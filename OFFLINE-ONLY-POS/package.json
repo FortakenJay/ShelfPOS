@@ -1,0 +1,58 @@
+{
+  "name": "shelfpos",
+  "version": "1.0.0",
+  "description": "Offline retail POS system (Electron) for small shops in Costa Rica",
+  "main": "./out/main/index.js",
+  "author": "ShelfPOS",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "dev": "electron-vite dev",
+    "start": "electron-vite preview",
+    "build": "electron-vite build",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
+    "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
+    "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "postinstall": "electron-builder install-app-deps",
+    "dist": "electron-vite build && electron-builder --win",
+    "dist:dir": "electron-vite build && electron-builder --win --dir",
+    "doctor": "npx react-doctor@latest"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.101.0",
+    "@tanstack/react-router": "^1.170.15",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.10.0",
+    "i18next": "^26.3.1",
+    "iconv-lite": "^0.7.2",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-i18next": "^17.0.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.9.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@types/ws": "^8.18.1",
+    "@vitejs/plugin-react": "^5.2.0",
+    "electron": "^41.7.2",
+    "electron-builder": "^26.15.2",
+    "electron-vite": "^5.0.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.7",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^6.0.3",
+    "vite": "^7.3.5",
+    "ws": "^8.21.0"
+  },
+  "allowScripts": {
+    "better-sqlite3@12.10.0": true,
+    "electron-winstaller@5.4.0": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.27.7": true,
+    "electron@41.7.2": true
+  }
+}

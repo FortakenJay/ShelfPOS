@@ -1,0 +1,20 @@
+appId: com.shelfpos.app
+productName: ShelfPOS
+directories:
+  output: dist
+files:
+  - out/**
+  - package.json
+asarUnpack:
+  - '**/node_modules/better-sqlite3/**'
+  - '**/node_modules/usb/**'
+  - '**/node_modules/@node-escpos/**'
+win:
+  target:
+    - nsis
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+npmRebuild: true

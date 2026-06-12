@@ -1,0 +1,202 @@
+import { getDb } from '../index'
+import { getAppSettings, ivaRateFor } from './settings'
+import { localNow, round2 } from '../helpers'
+import type {
+  InventoryRow,
+  PaymentMethodReport,
+  SalesSummaryReport,
+  TaxBreakdownReport,
+  TaxBreakdownRow,
+  TaxCategory,
+  TopProductRow
+} from '../../../shared/types'
+
+interface SaleFilter {
+  fromTs?: string
+  toTs?: string
+  cierrePending?: boolean
+}
+
+function saleWhere(filter: SaleFilter): { where: string; params: Record<string, unknown> } {
+  const conditions: string[] = []
+  const params: Record<string, unknown> = {}
+  if (filter.fromTs) {
+    conditions.push('s.created_at >= @fromTs')
+    params.fromTs = filter.fromTs
+  }
+  if (filter.toTs) {
+    conditions.push('s.created_at <= @toTs')
+    params.toTs = filter.toTs
+  }
+  if (filter.cierrePending) {
+    conditions.push('s.cierre_id IS NULL')
+  }
+  return { where: conditions.length ? 'WHERE ' + conditions.join(' AND ') : '', params }
+}
+
+/** Payment breakdown from sale_payments (supports split payments). */
+export function paymentTotals(filter: SaleFilter): PaymentMethodReport {
+  const { where, params } = saleWhere(filter)
+  const rows = getDb()
+    .prepare(
+      `SELECT sp.method AS method, COALESCE(SUM(sp.amount), 0) AS amount,
+              COUNT(DISTINCT sp.sale_id) AS count
+       FROM sale_payments sp JOIN sales s ON s.id = sp.sale_id
+       ${where} GROUP BY sp.method`
+    )
+    .all(params) as { method: string; amount: number; count: number }[]
+  const result: PaymentMethodReport = {
+    cash: 0,
+    card: 0,
+    sinpe: 0,
+    total: 0,
+    countCash: 0,
+    countCard: 0,
+    countSinpe: 0
+  }
+  for (const row of rows) {
+    if (row.method === 'cash') {
+      result.cash = round2(row.amount)
+      result.countCash = row.count
+    } else if (row.method === 'card') {
+      result.card = round2(row.amount)
+      result.countCard = row.count
+    } else if (row.method === 'sinpe') {
+      result.sinpe = round2(row.amount)
+      result.countSinpe = row.count
+    }
+  }
+  result.total = round2(result.cash + result.card + result.sinpe)
+  return result
+}
+
+/** Number of distinct sales matching the filter (used for cierre tx count). */
+export function salesCount(filter: SaleFilter): number {
+  const { where, params } = saleWhere(filter)
+  const row = getDb()
+    .prepare(`SELECT COUNT(*) AS count FROM sales s ${where}`)
+    .get(params) as { count: number }
+  return row.count
+}
+
+/**
+ * IVA breakdown by tax category, reverse-calculated from IVA-inclusive line totals.
+ * Under régimen simplificado this is informational only (not shown on customer receipts).
+ */
+export function taxBreakdown(filter: SaleFilter): TaxBreakdownReport {
+  const { where, params } = saleWhere(filter)
+  const rows = getDb()
+    .prepare(
+      `SELECT si.tax_category AS taxCategory, COALESCE(SUM(si.line_total), 0) AS gross
+       FROM sale_items si JOIN sales s ON s.id = si.sale_id
+       ${where} GROUP BY si.tax_category`
+    )
+    .all(params) as { taxCategory: TaxCategory; gross: number }[]
+
+  const order: TaxCategory[] = ['standard', 'canasta_basica', 'exempt']
+  const result: TaxBreakdownRow[] = rows
+    .map((r) => {
+      const rate = ivaRateFor(r.taxCategory)
+      const gross = round2(r.gross)
+      const base = round2(gross / (1 + rate))
+      return { taxCategory: r.taxCategory, rate, gross, base, iva: round2(gross - base) }
+    })
+    .sort((a, b) => order.indexOf(a.taxCategory) - order.indexOf(b.taxCategory))
+
+  return {
+    regime: getAppSettings().taxRegime,
+    rows: result,
+    totalGross: round2(result.reduce((acc, r) => acc + r.gross, 0)),
+    totalBase: round2(result.reduce((acc, r) => acc + r.base, 0)),
+    totalIva: round2(result.reduce((acc, r) => acc + r.iva, 0))
+  }
+}
+
+export function salesSummary(filter: SaleFilter): SalesSummaryReport {
+  const db = getDb()
+  const { where, params } = saleWhere(filter)
+  const sales = db
+    .prepare(
+      `SELECT COALESCE(SUM(s.total), 0) AS revenue, COUNT(*) AS txCount FROM sales s ${where}`
+    )
+    .get(params) as { revenue: number; txCount: number }
+  const items = db
+    .prepare(
+      `SELECT COALESCE(SUM(si.quantity), 0) AS itemsSold
+       FROM sale_items si JOIN sales s ON s.id = si.sale_id ${where}`
+    )
+    .get(params) as { itemsSold: number }
+  const returnConditions: string[] = []
+  const returnParams: Record<string, unknown> = {}
+  if (filter.fromTs) {
+    returnConditions.push('created_at >= @fromTs')
+    returnParams.fromTs = filter.fromTs
+  }
+  if (filter.toTs) {
+    returnConditions.push('created_at <= @toTs')
+    returnParams.toTs = filter.toTs
+  }
+  const returns = db
+    .prepare(
+      `SELECT COUNT(*) AS count FROM return_items ${returnConditions.length ? 'WHERE ' + returnConditions.join(' AND ') : ''}`
+    )
+    .get(returnParams) as { count: number }
+  return {
+    totalRevenue: round2(sales.revenue),
+    txCount: sales.txCount,
+    itemsSold: items.itemsSold,
+    returnsCount: returns.count,
+    avgTicket: sales.txCount > 0 ? round2(sales.revenue / sales.txCount) : 0
+  }
+}
+
+export function topProducts(filter: SaleFilter, limit = 10): TopProductRow[] {
+  const { where, params } = saleWhere(filter)
+  return getDb()
+    .prepare(
+      `SELECT p.id AS productId, p.name AS name, p.barcode AS barcode,
+              SUM(si.quantity) AS quantity, COALESCE(SUM(si.line_total), 0) AS revenue
+       FROM sale_items si
+       JOIN sales s ON s.id = si.sale_id
+       JOIN products p ON p.id = si.product_id
+       ${where}
+       GROUP BY p.id ORDER BY quantity DESC LIMIT @limit`
+    )
+    .all({ ...params, limit }) as TopProductRow[]
+}
+
+export function inventorySnapshot(): InventoryRow[] {
+  const def = getAppSettings().stockThresholdDefault
+  return getDb()
+    .prepare(
+      `SELECT id, barcode, name, category, stock,
+              COALESCE(stock_threshold, @def) AS threshold,
+              price, ROUND(stock * price, 2) AS value
+       FROM products ORDER BY name COLLATE NOCASE`
+    )
+    .all({ def }) as InventoryRow[]
+}
+
+/** Start of the current (un-cierred) period: last cierre close, else first pending activity, else now. */
+export function periodOpenedAt(): string {
+  const db = getDb()
+  const lastCierre = db.prepare('SELECT MAX(closed_at) AS ts FROM cierres').get() as {
+    ts: string | null
+  }
+  if (lastCierre.ts) return lastCierre.ts
+  const firstSale = db
+    .prepare('SELECT MIN(created_at) AS ts FROM sales WHERE cierre_id IS NULL')
+    .get() as { ts: string | null }
+  if (firstSale.ts) return firstSale.ts
+  const firstMovement = db
+    .prepare('SELECT MIN(created_at) AS ts FROM cash_movements WHERE cierre_id IS NULL')
+    .get() as { ts: string | null }
+  return firstMovement.ts ?? localNow()
+}
+
+export function returnsCountSince(fromTs: string): number {
+  const row = getDb()
+    .prepare('SELECT COUNT(*) AS count FROM return_items WHERE created_at >= ?')
+    .get(fromTs) as { count: number }
+  return row.count
+}

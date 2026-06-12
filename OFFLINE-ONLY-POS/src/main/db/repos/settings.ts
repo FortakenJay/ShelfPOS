@@ -1,0 +1,88 @@
+import { getDb } from '../index'
+import type { AppSettings, IdType, Language, TaxRegime } from '../../../shared/types'
+
+export const SETTING_KEYS = {
+  language: 'language',
+  storeName: 'store_name',
+  firstRunComplete: 'first_run_complete',
+  printerCjkCapable: 'printer_cjk_capable',
+  stockThresholdDefault: 'stock_threshold_default',
+  scannerBurstMs: 'scanner_burst_ms',
+  managerPinHash: 'manager_pin_hash',
+  taxRegime: 'tax_regime',
+  ivaRateStandard: 'iva_rate_standard',
+  ivaRateCanastaBasica: 'iva_rate_canasta_basica',
+  branchCode: 'branch_code',
+  terminalCode: 'terminal_code',
+  consecutivoNext: 'consecutivo_next',
+  storeLegalName: 'store_legal_name',
+  storeIdType: 'store_id_type',
+  storeId: 'store_id',
+  storePhone: 'store_phone',
+  storeEmail: 'store_email',
+  storeActivityCode: 'store_activity_code',
+  storeProvince: 'store_province',
+  storeCanton: 'store_canton',
+  storeDistrict: 'store_district',
+  storeAddress: 'store_address',
+  receiptFooter: 'receipt_footer'
+} as const
+
+export function getSetting(key: string): string | null {
+  const row = getDb().prepare('SELECT value FROM settings WHERE key = ?').get(key) as
+    | { value: string }
+    | undefined
+  return row?.value ?? null
+}
+
+export function setSetting(key: string, value: string): void {
+  getDb()
+    .prepare(
+      'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
+    )
+    .run(key, value)
+}
+
+export function getAppSettings(): AppSettings {
+  return {
+    language: (getSetting(SETTING_KEYS.language) as Language | null) ?? null,
+    storeName: getSetting(SETTING_KEYS.storeName) ?? 'ShelfPOS',
+    printerCjkCapable: getSetting(SETTING_KEYS.printerCjkCapable) === '1',
+    stockThresholdDefault: Number(getSetting(SETTING_KEYS.stockThresholdDefault) ?? '5'),
+    scannerBurstMs: Number(getSetting(SETTING_KEYS.scannerBurstMs) ?? '30'),
+    firstRunComplete: getSetting(SETTING_KEYS.firstRunComplete) === '1',
+    taxRegime: (getSetting(SETTING_KEYS.taxRegime) as TaxRegime | null) ?? 'simplificado',
+    ivaRateStandard: Number(getSetting(SETTING_KEYS.ivaRateStandard) ?? '13'),
+    ivaRateCanastaBasica: Number(getSetting(SETTING_KEYS.ivaRateCanastaBasica) ?? '1'),
+    branchCode: getSetting(SETTING_KEYS.branchCode) ?? '001',
+    terminalCode: getSetting(SETTING_KEYS.terminalCode) ?? '00001',
+    storeLegalName: getSetting(SETTING_KEYS.storeLegalName) ?? '',
+    storeIdType: (getSetting(SETTING_KEYS.storeIdType) as IdType | null) ?? 'fisica',
+    storeId: getSetting(SETTING_KEYS.storeId) ?? '',
+    storePhone: getSetting(SETTING_KEYS.storePhone) ?? '',
+    storeEmail: getSetting(SETTING_KEYS.storeEmail) ?? '',
+    storeActivityCode: getSetting(SETTING_KEYS.storeActivityCode) ?? '',
+    storeProvince: getSetting(SETTING_KEYS.storeProvince) ?? '',
+    storeCanton: getSetting(SETTING_KEYS.storeCanton) ?? '',
+    storeDistrict: getSetting(SETTING_KEYS.storeDistrict) ?? '',
+    storeAddress: getSetting(SETTING_KEYS.storeAddress) ?? '',
+    receiptFooter: getSetting(SETTING_KEYS.receiptFooter) ?? ''
+  }
+}
+
+/** IVA rate (fraction, e.g. 0.13) for a tax category, from the configured mapping. */
+export function ivaRateFor(category: 'exempt' | 'canasta_basica' | 'standard'): number {
+  const s = getAppSettings()
+  switch (category) {
+    case 'exempt':
+      return 0
+    case 'canasta_basica':
+      return s.ivaRateCanastaBasica / 100
+    case 'standard':
+      return s.ivaRateStandard / 100
+  }
+}
+
+export function currentLanguage(): Language {
+  return (getSetting(SETTING_KEYS.language) as Language | null) ?? 'es'
+}
