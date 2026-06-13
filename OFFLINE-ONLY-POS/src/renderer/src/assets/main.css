@@ -37,6 +37,14 @@ textarea {
   user-select: text;
 }
 
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
 /* Retail counter speed: no transitions anywhere. Keyframe animations (spinner) still work. */
 *,
 *::before,

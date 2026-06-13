@@ -83,6 +83,41 @@ export interface ProductFilters {
   stockStatus?: StockStatus
 }
 
+export interface ProductImportError {
+  row: number
+  key: string
+  detail?: string
+}
+
+export interface ProductImportPreviewRow {
+  row: number
+  barcode: string
+  name: string
+  price: number
+  category: string | null
+  stock: number
+  taxCategory: TaxCategory
+  currentName?: string
+  currentPrice?: number
+}
+
+export interface ProductImportPreview {
+  canceled: boolean
+  filePath?: string
+  fileName?: string
+  toCreate: ProductImportPreviewRow[]
+  toUpdate: ProductImportPreviewRow[]
+  unchanged: ProductImportPreviewRow[]
+  errors: ProductImportError[]
+}
+
+export interface ProductImportResult {
+  canceled: boolean
+  created?: number
+  updated?: number
+  errors?: ProductImportError[]
+}
+
 export interface StockAlert {
   productId: number
   name: string
@@ -272,11 +307,12 @@ export interface CashSummary {
 }
 
 export interface CierrePreview {
-  openedAt: string
   pendingSales: number
-  totals: PaymentMethodReport
-  returnsCount: number
-  cash: CashSummary
+  /** Admin-only fields — omitted for cajero (sales) role. */
+  openedAt?: string
+  totals?: PaymentMethodReport
+  returnsCount?: number
+  cash?: CashSummary
 }
 
 export interface CierreRecord {
@@ -300,7 +336,6 @@ export interface CierreRecord {
 
 export interface CierreConfirmInput {
   shiftLabel: string
-  pin: string
   notes?: string
   /** Physically counted cash in the drawer; enables the discrepancy check. */
   countedCash?: number
@@ -424,7 +459,9 @@ export interface PrintPayload {
 
 // --- IPC ---
 
-export type ApiResult<T> = { ok: true; data: T } | { ok: false; error: string; message?: string }
+export type ApiResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; error: string; message?: string; vars?: Record<string, string | number> }
 
 export const IPC_CHANNELS = [
   'firstRun:status',
@@ -447,6 +484,9 @@ export const IPC_CHANNELS = [
   'products:update',
   'products:delete',
   'products:adjustStock',
+  'products:exportCsv',
+  'products:importCsvPreview',
+  'products:importCsvConfirm',
   'products:byBarcode',
   'products:search',
   'sales:create',

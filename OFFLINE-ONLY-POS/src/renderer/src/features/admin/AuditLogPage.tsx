@@ -6,7 +6,8 @@ import { api } from '@/lib/api'
 import { formatDate } from '@/lib/format'
 import { RequireRole } from '@/features/shell/Shell'
 import { Select, Td, Th } from '@/components/ui'
-import { DateRangePicker, presetToday } from '@/components/DateRangePicker'
+import { DateRangePicker } from '@/components/DateRangePicker'
+import { presetToday } from '@/components/dateRangePresets'
 import type { DateRange } from '@shared/types'
 
 export function AuditLogPage(): React.JSX.Element {
@@ -19,11 +20,11 @@ export function AuditLogPage(): React.JSX.Element {
 
 function AuditLog(): React.JSX.Element {
   const { t } = useTranslation()
-  const [range, setRange] = useState<DateRange>(presetToday())
+  const [range, setRange] = useState<DateRange>(() => presetToday())
   const [userId, setUserId] = useState<number | ''>('')
 
-  const users = useQuery({ queryKey: ['auditUsers'], queryFn: api.audit.users })
-  const log = useQuery({
+  const { data: auditUsers } = useQuery({ queryKey: ['auditUsers'], queryFn: api.audit.users })
+  const { data: auditRows } = useQuery({
     queryKey: ['audit', range, userId],
     queryFn: () =>
       api.audit.list({ range, userId: userId === '' ? undefined : Number(userId), limit: 500 })
@@ -48,7 +49,7 @@ function AuditLog(): React.JSX.Element {
           aria-label={t('audit.user')}
         >
           <option value="">{t('audit.allUsers')}</option>
-          {users.data?.map((u) => (
+          {auditUsers?.map((u) => (
             <option key={u.id} value={u.id}>
               {u.username}
             </option>
@@ -68,14 +69,14 @@ function AuditLog(): React.JSX.Element {
             </tr>
           </thead>
           <tbody>
-            {log.data?.length === 0 && (
+            {auditRows?.length === 0 && (
               <tr>
                 <Td colSpan={5} className="py-6 text-center text-slate-500">
                   {t('common.noData')}
                 </Td>
               </tr>
             )}
-            {log.data?.map((row) => (
+            {auditRows?.map((row) => (
               <tr key={row.id}>
                 <Td className="whitespace-nowrap">{formatDate(row.created_at, true)}</Td>
                 <Td className="font-semibold">{row.username ?? '—'}</Td>

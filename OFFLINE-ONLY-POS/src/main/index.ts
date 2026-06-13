@@ -44,6 +44,7 @@ async function initData(): Promise<BackupService> {
   }
 
   db.pragma('journal_mode = WAL')
+  db.pragma('synchronous = NORMAL')
   db.pragma('foreign_keys = ON')
 
   const backup = new BackupService(backupDir)

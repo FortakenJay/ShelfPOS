@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
 import { useToasts } from '@/lib/toast'
@@ -19,6 +19,7 @@ export function AdjustStockModal({
 }): React.JSX.Element {
   const { t } = useTranslation()
   const toasts = useToasts()
+  const queryClient = useQueryClient()
   const [delta, setDelta] = useState('')
   const [reason, setReason] = useState<(typeof REASONS)[number]>('received_shipment')
   const [otherReason, setOtherReason] = useState('')
@@ -31,6 +32,7 @@ export function AdjustStockModal({
     onSuccess: (result) => {
       toasts.stockAlerts(result.stockAlerts)
       toasts.success('products.adjust.done')
+      void queryClient.invalidateQueries({ queryKey: ['products'] })
       onSaved()
     },
     onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')

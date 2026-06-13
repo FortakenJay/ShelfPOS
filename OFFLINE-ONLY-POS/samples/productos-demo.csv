@@ -1,0 +1,31 @@
+Código de barras,Nombre,Precio (₡),Precio de costo (₡),Categoría,Stock inicial,Alerta de stock bajo,Categoría de impuesto,Cantidad para precio por mayor,Precio por mayor (₡)
+7501001001001,Arroz Flor de Arroz 1 kg,1250,980,Granos,40,10,canasta_basica,,
+7501001001002,Frijoles negros 1 kg,1450,1100,Granos,35,10,canasta_basica,,
+7501001001003,Azúcar morena 1 kg,980,750,Granos,30,8,canasta_basica,,
+7501001001004,Harina de maíz 1 kg,890,680,Granos,25,8,canasta_basica,,
+7501001001005,Aceite vegetal 900 ml,2100,1650,Despensa,24,6,standard,,
+7501001001006,Sal yodada 1 kg,650,480,Despensa,20,5,canasta_basica,,
+7501001001007,Leche entera 1 L,1150,920,Lácteos,48,12,canasta_basica,6,1080
+7501001001008,Queso Turrialba 250 g,1850,1420,Lácteos,18,5,standard,,
+7501001001009,Huevos cartón 30 unid.,4200,3600,Lácteos,15,4,standard,2,8000
+7501001001010,Pan blanco bolsa,1200,850,Panadería,20,6,standard,,
+7501001001011,Tortillas de maíz 20 pz,950,700,Panadería,22,6,standard,,
+7501001001012,Coca-Cola 600 ml,850,620,Bebidas,60,15,standard,6,4800
+7501001001013,Agua natural 600 ml,450,280,Bebidas,72,20,standard,12,4800
+7501001001014,Jugo Hit naranja 1 L,1350,1020,Bebidas,28,8,standard,,
+7501001001015,Cerveza Imperial 350 ml,950,720,Bebidas,36,10,standard,6,5400
+7501001001016,Galletas María 200 g,780,560,Snacks,30,8,standard,,
+7501001001017,Papas fritas Lays 150 g,1100,820,Snacks,24,6,standard,,
+7501001001018,Chocolates Sublime,350,240,Snacks,50,12,standard,,
+7501001001019,Atún en agua 170 g,1450,1100,Enlatados,20,5,standard,,
+7501001001020,Sardinas en tomate 170 g,980,720,Enlatados,18,5,standard,,
+7501001001021,Pasta espagueti 400 g,890,650,Despensa,28,8,standard,,
+7501001001022,Salsa Lizano 280 ml,1650,1280,Despensa,16,4,standard,,
+7501001001023,Café molido 250 g,2200,1750,Despensa,14,4,standard,,
+7501001001024,Jabón de barra 3 pz,1200,900,Limpieza,20,5,standard,,
+7501001001025,Detergente en polvo 1 kg,2850,2200,Limpieza,12,4,standard,,
+7501001001026,Papel higiénico 4 rollos,1850,1400,Limpieza,18,5,standard,,
+7501001001027,Shampoo 400 ml,3200,2500,Higiene,10,3,standard,,
+7501001001028,Pasta dental 100 ml,1450,1100,Higiene,15,4,standard,,
+7501001001029,Pilas AA 4 pz,2200,1700,Varios,12,3,standard,,
+7501001001030,Servilletas 100 pz,890,650,Varios,25,6,standard,,

@@ -1,6 +1,6 @@
 import type Database from 'better-sqlite3'
 
-export const SCHEMA_VERSION = 2
+export const SCHEMA_VERSION = 3
 
 type Migration = (db: Database.Database) => void
 
@@ -206,6 +206,14 @@ const migrations: Record<number, Migration> = {
         ('store_district', ''),
         ('store_address', ''),
         ('receipt_footer', '');
+    `)
+  },
+
+  // v3 — query indexes for common filters (category, return date range).
+  3: (db) => {
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
+      CREATE INDEX IF NOT EXISTS idx_return_items_created ON return_items(created_at);
     `)
   }
 }

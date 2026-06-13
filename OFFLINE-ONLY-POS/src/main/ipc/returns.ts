@@ -13,7 +13,6 @@ export function registerReturnHandlers(): void {
     ['sales', 'admin'],
     async (input) => {
       const user = session.require()
-      await session.verifyPin(input.pin)
 
       if (!input?.items?.length) throw new AppError('errors.invalidInput')
       for (const item of input.items) {
@@ -21,6 +20,8 @@ export function registerReturnHandlers(): void {
           throw new AppError('errors.invalidInput')
         }
       }
+
+      await session.verifyPin(input.pin)
 
       const db = getDb()
       const now = localNow()

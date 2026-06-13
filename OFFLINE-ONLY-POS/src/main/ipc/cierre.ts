@@ -25,23 +25,36 @@ import type {
   CierreRecord
 } from '../../shared/types'
 
+const CIERRE: ('sales' | 'admin')[] = ['sales', 'admin']
+const CIERRE_ADMIN: 'admin'[] = ['admin']
+
 export function registerCierreHandlers(backup: BackupService): void {
-  handle<void, CierrePreview>('cierre:preview', ['admin'], () => {
+  handle<void, CierrePreview>('cierre:preview', CIERRE, () => {
+    const pendingSales = salesCount({ cierrePending: true })
+    const user = session.require()
+    if (user.role === 'sales') {
+      return { pendingSales }
+    }
     const openedAt = periodOpenedAt()
-    const totals = paymentTotals({ cierrePending: true })
     return {
+      pendingSales,
       openedAt,
-      pendingSales: salesCount({ cierrePending: true }),
-      totals,
+      totals: paymentTotals({ cierrePending: true }),
       returnsCount: returnsCountSince(openedAt),
       cash: openCashSummary()
     }
   })
 
-  handle<CierreConfirmInput, CierreConfirmResult>('cierre:confirm', ['admin'], async (input) => {
+  handle<CierreConfirmInput, CierreConfirmResult>('cierre:confirm', CIERRE, async (input) => {
     const user = session.require()
-    await session.verifyPin(input.pin)
     const shiftLabel = input.shiftLabel?.trim() || 'Turno 1'
+    const notes = input.notes?.trim() || null
+    const countedCashInput =
+      user.role === 'admin' &&
+      input.countedCash != null &&
+      Number.isFinite(input.countedCash)
+        ? round2(input.countedCash)
+        : null
 
     const db = getDb()
     const lang = currentLanguage()
@@ -57,10 +70,7 @@ export function registerCierreHandlers(backup: BackupService): void {
       const top = topProducts({ fromTs: openedAt, toTs: now })
       const cash = openCashSummary()
 
-      const countedCash =
-        input.countedCash != null && Number.isFinite(input.countedCash)
-          ? round2(input.countedCash)
-          : null
+      const countedCash = countedCashInput
       const difference = countedCash != null ? round2(countedCash - cash.expectedCash) : null
 
       const id = Number(
@@ -87,7 +97,7 @@ export function registerCierreHandlers(backup: BackupService): void {
             cash.expectedCash,
             countedCash,
             difference,
-            input.notes?.trim() || null
+            notes
           ).lastInsertRowid
       )
 
@@ -135,7 +145,7 @@ export function registerCierreHandlers(backup: BackupService): void {
     return { cierreId, printStatus }
   })
 
-  handle<void, CierreRecord[]>('cierre:history', ['admin'], () => {
+  handle<void, CierreRecord[]>('cierre:history', CIERRE_ADMIN, () => {
     return getDb()
       .prepare(
         `SELECT c.id, c.opened_at, c.closed_at, c.shift_label, c.total_cash, c.total_card,

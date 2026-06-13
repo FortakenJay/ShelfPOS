@@ -1,3 +1,5 @@
+const NUMPAD_KEYS = ['7', '8', '9', '4', '5', '6', '1', '2', '3', 'C', '0', '⌫'] as const
+
 interface NumPadProps {
   onDigit: (digit: string) => void
   onBackspace: () => void
@@ -5,10 +7,9 @@ interface NumPadProps {
 }
 
 export function NumPad({ onDigit, onBackspace, onClear }: NumPadProps): React.JSX.Element {
-  const keys = ['7', '8', '9', '4', '5', '6', '1', '2', '3', 'C', '0', '⌫']
   return (
     <div className="grid grid-cols-3 gap-2">
-      {keys.map((key) => (
+      {NUMPAD_KEYS.map((key) => (
         <button
           key={key}
           type="button"

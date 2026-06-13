@@ -8,42 +8,59 @@ import { Button, Field, Input, Modal, Toggle } from '@/components/ui'
 import { PinModal } from '@/components/PinModal'
 import type { SaleDetail } from '@shared/types'
 
+interface ReturnModalState {
+  searchForm: { saleId: string; date: string }
+  searchState: { results: SaleDetail[] | null; searching: boolean; sale: SaleDetail | null }
+  returnQty: Record<number, number>
+  restock: boolean
+  pin: { open: boolean; error: string | null }
+}
+
+function initialReturnState(): ReturnModalState {
+  return {
+    searchForm: { saleId: '', date: todayStr() },
+    searchState: { results: null, searching: false, sale: null },
+    returnQty: {},
+    restock: false,
+    pin: { open: false, error: null }
+  }
+}
+
 export function ReturnModal({ onClose }: { onClose: () => void }): React.JSX.Element {
   const { t } = useTranslation()
   const toasts = useToasts()
   const queryClient = useQueryClient()
+  const [state, setState] = useState(initialReturnState)
+  const patch = (p: Partial<ReturnModalState>): void => setState((s) => ({ ...s, ...p }))
 
-  const [saleIdQuery, setSaleIdQuery] = useState('')
-  const [dateQuery, setDateQuery] = useState(todayStr())
-  const [results, setResults] = useState<SaleDetail[] | null>(null)
-  const [searching, setSearching] = useState(false)
-  const [sale, setSale] = useState<SaleDetail | null>(null)
-  const [returnQty, setReturnQty] = useState<Record<number, number>>({})
-  const [restock, setRestock] = useState(false)
-  const [pinOpen, setPinOpen] = useState(false)
-  const [pinError, setPinError] = useState<string | null>(null)
+  const { searchForm, searchState, returnQty, restock, pin } = state
+  const { results, searching, sale } = searchState
 
   const searchSales = async (): Promise<void> => {
-    setSearching(true)
-    setSale(null)
+    setState((s) => ({
+      ...s,
+      searchState: { ...s.searchState, searching: true, sale: null }
+    }))
     try {
-      const id = parseInt(saleIdQuery.trim(), 10)
+      const id = parseInt(searchForm.saleId.trim(), 10)
       const found = await api.sales.findForReturn(
-        Number.isFinite(id) && saleIdQuery.trim() !== '' ? { saleId: id } : { date: dateQuery }
+        Number.isFinite(id) && searchForm.saleId.trim() !== '' ? { saleId: id } : { date: searchForm.date }
       )
-      setResults(found)
+      setState((s) => ({
+        ...s,
+        searchState: { results: found, searching: false, sale: null }
+      }))
     } catch (err) {
       toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
-      setResults([])
-    } finally {
-      setSearching(false)
+      setState((s) => ({
+        ...s,
+        searchState: { results: [], searching: false, sale: null }
+      }))
     }
   }
 
   const selectSale = (s: SaleDetail): void => {
-    setSale(s)
-    setReturnQty({})
-    setRestock(false)
+    patch({ searchState: { ...searchState, sale: s }, returnQty: {}, restock: false })
   }
 
   const totalToReturn = sale
@@ -56,43 +73,42 @@ export function ReturnModal({ onClose }: { onClose: () => void }): React.JSX.Ele
       toasts.stockAlerts(result.stockAlerts)
       toasts.success('returns.success')
       void queryClient.invalidateQueries({ queryKey: ['products'] })
-      setPinOpen(false)
+      patch({ pin: { open: false, error: null } })
       onClose()
     },
     onError: (err) => {
       const key = err instanceof ApiError ? err.key : 'errors.unknown'
       if (key === 'errors.invalidPin') {
-        setPinError(t(key))
+        patch({ pin: { open: true, error: t(key) } })
       } else {
-        setPinOpen(false)
+        patch({ pin: { open: false, error: null } })
         toasts.error(key)
       }
     }
   })
 
-  const submitWithPin = (pin: string): void => {
+  const submitWithPin = (pinCode: string): void => {
     if (!sale || mutation.isPending) return
-    setPinError(null)
-    mutation.mutate({
-      saleId: sale.id,
-      items: Object.entries(returnQty)
-        .filter(([, qty]) => qty > 0)
-        .map(([productId, quantity]) => ({ productId: Number(productId), quantity })),
-      restock,
-      pin
-    })
+    patch({ pin: { open: true, error: null } })
+    const items: { productId: number; quantity: number }[] = []
+    for (const [productId, quantity] of Object.entries(returnQty)) {
+      const qty = Number(quantity)
+      if (qty > 0) items.push({ productId: Number(productId), quantity: qty })
+    }
+    mutation.mutate({ saleId: sale.id, items, restock, pin: pinCode })
   }
 
   return (
     <>
       <Modal title={t('returns.title')} onClose={onClose} size="xl">
-        {/* Step 1: find the sale */}
         <p className="mb-3 text-[15px] text-slate-600">{t('returns.searchHint')}</p>
         <div className="mb-4 flex flex-wrap items-end gap-3">
           <Field label={t('returns.saleId')}>
             <Input
-              value={saleIdQuery}
-              onChange={(e) => setSaleIdQuery(e.target.value.replace(/\D/g, ''))}
+              value={searchForm.saleId}
+              onChange={(e) =>
+                patch({ searchForm: { ...searchForm, saleId: e.target.value.replace(/\D/g, '') } })
+              }
               className="w-40"
               inputMode="numeric"
             />
@@ -100,8 +116,8 @@ export function ReturnModal({ onClose }: { onClose: () => void }): React.JSX.Ele
           <Field label={t('returns.byDate')}>
             <Input
               type="date"
-              value={dateQuery}
-              onChange={(e) => setDateQuery(e.target.value)}
+              value={searchForm.date}
+              onChange={(e) => patch({ searchForm: { ...searchForm, date: e.target.value } })}
               className="w-44"
             />
           </Field>
@@ -131,14 +147,16 @@ export function ReturnModal({ onClose }: { onClose: () => void }): React.JSX.Ele
           </div>
         )}
 
-        {/* Step 2: pick items */}
         {sale && (
           <div className="mt-2">
             <div className="mb-2 flex items-center justify-between">
               <h3 className="text-lg font-bold">
                 {t('returns.itemsTitle')} — #{sale.id}
               </h3>
-              <Button variant="ghost" onClick={() => setSale(null)}>
+              <Button
+                variant="ghost"
+                onClick={() => patch({ searchState: { ...searchState, sale: null } })}
+              >
                 {t('common.back')}
               </Button>
             </div>
@@ -174,7 +192,7 @@ export function ReturnModal({ onClose }: { onClose: () => void }): React.JSX.Ele
                             type="button"
                             disabled={qty <= 0}
                             onClick={() =>
-                              setReturnQty((p) => ({ ...p, [item.productId]: qty - 1 }))
+                              patch({ returnQty: { ...returnQty, [item.productId]: qty - 1 } })
                             }
                             className="h-10 w-10 rounded-md border-2 border-line text-lg font-bold hover:border-primary disabled:text-slate-300"
                           >
@@ -185,7 +203,7 @@ export function ReturnModal({ onClose }: { onClose: () => void }): React.JSX.Ele
                             type="button"
                             disabled={qty >= max}
                             onClick={() =>
-                              setReturnQty((p) => ({ ...p, [item.productId]: qty + 1 }))
+                              patch({ returnQty: { ...returnQty, [item.productId]: qty + 1 } })
                             }
                             className="h-10 w-10 rounded-md border-2 border-line text-lg font-bold hover:border-primary disabled:text-slate-300"
                           >
@@ -200,7 +218,12 @@ export function ReturnModal({ onClose }: { onClose: () => void }): React.JSX.Ele
             </table>
 
             <div className="mt-5 rounded-md border-2 border-warning bg-amber-50 p-4">
-              <Toggle checked={restock} onChange={setRestock} label={t('returns.restockToggle')} danger />
+              <Toggle
+                checked={restock}
+                onChange={(v) => patch({ restock: v })}
+                label={t('returns.restockToggle')}
+                danger
+              />
               <p className="mt-2 text-[14px] font-medium text-amber-900">
                 {t('returns.restockWarning')}
               </p>
@@ -214,10 +237,7 @@ export function ReturnModal({ onClose }: { onClose: () => void }): React.JSX.Ele
                 variant="danger"
                 size="lg"
                 disabled={totalToReturn === 0}
-                onClick={() => {
-                  setPinError(null)
-                  setPinOpen(true)
-                }}
+                onClick={() => patch({ pin: { open: true, error: null } })}
               >
                 {t('returns.confirm')}
               </Button>
@@ -226,13 +246,13 @@ export function ReturnModal({ onClose }: { onClose: () => void }): React.JSX.Ele
         )}
       </Modal>
 
-      {pinOpen && (
+      {pin.open && (
         <PinModal
           title={t('returns.pinLabel')}
           loading={mutation.isPending}
-          error={pinError}
+          error={pin.error}
           onSubmit={submitWithPin}
-          onCancel={() => setPinOpen(false)}
+          onCancel={() => patch({ pin: { open: false, error: null } })}
         />
       )}
     </>

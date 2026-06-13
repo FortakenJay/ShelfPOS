@@ -19,7 +19,7 @@ function PrintQueue(): React.JSX.Element {
   const toasts = useToasts()
   const queryClient = useQueryClient()
 
-  const jobs = useQuery({ queryKey: ['printQueue'], queryFn: api.printQueue.list })
+  const { data: jobs } = useQuery({ queryKey: ['printQueue'], queryFn: api.printQueue.list })
 
   const retry = useMutation({
     mutationFn: api.printQueue.retry,
@@ -47,14 +47,14 @@ function PrintQueue(): React.JSX.Element {
             </tr>
           </thead>
           <tbody>
-            {jobs.data?.length === 0 && (
+            {jobs?.length === 0 && (
               <tr>
                 <Td colSpan={5} className="py-8 text-center text-slate-500">
                   {t('printQueue.empty')}
                 </Td>
               </tr>
             )}
-            {jobs.data?.map((job) => (
+            {jobs?.map((job) => (
               <tr key={job.id}>
                 <Td className="font-mono">{job.id}</Td>
                 <Td className="font-semibold">{t(`printQueue.types.${job.job_type}`)}</Td>

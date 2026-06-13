@@ -6,10 +6,13 @@ import { formatMoney } from '@/lib/format'
 import { useToasts } from '@/lib/toast'
 import { useDebouncedValue } from '@/lib/useScanner'
 import { RequireRole } from '@/features/shell/Shell'
-import { Button, ConfirmDialog, Input, Select, Td, Th } from '@/components/ui'
+import { Button, ConfirmDialog, Input, Modal, Select, Td, Th } from '@/components/ui'
+import { ProductsTable } from './ProductsTable'
 import { ProductFormModal } from './ProductForm'
 import { AdjustStockModal } from './AdjustStockModal'
-import type { Product, StockStatus } from '@shared/types'
+import { ProductCsvHelpModal } from './ProductCsvHelpModal'
+import { ProductImportPreviewModal } from './ProductImportPreviewModal'
+import type { Product, ProductImportError, ProductImportPreview, StockStatus } from '@shared/types'
 
 export function ProductsPage(): React.JSX.Element {
   return (
@@ -24,40 +27,43 @@ function ProductManager(): React.JSX.Element {
   const toasts = useToasts()
   const queryClient = useQueryClient()
 
-  const [search, setSearch] = useState('')
-  const [category, setCategory] = useState('')
-  const [stockStatus, setStockStatus] = useState<StockStatus>('all')
-  const [formProduct, setFormProduct] = useState<Product | null | 'new'>(null)
-  const [adjustProduct, setAdjustProduct] = useState<Product | null>(null)
-  const [deleteProduct, setDeleteProduct] = useState<Product | null>(null)
+  const [filters, setFilters] = useState({
+    search: '',
+    category: '',
+    stockStatus: 'all' as StockStatus
+  })
+  const [ui, setUi] = useState({
+    formProduct: null as Product | null | 'new',
+    adjustProduct: null as Product | null,
+    deleteProduct: null as Product | null,
+    importErrors: null as ProductImportError[] | null,
+    csvHelpOpen: false,
+    importPreview: null as ProductImportPreview | null
+  })
 
-  const debouncedSearch = useDebouncedValue(search.trim(), 200)
-  const filters = {
+  const debouncedSearch = useDebouncedValue(filters.search.trim(), 200)
+  const queryFilters = {
     search: debouncedSearch || undefined,
-    category: category || undefined,
-    stockStatus
+    category: filters.category || undefined,
+    stockStatus: filters.stockStatus
   }
 
-  const products = useQuery({
-    queryKey: ['products', filters],
-    queryFn: () => api.products.list(filters)
+  const { data: productRows } = useQuery({
+    queryKey: ['products', queryFilters],
+    queryFn: () => api.products.list(queryFilters)
   })
-  const categories = useQuery({
+  const { data: categoryRows } = useQuery({
     queryKey: ['products', 'categories'],
     queryFn: api.products.categories
   })
-  const settings = useQuery({ queryKey: ['settings'], queryFn: api.settings.get })
-
-  const invalidate = (): void => {
-    void queryClient.invalidateQueries({ queryKey: ['products'] })
-  }
+  const { data: settingsData } = useQuery({ queryKey: ['settings'], queryFn: api.settings.get })
 
   const quickAdjust = useMutation({
     mutationFn: (input: { productId: number; delta: number }) =>
       api.products.adjustStock({ ...input, reason: 'manual_correction' }),
     onSuccess: (result) => {
       toasts.stockAlerts(result.stockAlerts)
-      invalidate()
+      void queryClient.invalidateQueries({ queryKey: ['products'] })
     },
     onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
   })
@@ -66,16 +72,72 @@ function ProductManager(): React.JSX.Element {
     mutationFn: (id: number) => api.products.delete(id),
     onSuccess: () => {
       toasts.success('products.deleted')
-      setDeleteProduct(null)
-      invalidate()
+      setUi((u) => ({ ...u, deleteProduct: null }))
+      void queryClient.invalidateQueries({ queryKey: ['products'] })
     },
     onError: (err) => {
-      setDeleteProduct(null)
+      setUi((u) => ({ ...u, deleteProduct: null }))
       toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
     }
   })
 
-  const defaultThreshold = settings.data?.stockThresholdDefault ?? 5
+  const exportTemplate = useMutation({
+    mutationFn: () => api.products.exportCsv(true),
+    onSuccess: (result) => {
+      if (!result.canceled && result.path) toasts.success('export.csvDone', { path: result.path })
+      void queryClient.invalidateQueries({ queryKey: ['products'] })
+    },
+    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+  })
+
+  const exportProducts = useMutation({
+    mutationFn: () => api.products.exportCsv(false),
+    onSuccess: (result) => {
+      if (!result.canceled && result.path) toasts.success('export.csvDone', { path: result.path })
+      void queryClient.invalidateQueries({ queryKey: ['products'] })
+    },
+    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+  })
+
+  const importPreviewMutation = useMutation({
+    mutationFn: api.products.importPreview,
+    onSuccess: (result) => {
+      if (result.canceled) return
+      setUi((u) => ({ ...u, importPreview: result }))
+      void queryClient.invalidateQueries({ queryKey: ['products'] })
+    },
+    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+  })
+
+  const importConfirmMutation = useMutation({
+    mutationFn: (filePath: string) => api.products.importConfirm(filePath),
+    onSuccess: (result) => {
+      if (result.canceled) return
+      const created = result.created ?? 0
+      const updated = result.updated ?? 0
+      const failed = result.errors?.length ?? 0
+      setUi((u) => ({ ...u, importPreview: null }))
+      if (created > 0 || updated > 0) void queryClient.invalidateQueries({ queryKey: ['products'] })
+      if (failed > 0) {
+        setUi((u) => ({ ...u, importErrors: result.errors ?? [] }))
+        if (created > 0 || updated > 0) {
+          toasts.success('products.csv.importPartial', {
+            created: created + updated,
+            failed
+          })
+        }
+      } else if (created > 0 && updated > 0) {
+        toasts.success('products.csv.importDoneBoth', { created, updated })
+      } else if (created > 0) {
+        toasts.success('products.csv.importDone', { count: created })
+      } else if (updated > 0) {
+        toasts.success('products.csv.importUpdated', { count: updated })
+      }
+    },
+    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+  })
+
+  const defaultThreshold = settingsData?.stockThresholdDefault ?? 5
 
   const stockCellClass = (p: Product): string => {
     const threshold = p.stock_threshold ?? defaultThreshold
@@ -87,22 +149,42 @@ function ProductManager(): React.JSX.Element {
 
   return (
     <div className="p-6">
-      <div className="mb-5 flex items-center justify-between">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">{t('products.title')}</h1>
-        <Button onClick={() => setFormProduct('new')}>{t('products.newProduct')}</Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="ghost" onClick={() => setUi((u) => ({ ...u, csvHelpOpen: true }))}>
+            {t('products.csv.helpBtn')}
+          </Button>
+          <Button variant="outline" loading={exportTemplate.isPending} onClick={() => exportTemplate.mutate()}>
+            {t('products.csv.exportTemplate')}
+          </Button>
+          <Button variant="outline" loading={exportProducts.isPending} onClick={() => exportProducts.mutate()}>
+            {t('products.csv.exportProducts')}
+          </Button>
+          <Button
+            variant="outline"
+            loading={importPreviewMutation.isPending || importConfirmMutation.isPending}
+            onClick={() => importPreviewMutation.mutate()}
+          >
+            {t('products.csv.importCsv')}
+          </Button>
+          <Button onClick={() => setUi((u) => ({ ...u, formProduct: 'new' }))}>{t('products.newProduct')}</Button>
+        </div>
       </div>
+
+      <p className="mb-4 max-w-4xl text-[14px] text-slate-600">{t('products.csv.hint')}</p>
 
       {/* Filters */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={filters.search}
+          onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
           placeholder={t('products.filters.searchPlaceholder')}
           className="max-w-xs"
         />
         <Select
-          value={stockStatus}
-          onChange={(e) => setStockStatus(e.target.value as StockStatus)}
+          value={filters.stockStatus}
+          onChange={(e) => setFilters((f) => ({ ...f, stockStatus: e.target.value as StockStatus }))}
           className="w-44"
           aria-label={t('products.filters.stockStatus')}
         >
@@ -112,13 +194,13 @@ function ProductManager(): React.JSX.Element {
           <option value="negative">{t('products.filters.negative')}</option>
         </Select>
         <Select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
+          value={filters.category}
+          onChange={(e) => setFilters((f) => ({ ...f, category: e.target.value }))}
           className="w-52"
           aria-label={t('products.category')}
         >
           <option value="">{t('products.filters.allCategories')}</option>
-          {categories.data?.map((c) => (
+          {categoryRows?.map((c) => (
             <option key={c} value={c}>
               {c}
             </option>
@@ -127,108 +209,86 @@ function ProductManager(): React.JSX.Element {
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-lg border-2 border-line bg-white">
-        <table className="w-full">
-          <thead>
-            <tr>
-              <Th>{t('products.barcode')}</Th>
-              <Th>{t('products.name')}</Th>
-              <Th className="text-right">{t('products.price')}</Th>
-              <Th className="text-center">{t('products.stock')}</Th>
-              <Th className="text-center">{t('products.threshold')}</Th>
-              <Th>{t('products.category')}</Th>
-              <Th className="text-right">{t('common.actions')}</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.data?.length === 0 && (
-              <tr>
-                <Td className="py-8 text-center text-slate-500" colSpan={7}>
-                  {t('products.empty')}
-                </Td>
-              </tr>
-            )}
-            {products.data?.map((p) => (
-              <tr key={p.id} className="hover:bg-slate-50">
-                <Td className="font-mono text-[14px]">{p.barcode}</Td>
-                <Td className="font-semibold">{p.name}</Td>
-                <Td className="text-right">{formatMoney(p.price)}</Td>
-                <Td className={`text-center text-[16px] ${stockCellClass(p)}`}>
-                  <div className="flex items-center justify-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => quickAdjust.mutate({ productId: p.id, delta: -1 })}
-                      className="h-8 w-8 rounded border border-line font-bold text-slate-600 hover:border-primary hover:text-primary"
-                      aria-label="-1"
-                    >
-                      −
-                    </button>
-                    <span className="w-12">{p.stock}</span>
-                    <button
-                      type="button"
-                      onClick={() => quickAdjust.mutate({ productId: p.id, delta: 1 })}
-                      className="h-8 w-8 rounded border border-line font-bold text-slate-600 hover:border-primary hover:text-primary"
-                      aria-label="+1"
-                    >
-                      +
-                    </button>
-                  </div>
-                </Td>
-                <Td className="text-center text-slate-500">
-                  {p.stock_threshold ?? defaultThreshold}
-                </Td>
-                <Td>{p.category ?? '—'}</Td>
-                <Td className="text-right whitespace-nowrap">
-                  <Button variant="ghost" onClick={() => setAdjustProduct(p)} className="!min-h-9">
-                    {t('products.adjust.title')}
-                  </Button>
-                  <Button variant="ghost" onClick={() => setFormProduct(p)} className="!min-h-9">
-                    {t('common.edit')}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => setDeleteProduct(p)}
-                    className="!min-h-9 text-danger"
-                  >
-                    {t('common.delete')}
-                  </Button>
-                </Td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <ProductsTable
+        rows={productRows}
+        defaultThreshold={defaultThreshold}
+        stockCellClass={stockCellClass}
+        onQuickAdjust={(productId, delta) => quickAdjust.mutate({ productId, delta })}
+        onAdjust={(p) => setUi((u) => ({ ...u, adjustProduct: p }))}
+        onEdit={(p) => setUi((u) => ({ ...u, formProduct: p }))}
+        onDelete={(p) => setUi((u) => ({ ...u, deleteProduct: p }))}
+      />
 
-      {formProduct !== null && (
+      {ui.formProduct !== null && (
         <ProductFormModal
-          product={formProduct === 'new' ? null : formProduct}
+          product={ui.formProduct === 'new' ? null : ui.formProduct}
           defaultThreshold={defaultThreshold}
-          categories={categories.data ?? []}
-          onClose={() => setFormProduct(null)}
+          categories={categoryRows ?? []}
+          onClose={() => setUi((u) => ({ ...u, formProduct: null }))}
           onSaved={() => {
-            setFormProduct(null)
-            invalidate()
+            setUi((u) => ({ ...u, formProduct: null }))
+            void queryClient.invalidateQueries({ queryKey: ['products'] })
           }}
         />
       )}
-      {adjustProduct && (
+      {ui.adjustProduct && (
         <AdjustStockModal
-          product={adjustProduct}
-          onClose={() => setAdjustProduct(null)}
+          product={ui.adjustProduct}
+          onClose={() => setUi((u) => ({ ...u, adjustProduct: null }))}
           onSaved={() => {
-            setAdjustProduct(null)
-            invalidate()
+            setUi((u) => ({ ...u, adjustProduct: null }))
+            void queryClient.invalidateQueries({ queryKey: ['products'] })
           }}
         />
       )}
-      {deleteProduct && (
+      {ui.deleteProduct && (
         <ConfirmDialog
           title={t('products.deleteTitle')}
-          body={t('products.deleteConfirm', { name: deleteProduct.name })}
+          body={t('products.deleteConfirm', { name: ui.deleteProduct.name })}
           confirmLabel={t('common.delete')}
           loading={deleteMutation.isPending}
-          onConfirm={() => deleteMutation.mutate(deleteProduct.id)}
-          onCancel={() => setDeleteProduct(null)}
+          onConfirm={() => deleteMutation.mutate(ui.deleteProduct!.id)}
+          onCancel={() => setUi((u) => ({ ...u, deleteProduct: null }))}
+        />
+      )}
+      {ui.importErrors && ui.importErrors.length > 0 && (
+        <Modal title={t('products.csv.importErrorsTitle')} onClose={() => setUi((u) => ({ ...u, importErrors: null }))} size="lg">
+          <div className="max-h-80 overflow-y-auto rounded-md border border-line">
+            <table className="w-full text-[14px]">
+              <thead>
+                <tr>
+                  <Th>{t('products.csv.row')}</Th>
+                  <Th>{t('common.status')}</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {ui.importErrors.map((err) => (
+                  <tr key={`${err.row}-${err.key}`}>
+                    <Td className="font-mono">{err.row}</Td>
+                    <Td className="text-danger">
+                      {t(err.key)}
+                      {err.detail ? ` — ${err.detail}` : ''}
+                    </Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Modal>
+      )}
+      {ui.csvHelpOpen && (
+        <ProductCsvHelpModal
+          downloadingTemplate={exportTemplate.isPending}
+          onDownloadTemplate={() => exportTemplate.mutate()}
+          onClose={() => setUi((u) => ({ ...u, csvHelpOpen: false }))}
+        />
+      )}
+      {ui.importPreview && !ui.importPreview.canceled && ui.importPreview.filePath && (
+        <ProductImportPreviewModal
+          preview={ui.importPreview}
+          loading={importConfirmMutation.isPending}
+          onClose={() => setUi((u) => ({ ...u, importPreview: null }))}
+          onConfirm={() => importConfirmMutation.mutate(ui.importPreview!.filePath as string)}
         />
       )}
     </div>

@@ -53,9 +53,9 @@ export function listAudit(filter: AuditLogFilter): AuditLogRow[] {
   return getDb()
     .prepare(
       `SELECT id, user_id, username, action, entity, entity_id, detail, created_at
-       FROM audit_log ${where} ORDER BY id DESC LIMIT ${limit}`
+       FROM audit_log ${where} ORDER BY id DESC LIMIT @limit`
     )
-    .all(params) as AuditLogRow[]
+    .all({ ...params, limit }) as AuditLogRow[]
 }
 
 export function listAuditUsers(): AuditUser[] {

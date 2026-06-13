@@ -11,24 +11,31 @@ interface CustomerModalProps {
   onClose: () => void
 }
 
+function customerFormState(current: CustomerInput | null) {
+  return {
+    name: current?.name ?? '',
+    idType: (current?.idType ?? 'fisica') as IdType,
+    id: current?.id ?? '',
+    phone: current?.phone ?? '',
+    email: current?.email ?? '',
+    activityCode: current?.activityCode ?? ''
+  }
+}
+
 /** Optional receptor data. Empty = "consumidor final" (anonymous walk-in). */
 export function CustomerModal({ current, onApply, onClose }: CustomerModalProps): React.JSX.Element {
   const { t } = useTranslation()
-  const [name, setName] = useState(current?.name ?? '')
-  const [idType, setIdType] = useState<IdType>(current?.idType ?? 'fisica')
-  const [id, setId] = useState(current?.id ?? '')
-  const [phone, setPhone] = useState(current?.phone ?? '')
-  const [email, setEmail] = useState(current?.email ?? '')
-  const [activityCode, setActivityCode] = useState(current?.activityCode ?? '')
+  const [form, setForm] = useState(() => customerFormState(current))
+  const patch = (p: Partial<typeof form>): void => setForm((prev) => ({ ...prev, ...p }))
 
   const apply = (): void => {
     const customer: CustomerInput = {
-      name: name.trim() || undefined,
-      idType,
-      id: id.trim() || undefined,
-      phone: phone.trim() || undefined,
-      email: email.trim() || undefined,
-      activityCode: activityCode.trim() || undefined
+      name: form.name.trim() || undefined,
+      idType: form.idType,
+      id: form.id.trim() || undefined,
+      phone: form.phone.trim() || undefined,
+      email: form.email.trim() || undefined,
+      activityCode: form.activityCode.trim() || undefined
     }
     const empty = !customer.name && !customer.id && !customer.phone && !customer.email && !customer.activityCode
     onApply(empty ? null : customer)
@@ -39,10 +46,10 @@ export function CustomerModal({ current, onApply, onClose }: CustomerModalProps)
       <p className="mb-4 text-[15px] text-slate-600">{t('pos.customer.hint')}</p>
       <div className="grid grid-cols-2 gap-4">
         <Field label={t('pos.customer.name')} className="col-span-2">
-          <Input autoFocus value={name} onChange={(e) => setName(e.target.value)} />
+          <Input value={form.name} onChange={(e) => patch({ name: e.target.value })} />
         </Field>
         <Field label={t('pos.customer.idType')}>
-          <Select value={idType} onChange={(e) => setIdType(e.target.value as IdType)}>
+          <Select value={form.idType} onChange={(e) => patch({ idType: e.target.value as IdType })}>
             {ID_TYPES.map((it) => (
               <option key={it} value={it}>
                 {t(`idTypes.${it}`)}
@@ -51,16 +58,16 @@ export function CustomerModal({ current, onApply, onClose }: CustomerModalProps)
           </Select>
         </Field>
         <Field label={t('pos.customer.id')}>
-          <Input value={id} onChange={(e) => setId(e.target.value)} />
+          <Input value={form.id} onChange={(e) => patch({ id: e.target.value })} />
         </Field>
         <Field label={t('pos.customer.phone')}>
-          <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <Input value={form.phone} onChange={(e) => patch({ phone: e.target.value })} />
         </Field>
         <Field label={t('pos.customer.email')}>
-          <Input value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input value={form.email} onChange={(e) => patch({ email: e.target.value })} />
         </Field>
         <Field label={t('pos.customer.activityCode')} className="col-span-2">
-          <Input value={activityCode} onChange={(e) => setActivityCode(e.target.value)} />
+          <Input value={form.activityCode} onChange={(e) => patch({ activityCode: e.target.value })} />
         </Field>
       </div>
 

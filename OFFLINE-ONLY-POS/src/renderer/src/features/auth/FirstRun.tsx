@@ -96,9 +96,8 @@ function CjkStep({ onDone }: { onDone: () => void }): React.JSX.Element {
       setMessage(t('firstRun.printTestSent'))
     } catch {
       setMessage(t('firstRun.printTestFailed'))
-    } finally {
-      setPrinting(false)
     }
+    setPrinting(false)
   }
 
   const answer = async (capable: boolean): Promise<void> => {
@@ -149,43 +148,41 @@ function AccountsStep({ backupPath }: { backupPath: string }): React.JSX.Element
     sales: { ...EMPTY },
     product_manager: { ...EMPTY }
   })
-  const [pin, setPin] = useState('')
-  const [pinConfirm, setPinConfirm] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  const [pinFields, setPinFields] = useState({ pin: '', confirm: '' })
+  const [submitState, setSubmitState] = useState({ error: null as string | null, busy: false })
 
   const setField = (role: Role, field: keyof AccountDraft, value: string): void => {
     setAccounts((prev) => ({ ...prev, [role]: { ...prev[role], [field]: value } }))
   }
 
   const submit = async (): Promise<void> => {
-    setError(null)
+    setSubmitState({ error: null, busy: false })
     for (const { role } of ROLES) {
       const acc = accounts[role]
       if (!acc.username.trim() || !acc.password) {
-        setError(t('firstRun.errors.fillAll'))
+        setSubmitState({ error: t('firstRun.errors.fillAll'), busy: false })
         return
       }
       if (acc.password !== acc.confirm) {
-        setError(t('firstRun.errors.passwordMismatch'))
+        setSubmitState({ error: t('firstRun.errors.passwordMismatch'), busy: false })
         return
       }
     }
     const names = new Set(ROLES.map(({ role }) => accounts[role].username.trim().toLowerCase()))
     if (names.size !== 3) {
-      setError(t('firstRun.errors.duplicateUsernames'))
+      setSubmitState({ error: t('firstRun.errors.duplicateUsernames'), busy: false })
       return
     }
-    if (!/^\d{4,6}$/.test(pin)) {
-      setError(t('firstRun.errors.pinFormat'))
+    if (!/^\d{4,6}$/.test(pinFields.pin)) {
+      setSubmitState({ error: t('firstRun.errors.pinFormat'), busy: false })
       return
     }
-    if (pin !== pinConfirm) {
-      setError(t('firstRun.errors.pinMismatch'))
+    if (pinFields.pin !== pinFields.confirm) {
+      setSubmitState({ error: t('firstRun.errors.pinMismatch'), busy: false })
       return
     }
 
-    setBusy(true)
+    setSubmitState({ error: null, busy: true })
     try {
       await api.firstRun.complete({
         users: ROLES.map(({ role }) => ({
@@ -193,13 +190,11 @@ function AccountsStep({ backupPath }: { backupPath: string }): React.JSX.Element
           password: accounts[role].password,
           role
         })),
-        pin
+        pin: pinFields.pin
       })
       void navigate({ to: '/login', replace: true })
     } catch (err) {
-      setError(t(err instanceof ApiError ? err.key : 'errors.unknown'))
-    } finally {
-      setBusy(false)
+      setSubmitState({ error: t(err instanceof ApiError ? err.key : 'errors.unknown'), busy: false })
     }
   }
 
@@ -248,8 +243,8 @@ function AccountsStep({ backupPath }: { backupPath: string }): React.JSX.Element
             <Input
               inputMode="numeric"
               maxLength={6}
-              value={pin}
-              onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+              value={pinFields.pin}
+              onChange={(e) => setPinFields((p) => ({ ...p, pin: e.target.value.replace(/\D/g, '') }))}
               type="password"
             />
           </Field>
@@ -257,16 +252,16 @@ function AccountsStep({ backupPath }: { backupPath: string }): React.JSX.Element
             <Input
               inputMode="numeric"
               maxLength={6}
-              value={pinConfirm}
-              onChange={(e) => setPinConfirm(e.target.value.replace(/\D/g, ''))}
+              value={pinFields.confirm}
+              onChange={(e) => setPinFields((p) => ({ ...p, confirm: e.target.value.replace(/\D/g, '') }))}
               type="password"
             />
           </Field>
         </div>
 
-        {error && <p className="mt-4 text-[15px] font-bold text-danger">{error}</p>}
+        {submitState.error && <p className="mt-4 text-[15px] font-bold text-danger">{submitState.error}</p>}
 
-        <Button type="submit" size="lg" className="mt-6 w-full" loading={busy}>
+        <Button type="submit" size="lg" className="mt-6 w-full" loading={submitState.busy}>
           {t('firstRun.create')}
         </Button>
       </form>

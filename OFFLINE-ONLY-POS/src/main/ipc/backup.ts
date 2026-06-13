@@ -4,13 +4,11 @@ import { writeFileSync } from 'node:fs'
 import { handle } from './helpers'
 import { getDb, getDbPath } from '../db'
 import { rangeBounds } from '../db/helpers'
+import { currentLanguage } from '../db/repos/settings'
+import { buildCsv } from '../services/csv'
+import { formatPaymentMethod, SALES_CSV_KEYS, salesCsvHeaders } from '../services/csvColumns'
 import type { BackupService } from '../services/backup'
 import type { BackupInfo, DateRange } from '../../shared/types'
-
-function csvEscape(value: unknown): string {
-  const s = value == null ? '' : String(value)
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
-}
 
 export function registerBackupHandlers(backup: BackupService): void {
   handle<void, BackupInfo>('backup:info', ['admin'], () => ({
@@ -35,6 +33,7 @@ export function registerBackupHandlers(backup: BackupService): void {
     'backup:exportCsv',
     ['admin'],
     async ({ range }) => {
+      const lang = currentLanguage()
       const result = await dialog.showSaveDialog({
         defaultPath: `ventas-${range.from}-${range.to}.csv`,
         filters: [{ name: 'CSV', extensions: ['csv'] }]
@@ -56,25 +55,16 @@ export function registerBackupHandlers(backup: BackupService): void {
         )
         .all(fromTs, toTs) as Record<string, unknown>[]
 
-      const headers = [
-        'sale_id',
-        'created_at',
-        'cashier',
-        'payment_method',
-        'sinpe_ref',
-        'sale_total',
-        'cierre_id',
-        'barcode',
-        'product',
-        'quantity',
-        'unit_price',
-        'line_total'
-      ]
-      const csv =
-        '\uFEFF' +
-        [headers.join(','), ...rows.map((r) => headers.map((h) => csvEscape(r[h])).join(','))].join(
-          '\r\n'
-        )
+      const translated = rows.map((row) => ({
+        ...row,
+        payment_method: formatPaymentMethod(lang, String(row.payment_method ?? ''))
+      }))
+
+      const csv = buildCsv(
+        salesCsvHeaders(lang),
+        [...SALES_CSV_KEYS],
+        translated
+      )
       writeFileSync(result.filePath, csv, 'utf8')
       return { canceled: false, path: result.filePath }
     }

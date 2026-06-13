@@ -269,8 +269,6 @@ const pendingTx = await evalJs(
 )
 log('9. cierre preview pending tx:', pendingTx)
 await evalJs(`window.__e2e.clickText('button','Realizar cierre'); true`)
-await waitFor(`document.querySelector('[role=dialog]')`, 5000, 'cierre pin modal')
-await pinClicks(['1', '2', '3', '4', 'Confirmar'])
 await waitFor(
   `[...document.querySelectorAll('div')].some(d => d.textContent.includes('Cierre registrado'))`,
   15000,

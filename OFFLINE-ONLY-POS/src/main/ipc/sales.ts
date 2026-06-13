@@ -3,6 +3,7 @@ import { AppError } from '../errors'
 import { getDb } from '../db'
 import { localNow, round2 } from '../db/helpers'
 import { alertsForProducts, getProduct } from '../db/repos/products'
+import { assertSaleStock } from '../db/repos/stock'
 import { insertPrintJob } from '../db/repos/printJobs'
 import { getAppSettings, currentLanguage, getSetting, setSetting, SETTING_KEYS } from '../db/repos/settings'
 import { writeAudit } from '../db/repos/audit'
@@ -27,6 +28,7 @@ import type {
 const SELL: ('sales' | 'admin')[] = ['sales', 'admin']
 const CONDITIONS: SaleCondition[] = ['contado', 'credito', 'apartado']
 const ID_TYPES: IdType[] = ['fisica', 'juridica', 'dimex', 'nite']
+const PAYMENT_METHODS = new Set<PaymentMethod>(['cash', 'card', 'sinpe'])
 
 /** Effective unit price: bulk price when the line qualifies for the bulk tier. */
 function effectiveUnitPrice(product: Product, quantity: number): number {
@@ -65,7 +67,7 @@ export function registerSalesHandlers(): void {
       }
     }
     for (const pay of input.payments) {
-      if (!['cash', 'card', 'sinpe'].includes(pay.method)) throw new AppError('errors.invalidInput')
+      if (!PAYMENT_METHODS.has(pay.method)) throw new AppError('errors.invalidInput')
       if (!Number.isFinite(pay.amount) || pay.amount <= 0) throw new AppError('errors.invalidInput')
     }
     const condition: SaleCondition =
@@ -81,6 +83,7 @@ export function registerSalesHandlers(): void {
       const lines = input.items.map((item) => {
         const product = getProduct(item.productId)
         if (!product) throw new AppError('errors.productNotFound')
+        assertSaleStock(product, item.quantity)
         const unitPrice = effectiveUnitPrice(product, item.quantity)
         const gross = round2(unitPrice * item.quantity)
         const lineDiscount = round2(Math.min(item.discount ?? 0, gross))
@@ -135,7 +138,7 @@ export function registerSalesHandlers(): void {
       if (change != null && change < 0) throw new AppError('pos.insufficient')
 
       // Legacy single-method column: the largest tender is the "primary" method.
-      const primary = [...input.payments].sort((a, b) => b.amount - a.amount)[0]
+      const primary = input.payments.reduce((best, p) => (p.amount > best.amount ? p : best))
       const sinpeRef = input.payments.find((p) => p.method === 'sinpe' && p.ref?.trim())?.ref?.trim()
 
       const customer: SaleCustomer = {
@@ -187,19 +190,24 @@ export function registerSalesHandlers(): void {
         'INSERT INTO sale_payments (sale_id, method, amount, ref) VALUES (?,?,?,?)'
       )
       const decrementStock = db.prepare(
-        'UPDATE products SET stock = stock - ?, updated_at = ? WHERE id = ?'
+        'UPDATE products SET stock = stock - ?, updated_at = ? WHERE id = ? AND stock >= ?'
       )
       for (const line of finalized) {
+        const productId = line.product.id
         insertItem.run(
           saleId,
-          line.product.id,
+          productId,
           line.quantity,
           line.unitPrice,
           line.discount,
           line.lineTotal,
           line.taxCategory
         )
-        decrementStock.run(line.quantity, now, line.product.id)
+        const stockResult = decrementStock.run(line.quantity, now, productId, line.quantity)
+        if (stockResult.changes === 0) {
+          const current = getProduct(productId) ?? line.product
+          assertSaleStock(current, line.quantity)
+        }
       }
       for (const pay of input.payments) {
         insertPayment.run(saleId, pay.method, round2(pay.amount), cleanText(pay.ref))

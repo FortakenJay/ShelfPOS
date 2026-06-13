@@ -1,13 +1,18 @@
 import type { Language } from '../../shared/types'
 
+const CRC_MONEY_OPTIONS: Intl.NumberFormatOptions = {
+  style: 'currency',
+  currency: 'CRC',
+  currencyDisplay: 'narrowSymbol',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2
+}
+
+const moneyFormatterEs = new Intl.NumberFormat('es-CR', CRC_MONEY_OPTIONS)
+const moneyFormatterZh = new Intl.NumberFormat('zh-CN', CRC_MONEY_OPTIONS)
+
 export function formatMoney(n: number, lang: Language): string {
-  return new Intl.NumberFormat(lang === 'zh-CN' ? 'zh-CN' : 'es-CR', {
-    style: 'currency',
-    currency: 'CRC',
-    currencyDisplay: 'narrowSymbol',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2
-  }).format(n)
+  return (lang === 'zh-CN' ? moneyFormatterZh : moneyFormatterEs).format(n)
 }
 
 /** Formats a local 'YYYY-MM-DD[ HH:mm:ss]' string per locale, without Date parsing. */

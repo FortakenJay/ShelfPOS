@@ -1,4 +1,5 @@
 import { getDb } from '../index'
+import { PRINT_JOB_COLUMNS } from '../columns'
 import { localNow } from '../helpers'
 import type { PrintJobRow, PrintJobStatus, PrintJobType, PrintPayload } from '../../../shared/types'
 
@@ -16,7 +17,7 @@ export function insertPrintJob(
 }
 
 export function getPrintJob(id: number): (PrintJobRow & { payload: string }) | undefined {
-  return getDb().prepare('SELECT * FROM print_jobs WHERE id = ?').get(id) as
+  return getDb().prepare(`SELECT ${PRINT_JOB_COLUMNS} FROM print_jobs WHERE id = ?`).get(id) as
     | (PrintJobRow & { payload: string })
     | undefined
 }

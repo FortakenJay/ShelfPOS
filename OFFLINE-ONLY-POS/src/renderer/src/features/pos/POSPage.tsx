@@ -1,24 +1,23 @@
-import { useCallback, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
+import { stockAllows } from '@/lib/errors'
 import { formatMoney } from '@/lib/format'
 import { effectiveUnitPrice, lineGross, lineTotal } from '@/lib/pricing'
 import { useToasts } from '@/lib/toast'
 import { useDebouncedValue, useScannerDetector } from '@/lib/useScanner'
 import { RequireRole } from '@/features/shell/Shell'
-import { Button } from '@/components/ui'
 import { PaymentModal } from './PaymentModal'
 import { ReturnModal } from './ReturnModal'
 import { DiscountModal } from './DiscountModal'
 import { CustomerModal } from './CustomerModal'
+import { POSCartPanel } from './POSCartPanel'
+import { POSSidebar } from './POSSidebar'
+import type { CartLine } from './types'
 import type { CustomerInput, PaymentMethod, Product } from '@shared/types'
 
-export interface CartLine {
-  product: Product
-  quantity: number
-  discount: number
-}
+export type { CartLine } from './types'
 
 type DiscountTarget = { kind: 'line'; productId: number } | { kind: 'cart' }
 
@@ -38,45 +37,79 @@ function POSTerminal(): React.JSX.Element {
   const queryClient = useQueryClient()
 
   const [query, setQuery] = useState('')
-  const [cart, setCart] = useState<CartLine[]>([])
-  const [method, setMethod] = useState<PaymentMethod>('cash')
-  const [cartDiscount, setCartDiscount] = useState(0)
-  const [customer, setCustomer] = useState<CustomerInput | null>(null)
-  const [payOpen, setPayOpen] = useState(false)
-  const [returnOpen, setReturnOpen] = useState(false)
-  const [discountTarget, setDiscountTarget] = useState<DiscountTarget | null>(null)
-  const [customerOpen, setCustomerOpen] = useState(false)
+  const [sale, setSale] = useState({
+    cart: [] as CartLine[],
+    method: 'cash' as PaymentMethod,
+    cartDiscount: 0,
+    customer: null as CustomerInput | null
+  })
+  const [modals, setModals] = useState({
+    payOpen: false,
+    returnOpen: false,
+    discountTarget: null as DiscountTarget | null,
+    customerOpen: false
+  })
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const { cart, method, cartDiscount, customer } = sale
+  const { payOpen, returnOpen, discountTarget, customerOpen } = modals
+  const setCart = (updater: CartLine[] | ((prev: CartLine[]) => CartLine[])): void =>
+    setSale((s) => ({
+      ...s,
+      cart: typeof updater === 'function' ? updater(s.cart) : updater
+    }))
 
   const { data: settings } = useQuery({ queryKey: ['settings'], queryFn: api.settings.get })
   const scanner = useScannerDetector(settings?.scannerBurstMs ?? 30)
 
   const debouncedQuery = useDebouncedValue(query.trim(), 150)
-  const search = useQuery({
+  const { data: searchResults } = useQuery({
     queryKey: ['posSearch', debouncedQuery],
     queryFn: () => api.products.search(debouncedQuery),
     enabled: debouncedQuery.length > 0
   })
 
-  const focusSearch = useCallback(() => {
-    requestAnimationFrame(() => inputRef.current?.focus())
+  useEffect(() => {
+    inputRef.current?.focus()
   }, [])
 
-  const addToCart = useCallback((product: Product): void => {
-    setCart((prev) => {
-      const existing = prev.find((l) => l.product.id === product.id)
-      if (existing) {
-        return prev.map((l) =>
-          l.product.id === product.id ? { ...l, quantity: l.quantity + 1 } : l
-        )
+  const focusSearch = (): void => {
+    requestAnimationFrame(() => inputRef.current?.focus())
+  }
+
+  const addToCart = (product: Product): boolean => {
+      const existing = cart.find((l) => l.product.id === product.id)
+      const nextQty = (existing?.quantity ?? 0) + 1
+      const check = stockAllows(product, nextQty)
+      if (!check.ok) {
+        toasts.error(check.key, check.vars)
+        return false
       }
-      return [...prev, { product, quantity: 1, discount: 0 }]
-    })
-  }, [])
+      setCart((prev) => {
+        const line = prev.find((l) => l.product.id === product.id)
+        if (line) {
+          return prev.map((l) =>
+            l.product.id === product.id ? { ...l, quantity: l.quantity + 1 } : l
+          )
+        }
+        return [...prev, { product, quantity: 1, discount: 0 }]
+      })
+      return true
+    }
 
   const setQuantity = (productId: number, quantity: number): void => {
+    const line = cart.find((l) => l.product.id === productId)
+    if (!line) return
+    const nextQty = Math.max(1, quantity)
+    if (nextQty > line.quantity) {
+      const check = stockAllows(line.product, nextQty)
+      if (!check.ok) {
+        toasts.error(check.key, check.vars)
+        return
+      }
+    }
     setCart((prev) =>
-      prev.map((l) => (l.product.id === productId ? { ...l, quantity: Math.max(1, quantity) } : l))
+      prev.map((l) => (l.product.id === productId ? { ...l, quantity: nextQty } : l))
     )
   }
 
@@ -90,9 +123,7 @@ function POSTerminal(): React.JSX.Element {
   }
 
   const resetSale = (): void => {
-    setCart([])
-    setCartDiscount(0)
-    setCustomer(null)
+    setSale({ cart: [], method: 'cash', cartDiscount: 0, customer: null })
     setQuery('')
   }
 
@@ -103,15 +134,15 @@ function POSTerminal(): React.JSX.Element {
     if (isScan) {
       const product = await api.products.byBarcode(value)
       if (product) {
-        addToCart(product)
-        setQuery('')
+        if (addToCart(product)) {
+          setQuery('')
+        }
         return
       }
       return
     }
-    if (search.data?.length === 1) {
-      addToCart(search.data[0])
-      setQuery('')
+    if (searchResults?.length === 1) {
+      if (addToCart(searchResults[0])) setQuery('')
     }
   }
 
@@ -126,7 +157,7 @@ function POSTerminal(): React.JSX.Element {
 
   const onSaleCompleted = (change: number | null): void => {
     resetSale()
-    setPayOpen(false)
+    setModals((m) => ({ ...m, payOpen: false }))
     if (change != null && change > 0) toasts.changeDue(change)
     toasts.success('pos.saleCompleted')
     void queryClient.invalidateQueries({ queryKey: ['posSearch'] })
@@ -154,7 +185,6 @@ function POSTerminal(): React.JSX.Element {
         <div className="border-b-2 border-line bg-white p-4">
           <input
             ref={inputRef}
-            autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
@@ -171,19 +201,22 @@ function POSTerminal(): React.JSX.Element {
           {debouncedQuery.length > 0 && (
             <div className="relative">
               <div className="absolute top-1 right-0 left-0 z-20 max-h-80 overflow-y-auto rounded-md border-2 border-line bg-white shadow-xl">
-                {search.data?.length === 0 && (
+                {searchResults?.length === 0 && (
                   <div className="px-4 py-3 text-[16px] text-slate-500">{t('pos.noResults')}</div>
                 )}
-                {search.data?.map((product) => (
+                {searchResults?.map((product) => (
                   <button
                     key={product.id}
                     type="button"
                     onClick={() => {
-                      addToCart(product)
-                      setQuery('')
-                      focusSearch()
+                      if (addToCart(product)) {
+                        setQuery('')
+                        focusSearch()
+                      }
                     }}
-                    className="flex w-full items-center justify-between border-b border-line px-4 py-3 text-left hover:bg-blue-50"
+                    className={`flex w-full items-center justify-between border-b border-line px-4 py-3 text-left hover:bg-blue-50 ${
+                      product.stock <= 0 ? 'opacity-60' : ''
+                    }`}
                   >
                     <span>
                       <span className="block text-[16px] font-semibold">{product.name}</span>
@@ -199,185 +232,30 @@ function POSTerminal(): React.JSX.Element {
           )}
         </div>
 
-        {/* Cart */}
-        <div className="flex-1 overflow-y-auto">
-          {cart.length === 0 ? (
-            <div className="flex h-full items-center justify-center text-xl text-slate-400">
-              {t('pos.cartEmpty')}
-            </div>
-          ) : (
-            <table className="w-full">
-              <thead className="sticky top-0">
-                <tr>
-                  <th className="bg-slate-100 px-4 py-2 text-left text-[14px] font-bold text-slate-600 uppercase">
-                    {t('products.name')}
-                  </th>
-                  <th className="w-36 bg-slate-100 px-2 py-2 text-center text-[14px] font-bold text-slate-600 uppercase">
-                    {t('pos.qty')}
-                  </th>
-                  <th className="w-28 bg-slate-100 px-2 py-2 text-right text-[14px] font-bold text-slate-600 uppercase">
-                    {t('pos.price')}
-                  </th>
-                  <th className="w-32 bg-slate-100 px-2 py-2 text-right text-[14px] font-bold text-slate-600 uppercase">
-                    {t('pos.lineTotal')}
-                  </th>
-                  <th className="w-16 bg-slate-100" />
-                </tr>
-              </thead>
-              <tbody>
-                {cart.map((line) => {
-                  const unit = effectiveUnitPrice(line.product, line.quantity)
-                  const isBulk = unit !== line.product.price
-                  return (
-                    <tr key={line.product.id} className="border-b border-line bg-white">
-                      <td className="px-4 py-3">
-                        <span className="block text-[17px] font-semibold">{line.product.name}</span>
-                        <div className="mt-1 flex items-center gap-2 text-[13px]">
-                          {isBulk && (
-                            <span className="rounded bg-cta/10 px-1.5 py-0.5 font-bold text-cta">
-                              {t('pos.bulkApplied')}
-                            </span>
-                          )}
-                          {line.discount > 0 && (
-                            <span className="font-semibold text-danger">
-                              −{formatMoney(line.discount)}
-                            </span>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setDiscountTarget({ kind: 'line', productId: line.product.id })
-                            }
-                            className="font-bold text-primary hover:underline"
-                          >
-                            {t('pos.discountBtn')}
-                          </button>
-                        </div>
-                      </td>
-                      <td className="px-2 py-2">
-                        <div className="flex items-center justify-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => setQuantity(line.product.id, line.quantity - 1)}
-                            className="h-11 w-11 rounded-md border-2 border-line text-xl font-bold hover:border-primary"
-                            aria-label="-"
-                          >
-                            −
-                          </button>
-                          <input
-                            type="number"
-                            min={1}
-                            value={line.quantity}
-                            onChange={(e) =>
-                              setQuantity(line.product.id, parseInt(e.target.value, 10) || 1)
-                            }
-                            className="h-11 w-14 rounded-md border-2 border-line text-center text-[17px] font-bold outline-none focus:border-primary"
-                            aria-label={t('pos.qty')}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setQuantity(line.product.id, line.quantity + 1)}
-                            className="h-11 w-11 rounded-md border-2 border-line text-xl font-bold hover:border-primary"
-                            aria-label="+"
-                          >
-                            +
-                          </button>
-                        </div>
-                      </td>
-                      <td className="px-2 py-3 text-right text-[16px]">{formatMoney(unit)}</td>
-                      <td className="px-2 py-3 text-right text-[17px] font-bold">
-                        {formatMoney(lineTotal(line.product, line.quantity, line.discount))}
-                      </td>
-                      <td className="px-2 py-2 text-center">
-                        <button
-                          type="button"
-                          onClick={() => removeLine(line.product.id)}
-                          aria-label={t('pos.remove')}
-                          className="h-11 w-11 rounded-md text-xl font-bold text-danger hover:bg-red-50"
-                        >
-                          ×
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
-
-        {/* Cart footer */}
-        <div className="border-t-2 border-line bg-white p-4">
-          <div className="mb-1 flex items-center justify-between">
-            <span className="text-[15px] font-semibold text-slate-500">{t('pos.subtotal')}</span>
-            <span className="text-[15px] font-bold">{formatMoney(itemsGross)}</span>
-          </div>
-          <div className="mb-3 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => setDiscountTarget({ kind: 'cart' })}
-              disabled={cart.length === 0}
-              className="text-[15px] font-bold text-primary hover:underline disabled:text-slate-300"
-            >
-              {t('pos.cartDiscount')}
-            </button>
-            <span className="text-[15px] font-bold text-danger">
-              {discountTotal > 0 ? `−${formatMoney(discountTotal)}` : '—'}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            {(['cash', 'card', 'sinpe'] as PaymentMethod[]).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setMethod(m)}
-                className={`min-h-[48px] flex-1 rounded-md border-2 text-[16px] font-bold ${
-                  method === m
-                    ? 'border-primary bg-primary text-white'
-                    : 'border-line bg-white text-slate-700 hover:border-primary'
-                }`}
-              >
-                {t(`pos.methods.${m}`)}
-              </button>
-            ))}
-          </div>
-        </div>
+        <POSCartPanel
+          cart={cart}
+          method={method}
+          itemsGross={itemsGross}
+          discountTotal={discountTotal}
+          onLineDiscount={(productId) =>
+            setModals((m) => ({ ...m, discountTarget: { kind: 'line', productId } }))
+          }
+          onCartDiscount={() => setModals((m) => ({ ...m, discountTarget: { kind: 'cart' } }))}
+          onSetMethod={(m) => setSale((s) => ({ ...s, method: m }))}
+          onSetQuantity={setQuantity}
+          onRemoveLine={removeLine}
+        />
       </div>
 
-      {/* Right panel: total + actions */}
-      <div className="flex w-80 shrink-0 flex-col justify-between bg-white p-5">
-        <div>
-          <div className="text-[16px] font-semibold text-slate-500 uppercase">{t('pos.total')}</div>
-          <div className="mt-1 text-5xl font-extrabold tracking-tight">{formatMoney(total)}</div>
-          <div className="mt-2 text-[15px] font-semibold text-slate-500">
-            {t(`pos.methods.${method}`)}
-          </div>
-          <button
-            type="button"
-            onClick={() => setCustomerOpen(true)}
-            className="mt-4 w-full rounded-md border-2 border-line px-3 py-2 text-left text-[14px] font-semibold hover:border-primary"
-          >
-            <span className="block text-[12px] text-slate-500 uppercase">{t('pos.customer.title')}</span>
-            <span className="block truncate">
-              {customer?.name || customer?.id || t('pos.customer.finalConsumer')}
-            </span>
-          </button>
-        </div>
-        <div className="space-y-3">
-          <Button
-            variant="cta"
-            size="xl"
-            className="w-full"
-            disabled={cart.length === 0}
-            onClick={() => setPayOpen(true)}
-          >
-            {t('pos.charge')}
-          </Button>
-          <Button variant="outline" size="lg" className="w-full" onClick={() => setReturnOpen(true)}>
-            {t('pos.return')}
-          </Button>
-        </div>
-      </div>
+      <POSSidebar
+        total={total}
+        method={method}
+        customer={customer}
+        cartEmpty={cart.length === 0}
+        onCustomerOpen={() => setModals((m) => ({ ...m, customerOpen: true }))}
+        onPayOpen={() => setModals((m) => ({ ...m, payOpen: true }))}
+        onReturnOpen={() => setModals((m) => ({ ...m, returnOpen: true }))}
+      />
 
       {payOpen && (
         <PaymentModal
@@ -391,7 +269,7 @@ function POSTerminal(): React.JSX.Element {
           customer={customer}
           initialMethod={method}
           onClose={() => {
-            setPayOpen(false)
+            setModals((m) => ({ ...m, payOpen: false }))
             focusSearch()
           }}
           onCompleted={onSaleCompleted}
@@ -400,7 +278,7 @@ function POSTerminal(): React.JSX.Element {
       {returnOpen && (
         <ReturnModal
           onClose={() => {
-            setReturnOpen(false)
+            setModals((m) => ({ ...m, returnOpen: false }))
             focusSearch()
           }}
         />
@@ -411,23 +289,23 @@ function POSTerminal(): React.JSX.Element {
           base={discountModalBase()}
           current={discountModalCurrent()}
           onApply={(amount) => {
-            if (discountTarget.kind === 'cart') setCartDiscount(amount)
+            if (discountTarget.kind === 'cart') setSale((s) => ({ ...s, cartDiscount: amount }))
             else setLineDiscount(discountTarget.productId, amount)
-            setDiscountTarget(null)
+            setModals((m) => ({ ...m, discountTarget: null }))
             focusSearch()
           }}
-          onClose={() => setDiscountTarget(null)}
+          onClose={() => setModals((m) => ({ ...m, discountTarget: null }))}
         />
       )}
       {customerOpen && (
         <CustomerModal
           current={customer}
           onApply={(c) => {
-            setCustomer(c)
-            setCustomerOpen(false)
+            setSale((s) => ({ ...s, customer: c }))
+            setModals((m) => ({ ...m, customerOpen: false }))
             focusSearch()
           }}
-          onClose={() => setCustomerOpen(false)}
+          onClose={() => setModals((m) => ({ ...m, customerOpen: false }))}
         />
       )}
     </div>

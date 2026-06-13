@@ -16,7 +16,7 @@
     "postinstall": "electron-builder install-app-deps",
     "dist": "electron-vite build && electron-builder --win",
     "dist:dir": "electron-vite build && electron-builder --win --dir",
-    "doctor": "npx react-doctor@latest"
+    "doctor": "react-doctor"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.101.0",
@@ -40,9 +40,13 @@
     "electron": "^41.7.2",
     "electron-builder": "^26.15.2",
     "electron-vite": "^5.0.0",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-compiler": "^19.1.0-rc.2",
     "eslint-plugin-react-hooks": "^7.1.1",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.7",
+    "react-doctor": "^0.5.4",
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.3",
     "vite": "^7.3.5",
@@ -54,5 +58,8 @@
     "esbuild@0.25.12": true,
     "esbuild@0.27.7": true,
     "electron@41.7.2": true
+  },
+  "overrides": {
+    "esbuild": "^0.28.1"
   }
 }

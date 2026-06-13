@@ -5,7 +5,8 @@ import { api, ApiError } from '@/lib/api'
 import { useToasts } from '@/lib/toast'
 import { RequireRole } from '@/features/shell/Shell'
 import { Button } from '@/components/ui'
-import { DateRangePicker, presetMonth } from '@/components/DateRangePicker'
+import { DateRangePicker } from '@/components/DateRangePicker'
+import { presetMonth } from '@/components/dateRangePresets'
 import type { DateRange } from '@shared/types'
 
 export function ExportPage(): React.JSX.Element {
@@ -20,9 +21,9 @@ function ExportBackup(): React.JSX.Element {
   const { t } = useTranslation()
   const toasts = useToasts()
   const queryClient = useQueryClient()
-  const [range, setRange] = useState<DateRange>(presetMonth())
+  const [range, setRange] = useState<DateRange>(() => presetMonth())
 
-  const info = useQuery({ queryKey: ['backupInfo'], queryFn: api.backup.info })
+  const { data: backupInfo } = useQuery({ queryKey: ['backupInfo'], queryFn: api.backup.info })
 
   const backupMutation = useMutation({
     mutationFn: api.backup.runManual,
@@ -39,6 +40,7 @@ function ExportBackup(): React.JSX.Element {
     mutationFn: () => api.backup.exportCsv(range),
     onSuccess: (result) => {
       if (!result.canceled && result.path) toasts.success('export.csvDone', { path: result.path })
+      void queryClient.invalidateQueries({ queryKey: ['backupInfo'] })
     },
     onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
   })
@@ -54,11 +56,11 @@ function ExportBackup(): React.JSX.Element {
           <dl className="mb-4 space-y-2 text-[14px]">
             <div>
               <dt className="font-bold text-slate-500">{t('export.dbPath')}</dt>
-              <dd className="font-mono break-all select-text">{info.data?.dbPath ?? '—'}</dd>
+              <dd className="font-mono break-all select-text">{backupInfo?.dbPath ?? '—'}</dd>
             </div>
             <div>
               <dt className="font-bold text-slate-500">{t('export.backupDir')}</dt>
-              <dd className="font-mono break-all select-text">{info.data?.backupDir ?? '—'}</dd>
+              <dd className="font-mono break-all select-text">{backupInfo?.backupDir ?? '—'}</dd>
             </div>
           </dl>
           <p className="mb-4 text-[14px] text-slate-600">{t('export.note')}</p>
@@ -66,10 +68,10 @@ function ExportBackup(): React.JSX.Element {
             {t('export.backupNow')}
           </Button>
           <div className="mt-4 max-h-48 overflow-y-auto rounded-md border border-line">
-            {info.data?.backups.length === 0 && (
+            {backupInfo?.backups.length === 0 && (
               <div className="px-3 py-2 text-[14px] text-slate-500">{t('export.noBackups')}</div>
             )}
-            {info.data?.backups.map((file) => (
+            {backupInfo?.backups.map((file) => (
               <div key={file} className="border-b border-line px-3 py-2 font-mono text-[13px]">
                 {file}
               </div>
@@ -80,6 +82,7 @@ function ExportBackup(): React.JSX.Element {
         {/* CSV export */}
         <div className="rounded-lg border-2 border-line bg-white p-5">
           <h2 className="mb-3 text-lg font-bold">{t('export.csvTitle')}</h2>
+          <p className="mb-4 text-[14px] text-slate-600">{t('export.csvLanguageNote')}</p>
           <div className="mb-5">
             <DateRangePicker value={range} onChange={setRange} />
           </div>

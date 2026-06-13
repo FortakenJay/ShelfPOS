@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
 import { formatMoney } from '@/lib/format'
 import { useToasts } from '@/lib/toast'
 import { RequireRole } from '@/features/shell/Shell'
 import { Button, Td, Th } from '@/components/ui'
-import { DateRangePicker, presetToday } from '@/components/DateRangePicker'
+import { DateRangePicker } from '@/components/DateRangePicker'
+import { presetToday } from '@/components/dateRangePresets'
 import type { DateRange, ReportData, ReportType } from '@shared/types'
 
 const REPORT_TYPES: ReportType[] = [
@@ -28,10 +29,11 @@ export function ReportsPage(): React.JSX.Element {
 function Reports(): React.JSX.Element {
   const { t } = useTranslation()
   const toasts = useToasts()
+  const queryClient = useQueryClient()
   const [type, setType] = useState<ReportType>('summary')
-  const [range, setRange] = useState<DateRange>(presetToday())
+  const [range, setRange] = useState<DateRange>(() => presetToday())
 
-  const report = useQuery({
+  const { data: reportData } = useQuery({
     queryKey: ['report', type, range],
     queryFn: () => api.reports.run(type, range)
   })
@@ -42,6 +44,7 @@ function Reports(): React.JSX.Element {
       if (printStatus === 'printed') toasts.success('reports.printSent')
       else if (printStatus === 'skipped_cjk') toasts.info('pos.printSkippedCjk')
       else toasts.error('pos.printFailed')
+      void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
     },
     onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
   })
@@ -77,7 +80,7 @@ function Reports(): React.JSX.Element {
       </div>
 
       <div className="overflow-hidden rounded-lg border-2 border-line bg-white">
-        {report.data && <ReportTable report={report.data} />}
+        {reportData && <ReportTable report={reportData} />}
       </div>
     </div>
   )

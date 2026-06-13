@@ -26,7 +26,9 @@ export function handle<TIn, TOut>(
       const data = await fn(payload as TIn)
       return { ok: true, data }
     } catch (err) {
-      if (err instanceof AppError) return { ok: false, error: err.key }
+      if (err instanceof AppError) {
+        return { ok: false, error: err.key, vars: err.vars }
+      }
       console.error(`[ipc:${channel}]`, err)
       return {
         ok: false,

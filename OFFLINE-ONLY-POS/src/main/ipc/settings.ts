@@ -81,8 +81,8 @@ export function registerSettingsHandlers(): void {
     'settings:changePin',
     ['admin'],
     async ({ currentPin, newPin }) => {
-      await session.verifyPin(currentPin)
       if (!PIN_RE.test(newPin)) throw new AppError('firstRun.errors.pinFormat')
+      await session.verifyPin(currentPin)
       setSetting(SETTING_KEYS.managerPinHash, await bcrypt.hash(newPin, 10))
       writeAudit('pin_changed', { entity: 'settings' })
       return null

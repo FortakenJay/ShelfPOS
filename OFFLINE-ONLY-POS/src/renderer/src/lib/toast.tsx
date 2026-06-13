@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
+import { createContext, use, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatMoney } from './format'
@@ -35,42 +35,36 @@ export function ToastProvider({ children }: { children: ReactNode }): React.JSX.
   const [toasts, setToasts] = useState<Toast[]>([])
   const nextId = useRef(1)
 
-  const dismiss = useCallback((id: number) => {
+  const dismiss = (id: number): void => {
     setToasts((prev) => prev.filter((t) => t.id !== id))
-  }, [])
+  }
 
-  const push = useCallback(
-    (toast: Omit<Toast, 'id'>) => {
-      const id = nextId.current++
-      setToasts((prev) => [...prev.slice(-7), { ...toast, id }])
-      if (!toast.persistent) {
-        setTimeout(() => dismiss(id), TRANSIENT_MS)
+  const push = (toast: Omit<Toast, 'id'>): void => {
+    const id = nextId.current++
+    setToasts((prev) => [...prev.slice(-7), { ...toast, id }])
+    if (!toast.persistent) {
+      setTimeout(() => dismiss(id), TRANSIENT_MS)
+    }
+  }
+
+  const apiValue: ToastApi = {
+    push,
+    success: (key, vars) => push({ kind: 'success', key, vars }),
+    error: (key, vars) => push({ kind: 'error', key, vars }),
+    info: (key, vars) => push({ kind: 'info', key, vars }),
+    stockAlerts: (alerts) => {
+      for (const alert of alerts) {
+        push({
+          kind: alert.level === 'out' ? 'stock-out' : 'stock-low',
+          key: alert.level === 'out' ? 'toasts.stockOut' : 'toasts.stockLow',
+          vars: { name: alert.name, stock: alert.stock },
+          persistent: true
+        })
       }
     },
-    [dismiss]
-  )
-
-  const apiValue = useMemo<ToastApi>(
-    () => ({
-      push,
-      success: (key, vars) => push({ kind: 'success', key, vars }),
-      error: (key, vars) => push({ kind: 'error', key, vars }),
-      info: (key, vars) => push({ kind: 'info', key, vars }),
-      stockAlerts: (alerts) => {
-        for (const alert of alerts) {
-          push({
-            kind: alert.level === 'out' ? 'stock-out' : 'stock-low',
-            key: alert.level === 'out' ? 'toasts.stockOut' : 'toasts.stockLow',
-            vars: { name: alert.name, stock: alert.stock },
-            persistent: true
-          })
-        }
-      },
-      changeDue: (amount) =>
-        push({ kind: 'success', key: 'toasts.changeDue', vars: { amount: formatMoney(amount) } })
-    }),
-    [push]
-  )
+    changeDue: (amount) =>
+      push({ kind: 'success', key: 'toasts.changeDue', vars: { amount: formatMoney(amount) } })
+  }
 
   return (
     <ToastContext.Provider value={apiValue}>
@@ -142,7 +136,7 @@ function ToastViewport({
 }
 
 export function useToasts(): ToastApi {
-  const ctx = useContext(ToastContext)
+  const ctx = use(ToastContext)
   if (!ctx) throw new Error('useToasts must be used inside ToastProvider')
   return ctx
 }

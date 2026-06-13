@@ -6,6 +6,7 @@ import type {
   TdHTMLAttributes,
   ThHTMLAttributes
 } from 'react'
+import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 // ---------- Spinner ----------
@@ -67,7 +68,7 @@ export function Button({
     <button
       type={type}
       disabled={disabled || loading}
-      className={`inline-flex items-center justify-center gap-2 rounded-md font-semibold select-none ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-md font-semibold select-none disabled:cursor-not-allowed ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`}
       {...rest}
     >
       {loading && <Spinner className="h-5 w-5" />}
@@ -166,6 +167,8 @@ export function Toggle({
 
 // ---------- Modal ----------
 
+const MODAL_WIDTHS = { md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' } as const
+
 export function Modal({
   title,
   onClose,
@@ -175,38 +178,44 @@ export function Modal({
   title: ReactNode
   onClose?: () => void
   children: ReactNode
-  size?: 'md' | 'lg' | 'xl'
+  size?: keyof typeof MODAL_WIDTHS
 }): React.JSX.Element {
   const { t } = useTranslation()
-  const widths = { md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' }
+  const dialogRef = useRef<HTMLDialogElement>(null)
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) return
+    dialog.showModal()
+    return () => {
+      dialog.close()
+    }
+  }, [])
+
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget && onClose) onClose()
+    <dialog
+      ref={dialogRef}
+      onCancel={(e) => {
+        e.preventDefault()
+        onClose?.()
       }}
+      className={`fixed inset-0 z-50 m-auto flex max-h-[90vh] w-[calc(100%-2rem)] flex-col rounded-lg border-0 bg-white p-0 shadow-2xl backdrop:bg-slate-900/60 open:flex ${MODAL_WIDTHS[size]}`}
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        className={`flex max-h-[90vh] w-full flex-col rounded-lg bg-white shadow-2xl ${widths[size]}`}
-      >
-        <div className="flex items-center justify-between border-b-2 border-line px-5 py-3">
-          <h2 className="text-xl font-bold">{title}</h2>
-          {onClose && (
-            <button
-              type="button"
-              aria-label={t('common.close')}
-              onClick={onClose}
-              className="px-2 text-2xl font-bold text-slate-400 hover:text-slate-700"
-            >
-              ×
-            </button>
-          )}
-        </div>
-        <div className="overflow-y-auto p-5">{children}</div>
+      <div className="flex items-center justify-between border-b-2 border-line px-5 py-3">
+        <h2 className="text-xl font-bold">{title}</h2>
+        {onClose && (
+          <button
+            type="button"
+            aria-label={t('common.close')}
+            onClick={onClose}
+            className="px-2 text-2xl font-bold text-slate-400 hover:text-slate-700"
+          >
+            ×
+          </button>
+        )}
       </div>
-    </div>
+      <div className="overflow-y-auto p-5">{children}</div>
+    </dialog>
   )
 }
 

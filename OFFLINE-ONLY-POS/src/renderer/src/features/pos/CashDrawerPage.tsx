@@ -24,11 +24,8 @@ function CashDrawer(): React.JSX.Element {
   const [moveAmount, setMoveAmount] = useState('')
   const [moveReason, setMoveReason] = useState('')
 
-  const status = useQuery({ queryKey: ['cashStatus'], queryFn: api.cash.status })
+  const { data } = useQuery({ queryKey: ['cashStatus'], queryFn: api.cash.status })
 
-  const invalidate = (): void => {
-    void queryClient.invalidateQueries({ queryKey: ['cashStatus'] })
-  }
   const onError = (err: unknown): void =>
     toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
 
@@ -37,7 +34,7 @@ function CashDrawer(): React.JSX.Element {
     onSuccess: () => {
       toasts.success('cash.floatOpenedToast')
       setFloatAmount('')
-      invalidate()
+      void queryClient.invalidateQueries({ queryKey: ['cashStatus'] })
     },
     onError
   })
@@ -49,12 +46,12 @@ function CashDrawer(): React.JSX.Element {
       toasts.success('cash.movementToast')
       setMoveAmount('')
       setMoveReason('')
-      invalidate()
+      void queryClient.invalidateQueries({ queryKey: ['cashStatus'] })
     },
     onError
   })
 
-  const data = status.data
+  const cashData = data
   const movementLabel = (type: CashMovementType): string => t(`cash.types.${type}`)
 
   return (
@@ -65,27 +62,27 @@ function CashDrawer(): React.JSX.Element {
         {/* Summary */}
         <div className="rounded-lg border-2 border-line bg-white p-5">
           <div className="grid grid-cols-2 gap-3">
-            <Cell label={t('cash.openingFloat')} value={data ? formatMoney(data.openingFloat) : '—'} />
-            <Cell label={t('cash.cashSales')} value={data ? formatMoney(data.cashSales) : '—'} />
-            <Cell label={t('cash.cashIn')} value={data ? formatMoney(data.cashIn) : '—'} />
-            <Cell label={t('cash.cashOut')} value={data ? formatMoney(data.cashOut) : '—'} />
+            <Cell label={t('cash.openingFloat')} value={cashData ? formatMoney(cashData.openingFloat) : '—'} />
+            <Cell label={t('cash.cashSales')} value={cashData ? formatMoney(cashData.cashSales) : '—'} />
+            <Cell label={t('cash.cashIn')} value={cashData ? formatMoney(cashData.cashIn) : '—'} />
+            <Cell label={t('cash.cashOut')} value={cashData ? formatMoney(cashData.cashOut) : '—'} />
           </div>
           <div className="mt-4 flex items-center justify-between rounded-md bg-chrome px-4 py-3 text-white">
             <span className="text-[16px] font-bold">{t('cash.expectedCash')}</span>
             <span className="text-3xl font-extrabold">
-              {data ? formatMoney(data.expectedCash) : '—'}
+              {cashData ? formatMoney(cashData.expectedCash) : '—'}
             </span>
           </div>
-          {data && (
+          {cashData && (
             <p className="mt-3 text-[13px] text-slate-500">
-              {t('cash.periodSince')}: {formatDate(data.openedAt, true)}
+              {t('cash.periodSince')}: {formatDate(cashData.openedAt, true)}
             </p>
           )}
         </div>
 
         {/* Actions */}
         <div className="rounded-lg border-2 border-line bg-white p-5">
-          {data && !data.floatOpened ? (
+          {cashData && !cashData.floatOpened ? (
             <div>
               <h2 className="mb-3 text-lg font-bold">{t('cash.openFloatTitle')}</h2>
               <Field label={t('cash.openingFloat')} className="mb-4">
@@ -162,14 +159,14 @@ function CashDrawer(): React.JSX.Element {
             </tr>
           </thead>
           <tbody>
-            {data?.movements.length === 0 && (
+            {cashData?.movements.length === 0 && (
               <tr>
                 <Td colSpan={5} className="py-6 text-center text-slate-500">
                   {t('common.noData')}
                 </Td>
               </tr>
             )}
-            {data?.movements.map((m) => (
+            {cashData?.movements.map((m) => (
               <tr key={m.id}>
                 <Td>{formatDate(m.created_at, true)}</Td>
                 <Td className="font-semibold">{movementLabel(m.type)}</Td>

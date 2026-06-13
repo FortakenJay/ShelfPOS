@@ -26,6 +26,8 @@ import type {
   PrintStatus,
   Product,
   ProductFilters,
+  ProductImportPreview,
+  ProductImportResult,
   ProductInput,
   ReportData,
   ReportType,
@@ -38,6 +40,7 @@ import type {
 export class ApiError extends Error {
   constructor(
     public readonly key: string,
+    public readonly vars?: Record<string, string | number>,
     detail?: string
   ) {
     super(detail ?? key)
@@ -47,7 +50,7 @@ export class ApiError extends Error {
 
 async function call<T>(channel: IpcChannel, payload?: unknown): Promise<T> {
   const result = (await window.api.invoke(channel, payload)) as ApiResult<T>
-  if (!result.ok) throw new ApiError(result.error, result.message)
+  if (!result.ok) throw new ApiError(result.error, result.vars, result.message)
   return result.data
 }
 
@@ -84,7 +87,12 @@ export const api = {
       call<Product>('products:update', { id, ...input }),
     delete: (id: number) => call<null>('products:delete', { id }),
     adjustStock: (input: AdjustStockInput) =>
-      call<{ product: Product; stockAlerts: StockAlert[] }>('products:adjustStock', input)
+      call<{ product: Product; stockAlerts: StockAlert[] }>('products:adjustStock', input),
+    exportCsv: (template?: boolean) =>
+      call<{ canceled: boolean; path?: string }>('products:exportCsv', { template }),
+    importPreview: () => call<ProductImportPreview>('products:importCsvPreview'),
+    importConfirm: (filePath: string) =>
+      call<ProductImportResult>('products:importCsvConfirm', { filePath })
   },
   sales: {
     create: (input: CreateSaleInput) => call<CreateSaleResult>('sales:create', input),

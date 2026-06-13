@@ -1,5 +1,7 @@
 import { handle } from './helpers'
 import { AppError } from '../errors'
+import { dialog } from 'electron'
+import { writeFileSync } from 'node:fs'
 import { getDb } from '../db'
 import { localNow } from '../db/helpers'
 import {
@@ -11,37 +13,28 @@ import {
   listProducts,
   searchProducts
 } from '../db/repos/products'
+import { currentLanguage } from '../db/repos/settings'
 import { session } from '../services/session'
 import { writeAudit } from '../db/repos/audit'
+import { buildCsv } from '../services/csv'
+import { PRODUCT_CSV_KEYS, productCsvHeaders } from '../services/csvColumns'
+import {
+  applyProductImport,
+  buildProductImportPreview,
+  readProductCsv,
+  validateProductInput
+} from '../services/productCsvImport'
 import type {
   AdjustStockInput,
   Product,
   ProductFilters,
+  ProductImportPreview,
+  ProductImportResult,
   ProductInput,
-  StockAlert,
-  TaxCategory
+  StockAlert
 } from '../../shared/types'
 
 const MANAGE: ('product_manager' | 'admin')[] = ['product_manager', 'admin']
-const TAX_CATEGORIES: TaxCategory[] = ['exempt', 'canasta_basica', 'standard']
-
-function validateProductInput(input: ProductInput): void {
-  if (!input.barcode?.trim() || !input.name?.trim()) throw new AppError('errors.invalidInput')
-  if (!Number.isFinite(input.price) || input.price < 0) throw new AppError('errors.invalidInput')
-  if (!TAX_CATEGORIES.includes(input.taxCategory)) throw new AppError('errors.invalidInput')
-  // Bulk pricing is all-or-nothing: need both a threshold quantity and a bulk price.
-  const hasQty = input.bulkQty != null
-  const hasPrice = input.bulkPrice != null
-  if (hasQty !== hasPrice) throw new AppError('errors.invalidInput')
-  if (hasQty) {
-    if (!Number.isInteger(input.bulkQty) || (input.bulkQty as number) < 2) {
-      throw new AppError('errors.invalidInput')
-    }
-    if (!Number.isFinite(input.bulkPrice as number) || (input.bulkPrice as number) < 0) {
-      throw new AppError('errors.invalidInput')
-    }
-  }
-}
 
 function isUniqueViolation(err: unknown): boolean {
   return err instanceof Error && err.message.includes('UNIQUE constraint failed')
@@ -168,4 +161,53 @@ export function registerProductHandlers(): void {
       }
     }
   )
+
+  handle<{ template?: boolean }, { canceled: boolean; path?: string }>(
+    'products:exportCsv',
+    MANAGE,
+    async ({ template }) => {
+      const lang = currentLanguage()
+      const result = await dialog.showSaveDialog({
+        defaultPath: template ? 'plantilla-productos.csv' : 'productos.csv',
+        filters: [{ name: 'CSV', extensions: ['csv'] }]
+      })
+      if (result.canceled || !result.filePath) return { canceled: true }
+
+      const rows = template
+        ? []
+        : listProducts({}).map((p) => ({
+            barcode: p.barcode,
+            name: p.name,
+            price: p.price,
+            cost_price: p.cost_price ?? '',
+            category: p.category ?? '',
+            stock: p.stock,
+            stock_threshold: p.stock_threshold ?? '',
+            tax_category: p.tax_category,
+            bulk_qty: p.bulk_qty ?? '',
+            bulk_price: p.bulk_price ?? ''
+          }))
+
+      const csv = buildCsv(productCsvHeaders(lang), [...PRODUCT_CSV_KEYS], rows)
+      writeFileSync(result.filePath, csv, 'utf8')
+      return { canceled: false, path: result.filePath }
+    }
+  )
+
+  handle<void, ProductImportPreview>('products:importCsvPreview', MANAGE, async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [{ name: 'CSV', extensions: ['csv'] }]
+    })
+    if (result.canceled || !result.filePaths[0]) {
+      return { canceled: true, toCreate: [], toUpdate: [], unchanged: [], errors: [] }
+    }
+    return buildProductImportPreview(readProductCsv(result.filePaths[0]))
+  })
+
+  handle<{ filePath: string }, ProductImportResult>('products:importCsvConfirm', MANAGE, ({ filePath }) => {
+    const user = session.require()
+    if (!filePath?.trim()) throw new AppError('errors.invalidInput')
+    return applyProductImport(filePath.trim(), user.id)
+  })
 }

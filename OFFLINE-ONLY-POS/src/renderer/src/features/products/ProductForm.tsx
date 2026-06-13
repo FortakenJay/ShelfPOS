@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
 import { useToasts } from '@/lib/toast'
@@ -7,6 +7,21 @@ import { Button, Field, Input, Modal, Select } from '@/components/ui'
 import type { Product, ProductInput, TaxCategory } from '@shared/types'
 
 const TAX_CATEGORIES: TaxCategory[] = ['standard', 'canasta_basica', 'exempt']
+
+function productFormState(product: Product | null) {
+  return {
+    barcode: product?.barcode ?? '',
+    name: product?.name ?? '',
+    price: product ? String(product.price) : '',
+    costPrice: product?.cost_price != null ? String(product.cost_price) : '',
+    category: product?.category ?? '',
+    stock: '0',
+    threshold: product?.stock_threshold != null ? String(product.stock_threshold) : '',
+    taxCategory: (product?.tax_category ?? 'standard') as TaxCategory,
+    bulkQty: product?.bulk_qty != null ? String(product.bulk_qty) : '',
+    bulkPrice: product?.bulk_price != null ? String(product.bulk_price) : ''
+  }
+}
 
 interface ProductFormModalProps {
   product: Product | null
@@ -25,29 +40,19 @@ export function ProductFormModal({
 }: ProductFormModalProps): React.JSX.Element {
   const { t } = useTranslation()
   const toasts = useToasts()
+  const queryClient = useQueryClient()
   const isEdit = product !== null
 
-  const [barcode, setBarcode] = useState(product?.barcode ?? '')
-  const [name, setName] = useState(product?.name ?? '')
-  const [price, setPrice] = useState(product ? String(product.price) : '')
-  const [costPrice, setCostPrice] = useState(product?.cost_price != null ? String(product.cost_price) : '')
-  const [category, setCategory] = useState(product?.category ?? '')
-  const [stock, setStock] = useState('0')
-  const [threshold, setThreshold] = useState(
-    product?.stock_threshold != null ? String(product.stock_threshold) : ''
-  )
-  const [taxCategory, setTaxCategory] = useState<TaxCategory>(product?.tax_category ?? 'standard')
-  const [bulkQty, setBulkQty] = useState(product?.bulk_qty != null ? String(product.bulk_qty) : '')
-  const [bulkPrice, setBulkPrice] = useState(
-    product?.bulk_price != null ? String(product.bulk_price) : ''
-  )
+  const [form, setForm] = useState(() => productFormState(product))
   const [error, setError] = useState<string | null>(null)
+  const patch = (p: Partial<typeof form>): void => setForm((prev) => ({ ...prev, ...p }))
 
   const mutation = useMutation({
     mutationFn: (input: ProductInput) =>
       isEdit ? api.products.update(product.id, input) : api.products.create(input),
     onSuccess: () => {
       toasts.success(isEdit ? 'products.updated' : 'products.created')
+      void queryClient.invalidateQueries({ queryKey: ['products'] })
       onSaved()
     },
     onError: (err) => {
@@ -57,14 +62,14 @@ export function ProductFormModal({
 
   const submit = (): void => {
     setError(null)
-    const priceNum = Number(price)
-    if (!barcode.trim() || !name.trim() || !Number.isFinite(priceNum) || priceNum < 0) {
+    const priceNum = Number(form.price)
+    if (!form.barcode.trim() || !form.name.trim() || !Number.isFinite(priceNum) || priceNum < 0) {
       setError(t('errors.invalidInput'))
       return
     }
-    const hasBulk = bulkQty.trim() !== '' || bulkPrice.trim() !== ''
-    const bulkQtyNum = bulkQty.trim() === '' ? null : Math.trunc(Number(bulkQty))
-    const bulkPriceNum = bulkPrice.trim() === '' ? null : Number(bulkPrice)
+    const hasBulk = form.bulkQty.trim() !== '' || form.bulkPrice.trim() !== ''
+    const bulkQtyNum = form.bulkQty.trim() === '' ? null : Math.trunc(Number(form.bulkQty))
+    const bulkPriceNum = form.bulkPrice.trim() === '' ? null : Number(form.bulkPrice)
     if (hasBulk) {
       if (bulkQtyNum == null || bulkQtyNum < 2 || bulkPriceNum == null || bulkPriceNum < 0) {
         setError(t('products.form.bulkError'))
@@ -72,14 +77,14 @@ export function ProductFormModal({
       }
     }
     mutation.mutate({
-      barcode: barcode.trim(),
-      name: name.trim(),
+      barcode: form.barcode.trim(),
+      name: form.name.trim(),
       price: priceNum,
-      costPrice: costPrice.trim() === '' ? null : Number(costPrice),
-      category: category.trim() || null,
-      stock: isEdit ? 0 : Math.trunc(Number(stock) || 0),
-      stockThreshold: threshold.trim() === '' ? null : Math.trunc(Number(threshold)),
-      taxCategory,
+      costPrice: form.costPrice.trim() === '' ? null : Number(form.costPrice),
+      category: form.category.trim() || null,
+      stock: isEdit ? 0 : Math.trunc(Number(form.stock) || 0),
+      stockThreshold: form.threshold.trim() === '' ? null : Math.trunc(Number(form.threshold)),
+      taxCategory: form.taxCategory,
       bulkQty: hasBulk ? bulkQtyNum : null,
       bulkPrice: hasBulk ? bulkPriceNum : null
     })
@@ -101,8 +106,8 @@ export function ProductFormModal({
           <Field label={t('products.barcode')}>
             <Input
               autoFocus
-              value={barcode}
-              onChange={(e) => setBarcode(e.target.value)}
+              value={form.barcode}
+              onChange={(e) => patch({ barcode: e.target.value })}
               onKeyDown={(e) => {
                 // A scanner fires Enter after the code: keep it from submitting a half-filled form.
                 if (e.key === 'Enter') {
@@ -116,33 +121,48 @@ export function ProductFormModal({
             />
           </Field>
           <Field label={t('products.name')}>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
+            <Input value={form.name} onChange={(e) => patch({ name: e.target.value })} />
           </Field>
           <Field label={t('products.price')}>
             <Input
               inputMode="decimal"
-              value={price}
-              onChange={(e) => setPrice(e.target.value.replace(/[^\d.]/g, ''))}
+              value={form.price}
+              onChange={(e) => patch({ price: e.target.value.replace(/[^\d.]/g, '') })}
             />
           </Field>
           <Field label={`${t('products.costPrice')} (${t('common.optional')})`}>
             <Input
               inputMode="decimal"
-              value={costPrice}
-              onChange={(e) => setCostPrice(e.target.value.replace(/[^\d.]/g, ''))}
+              value={form.costPrice}
+              onChange={(e) => patch({ costPrice: e.target.value.replace(/[^\d.]/g, '') })}
             />
           </Field>
           <Field label={t('products.category')}>
-            <Input value={category} onChange={(e) => setCategory(e.target.value)} list="categories" />
-            <datalist id="categories">
-              {categories.map((c) => (
-                <option key={c} value={c} />
-              ))}
-            </datalist>
+            <Input
+              value={form.category}
+              onChange={(e) => patch({ category: e.target.value })}
+            />
+            {categories.length > 0 && (
+              <fieldset className="mt-2 border-0 p-0">
+                <legend className="sr-only">{t('products.category')}</legend>
+                <div className="flex flex-wrap gap-1">
+                  {categories.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => patch({ category: c })}
+                      className="rounded-md border border-line bg-slate-50 px-2 py-1 text-[13px] font-semibold text-slate-700 hover:border-primary hover:bg-white"
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+            )}
           </Field>
           {isEdit ? (
             <Field label={t('products.stock')}>
-              <Input value={String(product.stock)} disabled />
+              <Input value={String(product.stock)} disabled aria-label={t('products.stock')} />
               <span className="mt-1 block text-[13px] text-slate-500">
                 {t('products.form.stockEditHint')}
               </span>
@@ -151,23 +171,23 @@ export function ProductFormModal({
             <Field label={t('products.form.initialStock')}>
               <Input
                 inputMode="numeric"
-                value={stock}
-                onChange={(e) => setStock(e.target.value.replace(/[^\d-]/g, ''))}
+                value={form.stock}
+                onChange={(e) => patch({ stock: e.target.value.replace(/[^\d-]/g, '') })}
               />
             </Field>
           )}
           <Field label={t('products.threshold')}>
             <Input
               inputMode="numeric"
-              value={threshold}
-              onChange={(e) => setThreshold(e.target.value.replace(/\D/g, ''))}
+              value={form.threshold}
+              onChange={(e) => patch({ threshold: e.target.value.replace(/\D/g, '') })}
               placeholder={t('products.thresholdHint', { value: defaultThreshold })}
             />
           </Field>
           <Field label={t('products.taxCategory')}>
             <Select
-              value={taxCategory}
-              onChange={(e) => setTaxCategory(e.target.value as TaxCategory)}
+              value={form.taxCategory}
+              onChange={(e) => patch({ taxCategory: e.target.value as TaxCategory })}
             >
               {TAX_CATEGORIES.map((tc) => (
                 <option key={tc} value={tc}>
@@ -184,16 +204,16 @@ export function ProductFormModal({
             <Field label={t('products.bulkQty')}>
               <Input
                 inputMode="numeric"
-                value={bulkQty}
-                onChange={(e) => setBulkQty(e.target.value.replace(/\D/g, ''))}
+                value={form.bulkQty}
+                onChange={(e) => patch({ bulkQty: e.target.value.replace(/\D/g, '') })}
                 placeholder={t('products.bulkQtyHint')}
               />
             </Field>
             <Field label={t('products.bulkPrice')}>
               <Input
                 inputMode="decimal"
-                value={bulkPrice}
-                onChange={(e) => setBulkPrice(e.target.value.replace(/[^\d.]/g, ''))}
+                value={form.bulkPrice}
+                onChange={(e) => patch({ bulkPrice: e.target.value.replace(/[^\d.]/g, '') })}
               />
             </Field>
           </div>

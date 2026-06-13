@@ -50,8 +50,11 @@ export function registerFirstRunHandlers(backupDir: string): void {
     if (!input || !Array.isArray(input.users) || input.users.length !== 3) {
       throw new AppError('errors.invalidInput')
     }
-    const roles = input.users.map((u) => u.role).sort()
-    if (JSON.stringify(roles) !== JSON.stringify([...REQUIRED_ROLES].sort())) {
+    const roles = input.users.map((u) => u.role)
+    roles.sort()
+    const required = [...REQUIRED_ROLES]
+    required.sort()
+    if (JSON.stringify(roles) !== JSON.stringify(required)) {
       throw new AppError('errors.invalidInput')
     }
     for (const user of input.users) {
@@ -61,14 +64,16 @@ export function registerFirstRunHandlers(backupDir: string): void {
     if (usernames.size !== 3) throw new AppError('firstRun.errors.duplicateUsernames')
     if (!PIN_RE.test(input.pin)) throw new AppError('firstRun.errors.pinFormat')
 
-    const hashed = await Promise.all(
-      input.users.map(async (u) => ({
-        username: u.username.trim(),
-        role: u.role,
-        hash: await bcrypt.hash(u.password, 10)
-      }))
-    )
-    const pinHash = await bcrypt.hash(input.pin, 10)
+    const [hashed, pinHash] = await Promise.all([
+      Promise.all(
+        input.users.map(async (u) => ({
+          username: u.username.trim(),
+          role: u.role,
+          hash: await bcrypt.hash(u.password, 10)
+        }))
+      ),
+      bcrypt.hash(input.pin, 10)
+    ])
 
     const db = getDb()
     const now = localNow()

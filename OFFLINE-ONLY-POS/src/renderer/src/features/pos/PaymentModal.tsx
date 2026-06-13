@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { api, ApiError } from '@/lib/api'
+import { api } from '@/lib/api'
+import { toastApiError } from '@/lib/errors'
 import { formatMoney } from '@/lib/format'
 import { useToasts } from '@/lib/toast'
 import { Button, Field, Input, Modal, Select } from '@/components/ui'
@@ -46,6 +47,7 @@ export function PaymentModal({
 }: PaymentModalProps): React.JSX.Element {
   const { t } = useTranslation()
   const toasts = useToasts()
+  const queryClient = useQueryClient()
   const [condition, setCondition] = useState<SaleCondition>('contado')
   const [entries, setEntries] = useState<PaymentEntry[]>([
     { method: initialMethod, amount: String(total), ref: '' }
@@ -103,11 +105,13 @@ export function PaymentModal({
     onSuccess: (result) => {
       toasts.stockAlerts(result.stockAlerts)
       notifyPrint(result.printStatus, result.printJobId)
+      void queryClient.invalidateQueries({ queryKey: ['posSearch'] })
+      void queryClient.invalidateQueries({ queryKey: ['products'] })
+      void queryClient.invalidateQueries({ queryKey: ['cashStatus'] })
+      void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
       onCompleted(result.change)
     },
-    onError: (err) => {
-      toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
-    }
+    onError: (err) => toastApiError(toasts, err)
   })
 
   const confirm = (): void => {
@@ -144,8 +148,10 @@ export function PaymentModal({
       </Field>
 
       <div className="space-y-3">
-        {entries.map((entry, idx) => (
-          <div key={idx} className="rounded-md border-2 border-line p-3">
+        {entries.map((entry) => {
+          const idx = entries.findIndex((e) => e.method === entry.method)
+          return (
+          <div key={entry.method} className="rounded-md border-2 border-line p-3">
             <div className="flex items-center gap-2">
               <Select
                 value={entry.method}
@@ -185,7 +191,8 @@ export function PaymentModal({
               />
             )}
           </div>
-        ))}
+          )
+        })}
       </div>
 
       {entries.length < METHODS.length && (
