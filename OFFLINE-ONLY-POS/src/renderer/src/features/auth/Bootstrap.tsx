@@ -4,7 +4,7 @@ import { api } from '@/lib/api'
 import { homeFor } from '@/lib/session'
 import { FullScreenSpinner } from '@/components/ui'
 
-/** Entry redirect: first-run wizard → login → role home. */
+/** Entry redirect: first-run wizard → language → login → role home. */
 export function Bootstrap(): React.JSX.Element {
   const navigate = useNavigate()
 
@@ -21,13 +21,13 @@ export function Bootstrap(): React.JSX.Element {
         const user = await api.auth.session()
         if (cancelled) return
         if (!user) {
-          void navigate({ to: '/login', replace: true })
+          void navigate({ to: '/choose-language', replace: true })
           return
         }
         void navigate({ to: homeFor(user.role), replace: true })
       } catch (err) {
         console.error(err)
-        void navigate({ to: '/login', replace: true })
+        void navigate({ to: '/choose-language', replace: true })
       }
     })()
     return () => {

@@ -4,10 +4,10 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
+import { app } from 'electron'
 import iconv from 'iconv-lite'
 import { AppError } from '../errors'
-import { getPrintJob, markPrintJob } from '../db/repos/printJobs'
-import { getAppSettings } from '../db/repos/settings'
+import { getPrintJob, listPendingPrintJobIds, markPrintJob } from '../db/repos/printJobs'
 import type { Language, PrintLine, PrintPayload, PrintStatus } from '../../shared/types'
 
 const execFileAsync = promisify(execFile)
@@ -16,8 +16,64 @@ const DEFAULT_PRINTER_NAME = 'EPSON TM-T20III Receipt'
 // 80mm TM-T20III renders 48 columns in Font A. Override with SHELFPOS_LINE_WIDTH.
 const LINE_WIDTH = Number(process.env.SHELFPOS_LINE_WIDTH) || 48
 
+let cachedRawPrintScriptPath: string | null = null
+let verifiedPrinterName: string | null = null
+let printerReady = false
+
+const PROBE_TIMEOUT_MS = 2_500
+
 function getPrinterName(): string {
   return process.env.SHELFPOS_PRINTER_NAME?.trim() || DEFAULT_PRINTER_NAME
+}
+
+/** Whether startup probe found the configured receipt printer. */
+export function isPrinterReady(): boolean {
+  return printerReady
+}
+
+/** Fast Windows printer probe — run once at startup (and on manual retry). */
+export async function probePrinter(): Promise<boolean> {
+  const printerName = getPrinterName()
+  try {
+    await Promise.race([
+      execFileAsync('powershell.exe', [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        `if (-not (Get-Printer -Name '${printerName.replace(/'/g, "''")}' -ErrorAction SilentlyContinue)) { exit 2 }`
+      ]),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('printer probe timeout')), PROBE_TIMEOUT_MS)
+      })
+    ])
+    verifiedPrinterName = printerName
+    printerReady = true
+    console.log(`[printer] ready: ${printerName}`)
+    return true
+  } catch {
+    verifiedPrinterName = null
+    printerReady = false
+    console.log(`[printer] not available: ${printerName}`)
+    return false
+  }
+}
+
+/** Called during app startup before the window is shown. */
+export async function initPrinter(): Promise<void> {
+  await probePrinter()
+}
+
+/** Prints pending jobs one at a time — a physical receipt printer cannot safely print in parallel. */
+async function flushPrintJobAt(ids: readonly number[], index: number): Promise<void> {
+  if (index >= ids.length) return
+  await attemptPrintJob(ids[index]!)
+  await flushPrintJobAt(ids, index + 1)
+}
+
+/** Prints any jobs left pending while the printer was offline. */
+export async function flushPendingPrintJobs(): Promise<void> {
+  if (!printerReady) return
+  await flushPrintJobAt(listPendingPrintJobIds(), 0)
 }
 
 /** Visual width: CJK characters take two columns on the printer. */
@@ -44,18 +100,15 @@ function sanitizeForCp850(s: string): string {
   return s.replace(/₡/g, 'C').replace(/[\u00A0\u202F]/g, ' ')
 }
 
-function encodeText(s: string, lang: Language): Buffer {
-  if (lang === 'zh-CN') return iconv.encode(s, 'gb18030')
+function encodeText(s: string): Buffer {
   return iconv.encode(sanitizeForCp850(s), 'cp850')
 }
 
 // --- ESC/POS command bytes ---
 const ESC = 0x1b
 const GS = 0x1d
-const FS = 0x1c
 const INIT = [ESC, 0x40] // ESC @ — reset
 const CODEPAGE_PC850 = [ESC, 0x74, 0x02] // ESC t 2
-const ENABLE_KANJI = [FS, 0x26] // FS & — multibyte mode (CJK printers)
 const align = (a: 'lt' | 'ct' | 'rt'): number[] => [ESC, 0x61, a === 'ct' ? 1 : a === 'rt' ? 2 : 0]
 const bold = (on: boolean): number[] => [ESC, 0x45, on ? 1 : 0]
 const size = (big: boolean): number[] => [GS, 0x21, big ? 0x11 : 0x00] // double width+height
@@ -63,19 +116,18 @@ const FEED = (n: number): number[] => [ESC, 0x64, n] // ESC d n
 const PARTIAL_CUT = [GS, 0x56, 0x42, 0x00] // GS V 66 0 — feed + partial cut
 const LF = 0x0a
 
-/** Renders the abstract print lines into a raw ESC/POS byte stream. */
-function toEscPos(lines: PrintLine[], lang: Language): Buffer {
-  const cjk = lang === 'zh-CN'
+/** Renders the abstract print lines into a raw ESC/POS byte stream (Spanish / CP850). */
+function toEscPos(lines: PrintLine[]): Buffer {
   const chunks: Buffer[] = []
   const cmd = (...bytes: number[]): void => {
     chunks.push(Buffer.from(bytes))
   }
   const write = (s: string): void => {
-    chunks.push(encodeText(s, lang))
+    chunks.push(encodeText(s))
   }
 
   cmd(...INIT)
-  cmd(...(cjk ? ENABLE_KANJI : CODEPAGE_PC850))
+  cmd(...CODEPAGE_PC850)
 
   for (const line of lines) {
     switch (line.t) {
@@ -165,26 +217,27 @@ Add-Type -TypeDefinition $src -Language CSharp
 `
 
 async function ensurePrinterExists(printerName: string): Promise<void> {
-  try {
-    await execFileAsync('powershell.exe', [
-      '-NoProfile',
-      '-NonInteractive',
-      '-Command',
-      `if (-not (Get-Printer -Name '${printerName.replace(/'/g, "''")}' -ErrorAction SilentlyContinue)) { exit 2 }`
-    ])
-  } catch {
-    throw new AppError('errors.printerNotFound')
-  }
+  if (!printerReady) throw new AppError('errors.printerNotFound')
+  if (verifiedPrinterName === printerName) return
+  const ready = await probePrinter()
+  if (!ready) throw new AppError('errors.printerNotFound')
+}
+
+async function getRawPrintScriptPath(): Promise<string> {
+  if (cachedRawPrintScriptPath) return cachedRawPrintScriptPath
+  const path = join(app.getPath('userData'), 'raw-print.ps1')
+  await writeFile(path, RAW_PRINT_PS1, 'utf8')
+  cachedRawPrintScriptPath = path
+  return path
 }
 
 async function sendRawToPrinter(data: Buffer, printerName: string): Promise<void> {
   const dir = join(tmpdir(), `shelfpos-print-${randomUUID()}`)
   const binPath = join(dir, 'job.bin')
-  const scriptPath = join(dir, 'print.ps1')
   await mkdir(dir, { recursive: true })
   try {
     await writeFile(binPath, data)
-    await writeFile(scriptPath, RAW_PRINT_PS1, 'utf8')
+    const scriptPath = await getRawPrintScriptPath()
     await execFileAsync('powershell.exe', [
       '-NoProfile',
       '-NonInteractive',
@@ -202,46 +255,47 @@ async function sendRawToPrinter(data: Buffer, printerName: string): Promise<void
   }
 }
 
-export async function printLines(lines: PrintLine[], lang: Language): Promise<void> {
+export async function printLines(lines: PrintLine[], _lang?: Language): Promise<void> {
   const printerName = getPrinterName()
   await ensurePrinterExists(printerName)
-  await sendRawToPrinter(toEscPos(lines, lang), printerName)
+  await sendRawToPrinter(toEscPos(lines), printerName)
 }
 
 /**
- * Attempts to print a stored job, updating its status.
- * Spanish priority policy: zh-CN jobs are skipped (marked failed) when the
- * printer is not CJK-capable — the operation that created the job still succeeds.
+ * Queues a print job without blocking checkout. Jobs stay `pending` in the DB
+ * when no printer is connected; otherwise printing runs on the next event-loop tick.
  */
+export function schedulePrintJob(jobId: number): PrintStatus {
+  const job = getPrintJob(jobId)
+  if (!job) return 'failed'
+  if (!printerReady) return 'printed'
+  setImmediate(() => {
+    void attemptPrintJob(jobId)
+  })
+  return 'printed'
+}
+
+/** Attempts to print a stored job, updating its status. */
 export async function attemptPrintJob(jobId: number): Promise<PrintStatus> {
   const job = getPrintJob(jobId)
   if (!job) return 'failed'
-  const payload = JSON.parse(job.payload) as PrintPayload
-  if (payload.lang === 'zh-CN' && !getAppSettings().printerCjkCapable) {
-    markPrintJob(jobId, 'failed')
-    return 'skipped_cjk'
+  if (!printerReady) {
+    const found = await probePrinter()
+    if (!found) return 'failed'
   }
+  const payload = JSON.parse(job.payload) as PrintPayload
   try {
     await printLines(payload.lines, payload.lang)
     markPrintJob(jobId, 'printed')
     return 'printed'
   } catch (err) {
     console.error(`[printer] job ${jobId} failed`, err)
+    if (err instanceof AppError && err.key === 'errors.printerNotFound') {
+      printerReady = false
+      verifiedPrinterName = null
+      return 'failed'
+    }
     markPrintJob(jobId, 'failed')
     return 'failed'
   }
-}
-
-/** First-run / settings CJK capability test — bypasses the capability gate. */
-export async function printCjkTest(): Promise<void> {
-  await printLines(
-    [
-      { t: 'text', v: 'ShelfPOS', align: 'ct', bold: true },
-      { t: 'hr' },
-      { t: 'text', v: '中文打印测试 12345', align: 'ct' },
-      { t: 'text', v: '如果您能看到中文字符，请选择"是"', align: 'ct' },
-      { t: 'hr' }
-    ],
-    'zh-CN'
-  )
 }

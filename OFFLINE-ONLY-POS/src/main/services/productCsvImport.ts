@@ -16,6 +16,7 @@ import type {
   ProductInput,
   TaxCategory
 } from '../../shared/types'
+import { roundColones } from '../../shared/money'
 
 const TAX_CATEGORIES: TaxCategory[] = ['exempt', 'canasta_basica', 'standard']
 
@@ -34,6 +35,8 @@ export function validateProductInput(input: ProductInput): void {
       throw new AppError('errors.invalidInput')
     }
   }
+  input.price = roundColones(input.price)
+  if (input.bulkPrice != null) input.bulkPrice = roundColones(input.bulkPrice)
 }
 
 function cell(row: string[], index: number | undefined): string {

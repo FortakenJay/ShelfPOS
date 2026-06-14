@@ -4,7 +4,6 @@ import { AppError } from '../errors'
 import { getAppSettings, setSetting, SETTING_KEYS } from '../db/repos/settings'
 import { writeAudit } from '../db/repos/audit'
 import { session } from '../services/session'
-import { printCjkTest } from '../services/printer'
 import type { AppSettings, IdType, Language, SettingsUpdateInput } from '../../shared/types'
 
 const PIN_RE = /^\d{4,6}$/
@@ -14,7 +13,7 @@ export function registerSettingsHandlers(): void {
   // Public: the renderer needs the language before any login (e.g. login screen).
   handle<void, AppSettings>('settings:get', 'public', () => getAppSettings())
 
-  handle<{ language: Language }, null>('settings:setLanguage', ['admin'], ({ language }) => {
+  handle<{ language: Language }, null>('settings:setLanguage', 'public', ({ language }) => {
     if (language !== 'es' && language !== 'zh-CN') throw new AppError('errors.invalidInput')
     setSetting(SETTING_KEYS.language, language)
     return null
@@ -84,18 +83,20 @@ export function registerSettingsHandlers(): void {
       if (!PIN_RE.test(newPin)) throw new AppError('firstRun.errors.pinFormat')
       await session.verifyPin(currentPin)
       setSetting(SETTING_KEYS.managerPinHash, await bcrypt.hash(newPin, 10))
-      writeAudit('pin_changed', { entity: 'settings' })
+      writeAudit('pin_changed', { entity: 'settings', detail: 'manager' })
       return null
     }
   )
 
-  handle<void, null>('settings:testCjk', ['admin'], async () => {
-    await printCjkTest()
-    return null
-  })
-
-  handle<{ capable: boolean }, null>('settings:setCjkCapable', ['admin'], ({ capable }) => {
-    setSetting(SETTING_KEYS.printerCjkCapable, capable ? '1' : '0')
-    return null
-  })
+  handle<{ currentPin: string; newPin: string }, null>(
+    'settings:changeCajaPin',
+    ['admin'],
+    async ({ currentPin, newPin }) => {
+      if (!PIN_RE.test(newPin)) throw new AppError('firstRun.errors.pinFormat')
+      await session.verifyCajaPin(currentPin)
+      setSetting(SETTING_KEYS.cajaPinHash, await bcrypt.hash(newPin, 10))
+      writeAudit('pin_changed', { entity: 'settings', detail: 'caja' })
+      return null
+    }
+  )
 }

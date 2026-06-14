@@ -3,6 +3,7 @@ import { formatDate, formatMoney } from './format'
 import { localNow } from '../db/helpers'
 import type {
   AppSettings,
+  CierreDiscountReport,
   IdType,
   InventoryRow,
   Language,
@@ -323,6 +324,7 @@ export interface CierrePrintArgs {
   txCount: number
   returnsCount: number
   topProducts: TopProductRow[]
+  discounts: CierreDiscountReport
   storeName: string
   cash: CierreCashArgs
 }
@@ -349,6 +351,56 @@ function cierreCashLines(lang: Language, cash: CierreCashArgs): PrintLine[] {
   return lines
 }
 
+function cierreDiscountLines(lang: Language, discounts: CierreDiscountReport): PrintLine[] {
+  if (discounts.sales.length === 0) return []
+  const money = (n: number): string => formatMoney(n, lang)
+  const lines: PrintLine[] = [
+    { t: 'hr' },
+    { t: 'text', v: t(lang, 'print.cierre.discountsTitle'), bold: true },
+    {
+      t: 'row',
+      l: t(lang, 'print.cierre.discountTotal'),
+      r: `-${money(discounts.totalDiscount)}`,
+      bold: true
+    },
+    {
+      t: 'row',
+      l: t(lang, 'print.cierre.cartDiscountTotal'),
+      r: `-${money(discounts.totalCartDiscount)}`
+    },
+    {
+      t: 'row',
+      l: t(lang, 'print.cierre.lineDiscountTotal'),
+      r: `-${money(discounts.totalLineDiscount)}`
+    }
+  ]
+  for (const sale of discounts.sales) {
+    const saleRef = sale.consecutivo ?? `#${sale.saleId}`
+    lines.push({ t: 'hr' })
+    lines.push({ t: 'text', v: saleRef, bold: true })
+    if (sale.cartDiscount > 0) {
+      lines.push({
+        t: 'row',
+        l: t(lang, 'print.cierre.cartDiscount'),
+        r: `-${money(sale.cartDiscount)}`
+      })
+    }
+    for (const item of sale.items) {
+      lines.push({
+        t: 'row',
+        l: `  ${item.productName} x${item.quantity}`,
+        r: `-${money(item.lineDiscount)}`
+      })
+    }
+    lines.push({
+      t: 'row',
+      l: t(lang, 'print.cierre.saleDiscountTotal'),
+      r: `-${money(sale.discountTotal)}`
+    })
+  }
+  return lines
+}
+
 export function buildCierreLines(args: CierrePrintArgs, lang: Language): PrintLine[] {
   const money = (n: number): string => formatMoney(n, lang)
   return [
@@ -359,6 +411,7 @@ export function buildCierreLines(args: CierrePrintArgs, lang: Language): PrintLi
     { t: 'row', l: t(lang, 'print.report.returns'), r: String(args.returnsCount) },
     { t: 'hr' },
     ...paymentLines(lang, args.totals),
+    ...cierreDiscountLines(lang, args.discounts),
     { t: 'hr' },
     ...cierreCashLines(lang, args.cash),
     { t: 'hr' },

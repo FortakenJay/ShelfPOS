@@ -48,6 +48,10 @@ export function listAudit(filter: AuditLogFilter): AuditLogRow[] {
     conditions.push('user_id = @userId')
     params.userId = filter.userId
   }
+  if (filter.action) {
+    conditions.push('action = @action')
+    params.action = filter.action
+  }
   const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : ''
   const limit = Math.min(Math.max(filter.limit ?? 200, 1), 1000)
   return getDb()
@@ -62,4 +66,11 @@ export function listAuditUsers(): AuditUser[] {
   return getDb()
     .prepare('SELECT id, username FROM users ORDER BY username COLLATE NOCASE')
     .all() as AuditUser[]
+}
+
+export function listAuditActions(): string[] {
+  const rows = getDb()
+    .prepare('SELECT DISTINCT action FROM audit_log ORDER BY action COLLATE NOCASE')
+    .all() as { action: string }[]
+  return rows.map((r) => r.action)
 }

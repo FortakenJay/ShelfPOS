@@ -1,6 +1,5 @@
 import type { Product } from '@shared/types'
-
-const round2 = (n: number): number => Math.round(n * 100) / 100
+import { roundColones } from '@shared/money'
 
 /** Effective unit price: bulk price when the quantity reaches the bulk tier. */
 export function effectiveUnitPrice(product: Product, quantity: number): number {
@@ -11,10 +10,10 @@ export function effectiveUnitPrice(product: Product, quantity: number): number {
 }
 
 export function lineGross(product: Product, quantity: number): number {
-  return round2(effectiveUnitPrice(product, quantity) * quantity)
+  return roundColones(effectiveUnitPrice(product, quantity) * quantity)
 }
 
 /** Line total after its own discount (never negative). */
 export function lineTotal(product: Product, quantity: number, discount: number): number {
-  return round2(Math.max(0, lineGross(product, quantity) - discount))
+  return roundColones(Math.max(0, lineGross(product, quantity) - discount))
 }

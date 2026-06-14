@@ -46,5 +46,22 @@ export const session = {
     if (!hash || !pin || !(await bcrypt.compare(pin, hash))) {
       throw new AppError('errors.invalidPin')
     }
+  },
+
+  async verifyCajaPin(pin: string): Promise<void> {
+    const hash = getSetting(SETTING_KEYS.cajaPinHash)
+    if (!hash || !pin || !(await bcrypt.compare(pin, hash))) {
+      throw new AppError('errors.invalidPin')
+    }
+  },
+
+  /** Accepts either the caja PIN (cashier) or the manager PIN (admin override). */
+  async verifyDiscountPin(pin: string): Promise<'caja' | 'manager'> {
+    if (!pin) throw new AppError('errors.invalidPin')
+    const cajaHash = getSetting(SETTING_KEYS.cajaPinHash)
+    if (cajaHash && (await bcrypt.compare(pin, cajaHash))) return 'caja'
+    const managerHash = getSetting(SETTING_KEYS.managerPinHash)
+    if (managerHash && (await bcrypt.compare(pin, managerHash))) return 'manager'
+    throw new AppError('errors.invalidPin')
   }
 }

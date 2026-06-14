@@ -1,0 +1,8 @@
+{
+  "entry": [
+    "src/main/index.ts",
+    "src/renderer/src/main.tsx",
+    "src/renderer/activation/main.ts",
+    "electron.vite.config.ts"
+  ]
+}

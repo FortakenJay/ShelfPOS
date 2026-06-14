@@ -25,7 +25,6 @@ function PrintQueue(): React.JSX.Element {
     mutationFn: api.printQueue.retry,
     onSuccess: ({ printStatus }) => {
       if (printStatus === 'printed') toasts.success('printQueue.retrySuccess')
-      else if (printStatus === 'skipped_cjk') toasts.info('pos.printSkippedCjk')
       else toasts.error('printQueue.retryFailed')
       void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
     },
@@ -41,6 +40,7 @@ function PrintQueue(): React.JSX.Element {
             <tr>
               <Th>#</Th>
               <Th>{t('printQueue.jobType')}</Th>
+              <Th>{t('printQueue.status')}</Th>
               <Th>{t('printQueue.saleRef')}</Th>
               <Th>{t('printQueue.createdAt')}</Th>
               <Th className="text-right">{t('common.actions')}</Th>
@@ -49,7 +49,7 @@ function PrintQueue(): React.JSX.Element {
           <tbody>
             {jobs?.length === 0 && (
               <tr>
-                <Td colSpan={5} className="py-8 text-center text-slate-500">
+                <Td colSpan={6} className="py-8 text-center text-slate-500">
                   {t('printQueue.empty')}
                 </Td>
               </tr>
@@ -58,6 +58,7 @@ function PrintQueue(): React.JSX.Element {
               <tr key={job.id}>
                 <Td className="font-mono">{job.id}</Td>
                 <Td className="font-semibold">{t(`printQueue.types.${job.job_type}`)}</Td>
+                <Td className="font-semibold">{t(`printQueue.statuses.${job.status}`)}</Td>
                 <Td>{job.sale_id != null ? `#${job.sale_id}` : '—'}</Td>
                 <Td>{formatDate(job.created_at, true)}</Td>
                 <Td className="text-right">

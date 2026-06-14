@@ -4,7 +4,6 @@ import { AppError } from '../errors'
 import { getDb, getDbPath } from '../db'
 import { localNow } from '../db/helpers'
 import { getAppSettings, setSetting, SETTING_KEYS } from '../db/repos/settings'
-import { printCjkTest } from '../services/printer'
 import type { FirstRunSetupInput, FirstRunStatus, Language, Role } from '../../shared/types'
 
 const PIN_RE = /^\d{4,6}$/
@@ -32,18 +31,6 @@ export function registerFirstRunHandlers(backupDir: string): void {
     return null
   })
 
-  handle<void, null>('firstRun:testCjk', 'public', async () => {
-    assertFirstRun()
-    await printCjkTest()
-    return null
-  })
-
-  handle<{ capable: boolean }, null>('firstRun:setCjkCapable', 'public', ({ capable }) => {
-    assertFirstRun()
-    setSetting(SETTING_KEYS.printerCjkCapable, capable ? '1' : '0')
-    return null
-  })
-
   handle<FirstRunSetupInput, null>('firstRun:complete', 'public', async (input) => {
     assertFirstRun()
 
@@ -63,8 +50,9 @@ export function registerFirstRunHandlers(backupDir: string): void {
     const usernames = new Set(input.users.map((u) => u.username.trim().toLowerCase()))
     if (usernames.size !== 3) throw new AppError('firstRun.errors.duplicateUsernames')
     if (!PIN_RE.test(input.pin)) throw new AppError('firstRun.errors.pinFormat')
+    if (!PIN_RE.test(input.cajaPin)) throw new AppError('firstRun.errors.pinFormat')
 
-    const [hashed, pinHash] = await Promise.all([
+    const [hashed, pinHash, cajaPinHash] = await Promise.all([
       Promise.all(
         input.users.map(async (u) => ({
           username: u.username.trim(),
@@ -72,7 +60,8 @@ export function registerFirstRunHandlers(backupDir: string): void {
           hash: await bcrypt.hash(u.password, 10)
         }))
       ),
-      bcrypt.hash(input.pin, 10)
+      bcrypt.hash(input.pin, 10),
+      bcrypt.hash(input.cajaPin, 10)
     ])
 
     const db = getDb()
@@ -83,6 +72,7 @@ export function registerFirstRunHandlers(backupDir: string): void {
       )
       for (const user of hashed) insert.run(user.username, user.hash, user.role, now)
       setSetting(SETTING_KEYS.managerPinHash, pinHash)
+      setSetting(SETTING_KEYS.cajaPinHash, cajaPinHash)
       setSetting(SETTING_KEYS.firstRunComplete, '1')
     })()
     return null

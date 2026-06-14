@@ -3,12 +3,13 @@ import { AppError } from '../errors'
 import { getDb } from '../db'
 import { localNow, round2 } from '../db/helpers'
 import { alertsForProducts, getProduct } from '../db/repos/products'
+import { hasOpeningFloat } from '../db/repos/cash'
 import { assertSaleStock } from '../db/repos/stock'
 import { insertPrintJob } from '../db/repos/printJobs'
-import { getAppSettings, currentLanguage, getSetting, setSetting, SETTING_KEYS } from '../db/repos/settings'
+import { getAppSettings, receiptLanguage, getSetting, setSetting, SETTING_KEYS } from '../db/repos/settings'
 import { writeAudit } from '../db/repos/audit'
 import { session } from '../services/session'
-import { attemptPrintJob } from '../services/printer'
+import { schedulePrintJob } from '../services/printer'
 import { buildReceiptLines, emisorFromSettings } from '../services/printTemplates'
 import type { ReceiptPaymentLine } from '../services/printTemplates'
 import type {
@@ -56,6 +57,7 @@ function cleanText(v: string | undefined): string | null {
 export function registerSalesHandlers(): void {
   handle<CreateSaleInput, CreateSaleResult>('sales:create', SELL, async (input) => {
     const user = session.require()
+    if (!hasOpeningFloat()) throw new AppError('errors.cashNotOpened')
     if (!input?.items?.length) throw new AppError('errors.invalidInput')
     if (!input?.payments?.length) throw new AppError('errors.invalidInput')
     for (const item of input.items) {
@@ -73,9 +75,16 @@ export function registerSalesHandlers(): void {
     const condition: SaleCondition =
       input.saleCondition && CONDITIONS.includes(input.saleCondition) ? input.saleCondition : 'contado'
 
+    const hasDiscount =
+      (input.cartDiscount ?? 0) > 0 || input.items.some((item) => (item.discount ?? 0) > 0)
+    if (hasDiscount) {
+      if (!input.discountPin?.trim()) throw new AppError('errors.discountPinRequired')
+      await session.verifyDiscountPin(input.discountPin.trim())
+    }
+
     const db = getDb()
     const settings = getAppSettings()
-    const lang = currentLanguage()
+    const lang = receiptLanguage()
     const now = localNow()
 
     const result = db.transaction((): Omit<CreateSaleResult, 'printStatus'> => {
@@ -116,7 +125,8 @@ export function registerSalesHandlers(): void {
         const lineTotal = round2(l.afterLineDiscount - share)
         return {
           ...l,
-          discount: round2(l.gross - lineTotal), // total reduction so unit*qty - discount = lineTotal
+          lineDiscount: l.lineDiscount,
+          discount: round2(l.gross - lineTotal),
           lineTotal,
           taxCategory: l.product.tax_category as TaxCategory
         }
@@ -159,16 +169,17 @@ export function registerSalesHandlers(): void {
         db
           .prepare(
             `INSERT INTO sales
-               (user_id, payment_method, subtotal, discount_total, total, sale_condition, consecutivo,
+               (user_id, payment_method, subtotal, discount_total, cart_discount, total, sale_condition, consecutivo,
                 sinpe_ref, customer_name, customer_id_type, customer_id, customer_phone, customer_email,
                 customer_activity_code, created_at)
-             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
           )
           .run(
             user.id,
             primary.method,
             subtotal,
             discountTotal,
+            cartDiscount,
             total,
             condition,
             consecutivo,
@@ -184,7 +195,7 @@ export function registerSalesHandlers(): void {
       )
 
       const insertItem = db.prepare(
-        'INSERT INTO sale_items (sale_id, product_id, quantity, unit_price, discount, line_total, tax_category) VALUES (?,?,?,?,?,?,?)'
+        'INSERT INTO sale_items (sale_id, product_id, quantity, unit_price, discount, line_discount, line_total, tax_category) VALUES (?,?,?,?,?,?,?,?)'
       )
       const insertPayment = db.prepare(
         'INSERT INTO sale_payments (sale_id, method, amount, ref) VALUES (?,?,?,?)'
@@ -200,6 +211,7 @@ export function registerSalesHandlers(): void {
           line.quantity,
           line.unitPrice,
           line.discount,
+          line.lineDiscount,
           line.lineTotal,
           line.taxCategory
         )
@@ -250,7 +262,10 @@ export function registerSalesHandlers(): void {
       writeAudit('sale_created', {
         entity: 'sale',
         entityId: saleId,
-        detail: `${consecutivo} · ${total}`
+        detail:
+          discountTotal > 0
+            ? `${consecutivo} · ${total} · desc ${discountTotal}`
+            : `${consecutivo} · ${total}`
       })
 
       return {
@@ -263,7 +278,7 @@ export function registerSalesHandlers(): void {
       }
     })()
 
-    const printStatus = await attemptPrintJob(result.printJobId)
+    const printStatus = schedulePrintJob(result.printJobId)
     return { ...result, printStatus }
   })
 

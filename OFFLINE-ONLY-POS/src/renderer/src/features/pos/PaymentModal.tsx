@@ -1,12 +1,11 @@
-import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
 import { toastApiError } from '@/lib/errors'
 import { formatMoney } from '@/lib/format'
 import { useToasts } from '@/lib/toast'
-import { Button, Field, Input, Modal, Select } from '@/components/ui'
-import { NumPad } from '@/components/NumPad'
+import { roundColones } from '@shared/money'
+import { Button, Field, Input, Modal, Select, Toggle } from '@/components/ui'
 import type {
   CreateSaleItemInput,
   CustomerInput,
@@ -14,32 +13,34 @@ import type {
   PrintStatus,
   SaleCondition
 } from '@shared/types'
+import { usePaymentModalState } from './paymentModalState'
+import { PaymentCashSection, PaymentSplitSection } from './PaymentSections'
 
 const METHODS: PaymentMethod[] = ['cash', 'card', 'sinpe']
 const CONDITIONS: SaleCondition[] = ['contado', 'credito', 'apartado']
-
-interface PaymentEntry {
-  method: PaymentMethod
-  amount: string
-  ref: string
-}
 
 interface PaymentModalProps {
   items: CreateSaleItemInput[]
   total: number
   cartDiscount: number
+  discountPin: string | null
   customer: CustomerInput | null
   initialMethod: PaymentMethod
   onClose: () => void
   onCompleted: (change: number | null) => void
 }
 
-const round2 = (n: number): number => Math.round(n * 100) / 100
+const round2 = roundColones
+
+function entryAmount(n: string): number {
+  return n === '' ? 0 : Number(n)
+}
 
 export function PaymentModal({
   items,
   total,
   cartDiscount,
+  discountPin,
   customer,
   initialMethod,
   onClose,
@@ -48,36 +49,32 @@ export function PaymentModal({
   const { t } = useTranslation()
   const toasts = useToasts()
   const queryClient = useQueryClient()
-  const [condition, setCondition] = useState<SaleCondition>('contado')
-  const [entries, setEntries] = useState<PaymentEntry[]>([
-    { method: initialMethod, amount: String(total), ref: '' }
-  ])
-  const [tendered, setTendered] = useState('')
+  const { state, dispatch } = usePaymentModalState(initialMethod)
+  const { condition, splitPayment, singleMethod, sinpeRef, entries, tendered } = state
 
-  const paid = round2(entries.reduce((acc, e) => acc + (e.amount === '' ? 0 : Number(e.amount)), 0))
-  const remaining = round2(total - paid)
-  const hasCash = entries.some((e) => e.method === 'cash')
-  const cashAmount = round2(
-    entries.filter((e) => e.method === 'cash').reduce((a, e) => a + (e.amount === '' ? 0 : Number(e.amount)), 0)
-  )
+  const splitPaid = round2(entries.reduce((acc, e) => acc + entryAmount(e.amount), 0))
+  const remaining = round2(Math.max(0, total - splitPaid))
+
+  const hasCashSingle = !splitPayment && singleMethod === 'cash'
+  const hasCashSplit = splitPayment && entries.some((e) => e.method === 'cash')
+  const hasCash = hasCashSingle || hasCashSplit
+
+  const cashAmount = splitPayment
+    ? round2(entries.filter((e) => e.method === 'cash').reduce((a, e) => a + entryAmount(e.amount), 0))
+    : total
+
   const tenderedNum = tendered === '' ? null : Number(tendered)
   const change = hasCash && tenderedNum != null ? round2(tenderedNum - cashAmount) : null
 
-  const balanced = Math.abs(remaining) < 0.01
-  const amountsValid = entries.every((e) => e.amount !== '' && Number(e.amount) > 0)
+  const splitBalanced = Math.abs(remaining) < 0.01
+  const splitAmountsValid = entries.every((e) => e.amount !== '' && Number(e.amount) > 0)
   const cashShort = hasCash && tenderedNum != null && tenderedNum < cashAmount
-  const canConfirm = balanced && amountsValid && !cashShort
 
-  const updateEntry = (idx: number, patch: Partial<PaymentEntry>): void => {
-    setEntries((prev) => prev.map((e, i) => (i === idx ? { ...e, ...patch } : e)))
-  }
-  const addEntry = (): void => {
-    const next = METHODS.find((m) => !entries.some((e) => e.method === m)) ?? 'cash'
-    setEntries((prev) => [...prev, { method: next, amount: String(Math.max(0, remaining)), ref: '' }])
-  }
-  const removeEntry = (idx: number): void => {
-    setEntries((prev) => prev.filter((_, i) => i !== idx))
-  }
+  const canConfirmSingle =
+    singleMethod === 'cash' ? tenderedNum != null && tenderedNum >= total : true
+
+  const canConfirmSplit = splitBalanced && splitAmountsValid && !cashShort
+  const canConfirm = splitPayment ? canConfirmSplit : canConfirmSingle
 
   const notifyPrint = (printStatus: PrintStatus, printJobId: number): void => {
     if (printStatus === 'failed') {
@@ -95,8 +92,6 @@ export function PaymentModal({
           }
         }
       })
-    } else if (printStatus === 'skipped_cjk') {
-      toasts.info('pos.printSkippedCjk')
     }
   }
 
@@ -114,19 +109,38 @@ export function PaymentModal({
     onError: (err) => toastApiError(toasts, err)
   })
 
+  const hasLineDiscount = items.some((item) => (item.discount ?? 0) > 0)
+  const hasDiscount = cartDiscount > 0 || hasLineDiscount
+
   const confirm = (): void => {
     if (mutation.isPending || !canConfirm) return
+    if (hasDiscount && !discountPin) {
+      toasts.error('errors.discountPinRequired')
+      return
+    }
+
+    const payments = splitPayment
+      ? entries.map((e) => ({
+          method: e.method,
+          amount: round2(Number(e.amount)),
+          ref: e.method === 'sinpe' && e.ref.trim() ? e.ref.trim() : undefined
+        }))
+      : [
+          {
+            method: singleMethod,
+            amount: total,
+            ref: singleMethod === 'sinpe' && sinpeRef.trim() ? sinpeRef.trim() : undefined
+          }
+        ]
+
     mutation.mutate({
       items,
-      payments: entries.map((e) => ({
-        method: e.method,
-        amount: round2(Number(e.amount)),
-        ref: e.method === 'sinpe' && e.ref.trim() ? e.ref.trim() : undefined
-      })),
+      payments,
       cartDiscount: cartDiscount > 0 ? cartDiscount : undefined,
       saleCondition: condition,
       customer: customer ?? undefined,
-      tendered: hasCash && tenderedNum != null ? tenderedNum : undefined
+      tendered: hasCash && tenderedNum != null ? tenderedNum : undefined,
+      discountPin: hasDiscount ? discountPin ?? undefined : undefined
     })
   }
 
@@ -138,7 +152,12 @@ export function PaymentModal({
       </div>
 
       <Field label={t('pos.saleCondition')} className="mb-4">
-        <Select value={condition} onChange={(e) => setCondition(e.target.value as SaleCondition)}>
+        <Select
+          value={condition}
+          onChange={(e) =>
+            dispatch({ type: 'setCondition', value: e.target.value as SaleCondition })
+          }
+        >
           {CONDITIONS.map((c) => (
             <option key={c} value={c}>
               {t(`pos.conditions.${c}`)}
@@ -147,99 +166,63 @@ export function PaymentModal({
         </Select>
       </Field>
 
-      <div className="space-y-3">
-        {entries.map((entry) => {
-          const idx = entries.findIndex((e) => e.method === entry.method)
-          return (
-          <div key={entry.method} className="rounded-md border-2 border-line p-3">
-            <div className="flex items-center gap-2">
-              <Select
-                value={entry.method}
-                onChange={(e) => updateEntry(idx, { method: e.target.value as PaymentMethod })}
-                className="w-40"
-              >
-                {METHODS.map((m) => (
-                  <option key={m} value={m}>
-                    {t(`pos.methods.${m}`)}
-                  </option>
-                ))}
-              </Select>
-              <Input
-                inputMode="decimal"
-                value={entry.amount}
-                onChange={(e) => updateEntry(idx, { amount: e.target.value.replace(/[^\d.]/g, '') })}
-                className="flex-1 text-right text-xl font-bold"
-                aria-label={t('pos.amount')}
-              />
-              {entries.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeEntry(idx)}
-                  aria-label={t('pos.remove')}
-                  className="h-11 w-11 rounded-md text-xl font-bold text-danger hover:bg-red-50"
-                >
-                  ×
-                </button>
-              )}
-            </div>
-            {entry.method === 'sinpe' && (
-              <Input
-                value={entry.ref}
-                onChange={(e) => updateEntry(idx, { ref: e.target.value })}
-                placeholder={t('pos.sinpeRef', { hint: t('common.optional') })}
-                className="mt-2"
-              />
-            )}
-          </div>
-          )
-        })}
+      <div className="mb-4 rounded-md border-2 border-line bg-slate-50 px-4 py-3">
+        <Toggle
+          checked={splitPayment}
+          onChange={(enabled) => dispatch({ type: 'toggleSplit', enabled, initialMethod })}
+          label={t('pos.splitPayment')}
+        />
       </div>
 
-      {entries.length < METHODS.length && (
-        <Button variant="outline" className="mt-3" onClick={addEntry}>
-          {t('pos.addPayment')}
-        </Button>
+      {!splitPayment ? (
+        <div className="rounded-md border-2 border-line p-4">
+          <Field label={t('pos.paymentMethod')}>
+            <Select
+              value={singleMethod}
+              onChange={(e) =>
+                dispatch({ type: 'setSingleMethod', value: e.target.value as PaymentMethod })
+              }
+              className="w-full"
+            >
+              {METHODS.map((m) => (
+                <option key={m} value={m}>
+                  {t(`pos.methods.${m}`)}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          {singleMethod === 'sinpe' && (
+            <Field label={t('pos.sinpeRef', { hint: t('common.optional') })} className="mt-3">
+              <Input
+                value={sinpeRef}
+                onChange={(e) => dispatch({ type: 'setSinpeRef', value: e.target.value })}
+              />
+            </Field>
+          )}
+        </div>
+      ) : (
+        <PaymentSplitSection
+          entries={entries}
+          remaining={remaining}
+          splitBalanced={splitBalanced}
+          onUpdateEntry={(id, patch) => dispatch({ type: 'updateEntry', id, patch })}
+          onRemoveEntry={(id) => dispatch({ type: 'removeEntry', id })}
+          onAddEntry={() => dispatch({ type: 'addEntry' })}
+        />
       )}
 
-      <div
-        className={`mt-4 flex items-center justify-between rounded-md px-4 py-3 ${
-          balanced ? 'bg-slate-100' : 'bg-amber-50'
-        }`}
-      >
-        <span className="text-[16px] font-bold">{t('pos.remaining')}</span>
-        <span className={`text-2xl font-extrabold ${balanced ? 'text-cta' : 'text-warning'}`}>
-          {formatMoney(remaining)}
-        </span>
-      </div>
-
       {hasCash && (
-        <div className="mt-4">
-          <Field label={t('pos.tendered')} className="mb-3">
-            <Input
-              inputMode="decimal"
-              value={tendered}
-              onChange={(e) => setTendered(e.target.value.replace(/[^\d.]/g, ''))}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && canConfirm) confirm()
-              }}
-              className="text-right text-2xl font-bold"
-            />
-          </Field>
-          <NumPad
-            onDigit={(d) => setTendered((v) => v + d)}
-            onBackspace={() => setTendered((v) => v.slice(0, -1))}
-            onClear={() => setTendered('')}
-          />
-          <div className="mt-3 flex items-center justify-between rounded-md bg-slate-100 px-4 py-3">
-            <span className="text-[17px] font-bold">{t('pos.changeDue')}</span>
-            <span
-              className={`text-2xl font-extrabold ${change != null && change < 0 ? 'text-danger' : 'text-cta'}`}
-            >
-              {change == null ? '—' : formatMoney(change)}
-            </span>
-          </div>
-          {cashShort && <p className="mt-2 text-[15px] font-bold text-danger">{t('pos.insufficient')}</p>}
-        </div>
+        <PaymentCashSection
+          tendered={tendered}
+          change={change}
+          cashShort={cashShort}
+          canConfirm={canConfirm}
+          onTenderedChange={(value) => dispatch({ type: 'setTendered', value })}
+          onDigit={(d) => dispatch({ type: 'setTendered', value: (prev) => prev + d })}
+          onBackspace={() => dispatch({ type: 'setTendered', value: (prev) => prev.slice(0, -1) })}
+          onClear={() => dispatch({ type: 'setTendered', value: '' })}
+          onConfirm={confirm}
+        />
       )}
 
       <div className="mt-5 flex gap-3">

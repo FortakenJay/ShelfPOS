@@ -6,6 +6,7 @@ import {
   Outlet
 } from '@tanstack/react-router'
 import { Bootstrap } from '@/features/auth/Bootstrap'
+import { ChooseLanguagePage } from '@/features/auth/ChooseLanguagePage'
 import { FirstRunWizard } from '@/features/auth/FirstRun'
 import { LoginPage } from '@/features/auth/Login'
 import { Shell } from '@/features/shell/Shell'
@@ -33,6 +34,12 @@ const firstRunRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/first-run',
   component: FirstRunWizard
+})
+
+const chooseLanguageRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/choose-language',
+  component: ChooseLanguagePage
 })
 
 const loginRoute = createRoute({
@@ -104,6 +111,7 @@ const settingsRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   firstRunRoute,
+  chooseLanguageRoute,
   loginRoute,
   shellRoute.addChildren([
     posRoute,

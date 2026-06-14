@@ -67,13 +67,7 @@
   },
   "firstRun": {
     "chooseLanguage": "Elija el idioma / 请选择语言",
-    "printerTestTitle": "打印机测试（中文字符）",
-    "printerTestBody": "请连接打印机并点击按钮。系统将打印一张包含中文字符的测试页，请确认是否正确打印。",
-    "printTest": "打印测试页",
-    "printTestSent": "测试页已发送到打印机。",
-    "printTestFailed": "打印失败。请检查打印机是否已连接。",
-    "didItPrint": "中文字符是否正确打印？",
-    "skipNote": "如果跳过测试，中文打印将被禁用（可稍后在设置中重新测试）。",
+    "chineseReceiptNote": "选择中文界面时，热敏小票以西班牙语打印。",
     "accountsTitle": "创建系统账户",
     "accountsIntro": "请创建系统的三个固定账户以及经理 PIN。PIN 用于授权退货和日结操作。",
     "adminAccount": "管理员账户",
@@ -83,6 +77,8 @@
     "password": "密码",
     "confirmPassword": "确认密码",
     "managerPin": "经理 PIN（4-6 位数字）",
+    "cajaPin": "收银 PIN（4-6 位数字）",
+    "confirmCajaPin": "确认收银 PIN",
     "confirmPin": "确认 PIN",
     "create": "创建并继续",
     "dataPath": "您的数据保存在：{{path}}",
@@ -90,6 +86,7 @@
       "fillAll": "请填写所有字段",
       "passwordMismatch": "两次输入的密码不一致",
       "pinMismatch": "两次输入的 PIN 不一致",
+      "cajaPinMismatch": "两次输入的收银 PIN 不一致",
       "pinFormat": "PIN 必须为 4 到 6 位数字",
       "duplicateUsernames": "用户名不能重复"
     }
@@ -99,7 +96,8 @@
     "username": "用户名",
     "password": "密码",
     "login": "登录",
-    "invalidCredentials": "用户名或密码错误"
+    "invalidCredentials": "用户名或密码错误",
+    "backToLanguage": "Idioma / 语言"
   },
   "pos": {
     "searchPlaceholder": "扫描条码或输入商品名称…",
@@ -129,8 +127,9 @@
     "saleCompleted": "销售已记录",
     "printFailed": "打印失败 — 是否重试？",
     "printRetried": "已重新发送打印",
-    "printSkippedCjk": "已跳过打印：打印机不支持中文",
     "amount": "金额",
+    "paymentMethod": "支付方式",
+    "splitPayment": "组合支付",
     "addPayment": "添加支付方式",
     "remaining": "剩余",
     "saleCondition": "销售条件",
@@ -149,7 +148,9 @@
       "amountValue": "折扣金额",
       "percentValue": "折扣百分比",
       "applied": "已应用折扣",
-      "remove": "取消折扣"
+      "remove": "取消折扣",
+      "pinTitle": "授权折扣的 PIN",
+      "coinStep": "金额按 ₡5 的倍数取整"
     },
     "customer": {
       "title": "客户",
@@ -329,6 +330,8 @@
     "to": "截止",
     "printReport": "打印",
     "printSent": "报表已发送到打印机",
+    "exportPdf": "下载 PDF",
+    "pdfDone": "PDF 已保存：{{path}}",
     "summary": {
       "totalRevenue": "总收入",
       "txCount": "交易笔数",
@@ -364,15 +367,43 @@
     "shiftLabel": "班次名称",
     "shiftPlaceholder": "班次 1",
     "notes": "备注",
+    "stepCount": "第 1 步：清点现金",
+    "stepConfirm": "第 2 步：确认日结",
+    "countedCashPrompt": "请清点钱箱内全部现金并输入总额。",
+    "expectedAmountsHint": "系统记录的本班次应有金额：",
+    "expectedSinpe": "应有 SINPE",
+    "continue": "继续",
+    "back": "返回",
+    "overNotice": "多出 {{amount}}（实点 {{counted}}，应有 {{expected}}）。将通知管理员。",
+    "shortNotice": "缺少 {{amount}}（实点 {{counted}}，应有 {{expected}}）。将通知管理员。",
     "doCierre": "执行日结",
     "confirmTitle": "确认日结",
-    "confirmBody": "本期销售将被锁定，并自动打印报表。此操作无法撤销。",
+    "confirmBody": "本期销售将被锁定，并打印班次小票。此操作无法撤销。",
     "success": "日结已记录",
+    "successDiscrepancy": "日结已记录。现金有差额，已通知管理员。",
+    "cajeroConfirmHint": "若实点金额与系统不符，将自动通知管理员。",
     "noPending": "没有待结算的销售",
     "history": "历史日结",
     "closedAt": "结算时间",
     "closedBy": "操作人",
-    "cashTitle": "现金清点"
+    "cashTitle": "现金清点",
+    "savePdf": "保存 PDF",
+    "pdfDone": "PDF 已保存：{{path}}",
+    "discountsTitle": "折扣",
+    "totalDiscounts": "折扣合计",
+    "cartDiscountTotal": "整单折扣",
+    "lineDiscountTotal": "单品折扣",
+    "saleCartDiscount": "整单折扣",
+    "saleLineDiscount": "单品折扣",
+    "saleDiscountTotal": "该单折扣合计",
+    "noDiscounts": "本期无折扣",
+    "discrepancyAlertsTitle": "现金差额日结 ({{count}} 笔)",
+    "discrepancyIncomplete": "{{date}} 的日结未平账（{{direction}} {{amount}}）。",
+    "discrepancyOver": "多出",
+    "discrepancyShort": "缺少",
+    "discrepancyBy": "操作人：{{user}}",
+    "discrepancyDifference": "差额：{{amount}}",
+    "discrepancyBanner": "({{count}} 笔日结) 现金有差额 — 请查看日结"
   },
   "cash": {
     "title": "现金 / 钱箱",
@@ -386,6 +417,8 @@
     "periodSince": "统计起始",
     "openFloatTitle": "开班",
     "openFloat": "开班",
+    "openFloatHint": "登记开班备用金后即可开始收银。",
+    "mustOpenFromPos": "收银台尚未开班。请先到「收银」完成开班后再使用现金功能。",
     "movementTitle": "现金进出",
     "reason": "原因",
     "movements": "现金进出记录",
@@ -402,6 +435,7 @@
     "title": "操作日志",
     "user": "用户",
     "allUsers": "所有用户",
+    "allActions": "所有操作",
     "action": "操作",
     "entity": "对象",
     "detail": "详情",
@@ -415,17 +449,26 @@
       "product_deleted": "删除商品",
       "stock_adjusted": "调整库存",
       "cierre_confirmed": "日结",
+      "cierre_cash_discrepancy": "日结现金差额",
       "cash_opening_float": "备用金",
       "cash_in": "现金存入",
       "cash_out": "现金支出",
       "settings_updated": "更新设置",
-      "pin_changed": "修改 PIN"
+      "pin_changed": "修改 PIN",
+      "discount_authorized_caja": "折扣已授权（收银 PIN）",
+      "discount_authorized_manager": "折扣已授权（经理 PIN）"
     }
   },
   "printQueue": {
     "title": "打印队列",
-    "empty": "没有失败的打印任务",
+    "empty": "没有待打印的小票",
     "jobType": "类型",
+    "status": "状态",
+    "statuses": {
+      "pending": "排队中",
+      "failed": "失败",
+      "printed": "已打印"
+    },
     "types": {
       "receipt": "小票",
       "report": "报表",
@@ -498,20 +541,17 @@
       "ivaCanasta": "基本商品税率 (%)"
     },
     "pinSection": "经理 PIN",
+    "managerPinHint": "用于授权退货，也可授权折扣。",
+    "cajaPinSection": "收银 PIN",
+    "cajaPinHint": "用于授权销售折扣。经理 PIN 也可授权折扣。",
     "currentPin": "当前 PIN",
     "newPin": "新 PIN（4-6 位数字）",
     "confirmNewPin": "确认新 PIN",
-    "changePin": "修改 PIN",
-    "pinChanged": "PIN 已更新",
-    "pinMismatch": "两次输入的 PIN 不一致",
-    "printerSection": "打印机",
-    "cjkStatus": "中文打印",
-    "capable": "支持",
-    "notCapable": "不支持",
-    "testCjk": "打印中文测试页",
-    "testSent": "测试页已发送。是否正确打印？",
-    "markCapable": "是，正常",
-    "markNotCapable": "不正常"
+    "changePin": "修改经理 PIN",
+    "changeCajaPin": "修改收银 PIN",
+    "pinChanged": "经理 PIN 已更新",
+    "cajaPinChanged": "收银 PIN 已更新",
+    "pinMismatch": "两次输入的 PIN 不一致"
   },
   "toasts": {
     "stockLow": "库存偏低：{{name}} — 剩余 {{stock}}",
@@ -558,9 +598,15 @@
     },
     "cierre": {
       "title": "日结报表",
-      "shift": "班次",
+      "shift": "日期/时间",
       "closedBy": "操作人",
-      "cashTitle": "现金清点"
+      "cashTitle": "现金清点",
+      "discountsTitle": "折扣",
+      "discountTotal": "折扣合计",
+      "cartDiscountTotal": "整单折扣",
+      "lineDiscountTotal": "单品折扣",
+      "cartDiscount": "整单折扣",
+      "saleDiscountTotal": "该单合计"
     }
   },
   "errors": {
@@ -577,10 +623,18 @@
     "saleNotFound": "未找到销售记录",
     "returnQtyExceeds": "退货数量超过已售数量",
     "noPendingSales": "没有待结算的销售",
+    "cierreNotFound": "未找到日结记录",
+    "countedCashRequired": "日结前请输入实点现金金额",
+    "discountPinRequired": "应用折扣需要 PIN 授权",
     "printerNotFound": "打印机未连接",
-    "printSkippedCjk": "已跳过打印：打印机不支持中文",
     "firstRunDone": "初始设置已完成",
     "paymentMismatch": "支付金额与合计不一致",
-    "floatAlreadyOpen": "本期已开班"
+    "floatAlreadyOpen": "本期已开班",
+    "pdfExportFailed": "无法保存 PDF",
+    "cashNotOpened": "请先完成开班",
+    "licenseInvalid": "许可证无效或已被篡改",
+    "licenseWrongDevice": "此许可证适用于其他设备",
+    "licenseExpired": "许可证已过期，请联系支持",
+    "licenseMissing": "未激活许可证"
   }
 }

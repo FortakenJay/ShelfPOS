@@ -16,7 +16,10 @@
     "postinstall": "electron-builder install-app-deps",
     "dist": "electron-vite build && electron-builder --win",
     "dist:dir": "electron-vite build && electron-builder --win --dir",
-    "doctor": "react-doctor"
+    "doctor": "react-doctor",
+    "license:machine-id": "tsx scripts/get-machine-id.ts",
+    "license:generate": "tsx scripts/generate-license.ts",
+    "license:keypair": "node scripts/generate-keypair.js"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.101.0",
@@ -25,13 +28,17 @@
     "better-sqlite3": "^12.10.0",
     "i18next": "^26.3.1",
     "iconv-lite": "^0.7.2",
+    "jsonwebtoken": "^9.0.3",
+    "node-machine-id": "^1.1.12",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-i18next": "^17.0.8"
+    "react-i18next": "^17.0.8",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.0",
     "@types/better-sqlite3": "^7.6.13",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.9.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
@@ -48,6 +55,7 @@
     "lint-staged": "^17.0.7",
     "react-doctor": "^0.5.4",
     "tailwindcss": "^4.3.0",
+    "tsx": "^4.22.4",
     "typescript": "^6.0.3",
     "vite": "^7.3.5",
     "ws": "^8.21.0"

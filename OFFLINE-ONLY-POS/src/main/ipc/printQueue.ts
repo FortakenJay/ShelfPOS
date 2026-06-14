@@ -1,14 +1,17 @@
 import { handle } from './helpers'
-import { listFailedPrintJobs } from '../db/repos/printJobs'
-import { attemptPrintJob } from '../services/printer'
+import { listQueuedPrintJobs } from '../db/repos/printJobs'
+import { attemptPrintJob, probePrinter } from '../services/printer'
 import type { PrintJobRow, PrintStatus } from '../../shared/types'
 
 export function registerPrintQueueHandlers(): void {
-  handle<void, PrintJobRow[]>('printQueue:list', ['admin'], () => listFailedPrintJobs())
+  handle<void, PrintJobRow[]>('printQueue:list', ['admin'], () => listQueuedPrintJobs())
 
   handle<{ id: number }, { printStatus: PrintStatus }>(
     'printQueue:retry',
     ['sales', 'admin'],
-    async ({ id }) => ({ printStatus: await attemptPrintJob(id) })
+    async ({ id }) => {
+      await probePrinter()
+      return { printStatus: await attemptPrintJob(id) }
+    }
   )
 }

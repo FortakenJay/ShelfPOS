@@ -42,20 +42,35 @@ function Reports(): React.JSX.Element {
     mutationFn: () => api.reports.print(type, range),
     onSuccess: ({ printStatus }) => {
       if (printStatus === 'printed') toasts.success('reports.printSent')
-      else if (printStatus === 'skipped_cjk') toasts.info('pos.printSkippedCjk')
       else toasts.error('pos.printFailed')
       void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
     },
     onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
   })
 
+  const pdfMutation = useMutation({
+    mutationFn: () => api.reports.exportPdf(type, range),
+    onSuccess: (result) => {
+      if (!result.canceled && result.path) toasts.success('reports.pdfDone', { path: result.path })
+      void queryClient.invalidateQueries({ queryKey: ['report', type, range] })
+    },
+    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+  })
+
+  const exportBusy = printMutation.isPending || pdfMutation.isPending
+
   return (
     <div className="p-6">
-      <div className="mb-5 flex items-center justify-between">
+      <div className="mb-5 flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">{t('reports.title')}</h1>
-        <Button onClick={() => printMutation.mutate()} loading={printMutation.isPending}>
-          {t('reports.printReport')}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => pdfMutation.mutate()} loading={pdfMutation.isPending} disabled={exportBusy}>
+            {t('reports.exportPdf')}
+          </Button>
+          <Button onClick={() => printMutation.mutate()} loading={printMutation.isPending} disabled={exportBusy}>
+            {t('reports.printReport')}
+          </Button>
+        </div>
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">

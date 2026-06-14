@@ -5,7 +5,7 @@ const CRC_MONEY_OPTIONS: Intl.NumberFormatOptions = {
   currency: 'CRC',
   currencyDisplay: 'narrowSymbol',
   minimumFractionDigits: 0,
-  maximumFractionDigits: 2
+  maximumFractionDigits: 0
 }
 
 const moneyFormatterEs = new Intl.NumberFormat('es-CR', CRC_MONEY_OPTIONS)

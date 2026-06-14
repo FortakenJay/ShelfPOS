@@ -1,0 +1,233 @@
+import { z } from 'zod'
+import type { IpcChannel } from '../types'
+import {
+  barcodeSchema,
+  dateRangeSchema,
+  filePathSchema,
+  idTypeSchema,
+  languageSchema,
+  localDateSchema,
+  moneySchema,
+  optionalLongTextSchema,
+  optionalTextSchema,
+  passwordSchema,
+  paymentMethodSchema,
+  pinSchema,
+  positiveIdSchema,
+  quantitySchema,
+  reportTypeSchema,
+  roleSchema,
+  saleConditionSchema,
+  shortTextSchema,
+  stockStatusSchema,
+  taxCategorySchema,
+  usernameSchema,
+  voidInput
+} from './primitives'
+
+const languagePayloadSchema = z.strictObject({ language: languageSchema })
+const pinChangeSchema = z.strictObject({ currentPin: pinSchema, newPin: pinSchema })
+
+const productInputSchema = z.strictObject({
+  barcode: barcodeSchema,
+  name: shortTextSchema,
+  price: moneySchema,
+  costPrice: moneySchema.nullable(),
+  category: z.string().trim().max(100).nullable(),
+  stock: z.number().int().min(0).max(10_000_000),
+  stockThreshold: z.number().int().min(0).max(10_000_000).nullable(),
+  taxCategory: taxCategorySchema,
+  bulkQty: z.number().int().min(2).max(10_000).nullable(),
+  bulkPrice: moneySchema.nullable()
+})
+
+const productFiltersSchema = z
+  .strictObject({
+    search: z.string().trim().max(100).optional(),
+    category: z.string().trim().max(100).optional(),
+    stockStatus: stockStatusSchema.optional()
+  })
+  .optional()
+
+const adjustStockInputSchema = z.strictObject({
+  productId: positiveIdSchema,
+  delta: z.number().int().min(-1_000_000).max(1_000_000),
+  reason: z.string().trim().min(1).max(500)
+})
+
+const salePaymentInputSchema = z.strictObject({
+  method: paymentMethodSchema,
+  amount: moneySchema,
+  ref: z.string().trim().max(64).optional()
+})
+
+const createSaleItemInputSchema = z.strictObject({
+  productId: positiveIdSchema,
+  quantity: quantitySchema,
+  discount: moneySchema.optional()
+})
+
+const customerInputSchema = z.strictObject({
+  name: z.string().trim().max(200).optional(),
+  idType: idTypeSchema.optional(),
+  id: z.string().trim().max(32).optional(),
+  phone: z.string().trim().max(32).optional(),
+  email: z.string().trim().max(128).optional(),
+  activityCode: z.string().trim().max(16).optional()
+})
+
+export const createSaleInputSchema = z.strictObject({
+  items: z.array(createSaleItemInputSchema).min(1).max(500),
+  payments: z.array(salePaymentInputSchema).min(1).max(3),
+  cartDiscount: moneySchema.optional(),
+  saleCondition: saleConditionSchema.optional(),
+  customer: customerInputSchema.optional(),
+  tendered: moneySchema.optional(),
+  discountPin: pinSchema.optional()
+})
+
+const createReturnInputSchema = z.strictObject({
+  saleId: positiveIdSchema,
+  items: z
+    .array(
+      z.strictObject({
+        productId: positiveIdSchema,
+        quantity: quantitySchema
+      })
+    )
+    .min(1)
+    .max(500),
+  restock: z.boolean(),
+  pin: pinSchema
+})
+
+const discountAuthorizeInputSchema = z.strictObject({
+  pin: pinSchema,
+  kind: z.enum(['line', 'cart']),
+  amount: moneySchema.refine((n) => n > 0, 'amount must be positive'),
+  productName: z.string().trim().max(200).optional()
+})
+
+const firstRunSetupInputSchema = z.strictObject({
+  users: z
+    .array(
+      z.strictObject({
+        username: usernameSchema,
+        password: passwordSchema,
+        role: roleSchema
+      })
+    )
+    .length(3),
+  pin: pinSchema,
+  cajaPin: pinSchema
+})
+
+const settingsUpdateInputSchema = z.strictObject({
+  storeName: z.string().trim().min(1).max(200).optional(),
+  stockThresholdDefault: z.number().int().min(0).max(1_000_000).optional(),
+  scannerBurstMs: z.number().int().min(5).max(500).optional(),
+  ivaRateStandard: z.number().finite().min(0).max(100).optional(),
+  ivaRateCanastaBasica: z.number().finite().min(0).max(100).optional(),
+  branchCode: z.string().trim().max(10).optional(),
+  terminalCode: z.string().trim().max(10).optional(),
+  storeLegalName: optionalTextSchema.optional(),
+  storeIdType: idTypeSchema.optional(),
+  storeId: z.string().trim().max(32).optional(),
+  storePhone: z.string().trim().max(32).optional(),
+  storeEmail: z.string().trim().max(128).optional(),
+  storeActivityCode: z.string().trim().max(16).optional(),
+  storeProvince: z.string().trim().max(64).optional(),
+  storeCanton: z.string().trim().max(64).optional(),
+  storeDistrict: z.string().trim().max(64).optional(),
+  storeAddress: optionalLongTextSchema.optional(),
+  receiptFooter: optionalLongTextSchema.optional()
+})
+
+const auditLogFilterSchema = z
+  .strictObject({
+    range: dateRangeSchema.optional(),
+    userId: positiveIdSchema.optional(),
+    action: z.string().trim().min(1).max(64).optional(),
+    limit: z.number().int().min(1).max(5000).optional()
+  })
+  .optional()
+
+const reportPayloadSchema = z.strictObject({
+  type: reportTypeSchema,
+  range: dateRangeSchema
+})
+
+const cierreConfirmInputSchema = z.strictObject({
+  shiftLabel: z.string().trim().max(100).nullish(),
+  notes: optionalLongTextSchema.nullish(),
+  countedCash: moneySchema
+})
+
+const cashMovementInputSchema = z.strictObject({
+  type: z.enum(['cash_in', 'cash_out']),
+  amount: moneySchema.refine((n) => n > 0, 'amount must be positive'),
+  reason: optionalTextSchema.optional()
+})
+
+const licenseActivateInputSchema = z.strictObject({
+  jwt: z.string().trim().min(20).max(16_384)
+})
+
+const productUpdateInputSchema = z.strictObject({
+  id: positiveIdSchema,
+  ...productInputSchema.shape
+})
+
+/** Per-channel Zod schemas — enforced in main-process IPC before any handler runs. */
+export const IPC_SCHEMAS = {
+  'license:activate': licenseActivateInputSchema,
+  'license:status': voidInput,
+  'firstRun:status': voidInput,
+  'firstRun:setLanguage': languagePayloadSchema,
+  'firstRun:complete': firstRunSetupInputSchema,
+  'auth:login': z.strictObject({ username: usernameSchema, password: passwordSchema }),
+  'auth:logout': voidInput,
+  'auth:session': voidInput,
+  'settings:get': voidInput,
+  'settings:update': settingsUpdateInputSchema,
+  'settings:setLanguage': languagePayloadSchema,
+  'settings:changePin': pinChangeSchema,
+  'settings:changeCajaPin': pinChangeSchema,
+  'products:list': productFiltersSchema,
+  'products:categories': voidInput,
+  'products:create': productInputSchema,
+  'products:update': productUpdateInputSchema,
+  'products:delete': z.strictObject({ id: positiveIdSchema }),
+  'products:adjustStock': adjustStockInputSchema,
+  'products:exportCsv': z.strictObject({ template: z.boolean().optional() }).optional(),
+  'products:importCsvPreview': voidInput,
+  'products:importCsvConfirm': z.strictObject({ filePath: filePathSchema }),
+  'products:byBarcode': z.strictObject({ barcode: barcodeSchema }),
+  'products:search': z.strictObject({ query: z.string().trim().max(100) }),
+  'sales:create': createSaleInputSchema,
+  'sales:findForReturn': z.strictObject({
+    saleId: positiveIdSchema.optional(),
+    date: localDateSchema.optional()
+  }),
+  'returns:create': createReturnInputSchema,
+  'discount:authorize': discountAuthorizeInputSchema,
+  'reports:run': reportPayloadSchema,
+  'reports:print': reportPayloadSchema,
+  'reports:exportPdf': reportPayloadSchema,
+  'cierre:preview': voidInput,
+  'cierre:confirm': cierreConfirmInputSchema,
+  'cierre:history': voidInput,
+  'cierre:discrepancyAlerts': voidInput,
+  'cierre:exportPdf': z.strictObject({ cierreId: positiveIdSchema }),
+  'cash:status': voidInput,
+  'cash:openFloat': z.strictObject({ amount: moneySchema }),
+  'cash:movement': cashMovementInputSchema,
+  'audit:list': auditLogFilterSchema,
+  'audit:users': voidInput,
+  'audit:actions': voidInput,
+  'printQueue:list': voidInput,
+  'printQueue:retry': z.strictObject({ id: positiveIdSchema }),
+  'backup:info': voidInput,
+  'backup:runManual': voidInput,
+  'backup:exportCsv': z.strictObject({ range: dateRangeSchema })
+} satisfies Record<IpcChannel, z.ZodType>

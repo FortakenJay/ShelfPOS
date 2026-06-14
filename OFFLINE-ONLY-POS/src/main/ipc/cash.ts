@@ -11,6 +11,7 @@ import { session } from '../services/session'
 import type { CashDrawerStatus, CashMovementInput, OpenFloatInput } from '../../shared/types'
 
 const CASH: ('sales' | 'admin')[] = ['sales', 'admin']
+const CASH_ADMIN: 'admin'[] = ['admin']
 
 export function registerCashHandlers(): void {
   handle<void, CashDrawerStatus>('cash:status', CASH, () => cashDrawerStatus())
@@ -26,8 +27,9 @@ export function registerCashHandlers(): void {
     return cashDrawerStatus()
   })
 
-  handle<CashMovementInput, CashDrawerStatus>('cash:movement', CASH, (input) => {
+  handle<CashMovementInput, CashDrawerStatus>('cash:movement', CASH_ADMIN, (input) => {
     const user = session.require()
+    if (!hasOpeningFloat()) throw new AppError('errors.cashNotOpened')
     if (input?.type !== 'cash_in' && input?.type !== 'cash_out') {
       throw new AppError('errors.invalidInput')
     }

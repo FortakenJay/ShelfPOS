@@ -22,17 +22,24 @@ function AuditLog(): React.JSX.Element {
   const { t } = useTranslation()
   const [range, setRange] = useState<DateRange>(() => presetToday())
   const [userId, setUserId] = useState<number | ''>('')
+  const [action, setAction] = useState('')
 
   const { data: auditUsers } = useQuery({ queryKey: ['auditUsers'], queryFn: api.audit.users })
+  const { data: auditActions } = useQuery({ queryKey: ['auditActions'], queryFn: api.audit.actions })
   const { data: auditRows } = useQuery({
-    queryKey: ['audit', range, userId],
+    queryKey: ['audit', range, userId, action],
     queryFn: () =>
-      api.audit.list({ range, userId: userId === '' ? undefined : Number(userId), limit: 500 })
+      api.audit.list({
+        range,
+        userId: userId === '' ? undefined : Number(userId),
+        action: action || undefined,
+        limit: 500
+      })
   })
 
-  const actionLabel = (action: string): string => {
-    const key = `audit.actions.${action}`
-    const translated = i18n.exists(key) ? t(key) : action
+  const actionLabel = (actionKey: string): string => {
+    const key = `audit.actions.${actionKey}`
+    const translated = i18n.exists(key) ? t(key) : actionKey
     return translated
   }
 
@@ -52,6 +59,19 @@ function AuditLog(): React.JSX.Element {
           {auditUsers?.map((u) => (
             <option key={u.id} value={u.id}>
               {u.username}
+            </option>
+          ))}
+        </Select>
+        <Select
+          value={action}
+          onChange={(e) => setAction(e.target.value)}
+          className="w-64"
+          aria-label={t('audit.action')}
+        >
+          <option value="">{t('audit.allActions')}</option>
+          {auditActions?.map((a) => (
+            <option key={a} value={a}>
+              {actionLabel(a)}
             </option>
           ))}
         </Select>

@@ -43,3 +43,39 @@ export function draftFromSettings(s: AppSettings): SettingsDraft {
     ivaCanasta: String(s.ivaRateCanastaBasica)
   }
 }
+
+const GENERAL_KEYS = ['storeName', 'threshold', 'scannerMs'] as const
+const EMISOR_KEYS = [
+  'legalName',
+  'idType',
+  'storeId',
+  'phone',
+  'email',
+  'activityCode',
+  'province',
+  'canton',
+  'district',
+  'address',
+  'footer'
+] as const
+const TAX_KEYS = ['branchCode', 'terminalCode', 'ivaStandard', 'ivaCanasta'] as const
+
+function sectionDirty(
+  draft: SettingsDraft,
+  saved: SettingsDraft,
+  keys: readonly (keyof SettingsDraft)[]
+): boolean {
+  return keys.some((k) => draft[k] !== saved[k])
+}
+
+export function generalDraftDirty(draft: SettingsDraft, saved: SettingsDraft): boolean {
+  return sectionDirty(draft, saved, GENERAL_KEYS)
+}
+
+export function emisorDraftDirty(draft: SettingsDraft, saved: SettingsDraft): boolean {
+  return sectionDirty(draft, saved, EMISOR_KEYS)
+}
+
+export function taxDraftDirty(draft: SettingsDraft, saved: SettingsDraft): boolean {
+  return sectionDirty(draft, saved, TAX_KEYS)
+}
