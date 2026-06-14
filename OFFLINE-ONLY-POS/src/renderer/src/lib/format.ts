@@ -6,7 +6,7 @@ const CRC_MONEY_OPTIONS: Intl.NumberFormatOptions = {
   currency: 'CRC',
   currencyDisplay: 'narrowSymbol',
   minimumFractionDigits: 0,
-  maximumFractionDigits: 2
+  maximumFractionDigits: 0
 }
 
 const moneyFormatterEs = new Intl.NumberFormat('es-CR', CRC_MONEY_OPTIONS)
@@ -34,4 +34,17 @@ export function todayStr(): string {
   const d = new Date()
   const pad = (n: number): string => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+/** Parse cash typed in the UI (supports Costa Rican thousands dots, e.g. 10.980 → 10980). */
+export function parseColonesInput(raw: string): number | null {
+  const s = raw.trim()
+  if (!s) return null
+  if (/^\d+$/.test(s)) {
+    const n = Number(s)
+    return Number.isFinite(n) ? n : null
+  }
+  const normalized = s.replace(/\./g, '').replace(',', '.')
+  const n = Number(normalized)
+  return Number.isFinite(n) && n >= 0 ? n : null
 }

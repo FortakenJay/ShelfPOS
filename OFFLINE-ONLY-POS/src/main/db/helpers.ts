@@ -1,4 +1,5 @@
 import type { DateRange } from '../../shared/types'
+import { roundColones } from '../../shared/money'
 
 const pad = (n: number): string => String(n).padStart(2, '0')
 
@@ -12,10 +13,17 @@ export function todayLocal(): string {
   return localNow().slice(0, 10)
 }
 
+/** Local calendar date `YYYY-MM-DD` N days before today. */
+export function daysAgoLocal(days: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() - days)
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
 export function rangeBounds(range: DateRange): [string, string] {
   return [`${range.from} 00:00:00`, `${range.to} 23:59:59`]
 }
 
 export function round2(n: number): number {
-  return Math.round(n * 100) / 100
+  return roundColones(n)
 }

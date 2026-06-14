@@ -1,6 +1,6 @@
 import type Database from 'better-sqlite3'
 
-export const SCHEMA_VERSION = 3
+export const SCHEMA_VERSION = 5
 
 type Migration = (db: Database.Database) => void
 
@@ -214,6 +214,29 @@ const migrations: Record<number, Migration> = {
     db.exec(`
       CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
       CREATE INDEX IF NOT EXISTS idx_return_items_created ON return_items(created_at);
+    `)
+  },
+
+  // v4 — caja PIN for discount authorization; audit action index.
+  4: (db) => {
+    const manager = db.prepare("SELECT value FROM settings WHERE key = 'manager_pin_hash'").get() as
+      | { value: string }
+      | undefined
+    const caja = db.prepare("SELECT value FROM settings WHERE key = 'caja_pin_hash'").get() as
+      | { value: string }
+      | undefined
+    if (manager?.value && !caja) {
+      db.prepare("INSERT INTO settings (key, value) VALUES ('caja_pin_hash', ?)").run(manager.value)
+    }
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_log(action)`)
+  },
+
+  // v5 — separate cart vs per-line discounts for cierre reporting.
+  5: (db) => {
+    db.exec(`
+      ALTER TABLE sales ADD COLUMN cart_discount REAL NOT NULL DEFAULT 0;
+      ALTER TABLE sale_items ADD COLUMN line_discount REAL NOT NULL DEFAULT 0;
+      UPDATE sale_items SET line_discount = discount WHERE discount > 0;
     `)
   }
 }

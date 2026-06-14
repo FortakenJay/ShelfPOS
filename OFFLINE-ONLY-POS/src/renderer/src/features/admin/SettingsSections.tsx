@@ -43,11 +43,13 @@ export function SettingsGeneralSection({
   draft,
   onChange,
   saving,
+  dirty,
   onSave
 }: {
   draft: SettingsDraft
   onChange: (patch: Partial<SettingsDraft>) => void
   saving: boolean
+  dirty: boolean
   onSave: () => void
 }): React.JSX.Element {
   const { t } = useTranslation()
@@ -73,7 +75,7 @@ export function SettingsGeneralSection({
         </Field>
       </div>
       <p className="mt-2 text-[13px] text-slate-500">{t('settings.scannerHint')}</p>
-      <Button className="mt-4" loading={saving} onClick={onSave}>
+      <Button className="mt-4" loading={saving} disabled={!dirty} onClick={onSave}>
         {t('common.save')}
       </Button>
     </section>
@@ -84,11 +86,13 @@ export function SettingsEmisorSection({
   draft,
   onChange,
   saving,
+  dirty,
   onSave
 }: {
   draft: SettingsDraft
   onChange: (patch: Partial<SettingsDraft>) => void
   saving: boolean
+  dirty: boolean
   onSave: () => void
 }): React.JSX.Element {
   const { t } = useTranslation()
@@ -137,7 +141,7 @@ export function SettingsEmisorSection({
           <Input value={draft.footer} onChange={(e) => onChange({ footer: e.target.value })} />
         </Field>
       </div>
-      <Button className="mt-4" loading={saving} onClick={onSave}>
+      <Button className="mt-4" loading={saving} disabled={!dirty} onClick={onSave}>
         {t('common.save')}
       </Button>
     </section>
@@ -149,12 +153,14 @@ export function SettingsTaxSection({
   taxRegime,
   onChange,
   saving,
+  dirty,
   onSave
 }: {
   draft: SettingsDraft
   taxRegime: AppSettings['taxRegime']
   onChange: (patch: Partial<SettingsDraft>) => void
   saving: boolean
+  dirty: boolean
   onSave: () => void
 }): React.JSX.Element {
   const { t } = useTranslation()
@@ -196,7 +202,7 @@ export function SettingsTaxSection({
           />
         </Field>
       </div>
-      <Button className="mt-4" loading={saving} onClick={onSave}>
+      <Button className="mt-4" loading={saving} disabled={!dirty} onClick={onSave}>
         {t('common.save')}
       </Button>
     </section>
@@ -220,6 +226,7 @@ export function SettingsPinSection({
   return (
     <section className="mb-6 rounded-lg border-2 border-line bg-white p-5">
       <h2 className="mb-3 text-lg font-bold">{t('settings.pinSection')}</h2>
+      <p className="mb-4 text-[14px] text-slate-600">{t('settings.managerPinHint')}</p>
       <div className="grid grid-cols-3 gap-4">
         <Field label={t('settings.currentPin')}>
           <Input
@@ -257,45 +264,57 @@ export function SettingsPinSection({
   )
 }
 
-export function SettingsPrinterSection({
-  cjkCapable,
-  cjkTestSent,
-  testing,
-  onTest,
-  onSetCapable
+export function SettingsCajaPinSection({
+  pin,
+  pinError,
+  saving,
+  onChange,
+  onSave
 }: {
-  cjkCapable: boolean
-  cjkTestSent: boolean
-  testing: boolean
-  onTest: () => void
-  onSetCapable: (capable: boolean) => void
+  pin: { current: string; next: string; confirm: string }
+  pinError: string | null
+  saving: boolean
+  onChange: (patch: Partial<{ current: string; next: string; confirm: string }>) => void
+  onSave: () => void
 }): React.JSX.Element {
   const { t } = useTranslation()
   return (
-    <section className="rounded-lg border-2 border-line bg-white p-5">
-      <h2 className="mb-3 text-lg font-bold">{t('settings.printerSection')}</h2>
-      <div className="mb-4 flex items-center justify-between rounded-md bg-slate-100 px-4 py-3">
-        <span className="font-semibold">{t('settings.cjkStatus')}</span>
-        <span className={`font-extrabold ${cjkCapable ? 'text-cta' : 'text-danger'}`}>
-          {cjkCapable ? t('settings.capable') : t('settings.notCapable')}
-        </span>
+    <section className="mb-6 rounded-lg border-2 border-line bg-white p-5">
+      <h2 className="mb-3 text-lg font-bold">{t('settings.cajaPinSection')}</h2>
+      <p className="mb-4 text-[14px] text-slate-600">{t('settings.cajaPinHint')}</p>
+      <div className="grid grid-cols-3 gap-4">
+        <Field label={t('settings.currentPin')}>
+          <Input
+            type="password"
+            inputMode="numeric"
+            maxLength={6}
+            value={pin.current}
+            onChange={(e) => onChange({ current: e.target.value.replace(/\D/g, '') })}
+          />
+        </Field>
+        <Field label={t('settings.newPin')}>
+          <Input
+            type="password"
+            inputMode="numeric"
+            maxLength={6}
+            value={pin.next}
+            onChange={(e) => onChange({ next: e.target.value.replace(/\D/g, '') })}
+          />
+        </Field>
+        <Field label={t('settings.confirmNewPin')}>
+          <Input
+            type="password"
+            inputMode="numeric"
+            maxLength={6}
+            value={pin.confirm}
+            onChange={(e) => onChange({ confirm: e.target.value.replace(/\D/g, '') })}
+          />
+        </Field>
       </div>
-      <Button variant="outline" loading={testing} onClick={onTest}>
-        {t('settings.testCjk')}
+      {pinError && <p className="mt-2 text-[15px] font-bold text-danger">{pinError}</p>}
+      <Button className="mt-4" loading={saving} disabled={!pin.current || pin.next.length < 4} onClick={onSave}>
+        {t('settings.changeCajaPin')}
       </Button>
-      {cjkTestSent && (
-        <div className="mt-4 rounded-md border-2 border-line p-4">
-          <p className="mb-3 font-bold">{t('settings.testSent')}</p>
-          <div className="flex gap-3">
-            <Button variant="cta" onClick={() => onSetCapable(true)}>
-              {t('settings.markCapable')}
-            </Button>
-            <Button variant="danger" onClick={() => onSetCapable(false)}>
-              {t('settings.markNotCapable')}
-            </Button>
-          </div>
-        </div>
-      )}
     </section>
   )
 }

@@ -81,11 +81,14 @@ export function Button({
 
 export function Input({
   className = '',
+  invalid = false,
   ...rest
-}: InputHTMLAttributes<HTMLInputElement>): React.JSX.Element {
+}: InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }): React.JSX.Element {
   return (
     <input
-      className={`min-h-[44px] w-full rounded-md border-2 border-line bg-white px-3 text-[16px] outline-none focus:border-primary disabled:bg-slate-100 ${className}`}
+      className={`min-h-[44px] w-full rounded-md border-2 bg-white px-3 text-[16px] outline-none disabled:bg-slate-100 ${
+        invalid ? 'border-danger focus:border-danger' : 'border-line focus:border-primary'
+      } ${className}`}
       {...rest}
     />
   )

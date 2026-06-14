@@ -30,7 +30,18 @@ export function LoginPage(): React.JSX.Element {
   }
 
   return (
-    <div className="flex h-full flex-col items-center justify-center bg-chrome p-6">
+    <div className="relative flex h-full flex-col items-center justify-center bg-chrome p-6">
+      <button
+        type="button"
+        onClick={() => void navigate({ to: '/choose-language' })}
+        className="absolute top-6 left-6 flex min-h-[56px] min-w-[56px] items-center justify-center gap-2 rounded-xl border-2 border-slate-500 bg-chrome-light px-5 py-3 text-white hover:border-primary hover:bg-slate-700"
+        aria-label={t('auth.backToLanguage')}
+      >
+        <span className="text-4xl leading-none" aria-hidden>
+          ←
+        </span>
+        <span className="text-[17px] font-bold">{t('auth.backToLanguage')}</span>
+      </button>
       <div className="mb-10 text-center">
         <div className="text-5xl font-extrabold text-white">
           Shelf<span className="text-primary">POS</span>

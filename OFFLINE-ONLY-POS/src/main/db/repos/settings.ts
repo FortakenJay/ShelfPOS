@@ -5,10 +5,10 @@ export const SETTING_KEYS = {
   language: 'language',
   storeName: 'store_name',
   firstRunComplete: 'first_run_complete',
-  printerCjkCapable: 'printer_cjk_capable',
   stockThresholdDefault: 'stock_threshold_default',
   scannerBurstMs: 'scanner_burst_ms',
   managerPinHash: 'manager_pin_hash',
+  cajaPinHash: 'caja_pin_hash',
   taxRegime: 'tax_regime',
   ivaRateStandard: 'iva_rate_standard',
   ivaRateCanastaBasica: 'iva_rate_canasta_basica',
@@ -47,7 +47,6 @@ export function getAppSettings(): AppSettings {
   return {
     language: (getSetting(SETTING_KEYS.language) as Language | null) ?? null,
     storeName: getSetting(SETTING_KEYS.storeName) ?? 'ShelfPOS',
-    printerCjkCapable: getSetting(SETTING_KEYS.printerCjkCapable) === '1',
     stockThresholdDefault: Number(getSetting(SETTING_KEYS.stockThresholdDefault) ?? '5'),
     scannerBurstMs: Number(getSetting(SETTING_KEYS.scannerBurstMs) ?? '30'),
     firstRunComplete: getSetting(SETTING_KEYS.firstRunComplete) === '1',
@@ -85,4 +84,9 @@ export function ivaRateFor(category: 'exempt' | 'canasta_basica' | 'standard'): 
 
 export function currentLanguage(): Language {
   return (getSetting(SETTING_KEYS.language) as Language | null) ?? 'es'
+}
+
+/** Thermal receipt/report language — always Spanish (ESC/POS CP850). */
+export function receiptLanguage(): Language {
+  return 'es'
 }

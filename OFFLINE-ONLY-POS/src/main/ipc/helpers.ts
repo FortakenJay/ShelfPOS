@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron'
 import { AppError } from '../errors'
 import { session } from '../services/session'
+import { IPC_SCHEMAS } from '../../shared/schemas/ipc'
 import type { ApiResult, IpcChannel, Role } from '../../shared/types'
 
 type Access = Role[] | 'public' | 'authed'
@@ -23,7 +24,14 @@ export function handle<TIn, TOut>(
           throw new AppError('errors.forbidden')
         }
       }
-      const data = await fn(payload as TIn)
+      const parsed = IPC_SCHEMAS[channel].safeParse(payload)
+      if (!parsed.success) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn(`[ipc:${channel}] validation failed`, parsed.error.issues)
+        }
+        throw new AppError('errors.invalidInput')
+      }
+      const data = await fn(parsed.data as TIn)
       return { ok: true, data }
     } catch (err) {
       if (err instanceof AppError) {

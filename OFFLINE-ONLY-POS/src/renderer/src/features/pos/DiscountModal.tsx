@@ -1,34 +1,120 @@
-import { useState } from 'react'
+import { useReducer } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import { api, ApiError } from '@/lib/api'
 import { formatMoney } from '@/lib/format'
+import { roundColones } from '@shared/money'
 import { Button, Field, Input, Modal } from '@/components/ui'
+import { PinModal } from '@/components/PinModal'
 
 interface DiscountModalProps {
   title: string
+  kind: 'line' | 'cart'
   base: number
   current: number
-  onApply: (amount: number) => void
+  productName?: string
+  onApply: (amount: number, authPin?: string) => void
   onClose: () => void
+}
+
+interface DiscountState {
+  mode: 'amount' | 'percent'
+  value: string
+  pinOpen: boolean
+  pinError: string | null
+  pendingAmount: number
+}
+
+type DiscountAction =
+  | { type: 'setMode'; mode: 'amount' | 'percent' }
+  | { type: 'setValue'; value: string }
+  | { type: 'openPin'; amount: number }
+  | { type: 'closePin' }
+  | { type: 'setPinError'; error: string | null }
+
+function discountReducer(state: DiscountState, action: DiscountAction): DiscountState {
+  switch (action.type) {
+    case 'setMode':
+      return { ...state, mode: action.mode }
+    case 'setValue':
+      return { ...state, value: action.value }
+    case 'openPin':
+      return { ...state, pendingAmount: action.amount, pinOpen: true, pinError: null }
+    case 'closePin':
+      return { ...state, pinOpen: false, pinError: null }
+    case 'setPinError':
+      return { ...state, pinError: action.error }
+    default:
+      return state
+  }
 }
 
 /** Computes an absolute discount (₡) from either a flat amount or a percentage of `base`. */
 export function DiscountModal({
   title,
+  kind,
   base,
   current,
+  productName,
   onApply,
   onClose
 }: DiscountModalProps): React.JSX.Element {
   const { t } = useTranslation()
-  const [mode, setMode] = useState<'amount' | 'percent'>('amount')
-  const [value, setValue] = useState(current > 0 ? String(current) : '')
+  const queryClient = useQueryClient()
+  const [state, dispatch] = useReducer(discountReducer, {
+    mode: 'amount',
+    value: current > 0 ? String(current) : '',
+    pinOpen: false,
+    pinError: null,
+    pendingAmount: 0
+  })
+  const { mode, value, pinOpen, pinError, pendingAmount } = state
 
   const num = value === '' ? 0 : Number(value)
   const computed =
-    mode === 'percent'
-      ? Math.round(((base * num) / 100) * 100) / 100
-      : Math.round(num * 100) / 100
-  const clamped = Math.min(Math.max(computed, 0), base)
+    mode === 'percent' ? roundColones((base * num) / 100) : roundColones(num)
+  const clamped = Math.min(Math.max(computed, 0), roundColones(base))
+
+  const authorizeMutation = useMutation({
+    mutationFn: (pin: string) =>
+      api.discount.authorize({
+        pin,
+        kind,
+        amount: pendingAmount,
+        productName
+      }),
+    onSuccess: (_data, pin) => {
+      onApply(pendingAmount, pin)
+      dispatch({ type: 'closePin' })
+      void queryClient.invalidateQueries({ queryKey: ['audit'] })
+    },
+    onError: (err) => {
+      dispatch({
+        type: 'setPinError',
+        error: t(err instanceof ApiError ? err.key : 'errors.unknown')
+      })
+    }
+  })
+
+  const requestApply = (): void => {
+    if (clamped <= 0) {
+      onApply(0)
+      return
+    }
+    dispatch({ type: 'openPin', amount: clamped })
+  }
+
+  if (pinOpen) {
+    return (
+      <PinModal
+        title={t('pos.discount.pinTitle')}
+        loading={authorizeMutation.isPending}
+        error={pinError}
+        onSubmit={(pin) => authorizeMutation.mutate(pin)}
+        onCancel={() => dispatch({ type: 'closePin' })}
+      />
+    )
+  }
 
   return (
     <Modal title={title} onClose={onClose}>
@@ -37,7 +123,7 @@ export function DiscountModal({
           <button
             key={m}
             type="button"
-            onClick={() => setMode(m)}
+            onClick={() => dispatch({ type: 'setMode', mode: m })}
             className={`min-h-[48px] flex-1 rounded-md border-2 text-[16px] font-bold ${
               mode === m
                 ? 'border-primary bg-primary text-white'
@@ -54,9 +140,17 @@ export function DiscountModal({
           autoFocus
           inputMode="decimal"
           value={value}
-          onChange={(e) => setValue(e.target.value.replace(/[^\d.]/g, ''))}
+          onChange={(e) =>
+            dispatch({
+              type: 'setValue',
+              value:
+                mode === 'percent'
+                  ? e.target.value.replace(/[^\d.]/g, '')
+                  : e.target.value.replace(/\D/g, '')
+            })
+          }
           onKeyDown={(e) => {
-            if (e.key === 'Enter') onApply(clamped)
+            if (e.key === 'Enter') requestApply()
           }}
           className="text-right text-2xl font-bold"
         />
@@ -66,6 +160,7 @@ export function DiscountModal({
         <span className="text-[16px] font-bold">{t('pos.discount.applied')}</span>
         <span className="text-2xl font-extrabold text-danger">-{formatMoney(clamped)}</span>
       </div>
+      <p className="mt-2 text-[13px] text-slate-500">{t('pos.discount.coinStep')}</p>
 
       <div className="mt-5 flex gap-3">
         {current > 0 && (
@@ -73,7 +168,7 @@ export function DiscountModal({
             {t('pos.discount.remove')}
           </Button>
         )}
-        <Button variant="cta" size="lg" className="flex-1" onClick={() => onApply(clamped)}>
+        <Button variant="cta" size="lg" className="flex-1" onClick={requestApply}>
           {t('common.confirm')}
         </Button>
       </div>

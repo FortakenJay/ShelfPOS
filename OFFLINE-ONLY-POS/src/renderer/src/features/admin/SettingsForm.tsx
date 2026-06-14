@@ -1,19 +1,99 @@
-import { useState } from 'react'
+import { useReducer, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import i18n from 'i18next'
 import { api, ApiError } from '@/lib/api'
 import { useToasts } from '@/lib/toast'
-import { draftFromSettings, type SettingsDraft } from './settingsDraft'
+import { draftFromSettings, emisorDraftDirty, generalDraftDirty, taxDraftDirty, type SettingsDraft } from './settingsDraft'
 import {
   SettingsEmisorSection,
   SettingsGeneralSection,
   SettingsLanguageSection,
   SettingsPinSection,
-  SettingsPrinterSection,
+  SettingsCajaPinSection,
   SettingsTaxSection
 } from './SettingsSections'
-import type { AppSettings, Language } from '@shared/types'
+import type { AppSettings, Language, SettingsUpdateInput } from '@shared/types'
+
+function commitSavedDraft(
+  saved: SettingsDraft,
+  draft: SettingsDraft,
+  input: SettingsUpdateInput
+): SettingsDraft {
+  const next = { ...saved }
+  if (
+    input.storeName !== undefined ||
+    input.stockThresholdDefault !== undefined ||
+    input.scannerBurstMs !== undefined
+  ) {
+    next.storeName = draft.storeName
+    next.threshold = draft.threshold
+    next.scannerMs = draft.scannerMs
+  }
+  if (input.storeLegalName !== undefined) {
+    next.legalName = draft.legalName
+    next.idType = draft.idType
+    next.storeId = draft.storeId
+    next.phone = draft.phone
+    next.email = draft.email
+    next.activityCode = draft.activityCode
+    next.province = draft.province
+    next.canton = draft.canton
+    next.district = draft.district
+    next.address = draft.address
+    next.footer = draft.footer
+  }
+  if (
+    input.branchCode !== undefined ||
+    input.terminalCode !== undefined ||
+    input.ivaRateStandard !== undefined ||
+    input.ivaRateCanastaBasica !== undefined
+  ) {
+    next.branchCode = draft.branchCode
+    next.terminalCode = draft.terminalCode
+    next.ivaStandard = draft.ivaStandard
+    next.ivaCanasta = draft.ivaCanasta
+  }
+  return next
+}
+
+type PinFields = { current: string; next: string; confirm: string }
+
+interface PinFormsState {
+  pin: PinFields
+  pinError: string | null
+  cajaPin: PinFields
+  cajaPinError: string | null
+}
+
+const emptyPinFields = (): PinFields => ({ current: '', next: '', confirm: '' })
+
+type PinFormsAction =
+  | { type: 'patchPin'; patch: Partial<PinFields> }
+  | { type: 'patchCajaPin'; patch: Partial<PinFields> }
+  | { type: 'setPinError'; error: string | null }
+  | { type: 'setCajaPinError'; error: string | null }
+  | { type: 'resetPin' }
+  | { type: 'resetCajaPin' }
+
+function pinFormsReducer(state: PinFormsState, action: PinFormsAction): PinFormsState {
+  switch (action.type) {
+    case 'patchPin':
+      return { ...state, pin: { ...state.pin, ...action.patch } }
+    case 'patchCajaPin':
+      return { ...state, cajaPin: { ...state.cajaPin, ...action.patch } }
+    case 'setPinError':
+      return { ...state, pinError: action.error }
+    case 'setCajaPinError':
+      return { ...state, cajaPinError: action.error }
+    case 'resetPin':
+      return { ...state, pin: emptyPinFields(), pinError: null }
+    case 'resetCajaPin':
+      return { ...state, cajaPin: emptyPinFields(), cajaPinError: null }
+    default:
+      return state
+  }
+}
 
 export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX.Element {
   const { t } = useTranslation()
@@ -21,9 +101,14 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
   const queryClient = useQueryClient()
 
   const [draft, setDraft] = useState<SettingsDraft>(() => draftFromSettings(settings))
-  const [pin, setPin] = useState({ current: '', next: '', confirm: '' })
-  const [pinError, setPinError] = useState<string | null>(null)
-  const [cjkTestSent, setCjkTestSent] = useState(false)
+  const [savedDraft, setSavedDraft] = useState<SettingsDraft>(() => draftFromSettings(settings))
+  const [pinForms, dispatchPinForms] = useReducer(pinFormsReducer, {
+    pin: emptyPinFields(),
+    pinError: null,
+    cajaPin: emptyPinFields(),
+    cajaPinError: null
+  })
+  const { pin, pinError, cajaPin, cajaPinError } = pinForms
 
   const patchDraft = (patch: Partial<SettingsDraft>): void => setDraft((prev) => ({ ...prev, ...patch }))
 
@@ -40,8 +125,12 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
 
   const updateMutation = useMutation({
     mutationFn: api.settings.update,
-    onSuccess: () => {
+    onSuccess: (_data, input) => {
       toasts.success('settings.saved')
+      setDraft((current) => {
+        setSavedDraft((saved) => commitSavedDraft(saved, current, input))
+        return current
+      })
       void queryClient.invalidateQueries({ queryKey: ['settings'] })
     },
     onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
@@ -51,29 +140,28 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
     mutationFn: () => api.settings.changePin(pin.current, pin.next),
     onSuccess: () => {
       toasts.success('settings.pinChanged')
-      setPin({ current: '', next: '', confirm: '' })
-      setPinError(null)
+      dispatchPinForms({ type: 'resetPin' })
       void queryClient.invalidateQueries({ queryKey: ['settings'] })
     },
-    onError: (err) => setPinError(t(err instanceof ApiError ? err.key : 'errors.unknown'))
+    onError: (err) =>
+      dispatchPinForms({
+        type: 'setPinError',
+        error: t(err instanceof ApiError ? err.key : 'errors.unknown')
+      })
   })
 
-  const cjkTestMutation = useMutation({
-    mutationFn: api.settings.testCjk,
+  const cajaPinMutation = useMutation({
+    mutationFn: () => api.settings.changeCajaPin(cajaPin.current, cajaPin.next),
     onSuccess: () => {
-      setCjkTestSent(true)
+      toasts.success('settings.cajaPinChanged')
+      dispatchPinForms({ type: 'resetCajaPin' })
       void queryClient.invalidateQueries({ queryKey: ['settings'] })
     },
-    onError: () => toasts.error('errors.printerNotFound')
-  })
-
-  const cjkCapableMutation = useMutation({
-    mutationFn: api.settings.setCjkCapable,
-    onSuccess: () => {
-      setCjkTestSent(false)
-      toasts.success('settings.saved')
-      void queryClient.invalidateQueries({ queryKey: ['settings'] })
-    }
+    onError: (err) =>
+      dispatchPinForms({
+        type: 'setCajaPinError',
+        error: t(err instanceof ApiError ? err.key : 'errors.unknown')
+      })
   })
 
   return (
@@ -88,6 +176,7 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
         draft={draft}
         onChange={patchDraft}
         saving={updateMutation.isPending}
+        dirty={generalDraftDirty(draft, savedDraft)}
         onSave={() =>
           updateMutation.mutate({
             storeName: draft.storeName,
@@ -101,6 +190,7 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
         draft={draft}
         onChange={patchDraft}
         saving={updateMutation.isPending}
+        dirty={emisorDraftDirty(draft, savedDraft)}
         onSave={() =>
           updateMutation.mutate({
             storeLegalName: draft.legalName,
@@ -123,6 +213,7 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
         taxRegime={settings.taxRegime}
         onChange={patchDraft}
         saving={updateMutation.isPending}
+        dirty={taxDraftDirty(draft, savedDraft)}
         onSave={() =>
           updateMutation.mutate({
             branchCode: draft.branchCode,
@@ -137,24 +228,32 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
         pin={pin}
         pinError={pinError}
         saving={pinMutation.isPending}
-        onChange={(patch) => setPin((prev) => ({ ...prev, ...patch }))}
+        onChange={(patch) => dispatchPinForms({ type: 'patchPin', patch })}
         onSave={() => {
           if (pin.next !== pin.confirm) {
-            setPinError(t('settings.pinMismatch'))
+            dispatchPinForms({ type: 'setPinError', error: t('settings.pinMismatch') })
             return
           }
-          setPinError(null)
+          dispatchPinForms({ type: 'setPinError', error: null })
           pinMutation.mutate()
         }}
       />
 
-      <SettingsPrinterSection
-        cjkCapable={settings.printerCjkCapable}
-        cjkTestSent={cjkTestSent}
-        testing={cjkTestMutation.isPending}
-        onTest={() => cjkTestMutation.mutate()}
-        onSetCapable={(capable) => cjkCapableMutation.mutate(capable)}
+      <SettingsCajaPinSection
+        pin={cajaPin}
+        pinError={cajaPinError}
+        saving={cajaPinMutation.isPending}
+        onChange={(patch) => dispatchPinForms({ type: 'patchCajaPin', patch })}
+        onSave={() => {
+          if (cajaPin.next !== cajaPin.confirm) {
+            dispatchPinForms({ type: 'setCajaPinError', error: t('settings.pinMismatch') })
+            return
+          }
+          dispatchPinForms({ type: 'setCajaPinError', error: null })
+          cajaPinMutation.mutate()
+        }}
       />
+
     </>
   )
 }

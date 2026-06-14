@@ -3,6 +3,7 @@ import { AppError } from '../errors'
 import { getDb } from '../db'
 import { localNow } from '../db/helpers'
 import { alertsForProducts } from '../db/repos/products'
+import { hasOpeningFloat } from '../db/repos/cash'
 import { writeAudit } from '../db/repos/audit'
 import { session } from '../services/session'
 import type { CreateReturnInput, CreateReturnResult } from '../../shared/types'
@@ -13,6 +14,7 @@ export function registerReturnHandlers(): void {
     ['sales', 'admin'],
     async (input) => {
       const user = session.require()
+      if (!hasOpeningFloat()) throw new AppError('errors.cashNotOpened')
 
       if (!input?.items?.length) throw new AppError('errors.invalidInput')
       for (const item of input.items) {

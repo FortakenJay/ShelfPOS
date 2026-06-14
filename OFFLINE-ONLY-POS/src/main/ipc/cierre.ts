@@ -1,10 +1,14 @@
+import { app, shell } from 'electron'
+import { join } from 'node:path'
 import { handle } from './helpers'
 import { AppError } from '../errors'
 import { getDb } from '../db'
 import { localNow, round2 } from '../db/helpers'
 import {
+  cierreDiscounts,
   paymentTotals,
   periodOpenedAt,
+  returnsCountBetween,
   returnsCountSince,
   salesCount,
   topProducts
@@ -12,52 +16,126 @@ import {
 import { openCashSummary } from '../db/repos/cash'
 import { insertPrintJob } from '../db/repos/printJobs'
 import { writeAudit } from '../db/repos/audit'
-import { currentLanguage, getAppSettings } from '../db/repos/settings'
+import { currentLanguage, getAppSettings, receiptLanguage } from '../db/repos/settings'
 import { session } from '../services/session'
-import { attemptPrintJob } from '../services/printer'
+import { schedulePrintJob } from '../services/printer'
 import { formatDate } from '../services/format'
 import { buildCierreLines } from '../services/printTemplates'
+import { writePrintLinesPdf } from '../services/printPdf'
+import { showSaveDialog } from '../window'
 import type { BackupService } from '../services/backup'
 import type {
   CierreConfirmInput,
   CierreConfirmResult,
+  CierreDiscrepancyAlert,
   CierrePreview,
-  CierreRecord
+  CierreRecord,
+  Language,
+  PrintLine
 } from '../../shared/types'
 
 const CIERRE: ('sales' | 'admin')[] = ['sales', 'admin']
 const CIERRE_ADMIN: 'admin'[] = ['admin']
 
+function formatCashDifferenceAuditDetail(
+  difference: number,
+  countedCash: number,
+  expectedCash: number,
+  closedAt: string
+): string {
+  const abs = Math.abs(difference)
+  const direction = difference > 0 ? 'sobra' : 'falta'
+  return `Cierre incompleto · indiferencia ${abs} (${direction}) · contado ${countedCash} · esperado ${expectedCash} · ${closedAt}`
+}
+
+function listCierreDiscrepancyAlerts(): CierreDiscrepancyAlert[] {
+  return getDb()
+    .prepare(
+      `SELECT c.id, c.closed_at, c.shift_label, c.expected_cash, c.counted_cash, c.cash_difference,
+              u.username AS closed_by
+       FROM cierres c JOIN users u ON u.id = c.closed_by_user_id
+       WHERE c.cash_difference IS NOT NULL AND c.cash_difference != 0
+       ORDER BY c.id DESC LIMIT 15`
+    )
+    .all() as CierreDiscrepancyAlert[]
+}
+
+function getCierreById(id: number): CierreRecord {
+  const row = getDb()
+    .prepare(
+      `SELECT c.id, c.opened_at, c.closed_at, c.shift_label, c.total_cash, c.total_card,
+              c.total_sinpe, c.total_sales, c.opening_float, c.cash_in, c.cash_out,
+              c.expected_cash, c.counted_cash, c.cash_difference, c.notes, u.username AS closed_by
+       FROM cierres c JOIN users u ON u.id = c.closed_by_user_id
+       WHERE c.id = ?`
+    )
+    .get(id) as CierreRecord | undefined
+  if (!row) throw new AppError('errors.cierreNotFound')
+  return row
+}
+
+function cierrePrintLines(cierre: CierreRecord, lang: Language): PrintLine[] {
+  const storeName = getAppSettings().storeName
+  const totals = paymentTotals({ cierreId: cierre.id })
+  return buildCierreLines(
+    {
+      rangeLabel: `${formatDate(cierre.opened_at, lang, true)} - ${formatDate(cierre.closed_at, lang, true)}`,
+      shiftLabel: cierre.shift_label ?? '',
+      closedBy: cierre.closed_by,
+      totals,
+      txCount: salesCount({ cierreId: cierre.id }),
+      returnsCount: returnsCountBetween(cierre.opened_at, cierre.closed_at),
+      topProducts: topProducts({ cierreId: cierre.id }),
+      discounts: cierreDiscounts({ cierreId: cierre.id }),
+      storeName,
+      cash: {
+        openingFloat: cierre.opening_float,
+        cashIn: cierre.cash_in,
+        cashOut: cierre.cash_out,
+        cashSales: cierre.total_cash,
+        expectedCash: cierre.expected_cash,
+        countedCash: cierre.counted_cash,
+        difference: cierre.cash_difference
+      }
+    },
+    lang
+  )
+}
+
 export function registerCierreHandlers(backup: BackupService): void {
   handle<void, CierrePreview>('cierre:preview', CIERRE, () => {
-    const pendingSales = salesCount({ cierrePending: true })
     const user = session.require()
-    if (user.role === 'sales') {
-      return { pendingSales }
+    const pendingSales = salesCount({ cierrePending: true })
+    const cash = openCashSummary()
+    const totals = paymentTotals({ cierrePending: true })
+    if (user.role !== 'admin') {
+      return { pendingSales, cash, totals: { sinpe: totals.sinpe } }
     }
     const openedAt = periodOpenedAt()
     return {
       pendingSales,
       openedAt,
-      totals: paymentTotals({ cierrePending: true }),
+      totals,
       returnsCount: returnsCountSince(openedAt),
-      cash: openCashSummary()
+      cash,
+      discounts: cierreDiscounts({ cierrePending: true })
     }
   })
 
   handle<CierreConfirmInput, CierreConfirmResult>('cierre:confirm', CIERRE, async (input) => {
     const user = session.require()
-    const shiftLabel = input.shiftLabel?.trim() || 'Turno 1'
     const notes = input.notes?.trim() || null
-    const countedCashInput =
-      user.role === 'admin' &&
-      input.countedCash != null &&
-      Number.isFinite(input.countedCash)
-        ? round2(input.countedCash)
-        : null
+    if (
+      input.countedCash == null ||
+      !Number.isFinite(input.countedCash) ||
+      input.countedCash < 0
+    ) {
+      throw new AppError('errors.countedCashRequired')
+    }
+    const countedCash = round2(input.countedCash)
 
     const db = getDb()
-    const lang = currentLanguage()
+    const lang = receiptLanguage()
     const storeName = getAppSettings().storeName
     const now = localNow()
 
@@ -69,9 +147,10 @@ export function registerCierreHandlers(backup: BackupService): void {
       const returnsCount = returnsCountSince(openedAt)
       const top = topProducts({ fromTs: openedAt, toTs: now })
       const cash = openCashSummary()
+      const discounts = cierreDiscounts({ cierrePending: true })
 
-      const countedCash = countedCashInput
-      const difference = countedCash != null ? round2(countedCash - cash.expectedCash) : null
+      const difference = round2(countedCash - cash.expectedCash)
+      const shiftLabel = input.shiftLabel?.trim() || formatDate(now, lang, true)
 
       const id = Number(
         db
@@ -114,6 +193,7 @@ export function registerCierreHandlers(backup: BackupService): void {
           txCount,
           returnsCount,
           topProducts: top,
+          discounts,
           storeName,
           cash: {
             openingFloat: cash.openingFloat,
@@ -130,8 +210,18 @@ export function registerCierreHandlers(backup: BackupService): void {
       writeAudit('cierre_confirmed', {
         entity: 'cierre',
         entityId: id,
-        detail: difference != null ? `dif ${difference}` : undefined
+        detail:
+          difference === 0
+            ? `${shiftLabel} · cierre completo`
+            : formatCashDifferenceAuditDetail(difference, countedCash, cash.expectedCash, now)
       })
+      if (difference !== 0) {
+        writeAudit('cierre_cash_discrepancy', {
+          entity: 'cierre',
+          entityId: id,
+          detail: formatCashDifferenceAuditDetail(difference, countedCash, cash.expectedCash, now)
+        })
+      }
       return { cierreId: id, printJobId: insertPrintJob('cierre', null, { lang, lines }) }
     })()
 
@@ -141,7 +231,7 @@ export function registerCierreHandlers(backup: BackupService): void {
       console.error('[cierre] backup failed', err)
     }
 
-    const printStatus = await attemptPrintJob(printJobId)
+    const printStatus = schedulePrintJob(printJobId)
     return { cierreId, printStatus }
   })
 
@@ -156,4 +246,30 @@ export function registerCierreHandlers(backup: BackupService): void {
       )
       .all() as CierreRecord[]
   })
+
+  handle<void, CierreDiscrepancyAlert[]>('cierre:discrepancyAlerts', CIERRE_ADMIN, () =>
+    listCierreDiscrepancyAlerts()
+  )
+
+  handle<{ cierreId: number }, { canceled: boolean; path?: string }>(
+    'cierre:exportPdf',
+    CIERRE,
+    async ({ cierreId }) => {
+      if (!Number.isInteger(cierreId) || cierreId < 1) throw new AppError('errors.invalidInput')
+      const cierre = getCierreById(cierreId)
+      const lang = currentLanguage()
+      const lines = cierrePrintLines(cierre, lang)
+      const stamp = cierre.closed_at.replace(/[:T]/g, '-').slice(0, 19)
+      const result = await showSaveDialog({
+        title: 'Guardar cierre PDF',
+        defaultPath: join(app.getPath('documents'), `cierre-${cierre.id}-${stamp}.pdf`),
+        filters: [{ name: 'PDF', extensions: ['pdf'] }]
+      })
+      if (result.canceled || !result.filePath) return { canceled: true }
+      await writePrintLinesPdf(lines, result.filePath)
+      const openErr = await shell.openPath(result.filePath)
+      if (openErr) await shell.showItemInFolder(result.filePath)
+      return { canceled: false, path: result.filePath }
+    }
+  )
 }

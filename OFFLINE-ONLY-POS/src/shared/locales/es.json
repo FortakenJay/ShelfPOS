@@ -67,13 +67,7 @@
   },
   "firstRun": {
     "chooseLanguage": "Elija el idioma / 请选择语言",
-    "printerTestTitle": "Prueba de impresora (caracteres chinos)",
-    "printerTestBody": "Conecte la impresora y pulse el botón. Se imprimirá una página de prueba con caracteres chinos. Verifique que se impriman correctamente.",
-    "printTest": "Imprimir prueba",
-    "printTestSent": "Prueba enviada a la impresora.",
-    "printTestFailed": "No se pudo imprimir. Verifique que la impresora esté conectada.",
-    "didItPrint": "¿Se imprimieron correctamente los caracteres chinos?",
-    "skipNote": "Si omite la prueba, la impresión en chino quedará desactivada (puede repetir la prueba en Configuración).",
+    "chineseReceiptNote": "Con idioma chino, los recibos térmicos se imprimen en español.",
     "accountsTitle": "Crear cuentas del sistema",
     "accountsIntro": "Cree las tres cuentas fijas del sistema y el PIN de gerente. El PIN se usa para autorizar devoluciones y cierres de caja.",
     "adminAccount": "Cuenta de administrador",
@@ -83,6 +77,8 @@
     "password": "Contraseña",
     "confirmPassword": "Confirmar contraseña",
     "managerPin": "PIN de gerente (4-6 dígitos)",
+    "cajaPin": "PIN de caja (4-6 dígitos)",
+    "confirmCajaPin": "Confirmar PIN de caja",
     "confirmPin": "Confirmar PIN",
     "create": "Crear y continuar",
     "dataPath": "Sus datos se guardan en: {{path}}",
@@ -90,6 +86,7 @@
       "fillAll": "Complete todos los campos",
       "passwordMismatch": "Las contraseñas no coinciden",
       "pinMismatch": "Los PIN no coinciden",
+      "cajaPinMismatch": "Los PIN de caja no coinciden",
       "pinFormat": "El PIN debe tener de 4 a 6 dígitos",
       "duplicateUsernames": "Los nombres de usuario deben ser distintos"
     }
@@ -99,7 +96,8 @@
     "username": "Usuario",
     "password": "Contraseña",
     "login": "Entrar",
-    "invalidCredentials": "Usuario o contraseña incorrectos"
+    "invalidCredentials": "Usuario o contraseña incorrectos",
+    "backToLanguage": "Idioma / 语言"
   },
   "pos": {
     "searchPlaceholder": "Escanee un código o escriba el nombre del producto…",
@@ -129,8 +127,9 @@
     "saleCompleted": "Venta registrada",
     "printFailed": "Impresión fallida — ¿Reintentar?",
     "printRetried": "Reimpresión enviada",
-    "printSkippedCjk": "Impresión omitida: la impresora no soporta chino",
     "amount": "Monto",
+    "paymentMethod": "Método de pago",
+    "splitPayment": "Pago dividido",
     "addPayment": "Agregar pago",
     "remaining": "Restante",
     "saleCondition": "Condición de venta",
@@ -149,7 +148,9 @@
       "amountValue": "Monto del descuento",
       "percentValue": "Porcentaje del descuento",
       "applied": "Descuento aplicado",
-      "remove": "Quitar descuento"
+      "remove": "Quitar descuento",
+      "pinTitle": "PIN para autorizar descuento",
+      "coinStep": "Montos en múltiplos de ₡5"
     },
     "customer": {
       "title": "Cliente",
@@ -329,6 +330,8 @@
     "to": "Hasta",
     "printReport": "Imprimir",
     "printSent": "Reporte enviado a la impresora",
+    "exportPdf": "Descargar PDF",
+    "pdfDone": "PDF guardado: {{path}}",
     "summary": {
       "totalRevenue": "Ingresos totales",
       "txCount": "Transacciones",
@@ -364,15 +367,43 @@
     "shiftLabel": "Etiqueta del turno",
     "shiftPlaceholder": "Turno 1",
     "notes": "Notas",
+    "stepCount": "Paso 1: Conteo de efectivo",
+    "stepConfirm": "Paso 2: Confirmar cierre",
+    "countedCashPrompt": "Cuente todo el efectivo en la caja e ingrese el total.",
+    "expectedAmountsHint": "Según el sistema, en este turno debería haber:",
+    "expectedSinpe": "SINPE esperado",
+    "continue": "Continuar",
+    "back": "Volver",
+    "overNotice": "Sobran {{amount}} (contado {{counted}}, esperado {{expected}}). El administrador será notificado.",
+    "shortNotice": "Faltan {{amount}} (contado {{counted}}, esperado {{expected}}). El administrador será notificado.",
     "doCierre": "Realizar cierre",
     "confirmTitle": "Confirmar cierre",
-    "confirmBody": "Las ventas del periodo quedarán bloqueadas y se imprimirá el reporte. Esta acción no se puede deshacer.",
+    "confirmBody": "Las ventas del periodo quedarán bloqueadas y se imprimirá el tiquete de turno. Esta acción no se puede deshacer.",
     "success": "Cierre registrado",
+    "successDiscrepancy": "Cierre registrado. Diferencia de efectivo — el administrador fue notificado.",
+    "cajeroConfirmHint": "Si el conteo no coincide con el sistema, el administrador será notificado automáticamente.",
     "noPending": "No hay ventas pendientes de cierre",
     "history": "Cierres anteriores",
     "closedAt": "Cerrado",
     "closedBy": "Por",
-    "cashTitle": "Conteo de efectivo"
+    "cashTitle": "Conteo de efectivo",
+    "savePdf": "Guardar PDF",
+    "pdfDone": "PDF guardado: {{path}}",
+    "discountsTitle": "Descuentos",
+    "totalDiscounts": "Total descuentos",
+    "cartDiscountTotal": "Descuentos de venta (carrito)",
+    "lineDiscountTotal": "Descuentos por artículo",
+    "saleCartDiscount": "Descuento de venta",
+    "saleLineDiscount": "Descuento por artículo",
+    "saleDiscountTotal": "Total descuento venta",
+    "noDiscounts": "Sin descuentos en este periodo",
+    "discrepancyAlertsTitle": "Cierres con diferencia ({{count}} cierres)",
+    "discrepancyIncomplete": "El cierre del {{date}} no fue completo ({{direction}} {{amount}}).",
+    "discrepancyOver": "sobró",
+    "discrepancyShort": "faltó",
+    "discrepancyBy": "Por {{user}}",
+    "discrepancyDifference": "Indiferencia: {{amount}}",
+    "discrepancyBanner": "({{count}} cierres) Diferencia de efectivo — revise Cierre de caja"
   },
   "cash": {
     "title": "Caja / Efectivo",
@@ -386,6 +417,8 @@
     "periodSince": "Periodo desde",
     "openFloatTitle": "Abrir caja",
     "openFloat": "Abrir caja",
+    "openFloatHint": "Registre el fondo inicial para comenzar a vender en esta caja.",
+    "mustOpenFromPos": "La caja aún no está abierta. Vaya a Caja (POS) para registrar la apertura antes de vender.",
     "movementTitle": "Movimiento de efectivo",
     "reason": "Motivo",
     "movements": "Movimientos de efectivo",
@@ -402,6 +435,7 @@
     "title": "Bitácora de actividad",
     "user": "Usuario",
     "allUsers": "Todos los usuarios",
+    "allActions": "Todas las acciones",
     "action": "Acción",
     "entity": "Entidad",
     "detail": "Detalle",
@@ -415,17 +449,26 @@
       "product_deleted": "Producto eliminado",
       "stock_adjusted": "Stock ajustado",
       "cierre_confirmed": "Cierre de caja",
+      "cierre_cash_discrepancy": "Diferencia de efectivo en cierre",
       "cash_opening_float": "Fondo de caja",
       "cash_in": "Entrada de efectivo",
       "cash_out": "Salida de efectivo",
       "settings_updated": "Configuración actualizada",
-      "pin_changed": "PIN cambiado"
+      "pin_changed": "PIN cambiado",
+      "discount_authorized_caja": "Descuento autorizado (PIN caja)",
+      "discount_authorized_manager": "Descuento autorizado (PIN gerente)"
     }
   },
   "printQueue": {
     "title": "Cola de impresión",
-    "empty": "No hay impresiones fallidas",
+    "empty": "No hay recibos pendientes de impresión",
     "jobType": "Tipo",
+    "status": "Estado",
+    "statuses": {
+      "pending": "En cola",
+      "failed": "Fallido",
+      "printed": "Impreso"
+    },
     "types": {
       "receipt": "Recibo",
       "report": "Reporte",
@@ -498,20 +541,17 @@
       "ivaCanasta": "Tarifa canasta básica (%)"
     },
     "pinSection": "PIN de gerente",
+    "managerPinHint": "Autoriza devoluciones y puede autorizar descuentos.",
+    "cajaPinSection": "PIN de caja",
+    "cajaPinHint": "Autoriza descuentos en ventas. El PIN de gerente también puede autorizar descuentos.",
     "currentPin": "PIN actual",
     "newPin": "PIN nuevo (4-6 dígitos)",
     "confirmNewPin": "Confirmar PIN nuevo",
-    "changePin": "Cambiar PIN",
-    "pinChanged": "PIN actualizado",
-    "pinMismatch": "Los PIN no coinciden",
-    "printerSection": "Impresora",
-    "cjkStatus": "Impresión en chino",
-    "capable": "Compatible",
-    "notCapable": "No compatible",
-    "testCjk": "Imprimir prueba en chino",
-    "testSent": "Prueba enviada. ¿Se imprimió correctamente?",
-    "markCapable": "Sí, funciona",
-    "markNotCapable": "No funciona"
+    "changePin": "Cambiar PIN de gerente",
+    "changeCajaPin": "Cambiar PIN de caja",
+    "pinChanged": "PIN de gerente actualizado",
+    "cajaPinChanged": "PIN de caja actualizado",
+    "pinMismatch": "Los PIN no coinciden"
   },
   "toasts": {
     "stockLow": "Stock bajo: {{name}} — quedan {{stock}}",
@@ -558,9 +598,15 @@
     },
     "cierre": {
       "title": "CIERRE DE CAJA",
-      "shift": "Turno",
+      "shift": "Fecha / hora",
       "closedBy": "Cerrado por",
-      "cashTitle": "Conteo de efectivo"
+      "cashTitle": "Conteo de efectivo",
+      "discountsTitle": "DESCUENTOS",
+      "discountTotal": "Total descuentos",
+      "cartDiscountTotal": "Desc. venta (carrito)",
+      "lineDiscountTotal": "Desc. por artículo",
+      "cartDiscount": "Descuento venta",
+      "saleDiscountTotal": "Total venta"
     }
   },
   "errors": {
@@ -577,10 +623,18 @@
     "saleNotFound": "Venta no encontrada",
     "returnQtyExceeds": "La cantidad a devolver supera lo vendido",
     "noPendingSales": "No hay ventas pendientes de cierre",
+    "cierreNotFound": "Cierre no encontrado",
+    "countedCashRequired": "Ingrese el efectivo contado antes del cierre",
+    "discountPinRequired": "Se requiere PIN para aplicar descuentos",
     "printerNotFound": "Impresora no conectada",
-    "printSkippedCjk": "Impresión omitida: la impresora no soporta chino",
     "firstRunDone": "La configuración inicial ya fue completada",
     "paymentMismatch": "El monto de los pagos no coincide con el total",
-    "floatAlreadyOpen": "La caja ya fue abierta en este periodo"
+    "floatAlreadyOpen": "La caja ya fue abierta en este periodo",
+    "cashNotOpened": "Debe abrir la caja antes de continuar",
+    "licenseInvalid": "Licencia inválida o alterada",
+    "licenseWrongDevice": "Esta licencia es para otro equipo",
+    "licenseExpired": "Licencia vencida — contacte soporte",
+    "licenseMissing": "No hay licencia activa",
+    "pdfExportFailed": "No se pudo guardar el PDF"
   }
 }

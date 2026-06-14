@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { homeFor, useSession } from '@/lib/session'
 import { FullScreenSpinner } from '@/components/ui'
+import { CierreDiscrepancyBanner } from '@/features/admin/CierreDiscrepancyAlerts'
 import type { ReactNode } from 'react'
 import type { Role } from '@shared/types'
 
@@ -15,7 +16,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/pos', labelKey: 'nav.pos', roles: ['sales', 'admin'] },
-  { to: '/cash', labelKey: 'nav.cash', roles: ['sales', 'admin'] },
+  { to: '/cash', labelKey: 'nav.cash', roles: ['admin'] },
   { to: '/admin/cierre', labelKey: 'nav.cierre', roles: ['sales', 'admin'] },
   { to: '/products', labelKey: 'nav.products', roles: ['product_manager', 'admin'] }
 ]
@@ -35,14 +36,14 @@ export function Shell(): React.JSX.Element {
   const queryClient = useQueryClient()
 
   if (isLoading) return <FullScreenSpinner />
-  if (!user) return <Navigate to="/login" replace />
+  if (!user) return <Navigate to="/choose-language" replace />
 
   const visible = (items: NavItem[]): NavItem[] => items.filter((i) => i.roles.includes(user.role))
 
   const logout = async (): Promise<void> => {
     await api.auth.logout()
     queryClient.clear()
-    void navigate({ to: '/login', replace: true })
+    void navigate({ to: '/choose-language', replace: true })
   }
 
   const linkClass =
@@ -84,6 +85,7 @@ export function Shell(): React.JSX.Element {
         </div>
       </aside>
       <main className="min-w-0 flex-1 overflow-auto">
+        {user.role === 'admin' && <CierreDiscrepancyBanner />}
         <Outlet />
       </main>
     </div>
@@ -100,7 +102,7 @@ export function RequireRole({
 }): React.JSX.Element {
   const { user, isLoading } = useSession()
   if (isLoading) return <FullScreenSpinner />
-  if (!user) return <Navigate to="/login" replace />
+  if (!user) return <Navigate to="/choose-language" replace />
   if (!roles.includes(user.role)) return <Navigate to={homeFor(user.role)} replace />
   return <>{children}</>
 }

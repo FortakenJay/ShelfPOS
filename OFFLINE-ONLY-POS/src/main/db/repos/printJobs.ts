@@ -35,3 +35,20 @@ export function listFailedPrintJobs(): PrintJobRow[] {
     )
     .all() as PrintJobRow[]
 }
+
+export function listQueuedPrintJobs(): PrintJobRow[] {
+  return getDb()
+    .prepare(
+      `SELECT id, sale_id, job_type, status, created_at, printed_at
+       FROM print_jobs WHERE status IN ('pending', 'failed')
+       ORDER BY created_at DESC LIMIT 100`
+    )
+    .all() as PrintJobRow[]
+}
+
+export function listPendingPrintJobIds(): number[] {
+  const rows = getDb()
+    .prepare("SELECT id FROM print_jobs WHERE status = 'pending' ORDER BY id ASC")
+    .all() as { id: number }[]
+  return rows.map((r) => r.id)
+}

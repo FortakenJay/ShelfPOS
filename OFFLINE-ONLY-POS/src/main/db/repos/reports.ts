@@ -15,6 +15,7 @@ interface SaleFilter {
   fromTs?: string
   toTs?: string
   cierrePending?: boolean
+  cierreId?: number
 }
 
 function saleWhere(filter: SaleFilter): { where: string; params: Record<string, unknown> } {
@@ -30,6 +31,10 @@ function saleWhere(filter: SaleFilter): { where: string; params: Record<string, 
   }
   if (filter.cierrePending) {
     conditions.push('s.cierre_id IS NULL')
+  }
+  if (filter.cierreId != null) {
+    conditions.push('s.cierre_id = @cierreId')
+    params.cierreId = filter.cierreId
   }
   return { where: conditions.length ? 'WHERE ' + conditions.join(' AND ') : '', params }
 }
@@ -199,4 +204,120 @@ export function returnsCountSince(fromTs: string): number {
     .prepare('SELECT COUNT(*) AS count FROM return_items WHERE created_at >= ?')
     .get(fromTs) as { count: number }
   return row.count
+}
+
+export function returnsCountBetween(fromTs: string, toTs: string): number {
+  const row = getDb()
+    .prepare('SELECT COUNT(*) AS count FROM return_items WHERE created_at >= ? AND created_at <= ?')
+    .get(fromTs, toTs) as { count: number }
+  return row.count
+}
+
+interface DiscountSaleRow {
+  saleId: number
+  consecutivo: string | null
+  createdAt: string
+  cartDiscount: number
+  discountTotal: number
+  cashier: string
+}
+
+interface DiscountItemRow {
+  saleId: number
+  saleItemId: number
+  productName: string
+  quantity: number
+  lineDiscount: number
+}
+
+/** Cart-level and per-line discounts for cierre (admin review + print). */
+export function cierreDiscounts(filter: SaleFilter): {
+  totalDiscount: number
+  totalCartDiscount: number
+  totalLineDiscount: number
+  sales: {
+    saleId: number
+    consecutivo: string | null
+    createdAt: string
+    cashier: string
+    cartDiscount: number
+    lineDiscountTotal: number
+    discountTotal: number
+    items: { saleItemId: number; productName: string; quantity: number; lineDiscount: number }[]
+  }[]
+} {
+  const { where, params } = saleWhere(filter)
+  const discountWhere = where
+    ? `${where} AND s.discount_total > 0`
+    : 'WHERE s.discount_total > 0'
+
+  const salesRows = getDb()
+    .prepare(
+      `SELECT s.id AS saleId, s.consecutivo, s.created_at AS createdAt,
+              s.cart_discount AS cartDiscount, s.discount_total AS discountTotal,
+              u.username AS cashier
+       FROM sales s JOIN users u ON u.id = s.user_id
+       ${discountWhere}
+       ORDER BY s.created_at`
+    )
+    .all(params) as DiscountSaleRow[]
+
+  if (salesRows.length === 0) {
+    return { totalDiscount: 0, totalCartDiscount: 0, totalLineDiscount: 0, sales: [] }
+  }
+
+  const itemWhere = where
+    ? `${where} AND si.line_discount > 0`
+    : 'WHERE si.line_discount > 0'
+
+  const itemRows = getDb()
+    .prepare(
+      `SELECT si.sale_id AS saleId, si.id AS saleItemId, p.name AS productName, si.quantity,
+              si.line_discount AS lineDiscount
+       FROM sale_items si
+       JOIN products p ON p.id = si.product_id
+       JOIN sales s ON s.id = si.sale_id
+       ${itemWhere}
+       ORDER BY si.sale_id, si.id`
+    )
+    .all(params) as DiscountItemRow[]
+
+  const itemsBySale = new Map<number, DiscountItemRow[]>()
+  for (const row of itemRows) {
+    const list = itemsBySale.get(row.saleId) ?? []
+    list.push(row)
+    itemsBySale.set(row.saleId, list)
+  }
+
+  let totalCartDiscount = 0
+  let totalLineDiscount = 0
+  const sales = salesRows.map((sale) => {
+    const items = (itemsBySale.get(sale.saleId) ?? []).map((item) => ({
+      saleItemId: item.saleItemId,
+      productName: item.productName,
+      quantity: item.quantity,
+      lineDiscount: round2(item.lineDiscount)
+    }))
+    const lineDiscountTotal = round2(items.reduce((acc, i) => acc + i.lineDiscount, 0))
+    const cartDiscount = round2(sale.cartDiscount)
+    totalCartDiscount = round2(totalCartDiscount + cartDiscount)
+    totalLineDiscount = round2(totalLineDiscount + lineDiscountTotal)
+    return {
+      saleId: sale.saleId,
+      consecutivo: sale.consecutivo,
+      createdAt: sale.createdAt,
+      cashier: sale.cashier,
+      cartDiscount,
+      lineDiscountTotal,
+      discountTotal: round2(sale.discountTotal),
+      items
+    }
+  })
+
+  return {
+    totalDiscount: round2(sales.reduce((acc, s) => acc + s.discountTotal, 0)),
+    totalCartDiscount,
+    totalLineDiscount,
+    sales
+  }
 }

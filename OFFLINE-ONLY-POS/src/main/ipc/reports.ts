@@ -1,3 +1,5 @@
+import { app, shell } from 'electron'
+import { join } from 'node:path'
 import { handle } from './helpers'
 import { AppError } from '../errors'
 import { rangeBounds } from '../db/helpers'
@@ -9,9 +11,11 @@ import {
   topProducts
 } from '../db/repos/reports'
 import { insertPrintJob } from '../db/repos/printJobs'
-import { currentLanguage, getAppSettings } from '../db/repos/settings'
-import { attemptPrintJob } from '../services/printer'
+import { currentLanguage, getAppSettings, receiptLanguage } from '../db/repos/settings'
+import { schedulePrintJob } from '../services/printer'
 import { formatDate } from '../services/format'
+import { writePrintLinesPdf } from '../services/printPdf'
+import { showSaveDialog } from '../window'
 import {
   buildInventoryReportLines,
   buildPaymentReportLines,
@@ -21,6 +25,7 @@ import {
 } from '../services/printTemplates'
 import type {
   DateRange,
+  Language,
   PrintLine,
   PrintStatus,
   ReportData,
@@ -51,6 +56,28 @@ function validateRange(range: DateRange): void {
   }
 }
 
+function reportRangeLabel(range: DateRange, lang: Language): string {
+  return `${formatDate(range.from, lang)} - ${formatDate(range.to, lang)}`
+}
+
+function buildReportPrintLines(report: ReportData, range: DateRange, lang: Language, storeName: string): PrintLine[] {
+  const rangeLabel = reportRangeLabel(range, lang)
+  switch (report.type) {
+    case 'summary':
+      return buildSummaryReportLines(report.data, rangeLabel, lang, storeName)
+    case 'byPayment':
+      return buildPaymentReportLines(report.data, rangeLabel, lang, storeName)
+    case 'topProducts':
+      return buildTopProductsReportLines(report.data, rangeLabel, lang, storeName)
+    case 'inventory':
+      return buildInventoryReportLines(report.data, rangeLabel, lang, storeName)
+    case 'taxBreakdown':
+      return buildTaxReportLines(report.data.rows, report.data.regime, rangeLabel, lang, storeName)
+    default:
+      throw new AppError('errors.invalidInput')
+  }
+}
+
 export function registerReportHandlers(): void {
   handle<{ type: ReportType; range: DateRange }, ReportData>(
     'reports:run',
@@ -67,37 +94,35 @@ export function registerReportHandlers(): void {
     async ({ type, range }) => {
       validateRange(range)
       const report = runReport(type, range)
-      const lang = currentLanguage()
+      const lang = receiptLanguage()
       const storeName = getAppSettings().storeName
-      const rangeLabel = `${formatDate(range.from, lang)} - ${formatDate(range.to, lang)}`
-
-      let lines: PrintLine[]
-      switch (report.type) {
-        case 'summary':
-          lines = buildSummaryReportLines(report.data, rangeLabel, lang, storeName)
-          break
-        case 'byPayment':
-          lines = buildPaymentReportLines(report.data, rangeLabel, lang, storeName)
-          break
-        case 'topProducts':
-          lines = buildTopProductsReportLines(report.data, rangeLabel, lang, storeName)
-          break
-        case 'inventory':
-          lines = buildInventoryReportLines(report.data, rangeLabel, lang, storeName)
-          break
-        case 'taxBreakdown':
-          lines = buildTaxReportLines(
-            report.data.rows,
-            report.data.regime,
-            rangeLabel,
-            lang,
-            storeName
-          )
-          break
-      }
+      const lines = buildReportPrintLines(report, range, lang, storeName)
 
       const jobId = insertPrintJob('report', null, { lang, lines })
-      return { printStatus: await attemptPrintJob(jobId) }
+      return { printStatus: schedulePrintJob(jobId) }
+    }
+  )
+
+  handle<{ type: ReportType; range: DateRange }, { canceled: boolean; path?: string }>(
+    'reports:exportPdf',
+    ['admin'],
+    async ({ type, range }) => {
+      validateRange(range)
+      const result = await showSaveDialog({
+        title: 'Guardar reporte PDF',
+        defaultPath: join(app.getPath('documents'), `reporte-${type}-${range.from}-${range.to}.pdf`),
+        filters: [{ name: 'PDF', extensions: ['pdf'] }]
+      })
+      if (result.canceled || !result.filePath) return { canceled: true }
+
+      const report = runReport(type, range)
+      const lang = currentLanguage()
+      const storeName = getAppSettings().storeName
+      const lines = buildReportPrintLines(report, range, lang, storeName)
+      await writePrintLinesPdf(lines, result.filePath)
+      const openErr = await shell.openPath(result.filePath)
+      if (openErr) await shell.showItemInFolder(result.filePath)
+      return { canceled: false, path: result.filePath }
     }
   )
 }

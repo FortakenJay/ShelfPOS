@@ -10,6 +10,7 @@ import type {
   CashMovementInput,
   CierreConfirmInput,
   CierreConfirmResult,
+  CierreDiscrepancyAlert,
   CierrePreview,
   CierreRecord,
   CreateReturnInput,
@@ -17,6 +18,7 @@ import type {
   CreateSaleInput,
   CreateSaleResult,
   DateRange,
+  DiscountAuthorizeInput,
   FirstRunSetupInput,
   FirstRunStatus,
   IpcChannel,
@@ -58,8 +60,6 @@ export const api = {
   firstRun: {
     status: () => call<FirstRunStatus>('firstRun:status'),
     setLanguage: (language: Language) => call<null>('firstRun:setLanguage', { language }),
-    testCjk: () => call<null>('firstRun:testCjk'),
-    setCjkCapable: (capable: boolean) => call<null>('firstRun:setCjkCapable', { capable }),
     complete: (input: FirstRunSetupInput) => call<null>('firstRun:complete', input)
   },
   auth: {
@@ -74,8 +74,8 @@ export const api = {
     update: (input: SettingsUpdateInput) => call<AppSettings>('settings:update', input),
     changePin: (currentPin: string, newPin: string) =>
       call<null>('settings:changePin', { currentPin, newPin }),
-    testCjk: () => call<null>('settings:testCjk'),
-    setCjkCapable: (capable: boolean) => call<null>('settings:setCjkCapable', { capable })
+    changeCajaPin: (currentPin: string, newPin: string) =>
+      call<null>('settings:changeCajaPin', { currentPin, newPin })
   },
   products: {
     list: (filters: ProductFilters) => call<Product[]>('products:list', filters),
@@ -102,15 +102,23 @@ export const api = {
   returns: {
     create: (input: CreateReturnInput) => call<CreateReturnResult>('returns:create', input)
   },
+  discount: {
+    authorize: (input: DiscountAuthorizeInput) => call<null>('discount:authorize', input)
+  },
   reports: {
     run: (type: ReportType, range: DateRange) => call<ReportData>('reports:run', { type, range }),
     print: (type: ReportType, range: DateRange) =>
-      call<{ printStatus: PrintStatus }>('reports:print', { type, range })
+      call<{ printStatus: PrintStatus }>('reports:print', { type, range }),
+    exportPdf: (type: ReportType, range: DateRange) =>
+      call<{ canceled: boolean; path?: string }>('reports:exportPdf', { type, range })
   },
   cierre: {
     preview: () => call<CierrePreview>('cierre:preview'),
     confirm: (input: CierreConfirmInput) => call<CierreConfirmResult>('cierre:confirm', input),
-    history: () => call<CierreRecord[]>('cierre:history')
+    history: () => call<CierreRecord[]>('cierre:history'),
+    discrepancyAlerts: () => call<CierreDiscrepancyAlert[]>('cierre:discrepancyAlerts'),
+    exportPdf: (cierreId: number) =>
+      call<{ canceled: boolean; path?: string }>('cierre:exportPdf', { cierreId })
   },
   cash: {
     status: () => call<CashDrawerStatus>('cash:status'),
@@ -119,7 +127,8 @@ export const api = {
   },
   audit: {
     list: (filter: AuditLogFilter) => call<AuditLogRow[]>('audit:list', filter),
-    users: () => call<AuditUser[]>('audit:users')
+    users: () => call<AuditUser[]>('audit:users'),
+    actions: () => call<string[]>('audit:actions')
   },
   printQueue: {
     list: () => call<PrintJobRow[]>('printQueue:list'),

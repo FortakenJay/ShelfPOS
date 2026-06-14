@@ -4,7 +4,7 @@ export type Language = 'es' | 'zh-CN'
 export type StockStatus = 'all' | 'low' | 'zero' | 'negative'
 export type PrintJobStatus = 'pending' | 'printed' | 'failed'
 export type PrintJobType = 'receipt' | 'report' | 'cierre'
-export type PrintStatus = 'printed' | 'failed' | 'skipped_cjk'
+export type PrintStatus = 'printed' | 'failed'
 export type ReportType = 'summary' | 'byPayment' | 'topProducts' | 'inventory' | 'taxBreakdown'
 
 /** Dormant under régimen simplificado; drives IVA breakdown under régimen tradicional. */
@@ -24,7 +24,6 @@ export interface SessionUser {
 export interface AppSettings {
   language: Language | null
   storeName: string
-  printerCjkCapable: boolean
   stockThresholdDefault: number
   scannerBurstMs: number
   firstRunComplete: boolean
@@ -164,6 +163,8 @@ export interface CreateSaleInput {
   customer?: CustomerInput
   /** Physical cash handed over (for change). Only relevant when a cash payment exists. */
   tendered?: number
+  /** Required when any line or cart discount is applied. Caja or manager PIN. */
+  discountPin?: string
 }
 
 export interface CreateSaleResult {
@@ -306,13 +307,42 @@ export interface CashSummary {
   expectedCash: number
 }
 
+export interface CierreDiscountItem {
+  saleItemId: number
+  productName: string
+  quantity: number
+  lineDiscount: number
+}
+
+export interface CierreDiscountSale {
+  saleId: number
+  consecutivo: string | null
+  createdAt: string
+  cashier: string
+  cartDiscount: number
+  lineDiscountTotal: number
+  discountTotal: number
+  items: CierreDiscountItem[]
+}
+
+export interface CierreDiscountReport {
+  totalDiscount: number
+  totalCartDiscount: number
+  totalLineDiscount: number
+  sales: CierreDiscountSale[]
+}
+
 export interface CierrePreview {
   pendingSales: number
-  /** Admin-only fields — omitted for cajero (sales) role. */
+  /** Full totals for admin; cajero may receive only `{ sinpe }`. */
+  totals?: Partial<PaymentMethodReport> & Pick<PaymentMethodReport, 'sinpe'>
+  /** Admin-only. */
   openedAt?: string
-  totals?: PaymentMethodReport
   returnsCount?: number
+  /** Drawer reconciliation — includes `expectedCash` for cajero at cierre. */
   cash?: CashSummary
+  /** Admin-only. */
+  discounts?: CierreDiscountReport
 }
 
 export interface CierreRecord {
@@ -334,11 +364,23 @@ export interface CierreRecord {
   notes: string | null
 }
 
+/** Recent cierre where counted cash did not match expected (sobra o falta). */
+export interface CierreDiscrepancyAlert {
+  id: number
+  closed_at: string
+  shift_label: string | null
+  closed_by: string
+  expected_cash: number
+  counted_cash: number
+  cash_difference: number
+}
+
 export interface CierreConfirmInput {
-  shiftLabel: string
+  /** Optional override; defaults to cierre date/time on the server. */
+  shiftLabel?: string
   notes?: string
-  /** Physically counted cash in the drawer; enables the discrepancy check. */
-  countedCash?: number
+  /** Physically counted cash in the drawer — required before cierre. */
+  countedCash: number
 }
 
 export interface CierreConfirmResult {
@@ -362,9 +404,17 @@ export interface FirstRunStatus {
   backupDir: string
 }
 
+export interface DiscountAuthorizeInput {
+  pin: string
+  kind: 'line' | 'cart'
+  amount: number
+  productName?: string
+}
+
 export interface FirstRunSetupInput {
   users: { username: string; password: string; role: Role }[]
   pin: string
+  cajaPin: string
 }
 
 export interface BackupInfo {
@@ -436,6 +486,7 @@ export interface AuditLogRow {
 export interface AuditLogFilter {
   range?: DateRange
   userId?: number
+  action?: string
   limit?: number
 }
 
@@ -463,11 +514,19 @@ export type ApiResult<T> =
   | { ok: true; data: T }
   | { ok: false; error: string; message?: string; vars?: Record<string, string | number> }
 
+export interface LicenseStatus {
+  valid: boolean
+  clientName: string | null
+  expiresAt: string | null
+  machineId: string
+  error?: string
+}
+
 export const IPC_CHANNELS = [
+  'license:activate',
+  'license:status',
   'firstRun:status',
   'firstRun:setLanguage',
-  'firstRun:testCjk',
-  'firstRun:setCjkCapable',
   'firstRun:complete',
   'auth:login',
   'auth:logout',
@@ -476,8 +535,7 @@ export const IPC_CHANNELS = [
   'settings:update',
   'settings:setLanguage',
   'settings:changePin',
-  'settings:testCjk',
-  'settings:setCjkCapable',
+  'settings:changeCajaPin',
   'products:list',
   'products:categories',
   'products:create',
@@ -492,16 +550,21 @@ export const IPC_CHANNELS = [
   'sales:create',
   'sales:findForReturn',
   'returns:create',
+  'discount:authorize',
   'reports:run',
   'reports:print',
+  'reports:exportPdf',
   'cierre:preview',
   'cierre:confirm',
   'cierre:history',
+  'cierre:discrepancyAlerts',
+  'cierre:exportPdf',
   'cash:status',
   'cash:openFloat',
   'cash:movement',
   'audit:list',
   'audit:users',
+  'audit:actions',
   'printQueue:list',
   'printQueue:retry',
   'backup:info',

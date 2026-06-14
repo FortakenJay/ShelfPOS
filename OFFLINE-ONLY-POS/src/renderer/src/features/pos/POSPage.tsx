@@ -3,17 +3,16 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
 import { stockAllows } from '@/lib/errors'
-import { formatMoney } from '@/lib/format'
-import { effectiveUnitPrice, lineGross, lineTotal } from '@/lib/pricing'
+import { lineGross, lineTotal } from '@/lib/pricing'
 import { useToasts } from '@/lib/toast'
+import { roundColones } from '@shared/money'
 import { useDebouncedValue, useScannerDetector } from '@/lib/useScanner'
 import { RequireRole } from '@/features/shell/Shell'
-import { PaymentModal } from './PaymentModal'
-import { ReturnModal } from './ReturnModal'
-import { DiscountModal } from './DiscountModal'
-import { CustomerModal } from './CustomerModal'
 import { POSCartPanel } from './POSCartPanel'
 import { POSSidebar } from './POSSidebar'
+import { POSSearchPanel } from './POSSearchPanel'
+import { POSModals } from './POSModals'
+import { OpenFloatModal } from './OpenFloatModal'
 import type { CartLine } from './types'
 import type { CustomerInput, PaymentMethod, Product } from '@shared/types'
 
@@ -29,10 +28,9 @@ export function POSPage(): React.JSX.Element {
   )
 }
 
-const round2 = (n: number): number => Math.round(n * 100) / 100
+const round2 = roundColones
 
 function POSTerminal(): React.JSX.Element {
-  const { t } = useTranslation()
   const toasts = useToasts()
   const queryClient = useQueryClient()
 
@@ -49,6 +47,7 @@ function POSTerminal(): React.JSX.Element {
     discountTarget: null as DiscountTarget | null,
     customerOpen: false
   })
+  const [discountAuthPin, setDiscountAuthPin] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const { cart, method, cartDiscount, customer } = sale
@@ -60,6 +59,8 @@ function POSTerminal(): React.JSX.Element {
     }))
 
   const { data: settings } = useQuery({ queryKey: ['settings'], queryFn: api.settings.get })
+  const { data: cashStatus } = useQuery({ queryKey: ['cashStatus'], queryFn: api.cash.status })
+  const cashBlocked = cashStatus != null && !cashStatus.floatOpened
   const scanner = useScannerDetector(settings?.scannerBurstMs ?? 30)
 
   const debouncedQuery = useDebouncedValue(query.trim(), 150)
@@ -78,24 +79,24 @@ function POSTerminal(): React.JSX.Element {
   }
 
   const addToCart = (product: Product): boolean => {
-      const existing = cart.find((l) => l.product.id === product.id)
-      const nextQty = (existing?.quantity ?? 0) + 1
-      const check = stockAllows(product, nextQty)
-      if (!check.ok) {
-        toasts.error(check.key, check.vars)
-        return false
-      }
-      setCart((prev) => {
-        const line = prev.find((l) => l.product.id === product.id)
-        if (line) {
-          return prev.map((l) =>
-            l.product.id === product.id ? { ...l, quantity: l.quantity + 1 } : l
-          )
-        }
-        return [...prev, { product, quantity: 1, discount: 0 }]
-      })
-      return true
+    const existing = cart.find((l) => l.product.id === product.id)
+    const nextQty = (existing?.quantity ?? 0) + 1
+    const check = stockAllows(product, nextQty)
+    if (!check.ok) {
+      toasts.error(check.key, check.vars)
+      return false
     }
+    setCart((prev) => {
+      const line = prev.find((l) => l.product.id === product.id)
+      if (line) {
+        return prev.map((l) =>
+          l.product.id === product.id ? { ...l, quantity: l.quantity + 1 } : l
+        )
+      }
+      return [...prev, { product, quantity: 1, discount: 0 }]
+    })
+    return true
+  }
 
   const setQuantity = (productId: number, quantity: number): void => {
     const line = cart.find((l) => l.product.id === productId)
@@ -124,10 +125,12 @@ function POSTerminal(): React.JSX.Element {
 
   const resetSale = (): void => {
     setSale({ cart: [], method: 'cash', cartDiscount: 0, customer: null })
+    setDiscountAuthPin(null)
     setQuery('')
   }
 
   const onEnter = async (): Promise<void> => {
+    if (cashBlocked) return
     const value = query.trim()
     const isScan = scanner.consumeIsScan(value.length)
     if (!value) return
@@ -146,7 +149,6 @@ function POSTerminal(): React.JSX.Element {
     }
   }
 
-  // Totals: line totals reflect bulk pricing + per-line discount; cart discount applies on top.
   const itemsGross = round2(cart.reduce((acc, l) => acc + lineGross(l.product, l.quantity), 0))
   const afterLineDiscounts = round2(
     cart.reduce((acc, l) => acc + lineTotal(l.product, l.quantity, l.discount), 0)
@@ -154,6 +156,7 @@ function POSTerminal(): React.JSX.Element {
   const cartDiscountClamped = round2(Math.min(Math.max(cartDiscount, 0), afterLineDiscounts))
   const total = round2(afterLineDiscounts - cartDiscountClamped)
   const discountTotal = round2(itemsGross - total)
+  const activeDiscountPin = discountTotal > 0 ? discountAuthPin : null
 
   const onSaleCompleted = (change: number | null): void => {
     resetSale()
@@ -179,14 +182,20 @@ function POSTerminal(): React.JSX.Element {
   }
 
   return (
-    <div className="flex h-full">
-      {/* Left panel: search + cart */}
-      <div className="flex min-w-0 flex-1 flex-col border-r-2 border-line">
-        <div className="border-b-2 border-line bg-white p-4">
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
+    <>
+      {cashBlocked && (
+        <OpenFloatModal
+          onOpened={() => void queryClient.invalidateQueries({ queryKey: ['cashStatus'] })}
+        />
+      )}
+      <div className={`flex h-full ${cashBlocked ? 'pointer-events-none opacity-40' : ''}`}>
+        <div className="flex min-w-0 flex-1 flex-col border-r-2 border-line">
+          <POSSearchPanel
+            inputRef={inputRef}
+            query={query}
+            debouncedQuery={debouncedQuery}
+            searchResults={searchResults}
+            onQueryChange={setQuery}
             onKeyDown={(e) => {
               scanner.onKeyDown(e)
               if (e.key === 'Enter') {
@@ -194,120 +203,84 @@ function POSTerminal(): React.JSX.Element {
                 void onEnter()
               }
             }}
-            placeholder={t('pos.searchPlaceholder')}
-            className="min-h-[56px] w-full rounded-md border-2 border-line px-4 text-[18px] outline-none focus:border-primary"
-            aria-label={t('common.search')}
+            onSelectProduct={(product) => {
+              if (addToCart(product)) {
+                setQuery('')
+                focusSearch()
+              }
+            }}
           />
-          {debouncedQuery.length > 0 && (
-            <div className="relative">
-              <div className="absolute top-1 right-0 left-0 z-20 max-h-80 overflow-y-auto rounded-md border-2 border-line bg-white shadow-xl">
-                {searchResults?.length === 0 && (
-                  <div className="px-4 py-3 text-[16px] text-slate-500">{t('pos.noResults')}</div>
-                )}
-                {searchResults?.map((product) => (
-                  <button
-                    key={product.id}
-                    type="button"
-                    onClick={() => {
-                      if (addToCart(product)) {
-                        setQuery('')
-                        focusSearch()
-                      }
-                    }}
-                    className={`flex w-full items-center justify-between border-b border-line px-4 py-3 text-left hover:bg-blue-50 ${
-                      product.stock <= 0 ? 'opacity-60' : ''
-                    }`}
-                  >
-                    <span>
-                      <span className="block text-[16px] font-semibold">{product.name}</span>
-                      <span className="block text-[13px] text-slate-500">
-                        {product.barcode} · {t('pos.stock')}: {product.stock}
-                      </span>
-                    </span>
-                    <span className="text-[16px] font-bold">{formatMoney(product.price)}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+
+          <POSCartPanel
+            cart={cart}
+            method={method}
+            itemsGross={itemsGross}
+            discountTotal={discountTotal}
+            onLineDiscount={(productId) =>
+              setModals((m) => ({ ...m, discountTarget: { kind: 'line', productId } }))
+            }
+            onCartDiscount={() => setModals((m) => ({ ...m, discountTarget: { kind: 'cart' } }))}
+            onSetMethod={(m) => setSale((s) => ({ ...s, method: m }))}
+            onSetQuantity={setQuantity}
+            onRemoveLine={removeLine}
+          />
         </div>
 
-        <POSCartPanel
-          cart={cart}
-          method={method}
-          itemsGross={itemsGross}
-          discountTotal={discountTotal}
-          onLineDiscount={(productId) =>
-            setModals((m) => ({ ...m, discountTarget: { kind: 'line', productId } }))
-          }
-          onCartDiscount={() => setModals((m) => ({ ...m, discountTarget: { kind: 'cart' } }))}
-          onSetMethod={(m) => setSale((s) => ({ ...s, method: m }))}
-          onSetQuantity={setQuantity}
-          onRemoveLine={removeLine}
-        />
-      </div>
-
-      <POSSidebar
-        total={total}
-        method={method}
-        customer={customer}
-        cartEmpty={cart.length === 0}
-        onCustomerOpen={() => setModals((m) => ({ ...m, customerOpen: true }))}
-        onPayOpen={() => setModals((m) => ({ ...m, payOpen: true }))}
-        onReturnOpen={() => setModals((m) => ({ ...m, returnOpen: true }))}
-      />
-
-      {payOpen && (
-        <PaymentModal
-          items={cart.map((l) => ({
-            productId: l.product.id,
-            quantity: l.quantity,
-            discount: Math.min(l.discount, lineGross(l.product, l.quantity))
-          }))}
+        <POSSidebar
           total={total}
-          cartDiscount={cartDiscountClamped}
+          method={method}
           customer={customer}
-          initialMethod={method}
-          onClose={() => {
+          cartEmpty={cart.length === 0}
+          onCustomerOpen={() => setModals((m) => ({ ...m, customerOpen: true }))}
+          onPayOpen={() => {
+            if (cashBlocked) return
+            setModals((m) => ({ ...m, payOpen: true }))
+          }}
+          onReturnOpen={() => {
+            if (cashBlocked) return
+            setModals((m) => ({ ...m, returnOpen: true }))
+          }}
+        />
+
+        <POSModals
+          cart={cart}
+          total={total}
+          cartDiscountClamped={cartDiscountClamped}
+          discountAuthPin={activeDiscountPin}
+          customer={customer}
+          method={method}
+          payOpen={payOpen}
+          returnOpen={returnOpen}
+          discountTarget={discountTarget}
+          customerOpen={customerOpen}
+          afterLineDiscounts={afterLineDiscounts}
+          discountModalBase={discountModalBase()}
+          discountModalCurrent={discountModalCurrent()}
+          onPayClose={() => {
             setModals((m) => ({ ...m, payOpen: false }))
             focusSearch()
           }}
-          onCompleted={onSaleCompleted}
-        />
-      )}
-      {returnOpen && (
-        <ReturnModal
-          onClose={() => {
+          onReturnClose={() => {
             setModals((m) => ({ ...m, returnOpen: false }))
             focusSearch()
           }}
-        />
-      )}
-      {discountTarget && (
-        <DiscountModal
-          title={discountTarget.kind === 'cart' ? t('pos.cartDiscount') : t('pos.lineDiscount')}
-          base={discountModalBase()}
-          current={discountModalCurrent()}
-          onApply={(amount) => {
-            if (discountTarget.kind === 'cart') setSale((s) => ({ ...s, cartDiscount: amount }))
-            else setLineDiscount(discountTarget.productId, amount)
+          onDiscountClose={() => setModals((m) => ({ ...m, discountTarget: null }))}
+          onCustomerClose={() => setModals((m) => ({ ...m, customerOpen: false }))}
+          onSaleCompleted={onSaleCompleted}
+          onDiscountApply={(amount, authPin) => {
+            if (authPin) setDiscountAuthPin(authPin)
+            if (discountTarget?.kind === 'cart') setSale((s) => ({ ...s, cartDiscount: amount }))
+            else if (discountTarget?.kind === 'line') setLineDiscount(discountTarget.productId, amount)
             setModals((m) => ({ ...m, discountTarget: null }))
             focusSearch()
           }}
-          onClose={() => setModals((m) => ({ ...m, discountTarget: null }))}
-        />
-      )}
-      {customerOpen && (
-        <CustomerModal
-          current={customer}
-          onApply={(c) => {
+          onCustomerApply={(c) => {
             setSale((s) => ({ ...s, customer: c }))
             setModals((m) => ({ ...m, customerOpen: false }))
             focusSearch()
           }}
-          onClose={() => setModals((m) => ({ ...m, customerOpen: false }))}
         />
-      )}
-    </div>
+      </div>
+    </>
   )
 }
