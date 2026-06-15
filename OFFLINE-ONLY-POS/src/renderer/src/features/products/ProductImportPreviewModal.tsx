@@ -5,6 +5,7 @@ import type { ProductImportPreview, ProductImportPreviewRow } from '@shared/type
 
 interface ProductImportPreviewModalProps {
   preview: ProductImportPreview
+  titleKey?: string
   loading: boolean
   onConfirm: () => void
   onClose: () => void
@@ -63,6 +64,7 @@ function PreviewTable({
 
 export function ProductImportPreviewModal({
   preview,
+  titleKey = 'products.csv.preview.title',
   loading,
   onConfirm,
   onClose
@@ -72,7 +74,7 @@ export function ProductImportPreviewModal({
   const canApply = preview.toCreate.length > 0 || preview.toUpdate.length > 0
 
   return (
-    <Modal title={t('products.csv.preview.title')} onClose={onClose} size="lg">
+    <Modal title={t(titleKey)} onClose={onClose} size="lg">
       {preview.fileName && (
         <p className="mb-4 text-[14px] text-slate-600">
           {t('products.csv.preview.file')}: <span className="font-mono font-semibold">{preview.fileName}</span>

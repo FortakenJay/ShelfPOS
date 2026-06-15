@@ -5,6 +5,7 @@ import type { Product } from '@shared/types'
 
 export function ProductsTable({
   rows,
+  loading,
   defaultThreshold,
   stockCellClass,
   onQuickAdjust,
@@ -13,6 +14,7 @@ export function ProductsTable({
   onDelete
 }: {
   rows: Product[] | undefined
+  loading?: boolean
   defaultThreshold: number
   stockCellClass: (p: Product) => string
   onQuickAdjust: (productId: number, delta: number) => void
@@ -23,7 +25,9 @@ export function ProductsTable({
   const { t } = useTranslation()
 
   return (
-    <div className="overflow-hidden rounded-lg border-2 border-line bg-white">
+    <div
+      className={`overflow-hidden rounded-lg border-2 border-line bg-white ${loading ? 'opacity-60' : ''}`}
+    >
       <table className="w-full">
         <thead>
           <tr>

@@ -199,6 +199,8 @@
     "bulkQty": "Cantidad para precio por mayor",
     "bulkQtyHint": "Mínimo 2",
     "bulkPrice": "Precio por mayor (₡)",
+    "facturaNegativo": "Factura negativo",
+    "facturaNegativoHint": "Permite vender aunque no haya stock suficiente (el inventario puede quedar negativo).",
     "filters": {
       "stockStatus": "Estado de stock",
       "all": "Todos",
@@ -207,6 +209,11 @@
       "negative": "Negativo",
       "allCategories": "Todas las categorías",
       "searchPlaceholder": "Buscar por nombre o código…"
+    },
+    "pagination": {
+      "showing": "Mostrando {{from}}–{{to}} de {{total}}",
+      "perPage": "Por página",
+      "pageOf": "Página {{page}} de {{totalPages}}"
     },
     "form": {
       "createTitle": "Nuevo producto",
@@ -233,9 +240,11 @@
       "tax_category": "Categoría de impuesto",
       "bulk_qty": "Cantidad para precio por mayor",
       "bulk_price": "Precio por mayor (₡)",
+      "factura_negativo": "Factura negativo (0 o 1)",
       "exportTemplate": "Descargar plantilla CSV…",
       "exportProducts": "Exportar productos CSV…",
       "importCsv": "Importar CSV…",
+    "importEfactura": "Insertar XLSX de eFactura…",
       "importDone": "{{count}} producto(s) importado(s)",
       "importUpdated": "{{count}} producto(s) actualizado(s)",
       "importDoneBoth": "{{created}} creado(s), {{updated}} actualizado(s)",
@@ -282,6 +291,15 @@
         "tip3": "Los encabezados deben coincidir con el idioma de la aplicación (español o chino).",
         "tip4": "En la carpeta samples/ del proyecto hay plantilla vacía (productos-plantilla.csv) y un ejemplo con productos (productos-demo.csv).",
         "downloadTemplate": "Descargar plantilla vacía"
+      }
+    },
+    "efactura": {
+      "hint": "Importa el archivo productos exportado desde eFactura (.xlsx). Se usan: código (a), nombre (b), cantidad (c), factura negativo (g), precio compra (h), precio venta (p1), mayorista (p2/p2a) e IVA (j).",
+      "empty": "El archivo Excel está vacío",
+      "missingHeaders": "No se reconoce el formato eFactura (faltan columnas a, b, p1)",
+      "noRows": "No hay productos válidos para importar",
+      "preview": {
+        "title": "Vista previa — importación eFactura"
       }
     },
     "adjust": {

@@ -203,6 +203,9 @@ export function registerSalesHandlers(): void {
       const decrementStock = db.prepare(
         'UPDATE products SET stock = stock - ?, updated_at = ? WHERE id = ? AND stock >= ?'
       )
+      const decrementStockUnlimited = db.prepare(
+        'UPDATE products SET stock = stock - ?, updated_at = ? WHERE id = ?'
+      )
       for (const line of finalized) {
         const productId = line.product.id
         insertItem.run(
@@ -215,7 +218,12 @@ export function registerSalesHandlers(): void {
           line.lineTotal,
           line.taxCategory
         )
-        const stockResult = decrementStock.run(line.quantity, now, productId, line.quantity)
+        const stockStmt =
+          line.product.factura_negativo === 1 ? decrementStockUnlimited : decrementStock
+        const stockResult =
+          line.product.factura_negativo === 1
+            ? stockStmt.run(line.quantity, now, productId)
+            : stockStmt.run(line.quantity, now, productId, line.quantity)
         if (stockResult.changes === 0) {
           const current = getProduct(productId) ?? line.product
           assertSaleStock(current, line.quantity)

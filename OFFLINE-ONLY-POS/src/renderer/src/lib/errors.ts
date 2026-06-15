@@ -13,9 +13,10 @@ export function toastApiError(toasts: Toasts, err: unknown): void {
 
 /** Client-side stock guard before adding/increasing cart lines. */
 export function stockAllows(
-  product: { name: string; stock: number },
+  product: { name: string; stock: number; factura_negativo?: number },
   requestedQty: number
 ): { ok: true } | { ok: false; key: string; vars: Record<string, string | number> } {
+  if (product.factura_negativo === 1) return { ok: true }
   if (product.stock >= requestedQty) return { ok: true }
   if (product.stock <= 0) {
     return { ok: false, key: 'errors.outOfStock', vars: { name: product.name } }

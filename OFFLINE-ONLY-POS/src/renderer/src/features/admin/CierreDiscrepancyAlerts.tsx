@@ -1,6 +1,7 @@
-import { useCallback, useMemo, useSyncExternalStore } from 'react'
+import { useSyncExternalStore } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { api } from '@/lib/api'
 import { formatDate, formatMoney } from '@/lib/format'
 import type { CierreDiscrepancyAlert } from '@shared/types'
@@ -34,19 +35,20 @@ function dismissedSnapshot(): string {
   return localStorage.getItem(DISMISSED_STORAGE_KEY) ?? '[]'
 }
 
+function dismissCierreIds(ids: number | number[]): void {
+  const list = Array.isArray(ids) ? ids : [ids]
+  const next = new Set(readDismissedIds())
+  for (const id of list) next.add(id)
+  localStorage.setItem(DISMISSED_STORAGE_KEY, JSON.stringify([...next]))
+  emitDismissedChange()
+}
+
 function useDismissedCierreIds(): { dismissed: Set<number>; dismiss: (ids: number | number[]) => void } {
-  const snapshot = useSyncExternalStore(subscribeDismissed, dismissedSnapshot, () => '[]')
-  const dismissed = useMemo(() => readDismissedIds(), [snapshot])
+  const dismissedRevision = useSyncExternalStore(subscribeDismissed, dismissedSnapshot, () => '[]')
+  void dismissedRevision
+  const dismissed = readDismissedIds()
 
-  const dismiss = useCallback((ids: number | number[]) => {
-    const list = Array.isArray(ids) ? ids : [ids]
-    const next = new Set(dismissed)
-    for (const id of list) next.add(id)
-    localStorage.setItem(DISMISSED_STORAGE_KEY, JSON.stringify([...next]))
-    emitDismissedChange()
-  }, [dismissed])
-
-  return { dismissed, dismiss }
+  return { dismissed, dismiss: dismissCierreIds }
 }
 
 function useCierreDiscrepancyAlerts(): {
@@ -61,15 +63,12 @@ function useCierreDiscrepancyAlerts(): {
     retry: false
   })
 
-  const visible = useMemo(
-    () => (alerts ?? []).filter((alert) => !dismissed.has(alert.id)),
-    [alerts, dismissed]
-  )
+  const visible = (alerts ?? []).filter((alert) => !dismissed.has(alert.id))
 
   return { visible, dismiss }
 }
 
-function alertMessage(t: (key: string, opts?: object) => string, alert: CierreDiscrepancyAlert): string {
+function alertMessage(t: TFunction<'translation'>, alert: CierreDiscrepancyAlert): string {
   const amount = formatMoney(Math.abs(alert.cash_difference))
   const direction =
     alert.cash_difference > 0 ? t('cierre.discrepancyOver') : t('cierre.discrepancyShort')

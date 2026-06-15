@@ -24,10 +24,12 @@ import {
   readProductCsv,
   validateProductInput
 } from '../services/productCsvImport'
+import { readEfacturaXlsx } from '../services/productEfacturaImport'
 import type {
   AdjustStockInput,
   Product,
   ProductFilters,
+  ProductListResult,
   ProductImportPreview,
   ProductImportResult,
   ProductInput,
@@ -41,7 +43,7 @@ function isUniqueViolation(err: unknown): boolean {
 }
 
 export function registerProductHandlers(): void {
-  handle<ProductFilters, Product[]>('products:list', 'authed', (filters) =>
+  handle<ProductFilters, ProductListResult>('products:list', 'authed', (filters) =>
     listProducts(filters ?? {})
   )
 
@@ -64,8 +66,8 @@ export function registerProductHandlers(): void {
       return db.transaction(() => {
         const result = db
           .prepare(
-            `INSERT INTO products (barcode, name, price, cost_price, category, stock, stock_threshold, tax_category, bulk_qty, bulk_price, created_at, updated_at)
-             VALUES (?,?,?,?,?,0,?,?,?,?,?,?)`
+            `INSERT INTO products (barcode, name, price, cost_price, category, stock, stock_threshold, tax_category, bulk_qty, bulk_price, factura_negativo, created_at, updated_at)
+             VALUES (?,?,?,?,?,0,?,?,?,?,?,?,?)`
           )
           .run(
             input.barcode.trim(),
@@ -77,6 +79,7 @@ export function registerProductHandlers(): void {
             input.taxCategory,
             input.bulkQty ?? null,
             input.bulkPrice ?? null,
+            input.facturaNegativo ? 1 : 0,
             now,
             now
           )
@@ -97,7 +100,7 @@ export function registerProductHandlers(): void {
     try {
       getDb()
         .prepare(
-          `UPDATE products SET barcode = ?, name = ?, price = ?, cost_price = ?, category = ?, stock_threshold = ?, tax_category = ?, bulk_qty = ?, bulk_price = ?, updated_at = ?
+          `UPDATE products SET barcode = ?, name = ?, price = ?, cost_price = ?, category = ?, stock_threshold = ?, tax_category = ?, bulk_qty = ?, bulk_price = ?, factura_negativo = ?, updated_at = ?
            WHERE id = ?`
         )
         .run(
@@ -110,6 +113,7 @@ export function registerProductHandlers(): void {
           input.taxCategory,
           input.bulkQty ?? null,
           input.bulkPrice ?? null,
+          input.facturaNegativo ? 1 : 0,
           localNow(),
           input.id
         )
@@ -175,7 +179,7 @@ export function registerProductHandlers(): void {
 
       const rows = template
         ? []
-        : listProducts({}).map((p) => ({
+        : listProducts({}).items.map((p) => ({
             barcode: p.barcode,
             name: p.name,
             price: p.price,
@@ -185,7 +189,8 @@ export function registerProductHandlers(): void {
             stock_threshold: p.stock_threshold ?? '',
             tax_category: p.tax_category,
             bulk_qty: p.bulk_qty ?? '',
-            bulk_price: p.bulk_price ?? ''
+            bulk_price: p.bulk_price ?? '',
+            factura_negativo: p.factura_negativo ? '1' : '0'
           }))
 
       const csv = buildCsv(productCsvHeaders(lang), [...PRODUCT_CSV_KEYS], rows)
@@ -203,6 +208,23 @@ export function registerProductHandlers(): void {
       return { canceled: true, toCreate: [], toUpdate: [], unchanged: [], errors: [] }
     }
     return buildProductImportPreview(readProductCsv(result.filePaths[0]))
+  })
+
+  handle<void, ProductImportPreview>('products:importEfacturaPreview', MANAGE, async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [{ name: 'Excel (eFactura)', extensions: ['xlsx'] }]
+    })
+    if (result.canceled || !result.filePaths[0]) {
+      return { canceled: true, toCreate: [], toUpdate: [], unchanged: [], errors: [] }
+    }
+    return buildProductImportPreview(await readEfacturaXlsx(result.filePaths[0]))
+  })
+
+  handle<{ filePath: string }, ProductImportResult>('products:importEfacturaConfirm', MANAGE, async ({ filePath }) => {
+    const user = session.require()
+    if (!filePath?.trim()) throw new AppError('errors.invalidInput')
+    return applyProductImport(await readEfacturaXlsx(filePath.trim()), user.id)
   })
 
   handle<{ filePath: string }, ProductImportResult>('products:importCsvConfirm', MANAGE, ({ filePath }) => {
