@@ -7,6 +7,7 @@ import { useSession } from '@/lib/session'
 import { useToasts } from '@/lib/toast'
 import { RequireRole } from '@/features/shell/Shell'
 import { Button, Field, Input, Td, Th } from '@/components/ui'
+import { MoneyInput } from '@/components/MoneyInput'
 import { CierreDiscrepancyAlerts } from './CierreDiscrepancyAlerts'
 import type { CierreDiscountReport, CierrePreview, CierreRecord } from '@shared/types'
 
@@ -124,13 +125,12 @@ function Cierre(): React.JSX.Element {
           <h2 className="mb-2 text-lg font-bold">{t('cierre.stepCount')}</h2>
           <p className="mb-4 text-[15px] text-slate-600">{t('cierre.countedCashPrompt')}</p>
           <Field label={t('cash.countedCash')} className="mb-5">
-            <Input
+            <MoneyInput
               autoFocus
-              inputMode="decimal"
               value={countedCash}
-              onChange={(e) => setCountedCash(e.target.value.replace(/[^\d.,]/g, ''))}
+              onChange={setCountedCash}
               className="text-right text-2xl font-extrabold"
-              placeholder="0"
+              placeholder="₡0"
             />
           </Field>
           {pending === 0 && (

@@ -1,8 +1,44 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatMoney } from '@/lib/format'
 import { effectiveUnitPrice, lineTotal } from '@/lib/pricing'
 import type { CartLine } from './types'
 import type { PaymentMethod } from '@shared/types'
+
+function CartQtyInput({
+  value,
+  onCommit,
+  ariaLabel
+}: {
+  value: number
+  onCommit: (qty: number) => void
+  ariaLabel: string
+}): React.JSX.Element {
+  const [draft, setDraft] = useState<string | null>(null)
+  const display = draft ?? String(value)
+
+  const commit = (raw: string): void => {
+    const parsed = parseInt(raw, 10)
+    onCommit(Number.isFinite(parsed) && parsed >= 1 ? parsed : 1)
+    setDraft(null)
+  }
+
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      value={display}
+      onChange={(e) => setDraft(e.target.value.replace(/\D/g, ''))}
+      onFocus={() => setDraft(String(value))}
+      onBlur={() => commit(draft ?? String(value))}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur()
+      }}
+      className="h-11 w-14 rounded-md border-2 border-line text-center text-[17px] font-bold outline-none focus:border-primary"
+      aria-label={ariaLabel}
+    />
+  )
+}
 
 export function POSCartPanel({
   cart,
@@ -89,15 +125,10 @@ export function POSCartPanel({
                         >
                           −
                         </button>
-                        <input
-                          type="number"
-                          min={1}
+                        <CartQtyInput
                           value={line.quantity}
-                          onChange={(e) =>
-                            onSetQuantity(line.product.id, parseInt(e.target.value, 10) || 1)
-                          }
-                          className="h-11 w-14 rounded-md border-2 border-line text-center text-[17px] font-bold outline-none focus:border-primary"
-                          aria-label={t('pos.qty')}
+                          onCommit={(qty) => onSetQuantity(line.product.id, qty)}
+                          ariaLabel={t('pos.qty')}
                         />
                         <button
                           type="button"

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { formatMoney } from '@/lib/format'
 import { Button, Field, Input, Select } from '@/components/ui'
+import { MoneyInput } from '@/components/MoneyInput'
 import { NumPad } from '@/components/NumPad'
 import type { PaymentMethod } from '@shared/types'
 
@@ -37,14 +38,13 @@ export function PaymentCashSection({
   return (
     <div className="mt-4">
       <Field label={t('pos.tendered')} className="mb-3">
-        <Input
-          inputMode="decimal"
+        <MoneyInput
           value={tendered}
-          onChange={(e) => onTenderedChange(e.target.value.replace(/[^\d.]/g, ''))}
+          onChange={onTenderedChange}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && canConfirm) onConfirm()
           }}
-          placeholder="0"
+          placeholder="₡0"
           className={MONEY_INPUT_CLASS}
         />
       </Field>
@@ -108,15 +108,10 @@ export function PaymentSplitSection({
                   </Select>
                 </Field>
                 <Field label={t('pos.amount')} className="mt-3">
-                  <Input
-                    inputMode="decimal"
+                  <MoneyInput
                     value={entry.amount}
-                    onChange={(e) =>
-                      onUpdateEntry(entry.id, {
-                        amount: e.target.value.replace(/[^\d.]/g, '')
-                      })
-                    }
-                    placeholder="0"
+                    onChange={(amount) => onUpdateEntry(entry.id, { amount })}
+                    placeholder="₡0"
                     className={MONEY_INPUT_CLASS}
                   />
                 </Field>

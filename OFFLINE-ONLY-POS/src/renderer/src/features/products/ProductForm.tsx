@@ -2,8 +2,11 @@ import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
+import { parseColonesInput } from '@/lib/format'
 import { useToasts } from '@/lib/toast'
 import { Button, Field, Input, Modal, Select, Toggle } from '@/components/ui'
+import { MoneyInput } from '@/components/MoneyInput'
+import { formatMoneyInputFromNumber, moneyInputIsEmpty } from '@shared/money'
 import type { Product, ProductInput, TaxCategory } from '@shared/types'
 
 const TAX_CATEGORIES: TaxCategory[] = ['standard', 'canasta_basica', 'exempt']
@@ -12,14 +15,14 @@ function productFormState(product: Product | null) {
   return {
     barcode: product?.barcode ?? '',
     name: product?.name ?? '',
-    price: product ? String(product.price) : '',
-    costPrice: product?.cost_price != null ? String(product.cost_price) : '',
+    price: product ? formatMoneyInputFromNumber(product.price) : '',
+    costPrice: product?.cost_price != null ? formatMoneyInputFromNumber(product.cost_price) : '',
     category: product?.category ?? '',
     stock: '0',
     threshold: product?.stock_threshold != null ? String(product.stock_threshold) : '',
     taxCategory: (product?.tax_category ?? 'standard') as TaxCategory,
     bulkQty: product?.bulk_qty != null ? String(product.bulk_qty) : '',
-    bulkPrice: product?.bulk_price != null ? String(product.bulk_price) : '',
+    bulkPrice: product?.bulk_price != null ? formatMoneyInputFromNumber(product.bulk_price) : '',
     facturaNegativo: product?.factura_negativo === 1
   }
 }
@@ -63,14 +66,14 @@ export function ProductFormModal({
 
   const submit = (): void => {
     setError(null)
-    const priceNum = Number(form.price)
-    if (!form.barcode.trim() || !form.name.trim() || !Number.isFinite(priceNum) || priceNum < 0) {
+    const priceNum = parseColonesInput(form.price)
+    if (!form.barcode.trim() || !form.name.trim() || priceNum == null || priceNum < 0) {
       setError(t('errors.invalidInput'))
       return
     }
-    const hasBulk = form.bulkQty.trim() !== '' || form.bulkPrice.trim() !== ''
-    const bulkQtyNum = form.bulkQty.trim() === '' ? null : Math.trunc(Number(form.bulkQty))
-    const bulkPriceNum = form.bulkPrice.trim() === '' ? null : Number(form.bulkPrice)
+    const hasBulk = form.bulkQty.trim() !== '' || !moneyInputIsEmpty(form.bulkPrice)
+    const bulkQtyNum = moneyInputIsEmpty(form.bulkQty) ? null : Math.trunc(Number(form.bulkQty))
+    const bulkPriceNum = parseColonesInput(form.bulkPrice)
     if (hasBulk) {
       if (bulkQtyNum == null || bulkQtyNum < 2 || bulkPriceNum == null || bulkPriceNum < 0) {
         setError(t('products.form.bulkError'))
@@ -81,7 +84,7 @@ export function ProductFormModal({
       barcode: form.barcode.trim(),
       name: form.name.trim(),
       price: priceNum,
-      costPrice: form.costPrice.trim() === '' ? null : Number(form.costPrice),
+      costPrice: moneyInputIsEmpty(form.costPrice) ? null : parseColonesInput(form.costPrice),
       category: form.category.trim() || null,
       stock: isEdit ? 0 : Math.trunc(Number(form.stock) || 0),
       stockThreshold: form.threshold.trim() === '' ? null : Math.trunc(Number(form.threshold)),
@@ -126,18 +129,10 @@ export function ProductFormModal({
             <Input value={form.name} onChange={(e) => patch({ name: e.target.value })} />
           </Field>
           <Field label={t('products.price')}>
-            <Input
-              inputMode="decimal"
-              value={form.price}
-              onChange={(e) => patch({ price: e.target.value.replace(/[^\d.]/g, '') })}
-            />
+            <MoneyInput value={form.price} onChange={(price) => patch({ price })} />
           </Field>
           <Field label={`${t('products.costPrice')} (${t('common.optional')})`}>
-            <Input
-              inputMode="decimal"
-              value={form.costPrice}
-              onChange={(e) => patch({ costPrice: e.target.value.replace(/[^\d.]/g, '') })}
-            />
+            <MoneyInput value={form.costPrice} onChange={(costPrice) => patch({ costPrice })} />
           </Field>
           <Field label={t('products.category')}>
             <Input
@@ -212,11 +207,7 @@ export function ProductFormModal({
               />
             </Field>
             <Field label={t('products.bulkPrice')}>
-              <Input
-                inputMode="decimal"
-                value={form.bulkPrice}
-                onChange={(e) => patch({ bulkPrice: e.target.value.replace(/[^\d.]/g, '') })}
-              />
+              <MoneyInput value={form.bulkPrice} onChange={(bulkPrice) => patch({ bulkPrice })} />
             </Field>
           </div>
           <p className="mt-2 text-[13px] text-slate-500">{t('products.form.bulkHint')}</p>

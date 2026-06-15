@@ -2,9 +2,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
 import { toastApiError } from '@/lib/errors'
-import { formatMoney } from '@/lib/format'
+import { formatMoney, parseColonesInput } from '@/lib/format'
 import { useToasts } from '@/lib/toast'
-import { roundColones } from '@shared/money'
+import { roundColones, appendMoneyInputDigit, backspaceMoneyInput } from '@shared/money'
 import { Button, Field, Input, Modal, Select, Toggle } from '@/components/ui'
 import type {
   CreateSaleItemInput,
@@ -32,8 +32,8 @@ interface PaymentModalProps {
 
 const round2 = roundColones
 
-function entryAmount(n: string): number {
-  return n === '' ? 0 : Number(n)
+function entryAmount(raw: string): number {
+  return parseColonesInput(raw) ?? 0
 }
 
 export function PaymentModal({
@@ -63,11 +63,14 @@ export function PaymentModal({
     ? round2(entries.filter((e) => e.method === 'cash').reduce((a, e) => a + entryAmount(e.amount), 0))
     : total
 
-  const tenderedNum = tendered === '' ? null : Number(tendered)
+  const tenderedNum = parseColonesInput(tendered)
   const change = hasCash && tenderedNum != null ? round2(tenderedNum - cashAmount) : null
 
   const splitBalanced = Math.abs(remaining) < 0.01
-  const splitAmountsValid = entries.every((e) => e.amount !== '' && Number(e.amount) > 0)
+  const splitAmountsValid = entries.every((e) => {
+    const n = parseColonesInput(e.amount)
+    return n != null && n > 0
+  })
   const cashShort = hasCash && tenderedNum != null && tenderedNum < cashAmount
 
   const canConfirmSingle =
@@ -122,7 +125,7 @@ export function PaymentModal({
     const payments = splitPayment
       ? entries.map((e) => ({
           method: e.method,
-          amount: round2(Number(e.amount)),
+          amount: round2(parseColonesInput(e.amount) ?? 0),
           ref: e.method === 'sinpe' && e.ref.trim() ? e.ref.trim() : undefined
         }))
       : [
@@ -218,8 +221,15 @@ export function PaymentModal({
           cashShort={cashShort}
           canConfirm={canConfirm}
           onTenderedChange={(value) => dispatch({ type: 'setTendered', value })}
-          onDigit={(d) => dispatch({ type: 'setTendered', value: (prev) => prev + d })}
-          onBackspace={() => dispatch({ type: 'setTendered', value: (prev) => prev.slice(0, -1) })}
+          onDigit={(d) =>
+            dispatch({
+              type: 'setTendered',
+              value: (prev) => appendMoneyInputDigit(prev, d)
+            })
+          }
+          onBackspace={() =>
+            dispatch({ type: 'setTendered', value: (prev) => backspaceMoneyInput(prev) })
+          }
           onClear={() => dispatch({ type: 'setTendered', value: '' })}
           onConfirm={confirm}
         />

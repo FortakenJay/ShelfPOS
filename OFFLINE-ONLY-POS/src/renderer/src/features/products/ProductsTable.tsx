@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { formatMoney } from '@/lib/format'
+import { formatMoney, formatGroupedInteger } from '@/lib/format'
 import { Button, Td, Th } from '@/components/ui'
 import type { Product } from '@shared/types'
 
@@ -63,7 +63,7 @@ export function ProductsTable({
                   >
                     −
                   </button>
-                  <span className="w-12">{p.stock}</span>
+                  <span className="min-w-12">{formatGroupedInteger(p.stock)}</span>
                   <button
                     type="button"
                     onClick={() => onQuickAdjust(p.id, 1)}

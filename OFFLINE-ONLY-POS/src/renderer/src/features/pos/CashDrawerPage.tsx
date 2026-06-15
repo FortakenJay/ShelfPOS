@@ -6,6 +6,8 @@ import { formatDate, formatMoney, parseColonesInput } from '@/lib/format'
 import { useToasts } from '@/lib/toast'
 import { RequireRole } from '@/features/shell/Shell'
 import { Button, Field, Input, Td, Th } from '@/components/ui'
+import { MoneyInput } from '@/components/MoneyInput'
+import { moneyInputIsEmpty } from '@shared/money'
 import type { CashMovementType } from '@shared/types'
 
 export function CashDrawerPage(): React.JSX.Element {
@@ -75,11 +77,10 @@ function CashDrawerAdmin(): React.JSX.Element {
         <div className="rounded-lg border-2 border-line bg-white p-5">
           <h2 className="mb-3 text-lg font-bold">{t('cash.movementTitle')}</h2>
           <Field label={t('pos.amount')} className="mb-3">
-            <Input
-              inputMode="decimal"
+            <MoneyInput
               value={moveAmount}
               disabled={!floatOpened}
-              onChange={(e) => setMoveAmount(e.target.value.replace(/[^\d.,]/g, ''))}
+              onChange={setMoveAmount}
               className="text-right text-2xl font-bold"
             />
           </Field>
@@ -96,7 +97,7 @@ function CashDrawerAdmin(): React.JSX.Element {
               size="lg"
               className="flex-1"
               loading={movement.isPending}
-              disabled={!floatOpened || moveAmount === ''}
+              disabled={!floatOpened || moneyInputIsEmpty(moveAmount)}
               onClick={() => movement.mutate('cash_in')}
             >
               {t('cash.cashIn')}
@@ -106,7 +107,7 @@ function CashDrawerAdmin(): React.JSX.Element {
               size="lg"
               className="flex-1"
               loading={movement.isPending}
-              disabled={!floatOpened || moveAmount === ''}
+              disabled={!floatOpened || moneyInputIsEmpty(moveAmount)}
               onClick={() => movement.mutate('cash_out')}
             >
               {t('cash.cashOut')}

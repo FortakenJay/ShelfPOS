@@ -2,9 +2,10 @@ import { useReducer } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
-import { formatMoney } from '@/lib/format'
-import { roundColones } from '@shared/money'
+import { formatMoney, parseColonesInput } from '@/lib/format'
+import { formatMoneyInputFromNumber, roundColones } from '@shared/money'
 import { Button, Field, Input, Modal } from '@/components/ui'
+import { MoneyInput } from '@/components/MoneyInput'
 import { PinModal } from '@/components/PinModal'
 
 interface DiscountModalProps {
@@ -63,14 +64,19 @@ export function DiscountModal({
   const queryClient = useQueryClient()
   const [state, dispatch] = useReducer(discountReducer, {
     mode: 'amount',
-    value: current > 0 ? String(current) : '',
+    value: current > 0 ? formatMoneyInputFromNumber(current) : '',
     pinOpen: false,
     pinError: null,
     pendingAmount: 0
   })
   const { mode, value, pinOpen, pinError, pendingAmount } = state
 
-  const num = value === '' ? 0 : Number(value)
+  const num =
+    mode === 'percent'
+      ? value === ''
+        ? 0
+        : Number(value)
+      : (parseColonesInput(value) ?? 0)
   const computed =
     mode === 'percent' ? roundColones((base * num) / 100) : roundColones(num)
   const clamped = Math.min(Math.max(computed, 0), roundColones(base))
@@ -136,24 +142,33 @@ export function DiscountModal({
       </div>
 
       <Field label={mode === 'percent' ? t('pos.discount.percentValue') : t('pos.discount.amountValue')}>
-        <Input
-          autoFocus
-          inputMode="decimal"
-          value={value}
-          onChange={(e) =>
-            dispatch({
-              type: 'setValue',
-              value:
-                mode === 'percent'
-                  ? e.target.value.replace(/[^\d.]/g, '')
-                  : e.target.value.replace(/\D/g, '')
-            })
-          }
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') requestApply()
-          }}
-          className="text-right text-2xl font-bold"
-        />
+        {mode === 'percent' ? (
+          <Input
+            autoFocus
+            inputMode="decimal"
+            value={value}
+            onChange={(e) =>
+              dispatch({
+                type: 'setValue',
+                value: e.target.value.replace(/[^\d.]/g, '')
+              })
+            }
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') requestApply()
+            }}
+            className="text-right text-2xl font-bold"
+          />
+        ) : (
+          <MoneyInput
+            autoFocus
+            value={value}
+            onChange={(next) => dispatch({ type: 'setValue', value: next })}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') requestApply()
+            }}
+            className="text-right text-2xl font-bold"
+          />
+        )}
       </Field>
 
       <div className="mt-4 flex items-center justify-between rounded-md bg-slate-100 px-4 py-3">
