@@ -264,11 +264,11 @@ function CierreSummary({
         <SummaryCell label={t('cierre.pendingTx')} value={String(pending)} />
         <SummaryCell
           label={t('cierre.totalCash')}
-          value={preview?.totals ? formatMoney(preview.totals.cash) : '—'}
+          value={preview?.totals?.cash != null ? formatMoney(preview.totals.cash) : '—'}
         />
         <SummaryCell
           label={t('cierre.totalCard')}
-          value={preview?.totals ? formatMoney(preview.totals.card) : '—'}
+          value={preview?.totals?.card != null ? formatMoney(preview.totals.card) : '—'}
         />
         <SummaryCell
           label={t('cierre.totalSinpe')}
@@ -279,7 +279,7 @@ function CierreSummary({
       <div className="flex items-center justify-between rounded-md bg-chrome px-4 py-3 text-white">
         <span className="text-[16px] font-bold">{t('cierre.totalSales')}</span>
         <span className="text-3xl font-extrabold">
-          {preview?.totals ? formatMoney(preview.totals.total) : '—'}
+          {preview?.totals?.total != null ? formatMoney(preview.totals.total) : '—'}
         </span>
       </div>
     </div>

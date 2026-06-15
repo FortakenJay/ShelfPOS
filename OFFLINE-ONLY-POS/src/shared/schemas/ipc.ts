@@ -38,14 +38,17 @@ const productInputSchema = z.strictObject({
   stockThreshold: z.number().int().min(0).max(10_000_000).nullable(),
   taxCategory: taxCategorySchema,
   bulkQty: z.number().int().min(2).max(10_000).nullable(),
-  bulkPrice: moneySchema.nullable()
+  bulkPrice: moneySchema.nullable(),
+  facturaNegativo: z.boolean()
 })
 
 const productFiltersSchema = z
   .strictObject({
     search: z.string().trim().max(100).optional(),
     category: z.string().trim().max(100).optional(),
-    stockStatus: stockStatusSchema.optional()
+    stockStatus: stockStatusSchema.optional(),
+    page: z.number().int().min(1).max(10_000).optional(),
+    pageSize: z.number().int().min(1).max(200).optional()
   })
   .optional()
 
@@ -202,6 +205,8 @@ export const IPC_SCHEMAS = {
   'products:exportCsv': z.strictObject({ template: z.boolean().optional() }).optional(),
   'products:importCsvPreview': voidInput,
   'products:importCsvConfirm': z.strictObject({ filePath: filePathSchema }),
+  'products:importEfacturaPreview': voidInput,
+  'products:importEfacturaConfirm': z.strictObject({ filePath: filePathSchema }),
   'products:byBarcode': z.strictObject({ barcode: barcodeSchema }),
   'products:search': z.strictObject({ query: z.string().trim().max(100) }),
   'sales:create': createSaleInputSchema,

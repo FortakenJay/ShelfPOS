@@ -28,6 +28,7 @@ import type {
   PrintStatus,
   Product,
   ProductFilters,
+  ProductListResult,
   ProductImportPreview,
   ProductImportResult,
   ProductInput,
@@ -78,7 +79,7 @@ export const api = {
       call<null>('settings:changeCajaPin', { currentPin, newPin })
   },
   products: {
-    list: (filters: ProductFilters) => call<Product[]>('products:list', filters),
+    list: (filters: ProductFilters) => call<ProductListResult>('products:list', filters),
     categories: () => call<string[]>('products:categories'),
     byBarcode: (barcode: string) => call<Product | null>('products:byBarcode', { barcode }),
     search: (query: string) => call<Product[]>('products:search', { query }),
@@ -91,8 +92,11 @@ export const api = {
     exportCsv: (template?: boolean) =>
       call<{ canceled: boolean; path?: string }>('products:exportCsv', { template }),
     importPreview: () => call<ProductImportPreview>('products:importCsvPreview'),
+    importEfacturaPreview: () => call<ProductImportPreview>('products:importEfacturaPreview'),
     importConfirm: (filePath: string) =>
-      call<ProductImportResult>('products:importCsvConfirm', { filePath })
+      call<ProductImportResult>('products:importCsvConfirm', { filePath }),
+    importEfacturaConfirm: (filePath: string) =>
+      call<ProductImportResult>('products:importEfacturaConfirm', { filePath })
   },
   sales: {
     create: (input: CreateSaleInput) => call<CreateSaleResult>('sales:create', input),
