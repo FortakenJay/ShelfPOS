@@ -46,9 +46,7 @@ function dismissCierreIds(ids: number | number[]): void {
 function useDismissedCierreIds(): { dismissed: Set<number>; dismiss: (ids: number | number[]) => void } {
   const dismissedRevision = useSyncExternalStore(subscribeDismissed, dismissedSnapshot, () => '[]')
   void dismissedRevision
-  const dismissed = readDismissedIds()
-
-  return { dismissed, dismiss: dismissCierreIds }
+  return { dismissed: readDismissedIds(), dismiss: dismissCierreIds }
 }
 
 function useCierreDiscrepancyAlerts(): {
@@ -64,7 +62,6 @@ function useCierreDiscrepancyAlerts(): {
   })
 
   const visible = (alerts ?? []).filter((alert) => !dismissed.has(alert.id))
-
   return { visible, dismiss }
 }
 

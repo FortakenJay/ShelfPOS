@@ -6,7 +6,7 @@ import { localNow } from '../db/helpers'
 import { applyStockDelta, getProduct, getProductByBarcode } from '../db/repos/products'
 import { writeAudit } from '../db/repos/audit'
 import { parseCsv } from './csv'
-import { mapProductCsvHeaders, parseFacturaNegativo, parseTaxCategory, type ProductCsvKey } from './csvColumns'
+import { mapProductCsvHeaders, parseTaxCategory, type ProductCsvKey } from './csvColumns'
 import type {
   Product,
   ProductImportError,
@@ -94,8 +94,7 @@ export function parseProductRow(
     stockThreshold: threshold != null && threshold >= 0 ? threshold : null,
     taxCategory,
     bulkQty,
-    bulkPrice,
-    facturaNegativo: parseFacturaNegativo(cell(row, columns.factura_negativo))
+    bulkPrice
   }
 }
 
@@ -108,8 +107,7 @@ function productInputDiffers(existing: Product, input: ProductInput): boolean {
     existing.tax_category !== input.taxCategory ||
     (existing.stock_threshold ?? null) !== input.stockThreshold ||
     (existing.bulk_qty ?? null) !== input.bulkQty ||
-    (existing.bulk_price ?? null) !== input.bulkPrice ||
-    Boolean(existing.factura_negativo) !== input.facturaNegativo
+    (existing.bulk_price ?? null) !== input.bulkPrice
   )
 }
 
@@ -134,7 +132,7 @@ function previewRow(
   return base
 }
 
-export interface ParsedCsv {
+interface ParsedCsv {
   filePath: string
   fileName: string
   columns: Partial<Record<ProductCsvKey, number>>
@@ -202,9 +200,8 @@ export function buildProductImportPreview(parsed: ParsedCsv): ProductImportPrevi
   }
 }
 
-export function applyProductImport(filePathOrParsed: string | ParsedCsv, userId: number): ProductImportResult {
-  const parsed = typeof filePathOrParsed === 'string' ? readProductCsv(filePathOrParsed) : filePathOrParsed
-  const preview = buildProductImportPreview(parsed)
+export function applyProductImport(filePath: string, userId: number): ProductImportResult {
+  const preview = buildProductImportPreview(readProductCsv(filePath))
   const db = getDb()
   const errors: ProductImportError[] = [...preview.errors]
   let created = 0
@@ -216,8 +213,8 @@ export function applyProductImport(filePathOrParsed: string | ParsedCsv, userId:
         const now = localNow()
         const insert = db
           .prepare(
-            `INSERT INTO products (barcode, name, price, cost_price, category, stock, stock_threshold, tax_category, bulk_qty, bulk_price, factura_negativo, created_at, updated_at)
-             VALUES (?,?,?,?,?,0,?,?,?,?,?,?,?)`
+            `INSERT INTO products (barcode, name, price, cost_price, category, stock, stock_threshold, tax_category, bulk_qty, bulk_price, created_at, updated_at)
+             VALUES (?,?,?,?,?,0,?,?,?,?,?,?)`
           )
           .run(
             input.barcode.trim(),
@@ -229,7 +226,6 @@ export function applyProductImport(filePathOrParsed: string | ParsedCsv, userId:
             input.taxCategory,
             input.bulkQty,
             input.bulkPrice,
-            input.facturaNegativo ? 1 : 0,
             now,
             now
           )
@@ -259,7 +255,7 @@ export function applyProductImport(filePathOrParsed: string | ParsedCsv, userId:
       db.transaction(() => {
         getDb()
           .prepare(
-            `UPDATE products SET barcode = ?, name = ?, price = ?, cost_price = ?, category = ?, stock_threshold = ?, tax_category = ?, bulk_qty = ?, bulk_price = ?, factura_negativo = ?, updated_at = ?
+            `UPDATE products SET barcode = ?, name = ?, price = ?, cost_price = ?, category = ?, stock_threshold = ?, tax_category = ?, bulk_qty = ?, bulk_price = ?, updated_at = ?
              WHERE id = ?`
           )
           .run(
@@ -272,7 +268,6 @@ export function applyProductImport(filePathOrParsed: string | ParsedCsv, userId:
             input.taxCategory,
             input.bulkQty,
             input.bulkPrice,
-            input.facturaNegativo ? 1 : 0,
             localNow(),
             existing.id
           )
@@ -290,6 +285,7 @@ export function applyProductImport(filePathOrParsed: string | ParsedCsv, userId:
     }
   }
 
+  const parsed = readProductCsv(filePath)
   const seenBarcodes = new Set<string>()
 
   for (let i = 1; i < parsed.rows.length; i++) {

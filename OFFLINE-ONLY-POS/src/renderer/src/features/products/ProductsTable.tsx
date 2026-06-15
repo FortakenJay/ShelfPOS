@@ -1,11 +1,10 @@
 import { useTranslation } from 'react-i18next'
-import { formatMoney } from '@/lib/format'
+import { formatMoney, formatGroupedInteger } from '@/lib/format'
 import { Button, Td, Th } from '@/components/ui'
 import type { Product } from '@shared/types'
 
 export function ProductsTable({
   rows,
-  loading,
   defaultThreshold,
   stockCellClass,
   onQuickAdjust,
@@ -14,7 +13,6 @@ export function ProductsTable({
   onDelete
 }: {
   rows: Product[] | undefined
-  loading?: boolean
   defaultThreshold: number
   stockCellClass: (p: Product) => string
   onQuickAdjust: (productId: number, delta: number) => void
@@ -25,9 +23,7 @@ export function ProductsTable({
   const { t } = useTranslation()
 
   return (
-    <div
-      className={`overflow-hidden rounded-lg border-2 border-line bg-white ${loading ? 'opacity-60' : ''}`}
-    >
+    <div className="overflow-hidden rounded-lg border-2 border-line bg-white">
       <table className="w-full">
         <thead>
           <tr>
@@ -63,7 +59,7 @@ export function ProductsTable({
                   >
                     −
                   </button>
-                  <span className="w-12">{p.stock}</span>
+                  <span className="w-12">{formatGroupedInteger(p.stock)}</span>
                   <button
                     type="button"
                     onClick={() => onQuickAdjust(p.id, 1)}

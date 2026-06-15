@@ -28,8 +28,7 @@ export const PRODUCT_CSV_KEYS = [
   'stock_threshold',
   'tax_category',
   'bulk_qty',
-  'bulk_price',
-  'factura_negativo'
+  'bulk_price'
 ] as const
 
 export type ProductCsvKey = (typeof PRODUCT_CSV_KEYS)[number]
@@ -101,14 +100,6 @@ export function parseTaxCategory(raw: string): TaxCategory | null {
   const norm = normalizeHeader(raw)
   if (!norm) return 'standard'
   return NORMALIZED_TO_TAX_CATEGORY.get(norm) ?? null
-}
-
-/** Parses 0/1 (or sí/no) for factura negativo. Empty → false. */
-export function parseFacturaNegativo(raw: string): boolean {
-  const norm = normalizeHeader(raw)
-  if (!norm) return false
-  if (['1', 'true', 'si', 'sí', 'yes', 'on'].includes(norm)) return true
-  return false
 }
 
 export function formatPaymentMethod(lang: Language, method: string): string {

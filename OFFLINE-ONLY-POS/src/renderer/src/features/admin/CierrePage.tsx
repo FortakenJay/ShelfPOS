@@ -272,7 +272,7 @@ function CierreSummary({
         />
         <SummaryCell
           label={t('cierre.totalSinpe')}
-          value={preview?.totals ? formatMoney(preview.totals.sinpe) : '—'}
+          value={preview?.totals?.sinpe != null ? formatMoney(preview.totals.sinpe) : '—'}
         />
         <SummaryCell label={t('cierre.returnsCount')} value={String(preview?.returnsCount ?? 0)} />
       </div>

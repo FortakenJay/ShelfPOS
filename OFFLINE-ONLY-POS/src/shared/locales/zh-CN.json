@@ -199,8 +199,6 @@
     "bulkQty": "批发价数量",
     "bulkQtyHint": "至少 2",
     "bulkPrice": "批发价 (₡)",
-    "facturaNegativo": "负库存开票",
-    "facturaNegativoHint": "允许在库存不足时仍可销售（库存可变为负数）。",
     "filters": {
       "stockStatus": "库存状态",
       "all": "全部",
@@ -209,11 +207,6 @@
       "negative": "负库存",
       "allCategories": "所有分类",
       "searchPlaceholder": "按名称或条码搜索…"
-    },
-    "pagination": {
-      "showing": "显示第 {{from}}–{{to}} 条，共 {{total}} 条",
-      "perPage": "每页",
-      "pageOf": "第 {{page}} / {{totalPages}} 页"
     },
     "form": {
       "createTitle": "新建商品",
@@ -240,11 +233,9 @@
       "tax_category": "税务类别",
       "bulk_qty": "批发价数量",
       "bulk_price": "批发价 (₡)",
-      "factura_negativo": "负库存开票 (0 或 1)",
       "exportTemplate": "下载 CSV 模板…",
       "exportProducts": "导出商品 CSV…",
       "importCsv": "导入 CSV…",
-      "importEfactura": "导入 eFactura XLSX…",
       "importDone": "已导入 {{count}} 个商品",
       "importUpdated": "已更新 {{count}} 个商品",
       "importDoneBoth": "新建 {{created}} 个，更新 {{updated}} 个",
@@ -291,15 +282,6 @@
         "tip3": "表头须与应用当前语言一致（西班牙语或中文）。",
         "tip4": "项目 samples/ 文件夹中有空白模板（productos-plantilla.csv）和示例商品（productos-demo.csv）。",
         "downloadTemplate": "下载空白模板"
-      }
-    },
-    "efactura": {
-      "hint": "导入 eFactura 导出的商品文件 (.xlsx)。使用：条形码 (a)、名称 (b)、数量 (c)、负库存开票 (g)、进价 (h)、零售价 (p1)、批发价 (p2/p2a)、税 (j)。",
-      "empty": "Excel 文件为空",
-      "missingHeaders": "无法识别 eFactura 格式（缺少 a、b、p1 列）",
-      "noRows": "没有可导入的有效商品",
-      "preview": {
-        "title": "预览 — eFactura 导入"
       }
     },
     "adjust": {

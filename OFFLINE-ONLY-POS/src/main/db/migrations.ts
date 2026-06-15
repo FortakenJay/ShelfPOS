@@ -1,6 +1,6 @@
 import type Database from 'better-sqlite3'
 
-export const SCHEMA_VERSION = 6
+export const SCHEMA_VERSION = 5
 
 type Migration = (db: Database.Database) => void
 
@@ -237,14 +237,6 @@ const migrations: Record<number, Migration> = {
       ALTER TABLE sales ADD COLUMN cart_discount REAL NOT NULL DEFAULT 0;
       ALTER TABLE sale_items ADD COLUMN line_discount REAL NOT NULL DEFAULT 0;
       UPDATE sale_items SET line_discount = discount WHERE discount > 0;
-    `)
-  },
-
-  // v6 — eFactura "facturar negativo": allow selling below zero stock.
-  6: (db) => {
-    db.exec(`
-      ALTER TABLE products ADD COLUMN factura_negativo INTEGER NOT NULL DEFAULT 0
-        CHECK (factura_negativo IN (0, 1));
     `)
   }
 }

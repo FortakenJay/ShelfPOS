@@ -2,17 +2,21 @@ import { getDb } from '../index'
 import { PRODUCT_COLUMNS } from '../columns'
 import { localNow } from '../helpers'
 import { getSetting, SETTING_KEYS } from './settings'
-import type { Product, ProductFilters, ProductListResult, StockAlert } from '../../../shared/types'
+import type { Product, ProductFilters, StockAlert } from '../../../shared/types'
 
 const productSelect = `SELECT ${PRODUCT_COLUMNS} FROM products`
 
-const DEFAULT_PAGE_SIZE = 50
-const MAX_PAGE_SIZE = 200
+export function getProduct(id: number): Product | undefined {
+  return getDb().prepare(`${productSelect} WHERE id = ?`).get(id) as Product | undefined
+}
 
-function buildProductListWhere(filters: ProductFilters): {
-  whereSql: string
-  params: Record<string, unknown>
-} {
+export function getProductByBarcode(barcode: string): Product | undefined {
+  return getDb().prepare(`${productSelect} WHERE barcode = ?`).get(barcode) as
+    | Product
+    | undefined
+}
+
+export function listProducts(filters: ProductFilters): Product[] {
   const def = Number(getSetting(SETTING_KEYS.stockThresholdDefault) ?? '5')
   const where: string[] = []
   const params: Record<string, unknown> = { def }
@@ -37,43 +41,8 @@ function buildProductListWhere(filters: ProductFilters): {
       break
   }
 
-  return {
-    whereSql: where.length ? `WHERE ${where.join(' AND ')}` : '',
-    params
-  }
-}
-
-export function getProduct(id: number): Product | undefined {
-  return getDb().prepare(`${productSelect} WHERE id = ?`).get(id) as Product | undefined
-}
-
-export function getProductByBarcode(barcode: string): Product | undefined {
-  return getDb().prepare(`${productSelect} WHERE barcode = ?`).get(barcode) as
-    | Product
-    | undefined
-}
-
-export function listProducts(filters: ProductFilters): ProductListResult {
-  const page = Math.max(1, Math.trunc(filters.page ?? 1))
-  const pageSize = Math.min(
-    Math.max(Math.trunc(filters.pageSize ?? DEFAULT_PAGE_SIZE), 1),
-    MAX_PAGE_SIZE
-  )
-  const offset = (page - 1) * pageSize
-  const { whereSql, params } = buildProductListWhere(filters)
-  const db = getDb()
-
-  const total = (
-    db.prepare(`SELECT COUNT(*) AS count FROM products ${whereSql}`).get(params) as { count: number }
-  ).count
-
-  const items = db
-    .prepare(
-      `${productSelect} ${whereSql} ORDER BY name COLLATE NOCASE LIMIT @limit OFFSET @offset`
-    )
-    .all({ ...params, limit: pageSize, offset }) as Product[]
-
-  return { items, total, page, pageSize }
+  const sql = `${productSelect} ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY name COLLATE NOCASE`
+  return getDb().prepare(sql).all(params) as Product[]
 }
 
 export function searchProducts(query: string, limit = 20): Product[] {

@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
 import { useToasts } from '@/lib/toast'
-import { Button, Field, Input, Modal, Select, Toggle } from '@/components/ui'
+import { Button, Field, Input, Modal, Select } from '@/components/ui'
 import type { Product, ProductInput, TaxCategory } from '@shared/types'
 
 const TAX_CATEGORIES: TaxCategory[] = ['standard', 'canasta_basica', 'exempt']
@@ -19,8 +19,7 @@ function productFormState(product: Product | null) {
     threshold: product?.stock_threshold != null ? String(product.stock_threshold) : '',
     taxCategory: (product?.tax_category ?? 'standard') as TaxCategory,
     bulkQty: product?.bulk_qty != null ? String(product.bulk_qty) : '',
-    bulkPrice: product?.bulk_price != null ? String(product.bulk_price) : '',
-    facturaNegativo: product?.factura_negativo === 1
+    bulkPrice: product?.bulk_price != null ? String(product.bulk_price) : ''
   }
 }
 
@@ -87,8 +86,7 @@ export function ProductFormModal({
       stockThreshold: form.threshold.trim() === '' ? null : Math.trunc(Number(form.threshold)),
       taxCategory: form.taxCategory,
       bulkQty: hasBulk ? bulkQtyNum : null,
-      bulkPrice: hasBulk ? bulkPriceNum : null,
-      facturaNegativo: form.facturaNegativo
+      bulkPrice: hasBulk ? bulkPriceNum : null
     })
   }
 
@@ -220,15 +218,6 @@ export function ProductFormModal({
             </Field>
           </div>
           <p className="mt-2 text-[13px] text-slate-500">{t('products.form.bulkHint')}</p>
-        </div>
-
-        <div className="mt-4 rounded-md border-2 border-line p-4">
-          <Toggle
-            checked={form.facturaNegativo}
-            onChange={(facturaNegativo) => patch({ facturaNegativo })}
-            label={t('products.facturaNegativo')}
-          />
-          <p className="mt-2 text-[13px] text-slate-500">{t('products.facturaNegativoHint')}</p>
         </div>
 
         {error && <p className="mt-4 text-[15px] font-bold text-danger">{error}</p>}

@@ -59,8 +59,6 @@ export interface Product {
   tax_category: TaxCategory
   bulk_qty: number | null
   bulk_price: number | null
-  /** 1 = allow sales when stock is insufficient (eFactura "facturar negativo"). */
-  factura_negativo: number
   created_at: string
   updated_at: string
 }
@@ -76,22 +74,12 @@ export interface ProductInput {
   taxCategory: TaxCategory
   bulkQty: number | null
   bulkPrice: number | null
-  facturaNegativo: boolean
 }
 
 export interface ProductFilters {
   search?: string
   category?: string
   stockStatus?: StockStatus
-  page?: number
-  pageSize?: number
-}
-
-export interface ProductListResult {
-  items: Product[]
-  total: number
-  page: number
-  pageSize: number
 }
 
 export interface ProductImportError {
@@ -557,8 +545,6 @@ export const IPC_CHANNELS = [
   'products:exportCsv',
   'products:importCsvPreview',
   'products:importCsvConfirm',
-  'products:importEfacturaPreview',
-  'products:importEfacturaConfirm',
   'products:byBarcode',
   'products:search',
   'sales:create',

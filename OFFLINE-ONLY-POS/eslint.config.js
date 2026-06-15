@@ -5,7 +5,7 @@ export default [
   { ignores: ['out/**', 'dist/**', 'node_modules/**', 'private/**'] },
   js.configs.recommended,
   {
-    files: ['src/**/*.{js,jsx,ts,tsx}'],
+    files: ['src/**/*.{js,jsx}'],
     plugins: {
       'react-hooks': reactHooks
     },

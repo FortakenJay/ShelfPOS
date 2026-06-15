@@ -27,7 +27,6 @@
     "@tanstack/react-router": "^1.170.15",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.10.0",
-    "exceljs": "^4.4.0",
     "i18next": "^26.3.1",
     "iconv-lite": "^0.7.2",
     "jsonwebtoken": "^9.0.3",
@@ -70,7 +69,6 @@
     "electron@41.7.2": true
   },
   "overrides": {
-    "esbuild": "^0.28.1",
-    "uuid": "^11.1.0"
+    "esbuild": "^0.28.1"
   }
 }
