@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs'
 import { handle } from './helpers'
 import { AppError } from '../errors'
-import { getAppSettings, setSetting, SETTING_KEYS } from '../db/repos/settings'
+import { getAppSettings, getSetting, setSetting, SETTING_KEYS } from '../db/repos/settings'
 import { writeAudit } from '../db/repos/audit'
 import { session } from '../services/session'
 import type { AppSettings, IdType, Language, SettingsUpdateInput } from '../../shared/types'
@@ -93,9 +93,13 @@ export function registerSettingsHandlers(): void {
     ['admin'],
     async ({ currentPin, newPin }) => {
       if (!PIN_RE.test(newPin)) throw new AppError('firstRun.errors.pinFormat')
-      await session.verifyCajaPin(currentPin)
+      const existing = getSetting(SETTING_KEYS.cajaPinHash)
+      if (existing) {
+        if (!PIN_RE.test(currentPin)) throw new AppError('errors.invalidPin')
+        await session.verifyCajaPin(currentPin)
+      }
       setSetting(SETTING_KEYS.cajaPinHash, await bcrypt.hash(newPin, 10))
-      writeAudit('pin_changed', { entity: 'settings', detail: 'caja' })
+      writeAudit('pin_changed', { entity: 'settings', detail: existing ? 'caja' : 'caja_initial' })
       return null
     }
   )

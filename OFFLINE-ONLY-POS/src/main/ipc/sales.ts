@@ -65,6 +65,9 @@ export function registerSalesHandlers(): void {
       if (item.discount != null && (!Number.isFinite(item.discount) || item.discount < 0)) {
         throw new AppError('errors.invalidInput')
       }
+      if (item.unitPrice != null && (!Number.isFinite(item.unitPrice) || item.unitPrice <= 0)) {
+        throw new AppError('errors.invalidInput')
+      }
     }
     for (const pay of input.payments) {
       if (!PAYMENT_METHODS.has(pay.method)) throw new AppError('errors.invalidInput')
@@ -90,7 +93,8 @@ export function registerSalesHandlers(): void {
         const product = getProduct(item.productId)
         if (!product) throw new AppError('errors.productNotFound')
         assertSaleStock(product, item.quantity)
-        const unitPrice = effectiveUnitPrice(product, item.quantity)
+        const unitPrice =
+          item.unitPrice != null ? round2(item.unitPrice) : effectiveUnitPrice(product, item.quantity)
         const gross = round2(unitPrice * item.quantity)
         const lineDiscount = round2(Math.min(item.discount ?? 0, gross))
         return {

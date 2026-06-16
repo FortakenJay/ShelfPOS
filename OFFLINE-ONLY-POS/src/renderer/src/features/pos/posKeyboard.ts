@@ -1,0 +1,53 @@
+import { useEffect, type RefObject } from 'react'
+
+export function isEditableElement(target: EventTarget | null): target is HTMLElement {
+  if (!(target instanceof HTMLElement)) return false
+  const tag = target.tagName
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true
+  return target.isContentEditable
+}
+
+/** Enter in a field should commit the value, not trigger a global POS action. */
+export function commitEditableOnEnter(e: React.KeyboardEvent<HTMLElement>): void {
+  if (e.key !== 'Enter') return
+  e.preventDefault()
+  e.stopPropagation()
+  e.currentTarget.blur()
+}
+
+/** Enter anywhere on the POS screen: add/search product or open payment when search is empty. */
+export function usePosEnterShortcut({
+  enabled,
+  query,
+  searchInputRef,
+  onSearchEnter,
+  onCharge
+}: {
+  enabled: boolean
+  query: string
+  searchInputRef: RefObject<HTMLInputElement | null>
+  onSearchEnter: () => void | Promise<void>
+  onCharge: () => void
+}): void {
+  useEffect(() => {
+    if (!enabled) return
+
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'Enter' || event.defaultPrevented) return
+      if (event.target instanceof HTMLButtonElement) return
+      if (event.target instanceof HTMLElement && event.target.closest('dialog[open]')) return
+
+      const trimmed = query.trim()
+      const isSearchInput = event.target === searchInputRef.current
+
+      if (isEditableElement(event.target) && !isSearchInput) return
+
+      event.preventDefault()
+      if (!trimmed) onCharge()
+      else void onSearchEnter()
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [enabled, query, searchInputRef, onSearchEnter, onCharge])
+}

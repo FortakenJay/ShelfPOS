@@ -27,11 +27,13 @@ function AdminCash(): React.JSX.Element {
 
   return (
     <div className="p-6">
-      <h1 className="mb-5 text-2xl font-bold">{t('cash.adminTitle')}</h1>
-      <div className="mb-5">
-        <DateRangePicker value={range} onChange={setRange} />
+      <div className="mx-auto w-full max-w-6xl">
+        <h1 className="mb-6 text-2xl font-bold">{t('cash.adminTitle')}</h1>
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <DateRangePicker value={range} onChange={setRange} />
+        </div>
+        <CashMovementsPanel movements={movements ?? []} floatOpened={false} canEdit={false} />
       </div>
-      <CashMovementsPanel movements={movements ?? []} floatOpened={false} canEdit={false} />
     </div>
   )
 }

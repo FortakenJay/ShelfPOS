@@ -34,7 +34,7 @@ function PrintQueue(): React.JSX.Element {
   return (
     <div className="p-6">
       <h1 className="mb-5 text-2xl font-bold">{t('printQueue.title')}</h1>
-      <div className="max-w-4xl overflow-hidden rounded-lg border-2 border-line bg-white">
+      <div className="overflow-hidden rounded-lg border-2 border-line bg-white">
         <table className="w-full">
           <thead>
             <tr>
@@ -49,7 +49,7 @@ function PrintQueue(): React.JSX.Element {
           <tbody>
             {jobs?.length === 0 && (
               <tr>
-                <Td colSpan={6} className="py-8 text-center text-slate-500">
+                <Td colSpan={6} className="py-6 text-center text-slate-500">
                   {t('printQueue.empty')}
                 </Td>
               </tr>

@@ -165,26 +165,44 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
   })
 
   return (
-    <>
+    <div className="space-y-6">
       <SettingsLanguageSection
         currentLang={settings.language ?? 'es'}
         pending={languageMutation.isPending}
         onSelect={(lang) => languageMutation.mutate(lang)}
       />
 
-      <SettingsGeneralSection
-        draft={draft}
-        onChange={patchDraft}
-        saving={updateMutation.isPending}
-        dirty={generalDraftDirty(draft, savedDraft)}
-        onSave={() =>
-          updateMutation.mutate({
-            storeName: draft.storeName,
-            stockThresholdDefault: Number(draft.threshold) || 5,
-            scannerBurstMs: Number(draft.scannerMs) || 30
-          })
-        }
-      />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <SettingsGeneralSection
+          draft={draft}
+          onChange={patchDraft}
+          saving={updateMutation.isPending}
+          dirty={generalDraftDirty(draft, savedDraft)}
+          onSave={() =>
+            updateMutation.mutate({
+              storeName: draft.storeName,
+              stockThresholdDefault: Number(draft.threshold) || 5,
+              scannerBurstMs: Number(draft.scannerMs) || 30
+            })
+          }
+        />
+
+        <SettingsTaxSection
+          draft={draft}
+          taxRegime={settings.taxRegime}
+          onChange={patchDraft}
+          saving={updateMutation.isPending}
+          dirty={taxDraftDirty(draft, savedDraft)}
+          onSave={() =>
+            updateMutation.mutate({
+              branchCode: draft.branchCode,
+              terminalCode: draft.terminalCode,
+              ivaRateStandard: Number(draft.ivaStandard) || 0,
+              ivaRateCanastaBasica: Number(draft.ivaCanasta) || 0
+            })
+          }
+        />
+      </div>
 
       <SettingsEmisorSection
         draft={draft}
@@ -208,52 +226,38 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
         }
       />
 
-      <SettingsTaxSection
-        draft={draft}
-        taxRegime={settings.taxRegime}
-        onChange={patchDraft}
-        saving={updateMutation.isPending}
-        dirty={taxDraftDirty(draft, savedDraft)}
-        onSave={() =>
-          updateMutation.mutate({
-            branchCode: draft.branchCode,
-            terminalCode: draft.terminalCode,
-            ivaRateStandard: Number(draft.ivaStandard) || 0,
-            ivaRateCanastaBasica: Number(draft.ivaCanasta) || 0
-          })
-        }
-      />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <SettingsPinSection
+          pin={pin}
+          pinError={pinError}
+          saving={pinMutation.isPending}
+          onChange={(patch) => dispatchPinForms({ type: 'patchPin', patch })}
+          onSave={() => {
+            if (pin.next !== pin.confirm) {
+              dispatchPinForms({ type: 'setPinError', error: t('settings.pinMismatch') })
+              return
+            }
+            dispatchPinForms({ type: 'setPinError', error: null })
+            pinMutation.mutate()
+          }}
+        />
 
-      <SettingsPinSection
-        pin={pin}
-        pinError={pinError}
-        saving={pinMutation.isPending}
-        onChange={(patch) => dispatchPinForms({ type: 'patchPin', patch })}
-        onSave={() => {
-          if (pin.next !== pin.confirm) {
-            dispatchPinForms({ type: 'setPinError', error: t('settings.pinMismatch') })
-            return
-          }
-          dispatchPinForms({ type: 'setPinError', error: null })
-          pinMutation.mutate()
-        }}
-      />
-
-      <SettingsCajaPinSection
-        pin={cajaPin}
-        pinError={cajaPinError}
-        saving={cajaPinMutation.isPending}
-        onChange={(patch) => dispatchPinForms({ type: 'patchCajaPin', patch })}
-        onSave={() => {
-          if (cajaPin.next !== cajaPin.confirm) {
-            dispatchPinForms({ type: 'setCajaPinError', error: t('settings.pinMismatch') })
-            return
-          }
-          dispatchPinForms({ type: 'setCajaPinError', error: null })
-          cajaPinMutation.mutate()
-        }}
-      />
-
-    </>
+        <SettingsCajaPinSection
+          pin={cajaPin}
+          pinError={cajaPinError}
+          saving={cajaPinMutation.isPending}
+          cajaPinConfigured={settings.cajaPinConfigured}
+          onChange={(patch) => dispatchPinForms({ type: 'patchCajaPin', patch })}
+          onSave={() => {
+            if (cajaPin.next !== cajaPin.confirm) {
+              dispatchPinForms({ type: 'setCajaPinError', error: t('settings.pinMismatch') })
+              return
+            }
+            dispatchPinForms({ type: 'setCajaPinError', error: null })
+            cajaPinMutation.mutate()
+          }}
+        />
+      </div>
+    </div>
   )
 }

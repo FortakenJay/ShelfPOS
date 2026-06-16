@@ -29,6 +29,7 @@ export interface AppSettings {
   stockThresholdDefault: number
   scannerBurstMs: number
   firstRunComplete: boolean
+  cajaPinConfigured: boolean
   // Tax regime + IVA rate mapping (IVA dormant while regime is 'simplificado').
   taxRegime: TaxRegime
   ivaRateStandard: number
@@ -166,6 +167,8 @@ export interface CreateSaleItemInput {
   quantity: number
   /** Absolute discount (₡) applied to this line, after any bulk price. */
   discount?: number
+  /** Overrides catalog/bulk unit price for this line when charging a different amount. */
+  unitPrice?: number
 }
 
 export interface CreateSaleInput {
@@ -607,9 +610,32 @@ export interface DiscountAuthorizeInput {
 }
 
 export interface FirstRunSetupInput {
-  users: { username: string; password: string; role: Role }[]
+  username: string
+  password: string
   pin: string
-  cajaPin: string
+}
+
+export interface AppUserRow {
+  id: number
+  username: string
+  role: Role
+  isActive: boolean
+  createdAt: string
+  lastLoginAt: string | null
+}
+
+export interface UserCreateInput {
+  username: string
+  password: string
+  role: Role
+}
+
+export interface UserUpdateInput {
+  id: number
+  username?: string
+  password?: string
+  role?: Role
+  isActive?: boolean
 }
 
 export interface BackupInfo {
@@ -765,6 +791,10 @@ export const IPC_CHANNELS = [
   'audit:list',
   'audit:users',
   'audit:actions',
+  'users:list',
+  'users:create',
+  'users:update',
+  'users:delete',
   'printQueue:list',
   'printQueue:retry',
   'backup:info',

@@ -18,11 +18,29 @@ body {
   padding: 24px;
 }
 
-h1 {
+.logo {
+  display: block;
+  margin: 0 auto 12px;
+  height: 64px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.brand {
   margin: 0 0 4px;
   font-size: 28px;
   font-weight: 800;
   text-align: center;
+  letter-spacing: -0.02em;
+}
+
+.brand-shelf {
+  color: #ffffff;
+}
+
+.brand-pos {
+  color: #94a3b8;
 }
 
 .subtitle {

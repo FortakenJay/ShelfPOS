@@ -26,6 +26,11 @@ import {
 
 const languagePayloadSchema = z.strictObject({ language: languageSchema })
 const pinChangeSchema = z.strictObject({ currentPin: pinSchema, newPin: pinSchema })
+/** Empty currentPin allowed when caja PIN is not configured yet. */
+const cajaPinChangeInputSchema = z.strictObject({
+  currentPin: z.union([z.literal(''), pinSchema]),
+  newPin: pinSchema
+})
 
 const productInputSchema = z.strictObject({
   barcode: barcodeSchema,
@@ -66,7 +71,8 @@ const salePaymentInputSchema = z.strictObject({
 const createSaleItemInputSchema = z.strictObject({
   productId: positiveIdSchema,
   quantity: quantitySchema,
-  discount: moneySchema.optional()
+  discount: moneySchema.optional(),
+  unitPrice: moneySchema.optional()
 })
 
 const customerInputSchema = z.strictObject({
@@ -110,17 +116,23 @@ const discountAuthorizeInputSchema = z.strictObject({
 })
 
 const firstRunSetupInputSchema = z.strictObject({
-  users: z
-    .array(
-      z.strictObject({
-        username: usernameSchema,
-        password: passwordSchema,
-        role: roleSchema
-      })
-    )
-    .length(3),
-  pin: pinSchema,
-  cajaPin: pinSchema
+  username: usernameSchema,
+  password: passwordSchema,
+  pin: pinSchema
+})
+
+const userCreateInputSchema = z.strictObject({
+  username: usernameSchema,
+  password: passwordSchema,
+  role: roleSchema
+})
+
+const userUpdateInputSchema = z.strictObject({
+  id: positiveIdSchema,
+  username: usernameSchema.optional(),
+  password: passwordSchema.optional(),
+  role: roleSchema.optional(),
+  isActive: z.boolean().optional()
 })
 
 const settingsUpdateInputSchema = z.strictObject({
@@ -194,7 +206,7 @@ export const IPC_SCHEMAS = {
   'settings:update': settingsUpdateInputSchema,
   'settings:setLanguage': languagePayloadSchema,
   'settings:changePin': pinChangeSchema,
-  'settings:changeCajaPin': pinChangeSchema,
+  'settings:changeCajaPin': cajaPinChangeInputSchema,
   'products:list': productFiltersSchema,
   'products:categories': voidInput,
   'products:create': productInputSchema,
@@ -231,6 +243,10 @@ export const IPC_SCHEMAS = {
   'audit:list': auditLogFilterSchema,
   'audit:users': voidInput,
   'audit:actions': voidInput,
+  'users:list': voidInput,
+  'users:create': userCreateInputSchema,
+  'users:update': userUpdateInputSchema,
+  'users:delete': z.strictObject({ id: positiveIdSchema }),
   'printQueue:list': voidInput,
   'printQueue:retry': z.strictObject({ id: positiveIdSchema }),
   'backup:info': voidInput,

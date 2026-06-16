@@ -28,7 +28,8 @@
     "date": "日期",
     "status": "状态",
     "optional": "可选",
-    "noData": "暂无数据"
+    "noData": "暂无数据",
+    "switchLanguage": "切换语言"
   },
   "nav": {
     "pos": "收银台",
@@ -42,6 +43,7 @@
     "printQueue": "打印队列",
     "export": "导出与备份",
     "settings": "设置",
+    "users": "用户",
     "dashboard": "面板",
     "logout": "退出登录"
   },
@@ -70,17 +72,13 @@
   "firstRun": {
     "chooseLanguage": "Elija el idioma / 请选择语言",
     "chineseReceiptNote": "选择中文界面时，热敏小票以西班牙语打印。",
-    "accountsTitle": "创建系统账户",
-    "accountsIntro": "请创建系统的三个固定账户以及经理 PIN。PIN 用于授权退货和日结操作。",
+    "accountsTitle": "创建管理员",
+    "accountsIntro": "创建管理员账户和经理 PIN。PIN 用于授权退货、日结等敏感操作。之后可在「用户」中创建收银员和库存账户。",
     "adminAccount": "管理员账户",
-    "salesAccount": "收银员账户",
-    "pmAccount": "库存管理员账户",
     "username": "用户名",
     "password": "密码",
     "confirmPassword": "确认密码",
     "managerPin": "经理 PIN（4-6 位数字）",
-    "cajaPin": "收银 PIN（4-6 位数字）",
-    "confirmCajaPin": "确认收银 PIN",
     "confirmPin": "确认 PIN",
     "create": "创建并继续",
     "dataPath": "您的数据保存在：{{path}}",
@@ -88,9 +86,7 @@
       "fillAll": "请填写所有字段",
       "passwordMismatch": "两次输入的密码不一致",
       "pinMismatch": "两次输入的 PIN 不一致",
-      "cajaPinMismatch": "两次输入的收银 PIN 不一致",
-      "pinFormat": "PIN 必须为 4 到 6 位数字",
-      "duplicateUsernames": "用户名不能重复"
+      "pinFormat": "PIN 必须为 4 到 6 位数字"
     }
   },
   "auth": {
@@ -102,7 +98,7 @@
     "backToLanguage": "Idioma / 语言"
   },
   "pos": {
-    "searchPlaceholder": "扫描条码或输入商品名称…",
+    "searchPlaceholder": "扫描条码或输入商品名称…（空行 Enter = 收款）",
     "noResults": "没有结果",
     "cartEmpty": "购物车是空的",
     "qty": "数量",
@@ -118,6 +114,7 @@
       "sinpe": "SINPE Móvil"
     },
     "charge": "收款",
+    "chargeShortcut": "收款 (Enter)",
     "return": "退货",
     "stock": "库存",
     "payTitle": "收款",
@@ -132,9 +129,18 @@
     "amount": "金额",
     "paymentMethod": "支付方式",
     "splitPayment": "组合支付",
+    "splitPaymentActive": "组合支付模式 — 请在右侧填写每笔金额",
     "addPayment": "添加支付方式",
     "remaining": "剩余",
     "bulkApplied": "批发价",
+    "priceBtn": "改价",
+    "priceOverride": {
+      "title": "修改价格",
+      "catalogPrice": "登记价格",
+      "unitPrice": "销售价格",
+      "reset": "使用登记价格",
+      "customApplied": "自定义价格"
+    },
     "discountBtn": "折扣",
     "cartDiscount": "整单折扣",
     "lineDiscount": "单品折扣",
@@ -582,6 +588,7 @@
   },
   "cash": {
     "title": "现金 / 钱箱",
+    "summaryTitle": "收银概览",
     "adminTitle": "现金进出",
     "openingFloat": "开班备用金",
     "cashSales": "现金销售",
@@ -596,6 +603,7 @@
     "openFloatHint": "登记开班备用金后即可开始收银。",
     "mustOpenFromPos": "收银台尚未开班。请先到「收银」完成开班后再使用现金功能。",
     "movementTitle": "现金进出",
+    "insufficientCashHint": "金额超过收银机内可用现金（{{available}}）。",
     "pinTitleIn": "经理 PIN — 现金存入",
     "pinTitleOut": "经理 PIN — 现金支出",
     "reason": "原因",
@@ -634,8 +642,35 @@
       "settings_updated": "更新设置",
       "pin_changed": "修改 PIN",
       "discount_authorized_caja": "折扣已授权（收银 PIN）",
-      "discount_authorized_manager": "折扣已授权（经理 PIN）"
+      "discount_authorized_manager": "折扣已授权（经理 PIN）",
+      "user_created": "创建用户",
+      "user_updated": "更新用户",
+      "user_deactivated": "停用用户"
     }
+  },
+  "users": {
+    "title": "用户与角色",
+    "create": "新建用户",
+    "createTitle": "创建用户",
+    "editTitle": "编辑用户",
+    "username": "用户名",
+    "role": "角色",
+    "status": "状态",
+    "lastLogin": "上次登录",
+    "active": "启用",
+    "inactive": "停用",
+    "newPassword": "新密码",
+    "passwordOptional": "留空表示不修改密码。",
+    "created": "用户已创建",
+    "updated": "用户已更新",
+    "deleted": "用户已停用",
+    "setupTitle": "用户初始设置",
+    "setupIntro": "在创建收银员或库存账户之前，请先设置收银 PIN。收银员将用它授权销售折扣。",
+    "setupContinue": "保存并继续",
+    "setupDone": "收银 PIN 已设置",
+    "cajaPin": "收银 PIN（4-6 位数字）",
+    "confirmCajaPin": "确认收银 PIN",
+    "retry": "重试"
   },
   "printQueue": {
     "title": "打印队列",
@@ -689,6 +724,7 @@
   "settings": {
     "title": "设置",
     "language": "语言",
+    "generalTitle": "门店与扫描枪",
     "storeName": "店铺名称",
     "stockThresholdDefault": "低库存警戒值（全局）",
     "scannerBurstMs": "扫描枪阈值（毫秒）",
@@ -812,9 +848,15 @@
     "floatAlreadyOpen": "本期已开班",
     "pdfExportFailed": "无法保存 PDF",
     "cashNotOpened": "请先完成开班",
+    "insufficientCash": "收银机内现金不足（可用：{{available}}，请求：{{requested}}）",
     "licenseInvalid": "许可证无效或已被篡改",
     "licenseWrongDevice": "此许可证适用于其他设备",
     "licenseExpired": "许可证已过期，请联系支持",
-    "licenseMissing": "未激活许可证"
+    "licenseMissing": "未激活许可证",
+    "notFound": "未找到",
+    "duplicateUsername": "该用户名已存在",
+    "cannotDeleteSelf": "不能停用自己的账户",
+    "lastAdmin": "必须保留至少一名活跃管理员",
+    "alreadyConfigured": "该设置已完成"
   }
 }

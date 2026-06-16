@@ -8,6 +8,7 @@ import { useToasts } from '@/lib/toast'
 import { RequireRole } from '@/features/shell/Shell'
 import { Button, Field, Input, Td, Th } from '@/components/ui'
 import { MoneyInput } from '@/components/MoneyInput'
+import { CashDrawerSummary } from '@/features/pos/CashDrawerSummary'
 import { CierreDiscrepancyAlerts } from './CierreDiscrepancyAlerts'
 import type { CierreDiscountReport, CierrePreview, CierreRecord } from '@shared/types'
 
@@ -101,144 +102,152 @@ function Cierre(): React.JSX.Element {
 
   return (
     <div className="p-6">
-      <h1 className="mb-5 text-2xl font-bold">{t('cierre.title')}</h1>
+      <div className="mx-auto w-full max-w-6xl space-y-6">
+        <h1 className="text-2xl font-bold">{t('cierre.title')}</h1>
 
-      {isAdmin && <CierreDiscrepancyAlerts className="mb-6 max-w-5xl" />}
+        {isAdmin && <CierreDiscrepancyAlerts />}
 
-      {isAdmin && (
-        <div className="mb-6 max-w-5xl">
-          <CierreSummary preview={preview} pending={pending} />
-          <CierreDiscounts discounts={preview?.discounts} />
-        </div>
-      )}
+        {isAdmin && (
+          <>
+            <CierreSummary preview={preview} pending={pending} />
+            <CierreDiscounts discounts={preview?.discounts} />
+          </>
+        )}
 
-      {!isAdmin && pending > 0 && (
-        <p className="mb-4 max-w-lg text-[15px] text-slate-600">
-          {t('cierre.pendingTx')}: <span className="font-bold">{pending}</span>
-        </p>
-      )}
-
-      <CierreExpectedAmounts preview={preview} className="mb-4 max-w-lg" />
-
-      {step === 'count' ? (
-        <div className="mb-6 max-w-lg rounded-lg border-2 border-line bg-white p-5">
-          <h2 className="mb-2 text-lg font-bold">{t('cierre.stepCount')}</h2>
-          <p className="mb-4 text-[15px] text-slate-600">{t('cierre.countedCashPrompt')}</p>
-          <Field label={t('cash.countedCash')} className="mb-5">
-            <MoneyInput
-              autoFocus
-              value={countedCash}
-              onChange={setCountedCash}
-              className="text-right text-2xl font-extrabold"
-              placeholder="₡0"
+        <div
+          className={`grid gap-6 lg:items-start ${
+            preview?.cash ? 'lg:grid-cols-2' : 'mx-auto max-w-xl'
+          }`}
+        >
+          {preview?.cash && (
+            <CashDrawerSummary
+              summary={preview.cash}
+              openedAt={preview.openedAt}
+              expectedSinpe={preview.totals?.sinpe}
+              pending={pending}
+              className="h-full"
             />
-          </Field>
-          {pending === 0 && (
-            <p className="mb-4 text-[15px] font-bold text-warning">{t('cierre.noPending')}</p>
           )}
-          <Button
-            size="lg"
-            className="w-full"
-            disabled={previewLoading || pending === 0 || countedCash === ''}
-            onClick={continueToConfirm}
-          >
-            {t('cierre.continue')}
-          </Button>
-        </div>
-      ) : (
-        <div className="mb-6 max-w-lg rounded-lg border-2 border-line bg-white p-5">
-          <h2 className="mb-2 text-lg font-bold">{t('cierre.stepConfirm')}</h2>
-          <div className="mb-4 rounded-md bg-slate-100 px-4 py-3">
-            <div className="text-[13px] font-semibold text-slate-500">{t('cash.countedCash')}</div>
-            <div className="text-2xl font-extrabold">
-              {countedNum != null ? formatMoney(countedNum) : '—'}
+
+          {step === 'count' ? (
+            <div className="rounded-lg border-2 border-line bg-white p-5">
+              <h2 className="mb-2 text-lg font-bold">{t('cierre.stepCount')}</h2>
+              <p className="mb-4 text-[15px] text-slate-600">{t('cierre.countedCashPrompt')}</p>
+              <Field label={t('cash.countedCash')} className="mb-5">
+                <MoneyInput
+                  autoFocus
+                  value={countedCash}
+                  onChange={setCountedCash}
+                  className="text-right text-2xl font-extrabold"
+                  placeholder="₡0"
+                />
+              </Field>
+              {pending === 0 && (
+                <p className="mb-4 text-[15px] font-bold text-warning">{t('cierre.noPending')}</p>
+              )}
+              <Button
+                size="lg"
+                className="w-full"
+                disabled={previewLoading || pending === 0 || countedCash === ''}
+                onClick={continueToConfirm}
+              >
+                {t('cierre.continue')}
+              </Button>
             </div>
-          </div>
-          {isOver && (
-            <p className="mb-4 rounded-md border-2 border-warning bg-amber-50 px-4 py-3 text-[15px] font-semibold text-warning">
-              {t('cierre.overNotice', {
-                amount: formatMoney(countedNum! - expectedCash),
-                counted: formatMoney(countedNum!),
-                expected: formatMoney(expectedCash)
-              })}
-            </p>
+          ) : (
+            <div className="rounded-lg border-2 border-line bg-white p-5">
+              <h2 className="mb-4 text-lg font-bold">{t('cierre.stepConfirm')}</h2>
+              <CierreReconciliation
+                expectedCash={expectedCash}
+                countedNum={countedNum}
+                difference={difference}
+              />
+              {isOver && (
+                <p className="mb-4 rounded-md border-2 border-warning bg-amber-50 px-4 py-3 text-[15px] font-semibold text-warning">
+                  {t('cierre.overNotice', {
+                    amount: formatMoney(countedNum! - expectedCash),
+                    counted: formatMoney(countedNum!),
+                    expected: formatMoney(expectedCash)
+                  })}
+                </p>
+              )}
+              {isShort && (
+                <p className="mb-4 rounded-md border-2 border-danger bg-red-50 px-4 py-3 text-[15px] font-semibold text-danger">
+                  {t('cierre.shortNotice', {
+                    amount: formatMoney(expectedCash - countedNum!),
+                    counted: formatMoney(countedNum!),
+                    expected: formatMoney(expectedCash)
+                  })}
+                </p>
+              )}
+              {!isAdmin && !isOver && !isShort && (
+                <p className="mb-4 text-[15px] text-slate-600">{t('cierre.cajeroConfirmHint')}</p>
+              )}
+              <Field label={`${t('cierre.notes')} (${t('common.optional')})`} className="mb-5">
+                <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
+              </Field>
+              <p className="mb-4 text-[14px] text-slate-600">{t('cierre.confirmBody')}</p>
+              <div className="flex gap-3">
+                <Button variant="outline" size="lg" className="flex-1" onClick={() => setStep('count')}>
+                  {t('cierre.back')}
+                </Button>
+                <Button
+                  variant="danger"
+                  size="lg"
+                  className="flex-1"
+                  loading={mutation.isPending}
+                  onClick={doCierre}
+                >
+                  {t('cierre.doCierre')}
+                </Button>
+              </div>
+            </div>
           )}
-          {isShort && (
-            <p className="mb-4 rounded-md border-2 border-danger bg-red-50 px-4 py-3 text-[15px] font-semibold text-danger">
-              {t('cierre.shortNotice', {
-                amount: formatMoney(expectedCash - countedNum!),
-                counted: formatMoney(countedNum!),
-                expected: formatMoney(expectedCash)
-              })}
-            </p>
-          )}
-          {!isAdmin && !isOver && !isShort && (
-            <p className="mb-4 text-[15px] text-slate-600">{t('cierre.cajeroConfirmHint')}</p>
-          )}
-          <Field label={`${t('cierre.notes')} (${t('common.optional')})`} className="mb-5">
-            <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
-          </Field>
-          <p className="mb-4 text-[14px] text-slate-600">{t('cierre.confirmBody')}</p>
-          <div className="flex gap-3">
-            <Button variant="outline" size="lg" className="flex-1" onClick={() => setStep('count')}>
-              {t('cierre.back')}
-            </Button>
-            <Button
-              variant="danger"
-              size="lg"
-              className="flex-1"
-              loading={mutation.isPending}
-              onClick={doCierre}
-            >
-              {t('cierre.doCierre')}
-            </Button>
-          </div>
         </div>
-      )}
 
-      {isAdmin && (
-        <CierreCashReconciliation
-          preview={preview}
-          step={step}
-          countedNum={countedNum}
-          expectedCash={expectedCash}
-          difference={difference}
-        />
-      )}
-
-      {isAdmin && <CierreHistory historyRows={historyRows} />}
+        {isAdmin && <CierreHistory historyRows={historyRows} />}
+      </div>
     </div>
   )
 }
 
-function CierreExpectedAmounts({
-  preview,
-  className = ''
+function CierreReconciliation({
+  expectedCash,
+  countedNum,
+  difference
 }: {
-  preview: CierrePreview | undefined
-  className?: string
-}): React.JSX.Element | null {
+  expectedCash: number
+  countedNum: number | null
+  difference: number | null
+}): React.JSX.Element {
   const { t } = useTranslation()
-  const expectedCash = preview?.cash?.expectedCash
-  const expectedSinpe = preview?.totals?.sinpe
-
-  if (expectedCash == null && expectedSinpe == null) return null
 
   return (
-    <div className={`rounded-lg border-2 border-line bg-white p-5 ${className}`}>
-      <p className="mb-3 text-[15px] font-semibold text-slate-600">{t('cierre.expectedAmountsHint')}</p>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-md bg-chrome px-4 py-3 text-white">
-          <div className="text-[13px] font-semibold text-slate-300">{t('cash.expectedCash')}</div>
-          <div className="text-2xl font-extrabold">
-            {expectedCash != null ? formatMoney(expectedCash) : '—'}
-          </div>
+    <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="rounded-md bg-chrome px-4 py-3 text-white">
+        <div className="text-[13px] font-semibold text-slate-300">{t('cash.expectedCash')}</div>
+        <div className="text-2xl font-extrabold">{formatMoney(expectedCash)}</div>
+      </div>
+      <div className="rounded-md border-2 border-line px-4 py-3">
+        <div className="text-[13px] font-semibold text-slate-500">{t('cash.countedCash')}</div>
+        <div className="text-2xl font-extrabold">
+          {countedNum != null ? formatMoney(countedNum) : '—'}
         </div>
-        <div className="rounded-md border-2 border-line px-4 py-3">
-          <div className="text-[13px] font-semibold text-slate-500">{t('cierre.expectedSinpe')}</div>
-          <div className="text-2xl font-extrabold">
-            {expectedSinpe != null ? formatMoney(expectedSinpe) : '—'}
-          </div>
+      </div>
+      <div className="rounded-md border-2 border-line px-4 py-3">
+        <div className="text-[13px] font-semibold text-slate-500">{t('cash.difference')}</div>
+        <div
+          className={`text-2xl font-extrabold ${
+            difference == null
+              ? ''
+              : difference < 0
+                ? 'text-danger'
+                : difference > 0
+                  ? 'text-warning'
+                  : 'text-cta'
+          }`}
+        >
+          {difference == null ? '—' : formatMoney(difference)}
         </div>
       </div>
     </div>
@@ -256,7 +265,7 @@ function CierreSummary({
 
   return (
     <div className="rounded-lg border-2 border-line bg-white p-5">
-      <div className="mb-4 grid grid-cols-2 gap-3">
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <SummaryCell
           label={t('cierre.openedAt')}
           value={preview?.openedAt ? formatDate(preview.openedAt, true) : '—'}
@@ -296,7 +305,7 @@ function CierreDiscounts({
 
   if (discounts.sales.length === 0) {
     return (
-      <div className="mt-4 rounded-lg border-2 border-line bg-white p-5">
+      <div className="rounded-lg border-2 border-line bg-white p-5">
         <h2 className="mb-2 text-lg font-bold">{t('cierre.discountsTitle')}</h2>
         <p className="text-[15px] text-slate-500">{t('cierre.noDiscounts')}</p>
       </div>
@@ -304,9 +313,9 @@ function CierreDiscounts({
   }
 
   return (
-    <div className="mt-4 rounded-lg border-2 border-line bg-white p-5">
+    <div className="rounded-lg border-2 border-line bg-white p-5">
       <h2 className="mb-4 text-lg font-bold">{t('cierre.discountsTitle')}</h2>
-      <div className="mb-4 grid grid-cols-3 gap-3">
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <SummaryCell
           label={t('cierre.totalDiscounts')}
           value={formatMoney(discounts.totalDiscount)}
@@ -320,7 +329,7 @@ function CierreDiscounts({
           value={formatMoney(discounts.totalLineDiscount)}
         />
       </div>
-      <div className="overflow-hidden rounded-lg border border-line">
+      <div className="overflow-x-auto rounded-lg border border-line">
         <table className="w-full">
           <thead>
             <tr>
@@ -370,77 +379,6 @@ function CierreDiscounts({
   )
 }
 
-function CierreCashReconciliation({
-  preview,
-  step,
-  countedNum,
-  expectedCash,
-  difference
-}: {
-  preview: CierrePreview | undefined
-  step: CierreStep
-  countedNum: number | null
-  expectedCash: number
-  difference: number | null
-}): React.JSX.Element {
-  const { t } = useTranslation()
-  const showReconciliation = step === 'confirm'
-
-  return (
-    <div className="max-w-5xl rounded-lg border-2 border-line bg-white p-5">
-      <h2 className="mb-4 text-lg font-bold">{t('cierre.cashTitle')}</h2>
-      <div className="grid grid-cols-4 gap-3">
-        <SummaryCell
-          label={t('cash.openingFloat')}
-          value={preview?.cash ? formatMoney(preview.cash.openingFloat) : '—'}
-        />
-        <SummaryCell
-          label={t('cash.cashSales')}
-          value={preview?.cash ? formatMoney(preview.cash.cashSales) : '—'}
-        />
-        <SummaryCell
-          label={t('cash.cashIn')}
-          value={preview?.cash ? formatMoney(preview.cash.cashIn) : '—'}
-        />
-        <SummaryCell
-          label={t('cash.cashOut')}
-          value={preview?.cash ? formatMoney(preview.cash.cashOut) : '—'}
-        />
-      </div>
-      {showReconciliation && (
-        <div className="mt-4 grid grid-cols-3 gap-4">
-          <div className="rounded-md bg-chrome px-4 py-3 text-white">
-            <div className="text-[13px] font-semibold text-slate-300">{t('cash.expectedCash')}</div>
-            <div className="text-2xl font-extrabold">{formatMoney(expectedCash)}</div>
-          </div>
-          <div className="rounded-md border-2 border-line px-4 py-3">
-            <div className="text-[13px] font-semibold text-slate-500">{t('cash.countedCash')}</div>
-            <div className="text-2xl font-extrabold">
-              {countedNum != null ? formatMoney(countedNum) : '—'}
-            </div>
-          </div>
-          <div className="rounded-md border-2 border-line px-4 py-3">
-            <div className="text-[13px] font-semibold text-slate-500">{t('cash.difference')}</div>
-            <div
-              className={`text-2xl font-extrabold ${
-                difference == null
-                  ? ''
-                  : difference < 0
-                    ? 'text-danger'
-                    : difference > 0
-                      ? 'text-warning'
-                      : 'text-cta'
-              }`}
-            >
-              {difference == null ? '—' : formatMoney(difference)}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
 function CierreHistory({ historyRows }: { historyRows: CierreRecord[] | undefined }): React.JSX.Element {
   const { t } = useTranslation()
   const toasts = useToasts()
@@ -456,9 +394,9 @@ function CierreHistory({ historyRows }: { historyRows: CierreRecord[] | undefine
   }
 
   return (
-    <>
-      <h2 className="mt-8 mb-3 text-xl font-bold">{t('cierre.history')}</h2>
-      <div className="max-w-5xl overflow-hidden rounded-lg border-2 border-line bg-white">
+    <section className="rounded-lg border-2 border-line bg-white p-5">
+      <h2 className="mb-4 text-lg font-bold">{t('cierre.history')}</h2>
+      <div className="overflow-x-auto rounded-lg border border-line">
         <table className="w-full">
           <thead>
             <tr>
@@ -511,7 +449,7 @@ function CierreHistory({ historyRows }: { historyRows: CierreRecord[] | undefine
           </tbody>
         </table>
       </div>
-    </>
+    </section>
   )
 }
 

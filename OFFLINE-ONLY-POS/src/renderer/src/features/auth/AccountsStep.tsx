@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui'
 import { AccountsPinFields } from './components/AccountsPinFields'
-import { AccountsRoleGrid } from './components/AccountsRoleGrid'
+import { AdminAccountFields } from './components/AdminAccountFields'
 import { useAccountsStep } from './hooks/useAccountsStep'
 
 export function AccountsStep({ backupPath }: { backupPath: string }): React.JSX.Element {
@@ -9,7 +9,7 @@ export function AccountsStep({ backupPath }: { backupPath: string }): React.JSX.
   const step = useAccountsStep()
 
   return (
-    <div className="max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white p-8">
+    <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-8">
       <h1 className="mb-2 text-2xl font-bold">{t('firstRun.accountsTitle')}</h1>
       <p className="mb-6 text-[15px] text-slate-600">{t('firstRun.accountsIntro')}</p>
 
@@ -19,10 +19,10 @@ export function AccountsStep({ backupPath }: { backupPath: string }): React.JSX.
           void step.submit()
         }}
       >
-        <AccountsRoleGrid
-          accounts={step.accounts}
+        <AdminAccountFields
+          account={step.account}
           validation={step.validation}
-          registerFieldsetRef={step.registerFieldsetRef}
+          accountRef={step.accountRef}
           onFieldChange={step.setField}
         />
 
@@ -30,7 +30,6 @@ export function AccountsStep({ backupPath }: { backupPath: string }): React.JSX.
           pinFields={step.pinFields}
           validation={step.validation}
           managerPinRef={step.managerPinRef}
-          cajaPinRef={step.cajaPinRef}
           onPinFieldsChange={step.setPinFields}
           onValidationChange={step.setValidation}
         />

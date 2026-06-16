@@ -21,6 +21,7 @@ import { PrintQueuePage } from '@/features/admin/PrintQueuePage'
 import { ExportPage } from '@/features/admin/ExportPage'
 import { SettingsPage } from '@/features/admin/SettingsPage'
 import { AdminCashPage } from '@/features/admin/AdminCashPage'
+import { UsersPage } from '@/features/admin/UsersPage'
 import { DashboardPage } from '@/features/admin/dashboard/DashboardPage'
 import { DASHBOARD_TAB_SEARCH, type DashboardTab } from '@/features/admin/dashboard/dashboardTabs'
 import type { ReportType, StockStatus, ReportPeriodPreset } from '@shared/types'
@@ -164,6 +165,12 @@ const adminCashRoute = createRoute({
   component: AdminCashPage
 })
 
+const usersRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: '/admin/users',
+  component: UsersPage
+})
+
 const settingsRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: '/admin/settings',
@@ -187,6 +194,7 @@ const routeTree = rootRoute.addChildren([
     printQueueRoute,
     exportRoute,
     adminCashRoute,
+    usersRoute,
     settingsRoute
   ])
 ])

@@ -21,13 +21,13 @@ export function Bootstrap(): React.JSX.Element {
         const user = await api.auth.session()
         if (cancelled) return
         if (!user) {
-          void navigate({ to: '/choose-language', replace: true })
+          void navigate({ to: '/login', replace: true })
           return
         }
         void navigate({ to: homeFor(user.role), replace: true })
       } catch (err) {
         console.error(err)
-        void navigate({ to: '/choose-language', replace: true })
+        void navigate({ to: '/login', replace: true })
       }
     })()
     return () => {

@@ -2,6 +2,7 @@ import type {
   ButtonHTMLAttributes,
   InputHTMLAttributes,
   ReactNode,
+  Ref,
   SelectHTMLAttributes,
   TdHTMLAttributes,
   ThHTMLAttributes
@@ -82,10 +83,12 @@ export function Button({
 export function Input({
   className = '',
   invalid = false,
+  ref,
   ...rest
-}: InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }): React.JSX.Element {
+}: InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean; ref?: Ref<HTMLInputElement> }): React.JSX.Element {
   return (
     <input
+      ref={ref}
       className={`min-h-[44px] w-full rounded-md border-2 bg-white px-3 text-[16px] outline-none disabled:bg-slate-100 ${
         invalid ? 'border-danger focus:border-danger' : 'border-line focus:border-primary'
       } ${className}`}

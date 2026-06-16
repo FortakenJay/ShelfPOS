@@ -3,6 +3,7 @@ import { formatMoney } from '@/lib/format'
 import { Button, Field, Input, Select } from '@/components/ui'
 import { MoneyInput } from '@/components/MoneyInput'
 import type { PaymentMethod } from '@shared/types'
+import { commitEditableOnEnter } from './posKeyboard'
 
 const METHODS: PaymentMethod[] = ['cash', 'card', 'sinpe']
 
@@ -52,6 +53,7 @@ export function PaymentSplitSection({
                   <MoneyInput
                     value={entry.amount}
                     onChange={(amount) => onUpdateEntry(entry.id, { amount })}
+                    onKeyDown={commitEditableOnEnter}
                     placeholder="₡0"
                     className={MONEY_INPUT_CLASS}
                   />
@@ -64,6 +66,7 @@ export function PaymentSplitSection({
                     <Input
                       value={entry.ref}
                       onChange={(e) => onUpdateEntry(entry.id, { ref: e.target.value })}
+                      onKeyDown={commitEditableOnEnter}
                     />
                   </Field>
                 )}
@@ -90,8 +93,8 @@ export function PaymentSplitSection({
       )}
 
       <div
-        className={`mt-4 flex items-center justify-between rounded-md px-4 py-4 ${
-          splitBalanced ? 'bg-slate-100' : 'bg-amber-50'
+        className={`mt-4 flex items-center justify-between rounded-md border-2 px-4 py-4 ${
+          splitBalanced ? 'border-line bg-slate-100' : 'border-warning bg-amber-50'
         }`}
       >
         <span className="text-[17px] font-bold">{t('pos.remaining')}</span>

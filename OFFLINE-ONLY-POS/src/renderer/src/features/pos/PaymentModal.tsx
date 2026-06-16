@@ -2,15 +2,17 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
 import { toastApiError } from '@/lib/errors'
-import { formatMoney, parseColonesInput } from '@/lib/format'
+import { parseColonesInput } from '@/lib/format'
 import { useToasts } from '@/lib/toast'
 import { roundColones, appendMoneyInputDigit, backspaceMoneyInput } from '@shared/money'
-import { Button, Field, Input, Modal, Toggle } from '@/components/ui'
+import { Modal } from '@/components/ui'
 import type { CreateSaleItemInput, CustomerInput, PrintStatus } from '@shared/types'
 import { usePaymentModalState } from './paymentModalState'
-import { PaymentCashSection } from './PaymentCashSection'
-import { PaymentMethodButtons } from './PaymentMethodButtons'
+import { PaymentCheckoutPanel } from './PaymentCheckoutPanel'
+import { PaymentCheckoutPad } from './PaymentCheckoutPad'
+import { PaymentMethodSidebar } from './PaymentMethodSidebar'
 import { PaymentSplitSection } from './PaymentSplitSection'
+import { usePaymentKeyboard } from './usePaymentKeyboard'
 
 interface PaymentModalProps {
   items: CreateSaleItemInput[]
@@ -100,8 +102,10 @@ export function PaymentModal({
   const hasLineDiscount = items.some((item) => (item.discount ?? 0) > 0)
   const hasDiscount = cartDiscount > 0 || hasLineDiscount
 
+  const { mutate, isPending } = mutation
+
   const confirm = (): void => {
-    if (mutation.isPending || !canConfirm) return
+    if (isPending || !canConfirm) return
     if (hasDiscount && !discountPin) {
       toasts.error('errors.discountPinRequired')
       return
@@ -121,7 +125,7 @@ export function PaymentModal({
           }
         ]
 
-    mutation.mutate({
+    mutate({
       items,
       payments,
       cartDiscount: cartDiscount > 0 ? cartDiscount : undefined,
@@ -131,90 +135,83 @@ export function PaymentModal({
     })
   }
 
+  usePaymentKeyboard({
+    enabled: !isPending,
+    canConfirm,
+    splitPayment,
+    hasCashSingle,
+    singleMethod,
+    onClose,
+    onConfirm: confirm
+  })
+
+  const toggleSplit = (): void => {
+    dispatch({ type: 'toggleSplit', enabled: !splitPayment, initialMethod: singleMethod })
+  }
+
   return (
-    <Modal title={t('pos.payTitle')} onClose={mutation.isPending ? undefined : onClose} size="lg">
-      <div className="mb-4 flex items-baseline justify-between">
-        <span className="text-[17px] font-semibold text-slate-600">{t('pos.total')}</span>
-        <span className="text-4xl font-extrabold">{formatMoney(total)}</span>
-      </div>
-
-      <div className="mb-4 rounded-md border-2 border-line bg-slate-50 px-4 py-3">
-        <Toggle
-          checked={splitPayment}
-          onChange={(enabled) => dispatch({ type: 'toggleSplit', enabled, initialMethod: 'cash' })}
-          label={t('pos.splitPayment')}
+    <Modal
+      title={t('pos.payTitle')}
+      onClose={mutation.isPending ? undefined : onClose}
+      size="xl"
+    >
+      <div className="grid grid-cols-[minmax(9.5rem,11rem)_minmax(0,1fr)] gap-5">
+        <PaymentMethodSidebar
+          splitPayment={splitPayment}
+          method={singleMethod}
+          onSelectMethod={(method) => dispatch({ type: 'setSingleMethod', value: method })}
+          onToggleSplit={toggleSplit}
         />
-      </div>
 
-      {!splitPayment ? (
-        <div className="rounded-md border-2 border-line p-4">
-          <Field label={t('pos.paymentMethod')}>
-            <PaymentMethodButtons
-              value={singleMethod}
-              onChange={(method) => dispatch({ type: 'setSingleMethod', value: method })}
-            />
-          </Field>
-          {singleMethod === 'sinpe' && (
-            <Field label={t('pos.sinpeRef', { hint: t('common.optional') })} className="mt-3">
-              <Input
-                value={sinpeRef}
-                onChange={(e) => dispatch({ type: 'setSinpeRef', value: e.target.value })}
+        <div className="min-w-0">
+          {splitPayment ? (
+            <div className="flex min-h-[420px] flex-col gap-4">
+              <PaymentSplitSection
+                entries={entries}
+                remaining={remaining}
+                splitBalanced={splitBalanced}
+                onUpdateEntry={(id, patch) => dispatch({ type: 'updateEntry', id, patch })}
+                onRemoveEntry={(id) => dispatch({ type: 'removeEntry', id })}
+                onAddEntry={() => dispatch({ type: 'addEntry' })}
               />
-            </Field>
+              <div className="mt-auto">
+                <PaymentCheckoutPad
+                  onDigit={() => {}}
+                  onBackspace={() => {}}
+                  onClear={() => {}}
+                  onConfirm={confirm}
+                  canConfirm={canConfirm}
+                  loading={isPending}
+                  showKeys={false}
+                />
+              </div>
+            </div>
+          ) : (
+            <PaymentCheckoutPanel
+              total={total}
+              method={singleMethod}
+              tendered={tendered}
+              change={change}
+              cashShort={cashShort}
+              sinpeRef={sinpeRef}
+              canConfirm={canConfirm}
+              loading={isPending}
+              onTenderedChange={(value) => dispatch({ type: 'setTendered', value })}
+              onDigit={(d) =>
+                dispatch({
+                  type: 'setTendered',
+                  value: (prev) => appendMoneyInputDigit(prev, d)
+                })
+              }
+              onBackspace={() =>
+                dispatch({ type: 'setTendered', value: (prev) => backspaceMoneyInput(prev) })
+              }
+              onClear={() => dispatch({ type: 'setTendered', value: '' })}
+              onSinpeRefChange={(value) => dispatch({ type: 'setSinpeRef', value })}
+              onConfirm={confirm}
+            />
           )}
         </div>
-      ) : (
-        <PaymentSplitSection
-          entries={entries}
-          remaining={remaining}
-          splitBalanced={splitBalanced}
-          onUpdateEntry={(id, patch) => dispatch({ type: 'updateEntry', id, patch })}
-          onRemoveEntry={(id) => dispatch({ type: 'removeEntry', id })}
-          onAddEntry={() => dispatch({ type: 'addEntry' })}
-        />
-      )}
-
-      {hasCashSingle && (
-        <PaymentCashSection
-          tendered={tendered}
-          change={change}
-          cashShort={cashShort}
-          canConfirm={canConfirm}
-          onTenderedChange={(value) => dispatch({ type: 'setTendered', value })}
-          onDigit={(d) =>
-            dispatch({
-              type: 'setTendered',
-              value: (prev) => appendMoneyInputDigit(prev, d)
-            })
-          }
-          onBackspace={() =>
-            dispatch({ type: 'setTendered', value: (prev) => backspaceMoneyInput(prev) })
-          }
-          onClear={() => dispatch({ type: 'setTendered', value: '' })}
-          onConfirm={confirm}
-        />
-      )}
-
-      <div className="mt-5 flex gap-3">
-        <Button
-          variant="outline"
-          size="lg"
-          className="flex-1"
-          onClick={onClose}
-          disabled={mutation.isPending}
-        >
-          {t('common.cancel')}
-        </Button>
-        <Button
-          variant="cta"
-          size="lg"
-          className="flex-1"
-          onClick={confirm}
-          loading={mutation.isPending}
-          disabled={!canConfirm}
-        >
-          {t('pos.confirmPayment')}
-        </Button>
       </div>
     </Modal>
   )

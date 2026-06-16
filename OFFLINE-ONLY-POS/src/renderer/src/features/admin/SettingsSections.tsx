@@ -5,6 +5,27 @@ import type { AppSettings, IdType, Language } from '@shared/types'
 
 const ID_TYPES: IdType[] = ['fisica', 'juridica', 'dimex', 'nite']
 
+function SettingsSaveRow({
+  saving,
+  disabled,
+  onSave,
+  labelKey = 'common.save'
+}: {
+  saving: boolean
+  disabled: boolean
+  onSave: () => void
+  labelKey?: string
+}): React.JSX.Element {
+  const { t } = useTranslation()
+  return (
+    <div className="mt-5 flex justify-end border-t border-line pt-4">
+      <Button loading={saving} disabled={disabled} onClick={onSave}>
+        {t(labelKey)}
+      </Button>
+    </div>
+  )
+}
+
 export function SettingsLanguageSection({
   currentLang,
   pending,
@@ -16,16 +37,16 @@ export function SettingsLanguageSection({
 }): React.JSX.Element {
   const { t } = useTranslation()
   return (
-    <section className="mb-6 rounded-lg border-2 border-line bg-white p-5">
+    <section className="rounded-lg border-2 border-line bg-white p-5">
       <h2 className="mb-3 text-lg font-bold">{t('settings.language')}</h2>
-      <div className="flex gap-3">
+      <div className="mx-auto grid max-w-md grid-cols-2 gap-3">
         {(['es', 'zh-CN'] as Language[]).map((lang) => (
           <button
             key={lang}
             type="button"
             disabled={pending}
             onClick={() => onSelect(lang)}
-            className={`min-h-[52px] flex-1 rounded-md border-2 text-lg font-bold ${
+            className={`min-h-[52px] rounded-md border-2 text-lg font-bold ${
               currentLang === lang
                 ? 'border-primary bg-primary text-white'
                 : 'border-line bg-white hover:border-primary'
@@ -54,8 +75,9 @@ export function SettingsGeneralSection({
 }): React.JSX.Element {
   const { t } = useTranslation()
   return (
-    <section className="mb-6 rounded-lg border-2 border-line bg-white p-5">
-      <div className="grid grid-cols-2 gap-4">
+    <section className="flex h-full flex-col rounded-lg border-2 border-line bg-white p-5">
+      <h2 className="mb-3 text-lg font-bold">{t('settings.generalTitle')}</h2>
+      <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-3">
         <Field label={t('settings.storeName')}>
           <Input value={draft.storeName} onChange={(e) => onChange({ storeName: e.target.value })} />
         </Field>
@@ -74,10 +96,8 @@ export function SettingsGeneralSection({
           />
         </Field>
       </div>
-      <p className="mt-2 text-[13px] text-slate-500">{t('settings.scannerHint')}</p>
-      <Button className="mt-4" loading={saving} disabled={!dirty} onClick={onSave}>
-        {t('common.save')}
-      </Button>
+      <p className="mt-3 text-[13px] text-slate-500">{t('settings.scannerHint')}</p>
+      <SettingsSaveRow saving={saving} disabled={!dirty} onSave={onSave} />
     </section>
   )
 }
@@ -97,11 +117,11 @@ export function SettingsEmisorSection({
 }): React.JSX.Element {
   const { t } = useTranslation()
   return (
-    <section className="mb-6 rounded-lg border-2 border-line bg-white p-5">
+    <section className="rounded-lg border-2 border-line bg-white p-5">
       <h2 className="mb-1 text-lg font-bold">{t('settings.emisor.title')}</h2>
       <p className="mb-4 text-[13px] text-slate-500">{t('settings.emisor.hint')}</p>
-      <div className="grid grid-cols-2 gap-4">
-        <Field label={t('settings.emisor.legalName')} className="col-span-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <Field label={t('settings.emisor.legalName')} className="md:col-span-2 xl:col-span-3">
           <Input value={draft.legalName} onChange={(e) => onChange({ legalName: e.target.value })} />
         </Field>
         <Field label={t('settings.emisor.idType')}>
@@ -122,7 +142,7 @@ export function SettingsEmisorSection({
         <Field label={t('settings.emisor.email')}>
           <Input value={draft.email} onChange={(e) => onChange({ email: e.target.value })} />
         </Field>
-        <Field label={t('settings.emisor.activityCode')} className="col-span-2">
+        <Field label={t('settings.emisor.activityCode')} className="md:col-span-2 xl:col-span-3">
           <Input value={draft.activityCode} onChange={(e) => onChange({ activityCode: e.target.value })} />
         </Field>
         <Field label={t('settings.emisor.province')}>
@@ -134,16 +154,14 @@ export function SettingsEmisorSection({
         <Field label={t('settings.emisor.district')}>
           <Input value={draft.district} onChange={(e) => onChange({ district: e.target.value })} />
         </Field>
-        <Field label={t('settings.emisor.address')}>
+        <Field label={t('settings.emisor.address')} className="md:col-span-2">
           <Input value={draft.address} onChange={(e) => onChange({ address: e.target.value })} />
         </Field>
-        <Field label={t('settings.emisor.footer')} className="col-span-2">
+        <Field label={t('settings.emisor.footer')} className="md:col-span-2 xl:col-span-3">
           <Input value={draft.footer} onChange={(e) => onChange({ footer: e.target.value })} />
         </Field>
       </div>
-      <Button className="mt-4" loading={saving} disabled={!dirty} onClick={onSave}>
-        {t('common.save')}
-      </Button>
+      <SettingsSaveRow saving={saving} disabled={!dirty} onSave={onSave} />
     </section>
   )
 }
@@ -165,14 +183,14 @@ export function SettingsTaxSection({
 }): React.JSX.Element {
   const { t } = useTranslation()
   return (
-    <section className="mb-6 rounded-lg border-2 border-line bg-white p-5">
+    <section className="flex h-full flex-col rounded-lg border-2 border-line bg-white p-5">
       <h2 className="mb-1 text-lg font-bold">{t('settings.tax.title')}</h2>
       <div className="mb-4 flex items-center justify-between rounded-md bg-slate-100 px-4 py-3">
         <span className="font-semibold">{t('settings.tax.regime')}</span>
         <span className="font-extrabold">{t(`tax.regime.${taxRegime}`)}</span>
       </div>
       <p className="mb-4 text-[13px] text-slate-500">{t('settings.tax.regimeHint')}</p>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label={t('settings.tax.branchCode')}>
           <Input
             inputMode="numeric"
@@ -202,9 +220,7 @@ export function SettingsTaxSection({
           />
         </Field>
       </div>
-      <Button className="mt-4" loading={saving} disabled={!dirty} onClick={onSave}>
-        {t('common.save')}
-      </Button>
+      <SettingsSaveRow saving={saving} disabled={!dirty} onSave={onSave} />
     </section>
   )
 }
@@ -224,10 +240,10 @@ export function SettingsPinSection({
 }): React.JSX.Element {
   const { t } = useTranslation()
   return (
-    <section className="mb-6 rounded-lg border-2 border-line bg-white p-5">
+    <section className="flex h-full flex-col rounded-lg border-2 border-line bg-white p-5">
       <h2 className="mb-3 text-lg font-bold">{t('settings.pinSection')}</h2>
       <p className="mb-4 text-[14px] text-slate-600">{t('settings.managerPinHint')}</p>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid flex-1 grid-cols-1 gap-4">
         <Field label={t('settings.currentPin')}>
           <Input
             type="password"
@@ -257,9 +273,12 @@ export function SettingsPinSection({
         </Field>
       </div>
       {pinError && <p className="mt-2 text-[15px] font-bold text-danger">{pinError}</p>}
-      <Button className="mt-4" loading={saving} disabled={!pin.current || pin.next.length < 4} onClick={onSave}>
-        {t('settings.changePin')}
-      </Button>
+      <SettingsSaveRow
+        saving={saving}
+        disabled={!pin.current || pin.next.length < 4}
+        onSave={onSave}
+        labelKey="settings.changePin"
+      />
     </section>
   )
 }
@@ -268,30 +287,37 @@ export function SettingsCajaPinSection({
   pin,
   pinError,
   saving,
+  cajaPinConfigured,
   onChange,
   onSave
 }: {
   pin: { current: string; next: string; confirm: string }
   pinError: string | null
   saving: boolean
+  cajaPinConfigured: boolean
   onChange: (patch: Partial<{ current: string; next: string; confirm: string }>) => void
   onSave: () => void
 }): React.JSX.Element {
   const { t } = useTranslation()
+  const canSave =
+    pin.next.length >= 4 && (cajaPinConfigured ? pin.current.length >= 4 : true)
+
   return (
-    <section className="mb-6 rounded-lg border-2 border-line bg-white p-5">
+    <section className="flex h-full flex-col rounded-lg border-2 border-line bg-white p-5">
       <h2 className="mb-3 text-lg font-bold">{t('settings.cajaPinSection')}</h2>
       <p className="mb-4 text-[14px] text-slate-600">{t('settings.cajaPinHint')}</p>
-      <div className="grid grid-cols-3 gap-4">
-        <Field label={t('settings.currentPin')}>
-          <Input
-            type="password"
-            inputMode="numeric"
-            maxLength={6}
-            value={pin.current}
-            onChange={(e) => onChange({ current: e.target.value.replace(/\D/g, '') })}
-          />
-        </Field>
+      <div className="grid flex-1 grid-cols-1 gap-4">
+        {cajaPinConfigured && (
+          <Field label={t('settings.currentPin')}>
+            <Input
+              type="password"
+              inputMode="numeric"
+              maxLength={6}
+              value={pin.current}
+              onChange={(e) => onChange({ current: e.target.value.replace(/\D/g, '') })}
+            />
+          </Field>
+        )}
         <Field label={t('settings.newPin')}>
           <Input
             type="password"
@@ -312,9 +338,12 @@ export function SettingsCajaPinSection({
         </Field>
       </div>
       {pinError && <p className="mt-2 text-[15px] font-bold text-danger">{pinError}</p>}
-      <Button className="mt-4" loading={saving} disabled={!pin.current || pin.next.length < 4} onClick={onSave}>
-        {t('settings.changeCajaPin')}
-      </Button>
+      <SettingsSaveRow
+        saving={saving}
+        disabled={!canSave}
+        onSave={onSave}
+        labelKey={cajaPinConfigured ? 'settings.changeCajaPin' : 'users.setupContinue'}
+      />
     </section>
   )
 }

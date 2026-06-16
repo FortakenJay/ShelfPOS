@@ -123,20 +123,15 @@ await waitFor(`window.__e2e.byText('button','Español')`, 20000, 'language picke
 log('1. language picker OK')
 await evalJs(`window.__e2e.clickText('button','Español'); true`)
 
-await waitFor(`document.querySelectorAll('fieldset').length === 3`, 10000, 'accounts form')
+await waitFor(`document.querySelector('fieldset')`, 10000, 'accounts form')
 await evalJs(`
 (() => {
-  const data = [['admin','admin123'],['caja','caja1234'],['inv','inv12345']]
-  const fieldsets = [...document.querySelectorAll('fieldset')]
-  fieldsets.forEach((fs, i) => {
-    const inputs = [...fs.querySelectorAll('input')]
-    window.__e2e.setInput(inputs[0], data[i][0])
-    window.__e2e.setInput(inputs[1], data[i][1])
-    window.__e2e.setInput(inputs[2], data[i][1])
-  })
-  const all = [...document.querySelectorAll('form input')]
-  window.__e2e.setInput(all[all.length-2], '1234')
-  window.__e2e.setInput(all[all.length-1], '1234')
+  const inputs = [...document.querySelectorAll('form input')]
+  window.__e2e.setInput(inputs[0], 'admin')
+  window.__e2e.setInput(inputs[1], 'admin123')
+  window.__e2e.setInput(inputs[2], 'admin123')
+  window.__e2e.setInput(inputs[3], '1234')
+  window.__e2e.setInput(inputs[4], '1234')
   return true
 })()`)
 await evalJs(`window.__e2e.clickText('button','Crear y continuar'); true`)

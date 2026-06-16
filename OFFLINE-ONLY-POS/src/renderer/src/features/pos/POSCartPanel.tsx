@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatMoney } from '@/lib/format'
-import { effectiveUnitPrice, lineTotal } from '@/lib/pricing'
+import { catalogUnitPrice, lineTotal, lineUnitPrice } from '@/lib/pricing'
 import type { CartLine } from './types'
+import { commitEditableOnEnter } from './posKeyboard'
 
 function CartQtyInput({
   value,
@@ -31,7 +32,7 @@ function CartQtyInput({
       onFocus={() => setDraft(String(value))}
       onBlur={() => commit(draft ?? String(value))}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') e.currentTarget.blur()
+        if (e.key === 'Enter') commitEditableOnEnter(e)
       }}
       className="h-11 w-14 rounded-md border-2 border-line text-center text-[17px] font-bold outline-none focus:border-primary"
       aria-label={ariaLabel}
@@ -44,6 +45,7 @@ export function POSCartPanel({
   itemsGross,
   discountTotal,
   onLineDiscount,
+  onLinePrice,
   onCartDiscount,
   onSetQuantity,
   onRemoveLine
@@ -52,6 +54,7 @@ export function POSCartPanel({
   itemsGross: number
   discountTotal: number
   onLineDiscount: (productId: number) => void
+  onLinePrice: (productId: number) => void
   onCartDiscount: () => void
   onSetQuantity: (productId: number, quantity: number) => void
   onRemoveLine: (productId: number) => void
@@ -86,16 +89,24 @@ export function POSCartPanel({
             </thead>
             <tbody>
               {cart.map((line) => {
-                const unit = effectiveUnitPrice(line.product, line.quantity)
-                const isBulk = unit !== line.product.price
+                const unit = lineUnitPrice(line.product, line.quantity, line.priceOverride)
+                const isBulk =
+                  line.priceOverride == null &&
+                  catalogUnitPrice(line.product, line.quantity) !== line.product.price
+                const hasCustomPrice = line.priceOverride != null
                 return (
                   <tr key={line.product.id} className="border-b border-line bg-white">
                     <td className="px-4 py-3">
                       <span className="block text-[17px] font-semibold">{line.product.name}</span>
-                      <div className="mt-1 flex items-center gap-2 text-[16px]">
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-[16px]">
                         {isBulk && (
                           <span className="rounded bg-cta/10 px-1.5 py-0.5 text-[14px] font-bold text-cta">
                             {t('pos.bulkApplied')}
+                          </span>
+                        )}
+                        {hasCustomPrice && (
+                          <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[14px] font-bold text-primary">
+                            {t('pos.priceOverride.customApplied')}
                           </span>
                         )}
                         {line.discount > 0 && (
@@ -103,6 +114,13 @@ export function POSCartPanel({
                             −{formatMoney(line.discount)}
                           </span>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => onLinePrice(line.product.id)}
+                          className="text-[16px] font-bold text-primary hover:underline"
+                        >
+                          {t('pos.priceBtn')}
+                        </button>
                         <button
                           type="button"
                           onClick={() => onLineDiscount(line.product.id)}
@@ -139,7 +157,9 @@ export function POSCartPanel({
                     </td>
                     <td className="px-2 py-3 text-right text-[16px]">{formatMoney(unit)}</td>
                     <td className="px-2 py-3 text-right text-[17px] font-bold">
-                      {formatMoney(lineTotal(line.product, line.quantity, line.discount))}
+                      {formatMoney(
+                        lineTotal(line.product, line.quantity, line.discount, line.priceOverride)
+                      )}
                     </td>
                     <td className="px-2 py-2 text-center">
                       <button

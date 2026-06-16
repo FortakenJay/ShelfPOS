@@ -5,14 +5,21 @@ directories:
 files:
   - out/**
   - package.json
+extraResources:
+  - from: public/ShelfPOS.png
+    to: ShelfPOS.png
 asarUnpack:
   - '**/node_modules/better-sqlite3/**'
   - '**/node_modules/usb/**'
   - '**/node_modules/@node-escpos/**'
 win:
-  icon: public/SHELFPOS.png
+  icon: public/ShelfPOS.png
   target:
     - nsis
+mac:
+  icon: public/ShelfPOS.png
+  target:
+    - dmg
 nsis:
   oneClick: false
   perMachine: false

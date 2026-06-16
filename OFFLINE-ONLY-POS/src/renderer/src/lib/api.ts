@@ -2,6 +2,7 @@ import type {
   AdjustStockInput,
   ApiResult,
   AppSettings,
+  AppUserRow,
   AuditLogFilter,
   AuditLogRow,
   AuditUser,
@@ -39,7 +40,9 @@ import type {
   SaleDetail,
   SessionUser,
   SettingsUpdateInput,
-  StockAlert
+  StockAlert,
+  UserCreateInput,
+  UserUpdateInput
 } from '@shared/types'
 
 export class ApiError extends Error {
@@ -54,7 +57,13 @@ export class ApiError extends Error {
 }
 
 async function call<T>(channel: IpcChannel, payload?: unknown): Promise<T> {
-  const result = (await window.api.invoke(channel, payload)) as ApiResult<T>
+  let result: ApiResult<T>
+  try {
+    result = (await window.api.invoke(channel, payload)) as ApiResult<T>
+  } catch (err) {
+    console.error(`[api] ${channel}`, err)
+    throw new ApiError('errors.unknown')
+  }
   if (!result.ok) throw new ApiError(result.error, result.vars, result.message)
   return result.data
 }
@@ -139,6 +148,12 @@ export const api = {
     list: (filter: AuditLogFilter) => call<AuditLogRow[]>('audit:list', filter),
     users: () => call<AuditUser[]>('audit:users'),
     actions: () => call<string[]>('audit:actions')
+  },
+  users: {
+    list: () => call<AppUserRow[]>('users:list'),
+    create: (input: UserCreateInput) => call<AppUserRow>('users:create', input),
+    update: (input: UserUpdateInput) => call<AppUserRow>('users:update', input),
+    delete: (id: number) => call<null>('users:delete', { id })
   },
   printQueue: {
     list: () => call<PrintJobRow[]>('printQueue:list'),

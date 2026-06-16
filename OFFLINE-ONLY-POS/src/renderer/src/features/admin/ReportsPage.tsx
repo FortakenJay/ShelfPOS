@@ -1,4 +1,4 @@
-import { Link, useNavigate, useSearch } from '@tanstack/react-router'
+import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
@@ -102,15 +102,6 @@ function Reports(): React.JSX.Element {
 
   return (
     <div className="p-6">
-      <div className="mb-4">
-        <Link
-          to="/admin/dashboard"
-          className="text-[14px] font-semibold text-primary hover:underline"
-        >
-          ← {t('reports.backToDashboard')}
-        </Link>
-      </div>
-
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">{t('reports.title')}</h1>

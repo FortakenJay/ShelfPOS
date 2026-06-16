@@ -50,6 +50,7 @@ export function getAppSettings(): AppSettings {
     stockThresholdDefault: Number(getSetting(SETTING_KEYS.stockThresholdDefault) ?? '5'),
     scannerBurstMs: Number(getSetting(SETTING_KEYS.scannerBurstMs) ?? '30'),
     firstRunComplete: getSetting(SETTING_KEYS.firstRunComplete) === '1',
+    cajaPinConfigured: !!getSetting(SETTING_KEYS.cajaPinHash),
     taxRegime: (getSetting(SETTING_KEYS.taxRegime) as TaxRegime | null) ?? 'simplificado',
     ivaRateStandard: Number(getSetting(SETTING_KEYS.ivaRateStandard) ?? '13'),
     ivaRateCanastaBasica: Number(getSetting(SETTING_KEYS.ivaRateCanastaBasica) ?? '1'),

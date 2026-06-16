@@ -7,6 +7,8 @@ import { FullScreenSpinner } from '@/components/ui'
 import { CierreDiscrepancyBanner } from '@/features/admin/CierreDiscrepancyAlerts'
 import { NotificationsCenter } from '@/features/admin/dashboard/components/NotificationsCenter'
 import { useDashboard } from '@/features/admin/dashboard/useDashboard'
+import { AppLogo } from '@/components/AppLogo'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import type { ReactNode } from 'react'
 import type { Role } from '@shared/types'
 
@@ -29,6 +31,7 @@ const ADMIN_ITEMS: NavItem[] = [
   { to: '/admin/reports', labelKey: 'nav.reports', roles: ['admin'] },
   { to: '/products', labelKey: 'nav.products', roles: ['admin'] },
   { to: '/admin/cash', labelKey: 'nav.cashMovements', roles: ['admin'] },
+  { to: '/admin/users', labelKey: 'nav.users', roles: ['admin'] },
   { to: '/admin/audit', labelKey: 'nav.audit', roles: ['admin'] },
   { to: '/admin/print-queue', labelKey: 'nav.printQueue', roles: ['admin'] },
   { to: '/admin/export', labelKey: 'nav.export', roles: ['admin'] },
@@ -45,14 +48,14 @@ export function Shell(): React.JSX.Element {
     location.pathname === '/admin/dashboard' || location.pathname === '/admin'
 
   if (isLoading) return <FullScreenSpinner />
-  if (!user) return <Navigate to="/choose-language" replace />
+  if (!user) return <Navigate to="/login" replace />
 
   const visible = (items: NavItem[]): NavItem[] => items.filter((i) => i.roles.includes(user.role))
 
   const logout = async (): Promise<void> => {
     await api.auth.logout()
     queryClient.clear()
-    void navigate({ to: '/choose-language', replace: true })
+    void navigate({ to: '/login', replace: true })
   }
 
   const linkClass =
@@ -61,9 +64,7 @@ export function Shell(): React.JSX.Element {
   return (
     <div className="flex h-full">
       <aside className="flex w-60 shrink-0 flex-col overflow-hidden bg-chrome">
-        <div className="shrink-0 px-5 py-5 text-2xl font-extrabold tracking-tight text-white">
-          Shelf<span className="text-primary">POS</span>
-        </div>
+        <AppLogo className="shrink-0 px-5 py-5" size="md" />
         {user.role === 'admin' && <AdminSidebarNotifications />}
         <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3">
           {visible(NAV_ITEMS).map((item) => (
@@ -85,6 +86,7 @@ export function Shell(): React.JSX.Element {
         <div className="shrink-0 border-t border-chrome-light px-5 py-4">
           <div className="text-[15px] font-bold text-white">{user.username}</div>
           <div className="mb-3 text-[13px] text-slate-400">{t(`roles.${user.role}`)}</div>
+          <LanguageSwitcher className="mb-3" />
           <button
             type="button"
             onClick={() => void logout()}
@@ -121,7 +123,7 @@ export function RequireRole({
 }): React.JSX.Element {
   const { user, isLoading } = useSession()
   if (isLoading) return <FullScreenSpinner />
-  if (!user) return <Navigate to="/choose-language" replace />
+  if (!user) return <Navigate to="/login" replace />
   if (!roles.includes(user.role)) return <Navigate to={homeFor(user.role)} replace />
   return <>{children}</>
 }

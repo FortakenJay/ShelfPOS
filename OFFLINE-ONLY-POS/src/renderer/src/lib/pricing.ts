@@ -1,19 +1,43 @@
 import type { Product } from '@shared/types'
 import { roundColones } from '@shared/money'
 
-/** Effective unit price: bulk price when the quantity reaches the bulk tier. */
-export function effectiveUnitPrice(product: Product, quantity: number): number {
+/** Catalog unit price: bulk tier when quantity qualifies. */
+export function catalogUnitPrice(product: Product, quantity: number): number {
   if (product.bulk_qty != null && product.bulk_price != null && quantity >= product.bulk_qty) {
     return product.bulk_price
   }
   return product.price
 }
 
-export function lineGross(product: Product, quantity: number): number {
-  return roundColones(effectiveUnitPrice(product, quantity) * quantity)
+/** Effective unit price for a cart/sale line (override wins over catalog/bulk). */
+export function lineUnitPrice(
+  product: Product,
+  quantity: number,
+  priceOverride?: number
+): number {
+  if (priceOverride != null) return priceOverride
+  return catalogUnitPrice(product, quantity)
+}
+
+/** @deprecated Use `catalogUnitPrice` or `lineUnitPrice`. */
+export function effectiveUnitPrice(product: Product, quantity: number): number {
+  return catalogUnitPrice(product, quantity)
+}
+
+export function lineGross(
+  product: Product,
+  quantity: number,
+  priceOverride?: number
+): number {
+  return roundColones(lineUnitPrice(product, quantity, priceOverride) * quantity)
 }
 
 /** Line total after its own discount (never negative). */
-export function lineTotal(product: Product, quantity: number, discount: number): number {
-  return roundColones(Math.max(0, lineGross(product, quantity) - discount))
+export function lineTotal(
+  product: Product,
+  quantity: number,
+  discount: number,
+  priceOverride?: number
+): number {
+  return roundColones(Math.max(0, lineGross(product, quantity, priceOverride) - discount))
 }

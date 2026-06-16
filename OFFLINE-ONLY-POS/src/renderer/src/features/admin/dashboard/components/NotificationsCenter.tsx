@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import type { DashboardAlert } from '@shared/types'
@@ -43,7 +43,7 @@ export function NotificationsCenter({
     const trigger = triggerRef.current
     if (!dialog || !trigger) return
     if (isSidebar) positionDialogNearTrigger(dialog, trigger)
-    if (!dialog.open) dialog.showModal()
+    if (!dialog.open) dialog.show()
     setOpen(true)
   }
 
@@ -51,6 +51,33 @@ export function NotificationsCenter({
     if (dialogRef.current?.open) closeMenu()
     else openMenu()
   }
+
+  useEffect(() => {
+    if (!open) return
+
+    const onPointerDown = (event: PointerEvent): void => {
+      const dialog = dialogRef.current
+      const trigger = triggerRef.current
+      if (!dialog?.open) return
+
+      const target = event.target
+      if (!(target instanceof Node)) return
+      if (dialog.contains(target) || trigger?.contains(target)) return
+
+      closeMenu()
+    }
+
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') closeMenu()
+    }
+
+    document.addEventListener('pointerdown', onPointerDown, true)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown, true)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open])
 
   const triggerClass = isSidebar
     ? 'relative flex w-full items-center justify-between rounded-md border border-slate-600 px-4 py-2.5 text-[14px] font-semibold text-slate-200 hover:border-slate-500 hover:bg-chrome-light hover:text-white'
@@ -81,7 +108,7 @@ export function NotificationsCenter({
         ref={dialogRef}
         id="dashboard-notifications-dialog"
         aria-label={t('dashboard.notifications.title')}
-        className="max-h-[min(24rem,calc(100vh-5rem))] overflow-y-auto rounded-xl border-2 border-line bg-white p-3 shadow-xl backdrop:bg-black/30 open:fixed"
+        className="z-100 max-h-[min(24rem,calc(100vh-5rem))] overflow-y-auto rounded-xl border-2 border-line bg-white p-3 shadow-xl open:fixed"
         onClose={() => setOpen(false)}
       >
         {alerts.length === 0 ? (

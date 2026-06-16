@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
@@ -15,12 +15,16 @@ type PendingMovement = { type: 'cash_in' | 'cash_out' }
 export function CashMovementsPanel({
   movements,
   floatOpened,
+  expectedCash,
   canEdit,
+  sidebar,
   onMovementComplete
 }: {
   movements: CashMovementRow[]
   floatOpened: boolean
+  expectedCash?: number
   canEdit: boolean
+  sidebar?: ReactNode
   onMovementComplete?: () => void
 }): React.JSX.Element {
   const { t } = useTranslation()
@@ -32,6 +36,13 @@ export function CashMovementsPanel({
   const [pinError, setPinError] = useState<string | null>(null)
 
   const movementLabel = (type: CashMovementType): string => t(`cash.types.${type}`)
+
+  const parsedAmount = parseColonesInput(moveAmount)
+  const cashOutExceedsDrawer =
+    parsedAmount != null &&
+    expectedCash != null &&
+    floatOpened &&
+    parsedAmount > expectedCash
 
   const movement = useMutation({
     mutationFn: ({ type, pin }: PendingMovement & { pin: string }) => {
@@ -55,69 +66,86 @@ export function CashMovementsPanel({
         return
       }
       setPending(null)
-      toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+      if (err instanceof ApiError && err.key === 'errors.insufficientCash' && err.vars) {
+        toasts.error(err.key, {
+          available: formatMoney(Number(err.vars.available)),
+          requested: formatMoney(Number(err.vars.requested))
+        })
+        return
+      }
+      toasts.error(err instanceof ApiError ? err.key : 'errors.unknown', err instanceof ApiError ? err.vars : undefined)
     }
   })
 
   const requestMovement = (type: 'cash_in' | 'cash_out'): void => {
     if (!floatOpened || moneyInputIsEmpty(moveAmount)) return
+    const amount = parseColonesInput(moveAmount)
+    if (
+      type === 'cash_out' &&
+      amount != null &&
+      expectedCash != null &&
+      amount > expectedCash
+    ) {
+      toasts.error('errors.insufficientCash', {
+        available: formatMoney(expectedCash),
+        requested: formatMoney(amount)
+      })
+      return
+    }
     setPinError(null)
     setPending({ type })
   }
 
-  return (
-    <>
-      {canEdit && (
-        <>
-          {!floatOpened && (
-            <div className="mb-5 max-w-3xl rounded-lg border-2 border-warning bg-amber-50 px-4 py-3 text-[15px] font-semibold text-amber-950">
-              {t('cash.mustOpenFromPos')}
-            </div>
-          )}
-
-          <div className="mb-8 max-w-3xl rounded-lg border-2 border-line bg-white p-5">
-            <h2 className="mb-3 text-lg font-bold">{t('cash.movementTitle')}</h2>
-            <Field label={t('pos.amount')} className="mb-3">
-              <MoneyInput
-                value={moveAmount}
-                disabled={!floatOpened}
-                onChange={setMoveAmount}
-                className="text-right text-2xl font-bold"
-              />
-            </Field>
-            <Field label={`${t('cash.reason')} (${t('common.optional')})`} className="mb-4">
-              <Input
-                value={moveReason}
-                disabled={!floatOpened}
-                onChange={(e) => setMoveReason(e.target.value)}
-              />
-            </Field>
-            <div className="flex gap-3">
-              <Button
-                variant="cta"
-                size="lg"
-                className="flex-1"
-                disabled={!floatOpened || moneyInputIsEmpty(moveAmount)}
-                onClick={() => requestMovement('cash_in')}
-              >
-                {t('cash.cashIn')}
-              </Button>
-              <Button
-                variant="danger"
-                size="lg"
-                className="flex-1"
-                disabled={!floatOpened || moneyInputIsEmpty(moveAmount)}
-                onClick={() => requestMovement('cash_out')}
-              >
-                {t('cash.cashOut')}
-              </Button>
-            </div>
-          </div>
-        </>
+  const movementForm = canEdit ? (
+    <section className="rounded-lg border-2 border-line bg-white p-5">
+      <h2 className="mb-4 text-lg font-bold">{t('cash.movementTitle')}</h2>
+      <Field label={t('pos.amount')} className="mb-3">
+        <MoneyInput
+          value={moveAmount}
+          disabled={!floatOpened}
+          onChange={setMoveAmount}
+          className="text-right text-2xl font-bold"
+        />
+      </Field>
+      <Field label={`${t('cash.reason')} (${t('common.optional')})`} className="mb-4">
+        <Input
+          value={moveReason}
+          disabled={!floatOpened}
+          onChange={(e) => setMoveReason(e.target.value)}
+        />
+      </Field>
+      {cashOutExceedsDrawer && expectedCash != null && (
+        <p className="mb-3 text-[14px] font-semibold text-danger">
+          {t('cash.insufficientCashHint', { available: formatMoney(expectedCash) })}
+        </p>
       )}
+      <div className="flex gap-3">
+        <Button
+          variant="cta"
+          size="lg"
+          className="flex-1"
+          disabled={!floatOpened || moneyInputIsEmpty(moveAmount)}
+          onClick={() => requestMovement('cash_in')}
+        >
+          {t('cash.cashIn')}
+        </Button>
+        <Button
+          variant="danger"
+          size="lg"
+          className="flex-1"
+          disabled={!floatOpened || moneyInputIsEmpty(moveAmount) || cashOutExceedsDrawer}
+          onClick={() => requestMovement('cash_out')}
+        >
+          {t('cash.cashOut')}
+        </Button>
+      </div>
+    </section>
+  ) : null
 
-      <h2 className="mb-3 text-xl font-bold">{t('cash.movements')}</h2>
-      <div className="max-w-5xl overflow-hidden rounded-lg border-2 border-line bg-white">
+  const movementsTable = (
+    <section className="rounded-lg border-2 border-line bg-white">
+      <h2 className="border-b border-line px-5 py-4 text-lg font-bold">{t('cash.movements')}</h2>
+      <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr>
@@ -131,7 +159,7 @@ export function CashMovementsPanel({
           <tbody>
             {movements.length === 0 && (
               <tr>
-                <Td colSpan={5} className="py-6 text-center text-slate-500">
+                <Td colSpan={5} className="py-8 text-center text-slate-500">
                   {t('common.noData')}
                 </Td>
               </tr>
@@ -143,7 +171,7 @@ export function CashMovementsPanel({
                 <Td>{m.reason ?? '—'}</Td>
                 <Td>{m.username}</Td>
                 <Td
-                  className={`text-right font-bold ${m.type === 'cash_out' ? 'text-danger' : ''}`}
+                  className={`text-right font-bold tabular-nums ${m.type === 'cash_out' ? 'text-danger' : ''}`}
                 >
                   {m.type === 'cash_out' ? '−' : ''}
                   {formatMoney(m.amount)}
@@ -152,6 +180,27 @@ export function CashMovementsPanel({
             ))}
           </tbody>
         </table>
+      </div>
+    </section>
+  )
+
+  if (!canEdit) {
+    return movementsTable
+  }
+
+  return (
+    <>
+      <div className="grid gap-6 lg:grid-cols-5 lg:items-start">
+        <div className="space-y-6 lg:col-span-2">
+          {sidebar}
+          {!floatOpened && (
+            <div className="rounded-lg border-2 border-warning bg-amber-50 px-4 py-3 text-[15px] font-semibold text-amber-950">
+              {t('cash.mustOpenFromPos')}
+            </div>
+          )}
+          {movementForm}
+        </div>
+        <div className="lg:col-span-3">{movementsTable}</div>
       </div>
 
       {pending && (
