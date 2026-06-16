@@ -2,7 +2,7 @@ import { app, shell } from 'electron'
 import { join } from 'node:path'
 import { handle } from './helpers'
 import { AppError } from '../errors'
-import { rangeBounds } from '../db/helpers'
+import { daysInRange, rangeBounds } from '../db/helpers'
 import {
   inventorySnapshot,
   paymentTotals,
@@ -18,6 +18,8 @@ import { writePrintLinesPdf } from '../services/printPdf'
 import { showSaveDialog } from '../window'
 import {
   buildInventoryReportLines,
+  buildMultiDayPaymentReportLines,
+  buildMultiDaySummaryReportLines,
   buildPaymentReportLines,
   buildSummaryReportLines,
   buildTaxReportLines,
@@ -26,10 +28,12 @@ import {
 import type {
   DateRange,
   Language,
+  PaymentMethodReport,
   PrintLine,
   PrintStatus,
   ReportData,
-  ReportType
+  ReportType,
+  SalesSummaryReport
 } from '../../shared/types'
 
 function runReport(type: ReportType, range: DateRange): ReportData {
@@ -60,8 +64,33 @@ function reportRangeLabel(range: DateRange, lang: Language): string {
   return `${formatDate(range.from, lang)} - ${formatDate(range.to, lang)}`
 }
 
+function isMultiDay(range: DateRange): boolean {
+  return range.from !== range.to
+}
+
 function buildReportPrintLines(report: ReportData, range: DateRange, lang: Language, storeName: string): PrintLine[] {
   const rangeLabel = reportRangeLabel(range, lang)
+
+  if (isMultiDay(range) && report.type === 'summary') {
+    const days = daysInRange(range).map((date) => {
+      const [fromTs, toTs] = rangeBounds({ from: date, to: date })
+      return { date, data: salesSummary({ fromTs, toTs }) }
+    })
+    const [fromTs, toTs] = rangeBounds(range)
+    const total = salesSummary({ fromTs, toTs })
+    return buildMultiDaySummaryReportLines(days, total, rangeLabel, lang, storeName)
+  }
+
+  if (isMultiDay(range) && report.type === 'byPayment') {
+    const days = daysInRange(range).map((date) => {
+      const [fromTs, toTs] = rangeBounds({ from: date, to: date })
+      return { date, data: paymentTotals({ fromTs, toTs }) }
+    })
+    const [fromTs, toTs] = rangeBounds(range)
+    const total = paymentTotals({ fromTs, toTs })
+    return buildMultiDayPaymentReportLines(days, total, rangeLabel, lang, storeName)
+  }
+
   switch (report.type) {
     case 'summary':
       return buildSummaryReportLines(report.data, rangeLabel, lang, storeName)

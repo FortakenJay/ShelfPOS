@@ -4,7 +4,7 @@ import { attemptPrintJob, probePrinter } from '../services/printer'
 import type { PrintJobRow, PrintStatus } from '../../shared/types'
 
 export function registerPrintQueueHandlers(): void {
-  handle<void, PrintJobRow[]>('printQueue:list', ['admin'], () => listQueuedPrintJobs())
+  handle<void, PrintJobRow[]>('printQueue:list', ['sales', 'admin'], () => listQueuedPrintJobs())
 
   handle<{ id: number }, { printStatus: PrintStatus }>(
     'printQueue:retry',

@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { formatMoney } from '@/lib/format'
 import { effectiveUnitPrice, lineTotal } from '@/lib/pricing'
 import type { CartLine } from './types'
-import type { PaymentMethod } from '@shared/types'
 
 function CartQtyInput({
   value,
@@ -42,22 +41,18 @@ function CartQtyInput({
 
 export function POSCartPanel({
   cart,
-  method,
   itemsGross,
   discountTotal,
   onLineDiscount,
   onCartDiscount,
-  onSetMethod,
   onSetQuantity,
   onRemoveLine
 }: {
   cart: CartLine[]
-  method: PaymentMethod
   itemsGross: number
   discountTotal: number
   onLineDiscount: (productId: number) => void
   onCartDiscount: () => void
-  onSetMethod: (method: PaymentMethod) => void
   onSetQuantity: (productId: number, quantity: number) => void
   onRemoveLine: (productId: number) => void
 }): React.JSX.Element {
@@ -97,19 +92,21 @@ export function POSCartPanel({
                   <tr key={line.product.id} className="border-b border-line bg-white">
                     <td className="px-4 py-3">
                       <span className="block text-[17px] font-semibold">{line.product.name}</span>
-                      <div className="mt-1 flex items-center gap-2 text-[13px]">
+                      <div className="mt-1 flex items-center gap-2 text-[16px]">
                         {isBulk && (
-                          <span className="rounded bg-cta/10 px-1.5 py-0.5 font-bold text-cta">
+                          <span className="rounded bg-cta/10 px-1.5 py-0.5 text-[14px] font-bold text-cta">
                             {t('pos.bulkApplied')}
                           </span>
                         )}
                         {line.discount > 0 && (
-                          <span className="font-semibold text-danger">−{formatMoney(line.discount)}</span>
+                          <span className="text-[17px] font-bold text-danger">
+                            −{formatMoney(line.discount)}
+                          </span>
                         )}
                         <button
                           type="button"
                           onClick={() => onLineDiscount(line.product.id)}
-                          className="font-bold text-primary hover:underline"
+                          className="text-[16px] font-bold text-primary hover:underline"
                         >
                           {t('pos.discountBtn')}
                         </button>
@@ -163,38 +160,22 @@ export function POSCartPanel({
       </div>
 
       <div className="border-t-2 border-line bg-white p-4">
-        <div className="mb-1 flex items-center justify-between">
-          <span className="text-[15px] font-semibold text-slate-500">{t('pos.subtotal')}</span>
-          <span className="text-[15px] font-bold">{formatMoney(itemsGross)}</span>
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-[18px] font-semibold text-slate-500">{t('pos.subtotal')}</span>
+          <span className="text-[18px] font-bold">{formatMoney(itemsGross)}</span>
         </div>
-        <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center justify-between">
           <button
             type="button"
             onClick={onCartDiscount}
             disabled={cart.length === 0}
-            className="text-[15px] font-bold text-primary hover:underline disabled:text-slate-300"
+            className="text-[18px] font-bold text-primary hover:underline disabled:text-slate-300"
           >
             {t('pos.cartDiscount')}
           </button>
-          <span className="text-[15px] font-bold text-danger">
+          <span className="text-[18px] font-bold text-danger">
             {discountTotal > 0 ? `−${formatMoney(discountTotal)}` : '—'}
           </span>
-        </div>
-        <div className="flex items-center gap-2">
-          {(['cash', 'card', 'sinpe'] as PaymentMethod[]).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => onSetMethod(m)}
-              className={`min-h-[48px] flex-1 rounded-md border-2 text-[16px] font-bold ${
-                method === m
-                  ? 'border-primary bg-primary text-white'
-                  : 'border-line bg-white text-slate-700 hover:border-primary'
-              }`}
-            >
-              {t(`pos.methods.${m}`)}
-            </button>
-          ))}
         </div>
       </div>
     </>

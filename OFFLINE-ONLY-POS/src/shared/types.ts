@@ -12,7 +12,6 @@ export type TaxCategory = 'exempt' | 'canasta_basica' | 'standard'
 export type TaxRegime = 'simplificado' | 'tradicional'
 /** Costa Rica identification document types. */
 export type IdType = 'fisica' | 'juridica' | 'dimex' | 'nite'
-export type SaleCondition = 'contado' | 'credito' | 'apartado'
 export type CashMovementType = 'opening_float' | 'cash_in' | 'cash_out'
 
 export interface SessionUser {
@@ -171,7 +170,6 @@ export interface CreateSaleInput {
   payments: SalePaymentInput[]
   /** Absolute discount (₡) applied to the whole cart, on top of line discounts. */
   cartDiscount?: number
-  saleCondition?: SaleCondition
   customer?: CustomerInput
   /** Physical cash handed over (for change). Only relevant when a cash payment exists. */
   tendered?: number
@@ -226,7 +224,6 @@ export interface SaleDetail {
   subtotal: number
   discountTotal: number
   total: number
-  saleCondition: SaleCondition
   sinpeRef: string | null
   cierreId: number | null
   customer: SaleCustomer
@@ -249,12 +246,21 @@ export interface DateRange {
   to: string // YYYY-MM-DD
 }
 
+export interface PeriodCashTotals {
+  openingFloat: number
+  cashIn: number
+  cashOut: number
+  cashSales: number
+}
+
 export interface SalesSummaryReport {
   totalRevenue: number
   txCount: number
   itemsSold: number
   returnsCount: number
   avgTicket: number
+  totalDiscount: number
+  cash: PeriodCashTotals
 }
 
 export interface PaymentMethodReport {
@@ -480,6 +486,7 @@ export interface CashMovementInput {
   type: 'cash_in' | 'cash_out'
   amount: number
   reason?: string
+  pin: string
 }
 
 // --- audit log ---
@@ -576,6 +583,7 @@ export const IPC_CHANNELS = [
   'cash:status',
   'cash:openFloat',
   'cash:movement',
+  'cash:listMovements',
   'audit:list',
   'audit:users',
   'audit:actions',

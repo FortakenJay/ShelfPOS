@@ -19,6 +19,7 @@ import { AuditLogPage } from '@/features/admin/AuditLogPage'
 import { PrintQueuePage } from '@/features/admin/PrintQueuePage'
 import { ExportPage } from '@/features/admin/ExportPage'
 import { SettingsPage } from '@/features/admin/SettingsPage'
+import { AdminCashPage } from '@/features/admin/AdminCashPage'
 
 const rootRoute = createRootRoute({
   component: () => <Outlet />
@@ -102,6 +103,12 @@ const exportRoute = createRoute({
   component: ExportPage
 })
 
+const adminCashRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: '/admin/cash',
+  component: AdminCashPage
+})
+
 const settingsRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: '/admin/settings',
@@ -122,6 +129,7 @@ const routeTree = rootRoute.addChildren([
     auditRoute,
     printQueueRoute,
     exportRoute,
+    adminCashRoute,
     settingsRoute
   ])
 ])

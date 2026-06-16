@@ -33,6 +33,7 @@
   "nav": {
     "pos": "Caja",
     "cash": "Efectivo",
+    "cashMovements": "Movimiento de efectivo",
     "products": "Productos",
     "admin": "Administración",
     "reports": "Reportes",
@@ -132,12 +133,6 @@
     "splitPayment": "Pago dividido",
     "addPayment": "Agregar pago",
     "remaining": "Restante",
-    "saleCondition": "Condición de venta",
-    "conditions": {
-      "contado": "Contado",
-      "credito": "Crédito",
-      "apartado": "Apartado"
-    },
     "bulkApplied": "Precio por mayor",
     "discountBtn": "Descuento",
     "cartDiscount": "Descuento de la venta",
@@ -352,10 +347,15 @@
     "pdfDone": "PDF guardado: {{path}}",
     "summary": {
       "totalRevenue": "Ingresos totales",
+      "totalDiscount": "Descuentos aplicados",
       "txCount": "Transacciones",
       "itemsSold": "Artículos vendidos",
       "returnsCount": "Devoluciones",
-      "avgTicket": "Ticket promedio"
+      "avgTicket": "Ticket promedio",
+      "openingFloat": "Fondo inicial",
+      "cashSales": "Ventas en efectivo",
+      "cashIn": "Entradas de efectivo",
+      "cashOut": "Salidas de efectivo"
     },
     "byPayment": {
       "method": "Método",
@@ -421,10 +421,11 @@
     "discrepancyShort": "faltó",
     "discrepancyBy": "Por {{user}}",
     "discrepancyDifference": "Indiferencia: {{amount}}",
-    "discrepancyBanner": "({{count}} cierres) Diferencia de efectivo — revise Cierre de caja"
+    "discrepancyBanner": "({{count}} cierres) Diferencia de efectivo — revise Reportes o Bitácora"
   },
   "cash": {
     "title": "Caja / Efectivo",
+    "adminTitle": "Movimiento de efectivo",
     "openingFloat": "Fondo de caja inicial",
     "cashSales": "Ventas en efectivo",
     "cashIn": "Entrada de efectivo",
@@ -438,6 +439,8 @@
     "openFloatHint": "Registre el fondo inicial para comenzar a vender en esta caja.",
     "mustOpenFromPos": "La caja aún no está abierta. Vaya a Caja (POS) para registrar la apertura antes de vender.",
     "movementTitle": "Movimiento de efectivo",
+    "pinTitleIn": "PIN de gerente — entrada de efectivo",
+    "pinTitleOut": "PIN de gerente — salida de efectivo",
     "reason": "Motivo",
     "movements": "Movimientos de efectivo",
     "type": "Tipo",
@@ -588,7 +591,6 @@
       "thanks": "¡Gracias por su compra!",
       "docTitle": "TIQUETE DE VENTA",
       "consecutivo": "Consecutivo",
-      "condition": "Condición",
       "phone": "Tel",
       "activity": "Act. econ.",
       "id": "Identificación",
@@ -608,6 +610,9 @@
       "returns": "Devoluciones",
       "avgTicket": "Ticket promedio",
       "revenue": "Ingresos totales",
+      "totalDiscount": "Descuentos aplicados",
+      "daySection": "Día {{date}}",
+      "periodTotal": "TOTAL DEL PERIODO",
       "byPayment": "Por método de pago",
       "topProducts": "Productos más vendidos",
       "inventory": "Inventario",

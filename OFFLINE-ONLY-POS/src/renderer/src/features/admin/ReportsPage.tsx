@@ -108,10 +108,15 @@ function ReportTable({ report }: { report: ReportData }): React.JSX.Element {
     const d = report.data
     const rows: [string, string][] = [
       [t('reports.summary.totalRevenue'), formatMoney(d.totalRevenue)],
+      [t('reports.summary.totalDiscount'), formatMoney(d.totalDiscount)],
       [t('reports.summary.txCount'), String(d.txCount)],
       [t('reports.summary.itemsSold'), String(d.itemsSold)],
       [t('reports.summary.returnsCount'), String(d.returnsCount)],
-      [t('reports.summary.avgTicket'), formatMoney(d.avgTicket)]
+      [t('reports.summary.avgTicket'), formatMoney(d.avgTicket)],
+      [t('reports.summary.openingFloat'), formatMoney(d.cash.openingFloat)],
+      [t('reports.summary.cashSales'), formatMoney(d.cash.cashSales)],
+      [t('reports.summary.cashIn'), formatMoney(d.cash.cashIn)],
+      [t('reports.summary.cashOut'), formatMoney(d.cash.cashOut)]
     ]
     return (
       <table className="w-full">

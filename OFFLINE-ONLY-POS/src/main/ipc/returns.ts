@@ -11,7 +11,7 @@ import type { CreateReturnInput, CreateReturnResult } from '../../shared/types'
 export function registerReturnHandlers(): void {
   handle<CreateReturnInput, CreateReturnResult>(
     'returns:create',
-    ['sales', 'admin'],
+    ['sales'],
     async (input) => {
       const user = session.require()
       if (!hasOpeningFloat()) throw new AppError('errors.cashNotOpened')

@@ -33,6 +33,7 @@
   "nav": {
     "pos": "收银台",
     "cash": "现金",
+    "cashMovements": "现金进出",
     "products": "商品管理",
     "admin": "管理",
     "reports": "报表",
@@ -132,12 +133,6 @@
     "splitPayment": "组合支付",
     "addPayment": "添加支付方式",
     "remaining": "剩余",
-    "saleCondition": "销售条件",
-    "conditions": {
-      "contado": "现付",
-      "credito": "赊账",
-      "apartado": "预留"
-    },
     "bulkApplied": "批发价",
     "discountBtn": "折扣",
     "cartDiscount": "整单折扣",
@@ -352,10 +347,15 @@
     "pdfDone": "PDF 已保存：{{path}}",
     "summary": {
       "totalRevenue": "总收入",
+      "totalDiscount": "已用折扣",
       "txCount": "交易笔数",
       "itemsSold": "售出商品数",
       "returnsCount": "退货笔数",
-      "avgTicket": "平均客单价"
+      "avgTicket": "平均客单价",
+      "openingFloat": "开班备用金",
+      "cashSales": "现金销售",
+      "cashIn": "现金存入",
+      "cashOut": "现金支出"
     },
     "byPayment": {
       "method": "支付方式",
@@ -421,10 +421,11 @@
     "discrepancyShort": "缺少",
     "discrepancyBy": "操作人：{{user}}",
     "discrepancyDifference": "差额：{{amount}}",
-    "discrepancyBanner": "({{count}} 笔日结) 现金有差额 — 请查看日结"
+    "discrepancyBanner": "({{count}} 笔日结) 现金有差额 — 请查看报表或日志"
   },
   "cash": {
     "title": "现金 / 钱箱",
+    "adminTitle": "现金进出",
     "openingFloat": "开班备用金",
     "cashSales": "现金销售",
     "cashIn": "现金存入",
@@ -438,6 +439,8 @@
     "openFloatHint": "登记开班备用金后即可开始收银。",
     "mustOpenFromPos": "收银台尚未开班。请先到「收银」完成开班后再使用现金功能。",
     "movementTitle": "现金进出",
+    "pinTitleIn": "经理 PIN — 现金存入",
+    "pinTitleOut": "经理 PIN — 现金支出",
     "reason": "原因",
     "movements": "现金进出记录",
     "type": "类型",
@@ -588,7 +591,6 @@
       "thanks": "感谢惠顾！",
       "docTitle": "销售小票",
       "consecutivo": "单据号",
-      "condition": "销售条件",
       "phone": "电话",
       "activity": "经济活动",
       "id": "证件",
@@ -608,6 +610,9 @@
       "returns": "退货笔数",
       "avgTicket": "平均客单价",
       "revenue": "总收入",
+      "totalDiscount": "已用折扣",
+      "daySection": "{{date}}",
+      "periodTotal": "期间合计",
       "byPayment": "按支付方式",
       "topProducts": "热销商品",
       "inventory": "库存",

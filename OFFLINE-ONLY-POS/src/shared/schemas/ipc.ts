@@ -17,7 +17,6 @@ import {
   quantitySchema,
   reportTypeSchema,
   roleSchema,
-  saleConditionSchema,
   shortTextSchema,
   stockStatusSchema,
   taxCategorySchema,
@@ -83,7 +82,6 @@ export const createSaleInputSchema = z.strictObject({
   items: z.array(createSaleItemInputSchema).min(1).max(500),
   payments: z.array(salePaymentInputSchema).min(1).max(3),
   cartDiscount: moneySchema.optional(),
-  saleCondition: saleConditionSchema.optional(),
   customer: customerInputSchema.optional(),
   tendered: moneySchema.optional(),
   discountPin: pinSchema.optional()
@@ -169,7 +167,8 @@ const cierreConfirmInputSchema = z.strictObject({
 const cashMovementInputSchema = z.strictObject({
   type: z.enum(['cash_in', 'cash_out']),
   amount: moneySchema.refine((n) => n > 0, 'amount must be positive'),
-  reason: optionalTextSchema.optional()
+  reason: optionalTextSchema.optional(),
+  pin: pinSchema
 })
 
 const licenseActivateInputSchema = z.strictObject({
@@ -227,6 +226,7 @@ export const IPC_SCHEMAS = {
   'cash:status': voidInput,
   'cash:openFloat': z.strictObject({ amount: moneySchema }),
   'cash:movement': cashMovementInputSchema,
+  'cash:listMovements': dateRangeSchema,
   'audit:list': auditLogFilterSchema,
   'audit:users': voidInput,
   'audit:actions': voidInput,

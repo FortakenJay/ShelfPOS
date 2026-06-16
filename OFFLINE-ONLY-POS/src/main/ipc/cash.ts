@@ -1,20 +1,40 @@
 import { handle } from './helpers'
 import { AppError } from '../errors'
 import { getDb } from '../db'
+import { rangeBounds } from '../db/helpers'
 import {
   cashDrawerStatus,
   hasOpeningFloat,
-  insertCashMovement
+  insertCashMovement,
+  listCashMovements
 } from '../db/repos/cash'
 import { writeAudit } from '../db/repos/audit'
 import { session } from '../services/session'
-import type { CashDrawerStatus, CashMovementInput, OpenFloatInput } from '../../shared/types'
+import type {
+  CashDrawerStatus,
+  CashMovementInput,
+  CashMovementRow,
+  DateRange,
+  OpenFloatInput
+} from '../../shared/types'
 
-const CASH: ('sales' | 'admin')[] = ['sales', 'admin']
-const CASH_ADMIN: 'admin'[] = ['admin']
+const CASH: 'sales'[] = ['sales']
+const CASH_READ: ('sales' | 'admin')[] = ['sales', 'admin']
+
+function validateDateRange(range: DateRange): void {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(range?.from ?? '') || !/^\d{4}-\d{2}-\d{2}$/.test(range?.to ?? '')) {
+    throw new AppError('errors.invalidInput')
+  }
+}
 
 export function registerCashHandlers(): void {
-  handle<void, CashDrawerStatus>('cash:status', CASH, () => cashDrawerStatus())
+  handle<void, CashDrawerStatus>('cash:status', CASH_READ, () => cashDrawerStatus())
+
+  handle<DateRange, CashMovementRow[]>('cash:listMovements', ['admin'], (range) => {
+    validateDateRange(range)
+    const [fromTs, toTs] = rangeBounds(range)
+    return listCashMovements({ fromTs, toTs })
+  })
 
   handle<OpenFloatInput, CashDrawerStatus>('cash:openFloat', CASH, (input) => {
     const user = session.require()
@@ -27,19 +47,21 @@ export function registerCashHandlers(): void {
     return cashDrawerStatus()
   })
 
-  handle<CashMovementInput, CashDrawerStatus>('cash:movement', CASH_ADMIN, (input) => {
+  handle<CashMovementInput, CashDrawerStatus>('cash:movement', CASH, async (input) => {
     const user = session.require()
     if (!hasOpeningFloat()) throw new AppError('errors.cashNotOpened')
     if (input?.type !== 'cash_in' && input?.type !== 'cash_out') {
       throw new AppError('errors.invalidInput')
     }
     if (!Number.isFinite(input.amount) || input.amount <= 0) throw new AppError('errors.invalidInput')
+    await session.verifyPin(input.pin.trim())
     const reason = input.reason?.trim() || null
+    const detail = `${user.username}: ${input.amount}${reason ? ` (${reason})` : ''}`
     getDb().transaction(() => {
       insertCashMovement(input.type, input.amount, reason, user.id)
       writeAudit(input.type === 'cash_in' ? 'cash_in' : 'cash_out', {
         entity: 'cash',
-        detail: `${input.amount}${reason ? ` (${reason})` : ''}`
+        detail
       })
     })()
     return cashDrawerStatus()

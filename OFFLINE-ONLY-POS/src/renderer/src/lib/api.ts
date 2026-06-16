@@ -8,6 +8,7 @@ import type {
   BackupInfo,
   CashDrawerStatus,
   CashMovementInput,
+  CashMovementRow,
   CierreConfirmInput,
   CierreConfirmResult,
   CierreDiscrepancyAlert,
@@ -127,7 +128,8 @@ export const api = {
   cash: {
     status: () => call<CashDrawerStatus>('cash:status'),
     openFloat: (input: OpenFloatInput) => call<CashDrawerStatus>('cash:openFloat', input),
-    movement: (input: CashMovementInput) => call<CashDrawerStatus>('cash:movement', input)
+    movement: (input: CashMovementInput) => call<CashDrawerStatus>('cash:movement', input),
+    listMovements: (range: DateRange) => call<CashMovementRow[]>('cash:listMovements', range)
   },
   audit: {
     list: (filter: AuditLogFilter) => call<AuditLogRow[]>('audit:list', filter),

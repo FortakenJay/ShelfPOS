@@ -5,7 +5,7 @@ import { writeAudit } from '../db/repos/audit'
 import { session } from '../services/session'
 import type { DiscountAuthorizeInput } from '../../shared/types'
 
-const SELL: ('sales' | 'admin')[] = ['sales', 'admin']
+const SELL: 'sales'[] = ['sales']
 
 export function registerDiscountHandlers(): void {
   handle<DiscountAuthorizeInput, null>('discount:authorize', SELL, async (input) => {

@@ -1,5 +1,5 @@
 import { useReducer, type Dispatch } from 'react'
-import type { PaymentMethod, SaleCondition } from '@shared/types'
+import type { PaymentMethod } from '@shared/types'
 
 export interface PaymentEntry {
   id: string
@@ -15,7 +15,6 @@ export function newPaymentEntry(method: PaymentMethod, ref = ''): PaymentEntry {
 const METHODS: PaymentMethod[] = ['cash', 'card', 'sinpe']
 
 export interface PaymentModalState {
-  condition: SaleCondition
   splitPayment: boolean
   singleMethod: PaymentMethod
   sinpeRef: string
@@ -24,7 +23,6 @@ export interface PaymentModalState {
 }
 
 type PaymentModalAction =
-  | { type: 'setCondition'; value: SaleCondition }
   | { type: 'toggleSplit'; enabled: boolean; initialMethod: PaymentMethod }
   | { type: 'setSingleMethod'; value: PaymentMethod }
   | { type: 'setSinpeRef'; value: string }
@@ -35,7 +33,6 @@ type PaymentModalAction =
 
 export function createInitialPaymentState(initialMethod: PaymentMethod): PaymentModalState {
   return {
-    condition: 'contado',
     splitPayment: false,
     singleMethod: initialMethod,
     sinpeRef: '',
@@ -49,8 +46,6 @@ function paymentModalReducer(
   action: PaymentModalAction
 ): PaymentModalState {
   switch (action.type) {
-    case 'setCondition':
-      return { ...state, condition: action.value }
     case 'toggleSplit':
       if (action.enabled) {
         return {

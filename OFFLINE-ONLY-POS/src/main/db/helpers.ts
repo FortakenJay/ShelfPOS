@@ -24,6 +24,20 @@ export function rangeBounds(range: DateRange): [string, string] {
   return [`${range.from} 00:00:00`, `${range.to} 23:59:59`]
 }
 
+/** Inclusive list of `YYYY-MM-DD` dates from `range.from` through `range.to`. */
+export function daysInRange(range: DateRange): string[] {
+  const days: string[] = []
+  const cursor = new Date(`${range.from}T12:00:00`)
+  const end = new Date(`${range.to}T12:00:00`)
+  while (cursor <= end) {
+    days.push(
+      `${cursor.getFullYear()}-${pad(cursor.getMonth() + 1)}-${pad(cursor.getDate())}`
+    )
+    cursor.setDate(cursor.getDate() + 1)
+  }
+  return days
+}
+
 export function round2(n: number): number {
   return roundColones(n)
 }

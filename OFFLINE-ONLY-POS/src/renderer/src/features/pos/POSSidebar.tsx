@@ -1,11 +1,10 @@
 import { useTranslation } from 'react-i18next'
 import { formatMoney } from '@/lib/format'
 import { Button } from '@/components/ui'
-import type { CustomerInput, PaymentMethod } from '@shared/types'
+import type { CustomerInput } from '@shared/types'
 
 export function POSSidebar({
   total,
-  method,
   customer,
   cartEmpty,
   onCustomerOpen,
@@ -13,7 +12,6 @@ export function POSSidebar({
   onReturnOpen
 }: {
   total: number
-  method: PaymentMethod
   customer: CustomerInput | null
   cartEmpty: boolean
   onCustomerOpen: () => void
@@ -27,7 +25,6 @@ export function POSSidebar({
       <div>
         <div className="text-[16px] font-semibold text-slate-500 uppercase">{t('pos.total')}</div>
         <div className="mt-1 text-5xl font-extrabold tracking-tight">{formatMoney(total)}</div>
-        <div className="mt-2 text-[15px] font-semibold text-slate-500">{t(`pos.methods.${method}`)}</div>
         <button
           type="button"
           onClick={onCustomerOpen}

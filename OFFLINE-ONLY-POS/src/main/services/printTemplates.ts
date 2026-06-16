@@ -10,11 +10,10 @@ import type {
   PaymentMethod,
   PaymentMethodReport,
   PrintLine,
-  SaleCondition,
   SaleCustomer,
+  SalesSummaryReport,
   TaxBreakdownRow,
   TaxRegime,
-  SalesSummaryReport,
   TopProductRow
 } from '../../shared/types'
 
@@ -68,7 +67,6 @@ export interface ReceiptArgs {
   saleId: number
   createdAt: string
   cashier: string
-  saleCondition: SaleCondition
   items: ReceiptItemLine[]
   subtotal: number
   discountTotal: number
@@ -140,11 +138,6 @@ export function buildReceiptLines(args: ReceiptArgs, lang: Language): PrintLine[
   lines.push({ t: 'row', l: t(lang, 'print.receipt.saleId'), r: `#${args.saleId}` })
   lines.push({ t: 'row', l: t(lang, 'common.date'), r: formatDate(args.createdAt, lang, true) })
   lines.push({ t: 'row', l: t(lang, 'print.receipt.cashier'), r: args.cashier })
-  lines.push({
-    t: 'row',
-    l: t(lang, 'print.receipt.condition'),
-    r: t(lang, `pos.conditions.${args.saleCondition}`)
-  })
   lines.push({ t: 'hr' })
 
   for (const item of args.items) {
@@ -247,21 +240,80 @@ function topProductLines(lang: Language, rows: TopProductRow[]): PrintLine[] {
   return lines
 }
 
+function summaryMetricLines(lang: Language, data: SalesSummaryReport): PrintLine[] {
+  const money = (n: number): string => formatMoney(n, lang)
+  return [
+    { t: 'row', l: t(lang, 'print.report.revenue'), r: money(data.totalRevenue), bold: true },
+    { t: 'row', l: t(lang, 'print.report.totalDiscount'), r: `-${money(data.totalDiscount)}` },
+    { t: 'row', l: t(lang, 'print.report.transactions'), r: String(data.txCount) },
+    { t: 'row', l: t(lang, 'print.report.itemsSold'), r: String(data.itemsSold) },
+    { t: 'row', l: t(lang, 'print.report.returns'), r: String(data.returnsCount) },
+    { t: 'row', l: t(lang, 'print.report.avgTicket'), r: money(data.avgTicket) },
+    { t: 'hr' },
+    { t: 'text', v: t(lang, 'print.cierre.cashTitle'), bold: true },
+    { t: 'row', l: t(lang, 'cash.openingFloat'), r: money(data.cash.openingFloat) },
+    { t: 'row', l: t(lang, 'cash.cashSales'), r: money(data.cash.cashSales) },
+    { t: 'row', l: t(lang, 'cash.cashIn'), r: money(data.cash.cashIn) },
+    { t: 'row', l: t(lang, 'cash.cashOut'), r: `-${money(data.cash.cashOut)}` }
+  ]
+}
+
 export function buildSummaryReportLines(
   data: SalesSummaryReport,
   rangeLabel: string,
   lang: Language,
   storeName: string
 ): PrintLine[] {
-  const money = (n: number): string => formatMoney(n, lang)
   return [
     ...reportHeader(t(lang, 'reports.types.summary'), rangeLabel, lang, storeName),
-    { t: 'row', l: t(lang, 'print.report.revenue'), r: money(data.totalRevenue), bold: true },
-    { t: 'row', l: t(lang, 'print.report.transactions'), r: String(data.txCount) },
-    { t: 'row', l: t(lang, 'print.report.itemsSold'), r: String(data.itemsSold) },
-    { t: 'row', l: t(lang, 'print.report.returns'), r: String(data.returnsCount) },
-    { t: 'row', l: t(lang, 'print.report.avgTicket'), r: money(data.avgTicket) }
+    ...summaryMetricLines(lang, data)
   ]
+}
+
+export function buildMultiDaySummaryReportLines(
+  days: { date: string; data: SalesSummaryReport }[],
+  total: SalesSummaryReport,
+  rangeLabel: string,
+  lang: Language,
+  storeName: string
+): PrintLine[] {
+  const lines = reportHeader(t(lang, 'reports.types.summary'), rangeLabel, lang, storeName)
+  for (const day of days) {
+    lines.push({ t: 'hr' })
+    lines.push({
+      t: 'text',
+      v: t(lang, 'print.report.daySection', { date: formatDate(day.date, lang) }),
+      bold: true
+    })
+    lines.push(...summaryMetricLines(lang, day.data))
+  }
+  lines.push({ t: 'hr' })
+  lines.push({ t: 'text', v: t(lang, 'print.report.periodTotal'), bold: true, big: true })
+  lines.push(...summaryMetricLines(lang, total))
+  return lines
+}
+
+export function buildMultiDayPaymentReportLines(
+  days: { date: string; data: PaymentMethodReport }[],
+  total: PaymentMethodReport,
+  rangeLabel: string,
+  lang: Language,
+  storeName: string
+): PrintLine[] {
+  const lines = reportHeader(t(lang, 'reports.types.byPayment'), rangeLabel, lang, storeName)
+  for (const day of days) {
+    lines.push({ t: 'hr' })
+    lines.push({
+      t: 'text',
+      v: t(lang, 'print.report.daySection', { date: formatDate(day.date, lang) }),
+      bold: true
+    })
+    lines.push(...paymentLines(lang, day.data))
+  }
+  lines.push({ t: 'hr' })
+  lines.push({ t: 'text', v: t(lang, 'print.report.periodTotal'), bold: true, big: true })
+  lines.push(...paymentLines(lang, total))
+  return lines
 }
 
 export function buildPaymentReportLines(

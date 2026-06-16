@@ -34,7 +34,7 @@ import type {
   PrintLine
 } from '../../shared/types'
 
-const CIERRE: ('sales' | 'admin')[] = ['sales', 'admin']
+const CIERRE: 'sales'[] = ['sales']
 const CIERRE_ADMIN: 'admin'[] = ['admin']
 
 function formatCashDifferenceAuditDetail(

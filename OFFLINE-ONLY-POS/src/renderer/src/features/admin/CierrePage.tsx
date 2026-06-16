@@ -15,7 +15,7 @@ type CierreStep = 'count' | 'confirm'
 
 export function CierrePage(): React.JSX.Element {
   return (
-    <RequireRole roles={['sales', 'admin']}>
+    <RequireRole roles={['sales']}>
       <Cierre />
     </RequireRole>
   )

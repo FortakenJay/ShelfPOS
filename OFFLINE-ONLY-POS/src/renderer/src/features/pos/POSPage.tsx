@@ -14,7 +14,7 @@ import { POSSearchPanel } from './POSSearchPanel'
 import { POSModals } from './POSModals'
 import { OpenFloatModal } from './OpenFloatModal'
 import type { CartLine } from './types'
-import type { CustomerInput, PaymentMethod, Product } from '@shared/types'
+import type { CustomerInput, Product } from '@shared/types'
 
 export type { CartLine } from './types'
 
@@ -22,7 +22,7 @@ type DiscountTarget = { kind: 'line'; productId: number } | { kind: 'cart' }
 
 export function POSPage(): React.JSX.Element {
   return (
-    <RequireRole roles={['sales', 'admin']}>
+    <RequireRole roles={['sales']}>
       <POSTerminal />
     </RequireRole>
   )
@@ -37,7 +37,6 @@ function POSTerminal(): React.JSX.Element {
   const [query, setQuery] = useState('')
   const [sale, setSale] = useState({
     cart: [] as CartLine[],
-    method: 'cash' as PaymentMethod,
     cartDiscount: 0,
     customer: null as CustomerInput | null
   })
@@ -50,7 +49,7 @@ function POSTerminal(): React.JSX.Element {
   const [discountAuthPin, setDiscountAuthPin] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const { cart, method, cartDiscount, customer } = sale
+  const { cart, cartDiscount, customer } = sale
   const { payOpen, returnOpen, discountTarget, customerOpen } = modals
   const setCart = (updater: CartLine[] | ((prev: CartLine[]) => CartLine[])): void =>
     setSale((s) => ({
@@ -124,7 +123,7 @@ function POSTerminal(): React.JSX.Element {
   }
 
   const resetSale = (): void => {
-    setSale({ cart: [], method: 'cash', cartDiscount: 0, customer: null })
+    setSale({ cart: [], cartDiscount: 0, customer: null })
     setDiscountAuthPin(null)
     setQuery('')
   }
@@ -213,14 +212,12 @@ function POSTerminal(): React.JSX.Element {
 
           <POSCartPanel
             cart={cart}
-            method={method}
             itemsGross={itemsGross}
             discountTotal={discountTotal}
             onLineDiscount={(productId) =>
               setModals((m) => ({ ...m, discountTarget: { kind: 'line', productId } }))
             }
             onCartDiscount={() => setModals((m) => ({ ...m, discountTarget: { kind: 'cart' } }))}
-            onSetMethod={(m) => setSale((s) => ({ ...s, method: m }))}
             onSetQuantity={setQuantity}
             onRemoveLine={removeLine}
           />
@@ -228,7 +225,6 @@ function POSTerminal(): React.JSX.Element {
 
         <POSSidebar
           total={total}
-          method={method}
           customer={customer}
           cartEmpty={cart.length === 0}
           onCustomerOpen={() => setModals((m) => ({ ...m, customerOpen: true }))}
@@ -248,7 +244,6 @@ function POSTerminal(): React.JSX.Element {
           cartDiscountClamped={cartDiscountClamped}
           discountAuthPin={activeDiscountPin}
           customer={customer}
-          method={method}
           payOpen={payOpen}
           returnOpen={returnOpen}
           discountTarget={discountTarget}

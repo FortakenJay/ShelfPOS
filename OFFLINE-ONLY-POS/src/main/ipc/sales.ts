@@ -18,7 +18,6 @@ import type {
   IdType,
   PaymentMethod,
   Product,
-  SaleCondition,
   SaleCustomer,
   SaleDetail,
   SaleItemDetail,
@@ -26,8 +25,7 @@ import type {
   TaxCategory
 } from '../../shared/types'
 
-const SELL: ('sales' | 'admin')[] = ['sales', 'admin']
-const CONDITIONS: SaleCondition[] = ['contado', 'credito', 'apartado']
+const SELL: 'sales'[] = ['sales']
 const ID_TYPES: IdType[] = ['fisica', 'juridica', 'dimex', 'nite']
 const PAYMENT_METHODS = new Set<PaymentMethod>(['cash', 'card', 'sinpe'])
 
@@ -72,8 +70,7 @@ export function registerSalesHandlers(): void {
       if (!PAYMENT_METHODS.has(pay.method)) throw new AppError('errors.invalidInput')
       if (!Number.isFinite(pay.amount) || pay.amount <= 0) throw new AppError('errors.invalidInput')
     }
-    const condition: SaleCondition =
-      input.saleCondition && CONDITIONS.includes(input.saleCondition) ? input.saleCondition : 'contado'
+    const condition = 'contado' as const
 
     const hasDiscount =
       (input.cartDiscount ?? 0) > 0 || input.items.some((item) => (item.discount ?? 0) > 0)
@@ -240,7 +237,6 @@ export function registerSalesHandlers(): void {
           saleId,
           createdAt: now,
           cashier: user.username,
-          saleCondition: condition,
           items: finalized.map((l) => ({
             name: l.product.name,
             quantity: l.quantity,
@@ -303,7 +299,7 @@ export function registerSalesHandlers(): void {
         subtotal: number
         discount_total: number
         total: number
-        sale_condition: SaleCondition
+        sale_condition: string
         sinpe_ref: string | null
         cierre_id: number | null
         cashier: string
@@ -352,7 +348,6 @@ export function registerSalesHandlers(): void {
         subtotal: sale.subtotal,
         discountTotal: sale.discount_total,
         total: sale.total,
-        saleCondition: sale.sale_condition,
         sinpeRef: sale.sinpe_ref,
         cierreId: sale.cierre_id,
         customer: {

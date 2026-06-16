@@ -5,7 +5,7 @@ import { ReturnModal } from './ReturnModal'
 import { DiscountModal } from './DiscountModal'
 import { CustomerModal } from './CustomerModal'
 import type { CartLine } from './types'
-import type { CustomerInput, PaymentMethod } from '@shared/types'
+import type { CustomerInput } from '@shared/types'
 
 type DiscountTarget = { kind: 'line'; productId: number } | { kind: 'cart' }
 
@@ -15,7 +15,6 @@ interface POSModalsProps {
   cartDiscountClamped: number
   discountAuthPin: string | null
   customer: CustomerInput | null
-  method: PaymentMethod
   payOpen: boolean
   returnOpen: boolean
   discountTarget: DiscountTarget | null
@@ -38,7 +37,6 @@ export function POSModals({
   cartDiscountClamped,
   discountAuthPin,
   customer,
-  method,
   payOpen,
   returnOpen,
   discountTarget,
@@ -68,7 +66,6 @@ export function POSModals({
           cartDiscount={cartDiscountClamped}
           discountPin={discountAuthPin}
           customer={customer}
-          initialMethod={method}
           onClose={onPayClose}
           onCompleted={onSaleCompleted}
         />

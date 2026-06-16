@@ -21,7 +21,8 @@ export function homeFor(role: Role): string {
     case 'product_manager':
       return '/products'
     case 'sales':
-    case 'admin':
       return '/pos'
+    case 'admin':
+      return '/products'
   }
 }

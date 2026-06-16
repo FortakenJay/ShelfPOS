@@ -8,7 +8,7 @@ import { Button, Td, Th } from '@/components/ui'
 
 export function PrintQueuePage(): React.JSX.Element {
   return (
-    <RequireRole roles={['admin']}>
+    <RequireRole roles={['sales', 'admin']}>
       <PrintQueue />
     </RequireRole>
   )
@@ -62,13 +62,15 @@ function PrintQueue(): React.JSX.Element {
                 <Td>{job.sale_id != null ? `#${job.sale_id}` : '—'}</Td>
                 <Td>{formatDate(job.created_at, true)}</Td>
                 <Td className="text-right">
-                  <Button
-                    variant="outline"
-                    onClick={() => retry.mutate(job.id)}
-                    disabled={retry.isPending}
-                  >
-                    {t('printQueue.retry')}
-                  </Button>
+                  {(job.status === 'failed' || job.status === 'pending') && (
+                    <Button
+                      variant={job.status === 'failed' ? 'cta' : 'outline'}
+                      onClick={() => retry.mutate(job.id)}
+                      disabled={retry.isPending}
+                    >
+                      {t('printQueue.retry')}
+                    </Button>
+                  )}
                 </Td>
               </tr>
             ))}

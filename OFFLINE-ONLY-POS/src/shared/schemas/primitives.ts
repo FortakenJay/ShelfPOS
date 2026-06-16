@@ -42,8 +42,6 @@ export const taxCategorySchema = z.enum(['exempt', 'canasta_basica', 'standard']
 
 export const idTypeSchema = z.enum(['fisica', 'juridica', 'dimex', 'nite'])
 
-export const saleConditionSchema = z.enum(['contado', 'credito', 'apartado'])
-
 export const stockStatusSchema = z.enum(['all', 'low', 'zero', 'negative'])
 
 export const reportTypeSchema = z.enum([

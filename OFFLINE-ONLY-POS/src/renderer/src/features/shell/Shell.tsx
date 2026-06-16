@@ -15,14 +15,16 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: '/pos', labelKey: 'nav.pos', roles: ['sales', 'admin'] },
-  { to: '/cash', labelKey: 'nav.cash', roles: ['admin'] },
-  { to: '/admin/cierre', labelKey: 'nav.cierre', roles: ['sales', 'admin'] },
+  { to: '/pos', labelKey: 'nav.pos', roles: ['sales'] },
+  { to: '/cash', labelKey: 'nav.cash', roles: ['sales'] },
+  { to: '/admin/cierre', labelKey: 'nav.cierre', roles: ['sales'] },
+  { to: '/admin/print-queue', labelKey: 'nav.printQueue', roles: ['sales'] },
   { to: '/products', labelKey: 'nav.products', roles: ['product_manager', 'admin'] }
 ]
 
 const ADMIN_ITEMS: NavItem[] = [
   { to: '/admin/reports', labelKey: 'nav.reports', roles: ['admin'] },
+  { to: '/admin/cash', labelKey: 'nav.cashMovements', roles: ['admin'] },
   { to: '/admin/audit', labelKey: 'nav.audit', roles: ['admin'] },
   { to: '/admin/print-queue', labelKey: 'nav.printQueue', roles: ['admin'] },
   { to: '/admin/export', labelKey: 'nav.export', roles: ['admin'] },

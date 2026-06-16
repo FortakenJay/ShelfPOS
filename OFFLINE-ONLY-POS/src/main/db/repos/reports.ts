@@ -3,6 +3,7 @@ import { getAppSettings, ivaRateFor } from './settings'
 import { localNow, round2 } from '../helpers'
 import type {
   InventoryRow,
+  PeriodCashTotals,
   PaymentMethodReport,
   SalesSummaryReport,
   TaxBreakdownReport,
@@ -10,6 +11,40 @@ import type {
   TaxCategory,
   TopProductRow
 } from '../../../shared/types'
+
+function cashMovementTotalsForFilter(filter: SaleFilter): {
+  openingFloat: number
+  cashIn: number
+  cashOut: number
+} {
+  const conditions: string[] = []
+  const params: Record<string, unknown> = {}
+  if (filter.fromTs) {
+    conditions.push('created_at >= @fromTs')
+    params.fromTs = filter.fromTs
+  }
+  if (filter.toTs) {
+    conditions.push('created_at <= @toTs')
+    params.toTs = filter.toTs
+  }
+  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''
+  const rows = getDb()
+    .prepare(
+      `SELECT type, COALESCE(SUM(amount), 0) AS amount
+       FROM cash_movements ${where} GROUP BY type`
+    )
+    .all(params) as { type: string; amount: number }[]
+
+  let openingFloat = 0
+  let cashIn = 0
+  let cashOut = 0
+  for (const row of rows) {
+    if (row.type === 'opening_float') openingFloat = round2(row.amount)
+    else if (row.type === 'cash_in') cashIn = round2(row.amount)
+    else if (row.type === 'cash_out') cashOut = round2(row.amount)
+  }
+  return { openingFloat, cashIn, cashOut }
+}
 
 interface SaleFilter {
   fromTs?: string
@@ -146,12 +181,23 @@ export function salesSummary(filter: SaleFilter): SalesSummaryReport {
       `SELECT COUNT(*) AS count FROM return_items ${returnConditions.length ? 'WHERE ' + returnConditions.join(' AND ') : ''}`
     )
     .get(returnParams) as { count: number }
+  const discounts = cierreDiscounts(filter)
+  const cashMovements = cashMovementTotalsForFilter(filter)
+  const cashSales = paymentTotals(filter).cash
+  const cash: PeriodCashTotals = {
+    openingFloat: cashMovements.openingFloat,
+    cashIn: cashMovements.cashIn,
+    cashOut: cashMovements.cashOut,
+    cashSales
+  }
   return {
     totalRevenue: round2(sales.revenue),
     txCount: sales.txCount,
     itemsSold: items.itemsSold,
     returnsCount: returns.count,
-    avgTicket: sales.txCount > 0 ? round2(sales.revenue / sales.txCount) : 0
+    avgTicket: sales.txCount > 0 ? round2(sales.revenue / sales.txCount) : 0,
+    totalDiscount: discounts.totalDiscount,
+    cash
   }
 }
 

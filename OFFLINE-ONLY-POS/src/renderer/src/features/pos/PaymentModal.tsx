@@ -5,19 +5,12 @@ import { toastApiError } from '@/lib/errors'
 import { formatMoney, parseColonesInput } from '@/lib/format'
 import { useToasts } from '@/lib/toast'
 import { roundColones, appendMoneyInputDigit, backspaceMoneyInput } from '@shared/money'
-import { Button, Field, Input, Modal, Select, Toggle } from '@/components/ui'
-import type {
-  CreateSaleItemInput,
-  CustomerInput,
-  PaymentMethod,
-  PrintStatus,
-  SaleCondition
-} from '@shared/types'
+import { Button, Field, Input, Modal, Toggle } from '@/components/ui'
+import type { CreateSaleItemInput, CustomerInput, PrintStatus } from '@shared/types'
 import { usePaymentModalState } from './paymentModalState'
-import { PaymentCashSection, PaymentSplitSection } from './PaymentSections'
-
-const METHODS: PaymentMethod[] = ['cash', 'card', 'sinpe']
-const CONDITIONS: SaleCondition[] = ['contado', 'credito', 'apartado']
+import { PaymentCashSection } from './PaymentCashSection'
+import { PaymentMethodButtons } from './PaymentMethodButtons'
+import { PaymentSplitSection } from './PaymentSplitSection'
 
 interface PaymentModalProps {
   items: CreateSaleItemInput[]
@@ -25,7 +18,6 @@ interface PaymentModalProps {
   cartDiscount: number
   discountPin: string | null
   customer: CustomerInput | null
-  initialMethod: PaymentMethod
   onClose: () => void
   onCompleted: (change: number | null) => void
 }
@@ -42,41 +34,34 @@ export function PaymentModal({
   cartDiscount,
   discountPin,
   customer,
-  initialMethod,
   onClose,
   onCompleted
 }: PaymentModalProps): React.JSX.Element {
   const { t } = useTranslation()
   const toasts = useToasts()
   const queryClient = useQueryClient()
-  const { state, dispatch } = usePaymentModalState(initialMethod)
-  const { condition, splitPayment, singleMethod, sinpeRef, entries, tendered } = state
+  const { state, dispatch } = usePaymentModalState('cash')
+  const { splitPayment, singleMethod, sinpeRef, entries, tendered } = state
 
   const splitPaid = round2(entries.reduce((acc, e) => acc + entryAmount(e.amount), 0))
   const remaining = round2(Math.max(0, total - splitPaid))
 
   const hasCashSingle = !splitPayment && singleMethod === 'cash'
-  const hasCashSplit = splitPayment && entries.some((e) => e.method === 'cash')
-  const hasCash = hasCashSingle || hasCashSplit
-
-  const cashAmount = splitPayment
-    ? round2(entries.filter((e) => e.method === 'cash').reduce((a, e) => a + entryAmount(e.amount), 0))
-    : total
 
   const tenderedNum = parseColonesInput(tendered)
-  const change = hasCash && tenderedNum != null ? round2(tenderedNum - cashAmount) : null
+  const change = hasCashSingle && tenderedNum != null ? round2(tenderedNum - total) : null
 
   const splitBalanced = Math.abs(remaining) < 0.01
   const splitAmountsValid = entries.every((e) => {
     const n = parseColonesInput(e.amount)
     return n != null && n > 0
   })
-  const cashShort = hasCash && tenderedNum != null && tenderedNum < cashAmount
+  const cashShort = hasCashSingle && tenderedNum != null && tenderedNum < total
 
   const canConfirmSingle =
     singleMethod === 'cash' ? tenderedNum != null && tenderedNum >= total : true
 
-  const canConfirmSplit = splitBalanced && splitAmountsValid && !cashShort
+  const canConfirmSplit = splitBalanced && splitAmountsValid
   const canConfirm = splitPayment ? canConfirmSplit : canConfirmSingle
 
   const notifyPrint = (printStatus: PrintStatus, printJobId: number): void => {
@@ -140,9 +125,8 @@ export function PaymentModal({
       items,
       payments,
       cartDiscount: cartDiscount > 0 ? cartDiscount : undefined,
-      saleCondition: condition,
       customer: customer ?? undefined,
-      tendered: hasCash && tenderedNum != null ? tenderedNum : undefined,
+      tendered: hasCashSingle && tenderedNum != null ? tenderedNum : undefined,
       discountPin: hasDiscount ? discountPin ?? undefined : undefined
     })
   }
@@ -154,25 +138,10 @@ export function PaymentModal({
         <span className="text-4xl font-extrabold">{formatMoney(total)}</span>
       </div>
 
-      <Field label={t('pos.saleCondition')} className="mb-4">
-        <Select
-          value={condition}
-          onChange={(e) =>
-            dispatch({ type: 'setCondition', value: e.target.value as SaleCondition })
-          }
-        >
-          {CONDITIONS.map((c) => (
-            <option key={c} value={c}>
-              {t(`pos.conditions.${c}`)}
-            </option>
-          ))}
-        </Select>
-      </Field>
-
       <div className="mb-4 rounded-md border-2 border-line bg-slate-50 px-4 py-3">
         <Toggle
           checked={splitPayment}
-          onChange={(enabled) => dispatch({ type: 'toggleSplit', enabled, initialMethod })}
+          onChange={(enabled) => dispatch({ type: 'toggleSplit', enabled, initialMethod: 'cash' })}
           label={t('pos.splitPayment')}
         />
       </div>
@@ -180,19 +149,10 @@ export function PaymentModal({
       {!splitPayment ? (
         <div className="rounded-md border-2 border-line p-4">
           <Field label={t('pos.paymentMethod')}>
-            <Select
+            <PaymentMethodButtons
               value={singleMethod}
-              onChange={(e) =>
-                dispatch({ type: 'setSingleMethod', value: e.target.value as PaymentMethod })
-              }
-              className="w-full"
-            >
-              {METHODS.map((m) => (
-                <option key={m} value={m}>
-                  {t(`pos.methods.${m}`)}
-                </option>
-              ))}
-            </Select>
+              onChange={(method) => dispatch({ type: 'setSingleMethod', value: method })}
+            />
           </Field>
           {singleMethod === 'sinpe' && (
             <Field label={t('pos.sinpeRef', { hint: t('common.optional') })} className="mt-3">
@@ -214,7 +174,7 @@ export function PaymentModal({
         />
       )}
 
-      {hasCash && (
+      {hasCashSingle && (
         <PaymentCashSection
           tendered={tendered}
           change={change}
