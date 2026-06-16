@@ -19,6 +19,7 @@ import type {
   CreateSaleInput,
   CreateSaleResult,
   DateRange,
+  DashboardOverview,
   DiscountAuthorizeInput,
   FirstRunSetupInput,
   FirstRunStatus,
@@ -116,6 +117,9 @@ export const api = {
       call<{ printStatus: PrintStatus }>('reports:print', { type, range }),
     exportPdf: (type: ReportType, range: DateRange) =>
       call<{ canceled: boolean; path?: string }>('reports:exportPdf', { type, range })
+  },
+  dashboard: {
+    overview: () => call<DashboardOverview>('dashboard:overview')
   },
   cierre: {
     preview: () => call<CierrePreview>('cierre:preview'),

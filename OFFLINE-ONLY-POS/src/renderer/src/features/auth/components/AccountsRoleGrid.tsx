@@ -6,14 +6,14 @@ import { FIRST_RUN_ROLES, type AccountDraft, type ValidationState } from '../fir
 interface AccountsRoleGridProps {
   accounts: Record<Role, AccountDraft>
   validation: ValidationState
-  roleFieldsetRefs: React.MutableRefObject<Partial<Record<Role, HTMLFieldSetElement | null>>>
+  registerFieldsetRef: (role: Role, el: HTMLFieldSetElement | null) => void
   onFieldChange: (role: Role, field: keyof AccountDraft, value: string) => void
 }
 
 export function AccountsRoleGrid({
   accounts,
   validation,
-  roleFieldsetRefs,
+  registerFieldsetRef,
   onFieldChange
 }: AccountsRoleGridProps): React.JSX.Element {
   const { t } = useTranslation()
@@ -25,9 +25,7 @@ export function AccountsRoleGrid({
         return (
           <fieldset
             key={role}
-            ref={(el) => {
-              roleFieldsetRefs.current[role] = el
-            }}
+            ref={(el) => registerFieldsetRef(role, el)}
             className={`rounded-lg border-2 p-4 ${
               passwordMismatch ? 'border-danger bg-danger/5' : 'border-line'
             }`}

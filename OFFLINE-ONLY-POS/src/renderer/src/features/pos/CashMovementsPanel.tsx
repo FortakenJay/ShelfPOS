@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
 import { formatDate, formatMoney, parseColonesInput } from '@/lib/format'
@@ -25,6 +25,7 @@ export function CashMovementsPanel({
 }): React.JSX.Element {
   const { t } = useTranslation()
   const toasts = useToasts()
+  const queryClient = useQueryClient()
   const [moveAmount, setMoveAmount] = useState('')
   const [moveReason, setMoveReason] = useState('')
   const [pending, setPending] = useState<PendingMovement | null>(null)
@@ -44,6 +45,8 @@ export function CashMovementsPanel({
       setMoveReason('')
       setPending(null)
       setPinError(null)
+      void queryClient.invalidateQueries({ queryKey: ['cashStatus'] })
+      void queryClient.invalidateQueries({ queryKey: ['cashMovements'] })
       onMovementComplete?.()
     },
     onError: (err) => {

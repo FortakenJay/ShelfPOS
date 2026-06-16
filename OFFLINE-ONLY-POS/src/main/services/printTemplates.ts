@@ -235,7 +235,15 @@ function topProductLines(lang: Language, rows: TopProductRow[]): PrintLine[] {
     lines.push({ t: 'text', v: t(lang, 'common.noData') })
   }
   for (const row of rows) {
-    lines.push({ t: 'row', l: `${row.name} x${row.quantity}`, r: formatMoney(row.revenue, lang) })
+    const profit =
+      row.marginPct != null
+        ? ` · ${t(lang, 'reports.top.profit')} ${formatMoney(row.profit, lang)} (${row.marginPct}%)`
+        : ''
+    lines.push({
+      t: 'row',
+      l: `${row.name} x${row.quantity}`,
+      r: `${formatMoney(row.revenue, lang)}${profit}`
+    })
   }
   return lines
 }
@@ -249,6 +257,7 @@ function summaryMetricLines(lang: Language, data: SalesSummaryReport): PrintLine
     { t: 'row', l: t(lang, 'print.report.itemsSold'), r: String(data.itemsSold) },
     { t: 'row', l: t(lang, 'print.report.returns'), r: String(data.returnsCount) },
     { t: 'row', l: t(lang, 'print.report.avgTicket'), r: money(data.avgTicket) },
+    { t: 'row', l: t(lang, 'reports.summary.grossProfit'), r: money(data.grossProfit) },
     { t: 'hr' },
     { t: 'text', v: t(lang, 'print.cierre.cashTitle'), bold: true },
     { t: 'row', l: t(lang, 'cash.openingFloat'), r: money(data.cash.openingFloat) },

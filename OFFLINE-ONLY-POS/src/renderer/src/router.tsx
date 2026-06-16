@@ -3,6 +3,7 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  Navigate,
   Outlet
 } from '@tanstack/react-router'
 import { Bootstrap } from '@/features/auth/Bootstrap'
@@ -20,6 +21,19 @@ import { PrintQueuePage } from '@/features/admin/PrintQueuePage'
 import { ExportPage } from '@/features/admin/ExportPage'
 import { SettingsPage } from '@/features/admin/SettingsPage'
 import { AdminCashPage } from '@/features/admin/AdminCashPage'
+import { DashboardPage } from '@/features/admin/dashboard/DashboardPage'
+import { DASHBOARD_TAB_SEARCH, type DashboardTab } from '@/features/admin/dashboard/dashboardTabs'
+import type { ReportType, StockStatus, ReportPeriodPreset } from '@shared/types'
+
+const PRODUCT_STOCK_SEARCH = new Set<string>(['low', 'zero', 'negative'])
+const REPORT_TYPE_SEARCH = new Set<string>([
+  'summary',
+  'byPayment',
+  'topProducts',
+  'inventory',
+  'taxBreakdown'
+])
+const REPORT_PERIOD_SEARCH = new Set<string>(['today', 'week', 'month'])
 
 const rootRoute = createRootRoute({
   component: () => <Outlet />
@@ -70,13 +84,54 @@ const cashRoute = createRoute({
 const productsRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: '/products',
+  validateSearch: (search: Record<string, unknown>): { stock?: StockStatus; q?: string } => {
+    const result: { stock?: StockStatus; q?: string } = {}
+    const stock = search.stock
+    if (typeof stock === 'string' && PRODUCT_STOCK_SEARCH.has(stock)) {
+      result.stock = stock as StockStatus
+    }
+    const q = search.q
+    if (typeof q === 'string' && q.trim()) result.q = q.trim()
+    return result
+  },
   component: ProductsPage
 })
 
 const reportsRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: '/admin/reports',
+  validateSearch: (search: Record<string, unknown>): { type?: ReportType; period?: ReportPeriodPreset } => {
+    const result: { type?: ReportType; period?: ReportPeriodPreset } = {}
+    const type = search.type
+    if (typeof type === 'string' && REPORT_TYPE_SEARCH.has(type)) {
+      result.type = type as ReportType
+    }
+    const period = search.period
+    if (typeof period === 'string' && REPORT_PERIOD_SEARCH.has(period)) {
+      result.period = period as ReportPeriodPreset
+    }
+    return result
+  },
   component: ReportsPage
+})
+
+const dashboardRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: '/admin/dashboard',
+  validateSearch: (search: Record<string, unknown>): { tab?: DashboardTab } => {
+    const tab = search.tab
+    if (typeof tab === 'string' && DASHBOARD_TAB_SEARCH.has(tab)) {
+      return { tab: tab as DashboardTab }
+    }
+    return {}
+  },
+  component: DashboardPage
+})
+
+const adminIndexRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: '/admin',
+  component: () => <Navigate to="/admin/dashboard" replace />
 })
 
 const cierreRoute = createRoute({
@@ -124,6 +179,8 @@ const routeTree = rootRoute.addChildren([
     posRoute,
     cashRoute,
     productsRoute,
+    adminIndexRoute,
+    dashboardRoute,
     reportsRoute,
     cierreRoute,
     auditRoute,

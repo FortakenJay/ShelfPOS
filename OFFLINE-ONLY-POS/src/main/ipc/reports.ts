@@ -28,12 +28,10 @@ import {
 import type {
   DateRange,
   Language,
-  PaymentMethodReport,
   PrintLine,
   PrintStatus,
   ReportData,
-  ReportType,
-  SalesSummaryReport
+  ReportType
 } from '../../shared/types'
 
 function runReport(type: ReportType, range: DateRange): ReportData {

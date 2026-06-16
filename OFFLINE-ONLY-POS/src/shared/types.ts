@@ -7,6 +7,9 @@ export type PrintJobType = 'receipt' | 'report' | 'cierre'
 export type PrintStatus = 'printed' | 'failed'
 export type ReportType = 'summary' | 'byPayment' | 'topProducts' | 'inventory' | 'taxBreakdown'
 
+/** URL preset for report date ranges (matches dashboard KPI periods). */
+export type ReportPeriodPreset = 'today' | 'week' | 'month'
+
 /** Dormant under régimen simplificado; drives IVA breakdown under régimen tradicional. */
 export type TaxCategory = 'exempt' | 'canasta_basica' | 'standard'
 export type TaxRegime = 'simplificado' | 'tradicional'
@@ -260,6 +263,7 @@ export interface SalesSummaryReport {
   returnsCount: number
   avgTicket: number
   totalDiscount: number
+  grossProfit: number
   cash: PeriodCashTotals
 }
 
@@ -279,6 +283,8 @@ export interface TopProductRow {
   barcode: string
   quantity: number
   revenue: number
+  profit: number
+  marginPct: number | null
 }
 
 export interface InventoryRow {
@@ -314,6 +320,177 @@ export type ReportData =
   | { type: 'topProducts'; data: TopProductRow[] }
   | { type: 'inventory'; data: InventoryRow[] }
   | { type: 'taxBreakdown'; data: TaxBreakdownReport }
+
+// --- admin dashboard ---
+
+export interface DashboardKpiTrend {
+  value: number
+  previousValue: number
+  changePct: number | null
+}
+
+export interface DashboardKpis {
+  todaySales: DashboardKpiTrend
+  monthlySales: DashboardKpiTrend
+  todayTransactions: DashboardKpiTrend
+  avgTicketToday: DashboardKpiTrend
+  grossProfitToday: DashboardKpiTrend
+  totalProducts: DashboardKpiTrend
+  lowStockAlerts: DashboardKpiTrend
+  outOfStock: DashboardKpiTrend
+}
+
+export interface DashboardSalesTrendPoint {
+  date: string
+  revenue: number
+  transactions: number
+}
+
+export interface DashboardSalesByHour {
+  hour: number
+  transactions: number
+  revenue: number
+}
+
+export type DashboardStockStatus = 'healthy' | 'low' | 'critical'
+
+export interface DashboardCategoryRow {
+  category: string
+  revenue: number
+  unitsSold: number
+  productCount: number
+}
+
+export interface DashboardProductPerformanceRow {
+  productId: number
+  name: string
+  sku: string
+  unitsSold: number
+  revenue: number
+  profit: number
+  marginPct: number | null
+  stock: number
+  category: string | null
+}
+
+export interface DashboardInventorySummary {
+  totalProducts: number
+  activeProducts: number
+  lowStock: number
+  outOfStock: number
+  negativeStock: number
+  costValue: number
+  retailValue: number
+}
+
+export interface DashboardInventoryHealth {
+  healthy: number
+  low: number
+  critical: number
+  negative: number
+}
+
+export interface DashboardStockMovementPoint {
+  date: string
+  adjustmentCount: number
+  netDelta: number
+}
+
+export interface DashboardInventoryProductRow {
+  productId: number
+  name: string
+  sku: string
+  stock: number
+  minimum: number
+  status: DashboardStockStatus
+  updatedAt: string
+  category: string | null
+}
+
+export interface DashboardEmployeeOverview {
+  totalEmployees: number
+  activeEmployees: number
+  roleCounts: { role: Role; count: number }[]
+}
+
+export interface DashboardEmployeePerformanceRow {
+  userId: number
+  username: string
+  role: Role
+  transactions: number
+  salesVolume: number
+  avgTicket: number
+}
+
+export interface DashboardRoleSummary {
+  role: Role
+  count: number
+  descriptionKey: string
+}
+
+export type DashboardActivityKind =
+  | 'sale'
+  | 'product_create'
+  | 'product_update'
+  | 'stock_adjust'
+  | 'employee'
+  | 'other'
+
+export interface DashboardActivityItem {
+  id: string
+  kind: DashboardActivityKind
+  messageKey: string
+  detail: string
+  username: string | null
+  createdAt: string
+  linkTo?: string
+}
+
+export type DashboardAlertKind =
+  | 'low_stock'
+  | 'out_of_stock'
+  | 'negative_stock'
+  | 'cierre_discrepancy'
+  | 'print_failed'
+  | 'print_pending'
+
+export interface DashboardAlert {
+  kind: DashboardAlertKind
+  messageKey: string
+  count: number
+  severity: 'info' | 'warning' | 'danger'
+  linkTo?: string
+}
+
+export interface DashboardOverview {
+  storeName: string
+  generatedAt: string
+  kpis: DashboardKpis
+  salesTrend: DashboardSalesTrendPoint[]
+  salesByHour: DashboardSalesByHour[]
+  paymentToday: PaymentMethodReport
+  paymentMonth: PaymentMethodReport
+  topProducts: DashboardProductPerformanceRow[]
+  slowProducts: DashboardProductPerformanceRow[]
+  worstSellers: DashboardProductPerformanceRow[]
+  categoryPerformance: DashboardCategoryRow[]
+  recentlyAddedProducts: DashboardProductPerformanceRow[]
+  inventory: DashboardInventorySummary
+  inventoryHealth: DashboardInventoryHealth
+  stockMovementTrend: DashboardStockMovementPoint[]
+  lowStockProducts: DashboardInventoryProductRow[]
+  outOfStockProducts: DashboardInventoryProductRow[]
+  recentlyUpdatedInventory: DashboardInventoryProductRow[]
+  employees: DashboardEmployeeOverview
+  employeePerformance: DashboardEmployeePerformanceRow[]
+  roleSummaries: DashboardRoleSummary[]
+  recentEmployeeActivity: AuditLogRow[]
+  recentActivity: DashboardActivityItem[]
+  alerts: DashboardAlert[]
+  taxSummary: TaxBreakdownReport
+  taxableSales: number
+  exemptSales: number
+}
 
 /** Cash drawer state for the current (un-cierred) period. */
 export interface CashSummary {
@@ -575,6 +752,7 @@ export const IPC_CHANNELS = [
   'reports:run',
   'reports:print',
   'reports:exportPdf',
+  'dashboard:overview',
   'cierre:preview',
   'cierre:confirm',
   'cierre:history',

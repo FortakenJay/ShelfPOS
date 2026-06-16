@@ -1,5 +1,5 @@
 import { todayStr } from '@/lib/format'
-import type { DateRange } from '@shared/types'
+import type { DateRange, ReportPeriodPreset } from '@shared/types'
 
 function shiftDays(base: Date, days: number): string {
   const d = new Date(base)
@@ -22,4 +22,15 @@ export function presetWeek(): DateRange {
 export function presetMonth(): DateRange {
   const today = todayStr()
   return { from: today.slice(0, 8) + '01', to: today }
+}
+
+export function rangeForReportPeriod(period: ReportPeriodPreset): DateRange {
+  switch (period) {
+    case 'today':
+      return presetToday()
+    case 'week':
+      return presetWeek()
+    case 'month':
+      return presetMonth()
+  }
 }

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
 import { stockAllows } from '@/lib/errors'
 import { lineGross, lineTotal } from '@/lib/pricing'

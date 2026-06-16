@@ -21,14 +21,17 @@ export type ProductFiltersState = {
   stockStatus: StockStatus
 }
 
-export function useProductManager() {
+export function useProductManager(options?: {
+  initialStockStatus?: StockStatus
+  initialSearch?: string
+}) {
   const toasts = useToasts()
   const queryClient = useQueryClient()
 
   const [filters, setFilters] = useState<ProductFiltersState>({
-    search: '',
+    search: options?.initialSearch ?? '',
     category: '',
-    stockStatus: 'all'
+    stockStatus: options?.initialStockStatus ?? 'all'
   })
   const [ui, setUi] = useState<ProductManagerUiState>({
     formProduct: null,

@@ -1,4 +1,6 @@
+import { useSearch } from '@tanstack/react-router'
 import { RequireRole } from '@/features/shell/Shell'
+import type { StockStatus } from '@shared/types'
 import { ProductsPagination } from './ProductsPagination'
 import { ProductsTable } from './ProductsTable'
 import { ProductsPageToolbar } from './components/ProductsPageToolbar'
@@ -7,16 +9,26 @@ import { ProductManagerModals } from './components/ProductManagerModals'
 import { useProductManager } from './hooks/useProductManager'
 
 export function ProductsPage(): React.JSX.Element {
+  const { stock, q } = useSearch({ strict: false }) as {
+    stock?: StockStatus
+    q?: string
+  }
+
   return (
     <RequireRole roles={['product_manager', 'admin']}>
-      <ProductManager />
+      <ProductManager key={`${stock ?? ''}|${q ?? ''}`} stock={stock} q={q} />
     </RequireRole>
   )
 }
 
-function ProductManager(): React.JSX.Element {
-  const pm = useProductManager()
-
+function ProductManager({
+  stock,
+  q
+}: {
+  stock?: StockStatus
+  q?: string
+}): React.JSX.Element {
+  const pm = useProductManager({ initialStockStatus: stock, initialSearch: q })
   return (
     <div className="p-6">
       <ProductsPageToolbar

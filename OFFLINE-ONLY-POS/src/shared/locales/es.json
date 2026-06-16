@@ -42,6 +42,7 @@
     "printQueue": "Cola de impresión",
     "export": "Exportar y Respaldar",
     "settings": "Configuración",
+    "dashboard": "Panel",
     "logout": "Cerrar sesión"
   },
   "roles": {
@@ -316,6 +317,9 @@
   },
   "reports": {
     "title": "Reportes",
+    "subtitle": "Detalle exportable alineado con el panel de administración.",
+    "backToDashboard": "Volver al panel",
+    "profitHint": "La utilidad bruta usa el costo actual del producto (no el costo histórico de cada venta).",
     "types": {
       "summary": "Resumen de ventas",
       "byPayment": "Ingresos por método de pago",
@@ -352,6 +356,7 @@
       "itemsSold": "Artículos vendidos",
       "returnsCount": "Devoluciones",
       "avgTicket": "Ticket promedio",
+      "grossProfit": "Utilidad bruta",
       "openingFloat": "Fondo inicial",
       "cashSales": "Ventas en efectivo",
       "cashIn": "Entradas de efectivo",
@@ -365,12 +370,164 @@
     "top": {
       "product": "Producto",
       "qty": "Cantidad",
-      "revenue": "Ingresos"
+      "revenue": "Ingresos",
+      "profit": "Utilidad",
+      "margin": "Margen"
     },
     "inventory": {
       "value": "Valor",
       "totalValue": "Valor total del inventario",
-      "products": "Productos"
+      "products": "Productos",
+      "snapshotNote": "Instantánea actual del inventario (no filtrada por fechas)."
+    }
+  },
+  "dashboard": {
+    "title": "Panel de administración",
+    "overview": "Resumen general",
+    "store": "Tienda",
+    "searchPlaceholder": "Buscar productos por nombre o código…",
+    "notifications": {
+      "title": "Notificaciones"
+    },
+    "viewAllAlerts": "Ver todas las alertas",
+    "vsPrevious": "vs periodo anterior",
+    "loadError": "No se pudo cargar el panel",
+    "refresh": "Actualizar",
+    "lastUpdated": "Actualizado",
+    "tabs": {
+      "label": "Secciones del panel",
+      "home": "Inicio",
+      "analytics": "Analítica",
+      "inventory": "Inventario",
+      "team": "Equipo"
+    },
+    "quickActions": "Accesos rápidos",
+    "profitHint": "La utilidad bruta usa el costo actual del producto (no el costo histórico de cada venta).",
+    "viewAllProducts": "Ver todos los productos",
+    "viewAllLowStock": "Ver todo el stock bajo",
+    "viewOutOfStock": "Ver sin existencias",
+    "viewReports": "Ver reportes",
+    "viewAudit": "Ver bitácora completa",
+    "viewTaxReport": "Ver reporte fiscal",
+    "sections": {
+      "salesAnalytics": "Analítica de ventas",
+      "salesAnalyticsDesc": "Tendencias de ingresos, transacciones y métodos de pago.",
+      "productAnalytics": "Analítica de productos",
+      "productAnalyticsDesc": "Rendimiento por producto, categoría y rotación.",
+      "inventoryAnalytics": "Analítica de inventario",
+      "inventoryAnalyticsDesc": "Valor, salud del stock y movimientos recientes.",
+      "employees": "Gestión de empleados",
+      "employeesDesc": "Desempeño, roles y actividad del equipo.",
+      "activityAlerts": "Actividad y alertas",
+      "activityAlertsDesc": "Eventos recientes y avisos operativos.",
+      "homeCharts": "Resumen visual",
+      "homeChartsDesc": "Tendencia de ingresos, métodos de pago y ventas por hora."
+    },
+    "kpis": {
+      "todaySales": "Ventas de hoy",
+      "monthlySales": "Ventas del mes",
+      "todayTransactions": "Transacciones hoy",
+      "avgTicket": "Ticket promedio",
+      "grossProfit": "Utilidad bruta hoy",
+      "totalProducts": "Total productos",
+      "lowStockAlerts": "Stock bajo",
+      "outOfStock": "Sin existencias",
+      "needsAttention": "Requiere atención"
+    },
+    "charts": {
+      "revenueTrend": "Tendencia de ingresos",
+      "transactionTrend": "Volumen de transacciones",
+      "salesTrend": "Tendencia de ventas",
+      "salesByHour": "Ventas por hora",
+      "paymentMethods": "Métodos de pago",
+      "categoryPerformance": "Rendimiento por categoría",
+      "stockMovement": "Movimientos de inventario",
+      "inventoryHealth": "Salud del inventario",
+      "last30Days": "Últimos 30 días",
+      "today": "Hoy",
+      "thisMonth": "Este mes"
+    },
+    "inventory": {
+      "title": "Resumen de inventario",
+      "totalProducts": "Productos",
+      "activeProducts": "Activos (con stock)",
+      "costValue": "Valor a costo",
+      "retailValue": "Valor al detalle",
+      "outOfStock": "Sin existencias",
+      "lowStock": "Stock bajo"
+    },
+    "lowStock": {
+      "title": "Productos con stock bajo",
+      "sku": "SKU / Código",
+      "minimum": "Mínimo",
+      "status": "Estado"
+    },
+    "outOfStock": {
+      "title": "Productos sin existencias"
+    },
+    "recentInventory": {
+      "title": "Inventario actualizado recientemente"
+    },
+    "stockStatus": {
+      "healthy": "Normal",
+      "low": "Bajo",
+      "critical": "Crítico",
+      "negative": "Negativo"
+    },
+    "topProducts": {
+      "title": "Más vendidos (mes)",
+      "units": "Unidades",
+      "revenue": "Ingresos",
+      "profit": "Utilidad",
+      "margin": "Margen"
+    },
+    "slowProducts": {
+      "title": "Rotación lenta (mes)"
+    },
+    "worstSellers": {
+      "title": "Menor rendimiento (mes)"
+    },
+    "recentProducts": {
+      "title": "Agregados recientemente"
+    },
+    "employees": {
+      "overview": "Resumen de empleados",
+      "total": "Total empleados",
+      "active": "Empleados activos",
+      "roles": "Por rol",
+      "performance": "Desempeño por cajero (mes)",
+      "rolesAccess": "Roles y permisos",
+      "recentActivity": "Actividad reciente del equipo",
+      "name": "Empleado",
+      "transactions": "Transacciones",
+      "volume": "Volumen de ventas",
+      "avgTicket": "Ticket promedio"
+    },
+    "roles": {
+      "adminDesc": "Acceso completo: panel, reportes, configuración, bitácora y exportación.",
+      "salesDesc": "Caja, efectivo, cierre de caja y cola de impresión.",
+      "pmDesc": "Gestión de productos, inventario e importación."
+    },
+    "activity": {
+      "title": "Actividad reciente",
+      "sale": "Venta registrada"
+    },
+    "tax": {
+      "title": "Resumen fiscal (mes)",
+      "taxable": "Ventas gravadas",
+      "exempt": "Ventas exentas",
+      "ivaCollected": "IVA recaudado",
+      "monthlyLiability": "IVA estimado del mes"
+    },
+    "alerts": {
+      "title": "Centro de alertas",
+      "none": "Sin alertas pendientes",
+      "lowStock": "{{count}} productos con stock bajo",
+      "outOfStock": "{{count}} productos sin existencias",
+      "negativeStock": "{{count}} productos con stock negativo",
+      "cierreDiscrepancy": "{{count}} cierres con diferencia de efectivo",
+      "printFailed": "{{count}} recibos con error de impresión",
+      "printPending": "{{count}} recibos pendientes de impresión"
     }
   },
   "cierre": {

@@ -25,6 +25,9 @@ export function useAccountsStep() {
   const [submitState, setSubmitState] = useState({ error: null as string | null, busy: false })
   const [validation, setValidation] = useState<ValidationState>(EMPTY_VALIDATION)
   const roleFieldsetRefs = useRef<Partial<Record<Role, HTMLFieldSetElement | null>>>({})
+  const registerFieldsetRef = (role: Role, el: HTMLFieldSetElement | null): void => {
+    roleFieldsetRefs.current[role] = el
+  }
   const managerPinRef = useRef<HTMLDivElement | null>(null)
   const cajaPinRef = useRef<HTMLDivElement | null>(null)
 
@@ -155,6 +158,7 @@ export function useAccountsStep() {
     formError,
     submit,
     roleFieldsetRefs,
+    registerFieldsetRef,
     managerPinRef,
     cajaPinRef
   }

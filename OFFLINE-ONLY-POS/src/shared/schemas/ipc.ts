@@ -218,6 +218,7 @@ export const IPC_SCHEMAS = {
   'reports:run': reportPayloadSchema,
   'reports:print': reportPayloadSchema,
   'reports:exportPdf': reportPayloadSchema,
+  'dashboard:overview': voidInput,
   'cierre:preview': voidInput,
   'cierre:confirm': cierreConfirmInputSchema,
   'cierre:history': voidInput,

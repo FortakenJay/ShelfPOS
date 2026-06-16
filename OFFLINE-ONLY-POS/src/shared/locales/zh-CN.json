@@ -42,6 +42,7 @@
     "printQueue": "打印队列",
     "export": "导出与备份",
     "settings": "设置",
+    "dashboard": "面板",
     "logout": "退出登录"
   },
   "roles": {
@@ -316,6 +317,9 @@
   },
   "reports": {
     "title": "报表",
+    "subtitle": "与管理面板一致的可导出明细。",
+    "backToDashboard": "返回面板",
+    "profitHint": "毛利按商品当前成本价计算（非销售时的历史成本）。",
     "types": {
       "summary": "销售汇总",
       "byPayment": "按支付方式统计",
@@ -352,6 +356,7 @@
       "itemsSold": "售出商品数",
       "returnsCount": "退货笔数",
       "avgTicket": "平均客单价",
+      "grossProfit": "毛利",
       "openingFloat": "开班备用金",
       "cashSales": "现金销售",
       "cashIn": "现金存入",
@@ -365,12 +370,164 @@
     "top": {
       "product": "商品",
       "qty": "数量",
-      "revenue": "收入"
+      "revenue": "收入",
+      "profit": "毛利",
+      "margin": "毛利率"
     },
     "inventory": {
       "value": "价值",
       "totalValue": "库存总价值",
-      "products": "商品数"
+      "products": "商品数",
+      "snapshotNote": "当前库存快照（不按日期筛选）。"
+    }
+  },
+  "dashboard": {
+    "title": "管理面板",
+    "overview": "总览",
+    "store": "门店",
+    "searchPlaceholder": "按名称或条码搜索商品…",
+    "notifications": {
+      "title": "通知"
+    },
+    "viewAllAlerts": "查看全部提醒",
+    "vsPrevious": "较上期",
+    "loadError": "无法加载面板",
+    "refresh": "刷新",
+    "lastUpdated": "更新时间",
+    "tabs": {
+      "label": "面板分区",
+      "home": "首页",
+      "analytics": "分析",
+      "inventory": "库存",
+      "team": "团队"
+    },
+    "quickActions": "快捷入口",
+    "profitHint": "毛利按商品当前成本价计算（非销售时的历史成本）。",
+    "viewAllProducts": "查看全部商品",
+    "viewAllLowStock": "查看全部低库存",
+    "viewOutOfStock": "查看缺货商品",
+    "viewReports": "查看报表",
+    "viewAudit": "查看完整日志",
+    "viewTaxReport": "查看税务报表",
+    "sections": {
+      "salesAnalytics": "销售分析",
+      "salesAnalyticsDesc": "收入、交易量与支付方式趋势。",
+      "productAnalytics": "商品分析",
+      "productAnalyticsDesc": "商品、品类与周转表现。",
+      "inventoryAnalytics": "库存分析",
+      "inventoryAnalyticsDesc": "库存价值、健康度与近期变动。",
+      "employees": "员工管理",
+      "employeesDesc": "团队绩效、角色与活动。",
+      "activityAlerts": "活动与提醒",
+      "activityAlertsDesc": "近期事件与运营警告。",
+      "homeCharts": "可视化概览",
+      "homeChartsDesc": "收入趋势、支付方式与分时销售。"
+    },
+    "kpis": {
+      "todaySales": "今日销售",
+      "monthlySales": "本月销售",
+      "todayTransactions": "今日交易",
+      "avgTicket": "平均客单价",
+      "grossProfit": "今日毛利",
+      "totalProducts": "商品总数",
+      "lowStockAlerts": "低库存",
+      "outOfStock": "缺货",
+      "needsAttention": "需要关注"
+    },
+    "charts": {
+      "revenueTrend": "收入趋势",
+      "transactionTrend": "交易量趋势",
+      "salesTrend": "销售趋势",
+      "salesByHour": "按小时销售",
+      "paymentMethods": "支付方式",
+      "categoryPerformance": "品类表现",
+      "stockMovement": "库存变动",
+      "inventoryHealth": "库存健康度",
+      "last30Days": "近30天",
+      "today": "今日",
+      "thisMonth": "本月"
+    },
+    "inventory": {
+      "title": "库存摘要",
+      "totalProducts": "商品数",
+      "activeProducts": "有库存商品",
+      "costValue": "成本价值",
+      "retailValue": "零售价价值",
+      "outOfStock": "缺货",
+      "lowStock": "低库存"
+    },
+    "lowStock": {
+      "title": "低库存商品",
+      "sku": "SKU / 条码",
+      "minimum": "最低库存",
+      "status": "状态"
+    },
+    "outOfStock": {
+      "title": "缺货商品"
+    },
+    "recentInventory": {
+      "title": "最近更新库存"
+    },
+    "stockStatus": {
+      "healthy": "正常",
+      "low": "偏低",
+      "critical": "紧急",
+      "negative": "负库存"
+    },
+    "topProducts": {
+      "title": "热销商品（本月）",
+      "units": "销量",
+      "revenue": "收入",
+      "profit": "毛利",
+      "margin": "毛利率"
+    },
+    "slowProducts": {
+      "title": "滞销商品（本月）"
+    },
+    "worstSellers": {
+      "title": "销售最差（本月）"
+    },
+    "recentProducts": {
+      "title": "最近新增"
+    },
+    "employees": {
+      "overview": "员工概览",
+      "total": "员工总数",
+      "active": "在职员工",
+      "roles": "按角色",
+      "performance": "收银员表现（本月）",
+      "rolesAccess": "角色与权限",
+      "recentActivity": "团队近期活动",
+      "name": "员工",
+      "transactions": "交易笔数",
+      "volume": "销售额",
+      "avgTicket": "平均客单价"
+    },
+    "roles": {
+      "adminDesc": "完整权限：面板、报表、设置、日志与导出。",
+      "salesDesc": "收银、现金、日结与打印队列。",
+      "pmDesc": "商品管理、库存与导入。"
+    },
+    "activity": {
+      "title": "最近活动",
+      "sale": "已登记销售"
+    },
+    "tax": {
+      "title": "税务摘要（本月）",
+      "taxable": "应税销售",
+      "exempt": "免税销售",
+      "ivaCollected": "已收 IVA",
+      "monthlyLiability": "本月预估 IVA"
+    },
+    "alerts": {
+      "title": "提醒中心",
+      "none": "暂无提醒",
+      "lowStock": "{{count}} 个商品库存偏低",
+      "outOfStock": "{{count}} 个商品缺货",
+      "negativeStock": "{{count}} 个商品负库存",
+      "cierreDiscrepancy": "{{count}} 笔日结现金有差额",
+      "printFailed": "{{count}} 张收据打印失败",
+      "printPending": "{{count}} 张收据待打印"
     }
   },
   "cierre": {

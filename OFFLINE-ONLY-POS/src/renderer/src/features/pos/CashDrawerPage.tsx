@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
 import { RequireRole } from '@/features/shell/Shell'
@@ -14,7 +14,6 @@ export function CashDrawerPage(): React.JSX.Element {
 
 function CashDrawer(): React.JSX.Element {
   const { t } = useTranslation()
-  const queryClient = useQueryClient()
   const { data } = useQuery({ queryKey: ['cashStatus'], queryFn: api.cash.status })
 
   return (
@@ -24,7 +23,6 @@ function CashDrawer(): React.JSX.Element {
         movements={data?.movements ?? []}
         floatOpened={data?.floatOpened ?? false}
         canEdit
-        onMovementComplete={() => void queryClient.invalidateQueries({ queryKey: ['cashStatus'] })}
       />
     </div>
   )

@@ -12,6 +12,12 @@ import type {
   TopProductRow
 } from '../../../shared/types'
 
+const TAX_CATEGORY_ORDER = new Map<TaxCategory, number>([
+  ['standard', 0],
+  ['canasta_basica', 1],
+  ['exempt', 2]
+])
+
 function cashMovementTotalsForFilter(filter: SaleFilter): {
   openingFloat: number
   cashIn: number
@@ -133,7 +139,6 @@ export function taxBreakdown(filter: SaleFilter): TaxBreakdownReport {
     )
     .all(params) as { taxCategory: TaxCategory; gross: number }[]
 
-  const order: TaxCategory[] = ['standard', 'canasta_basica', 'exempt']
   const result: TaxBreakdownRow[] = rows
     .map((r) => {
       const rate = ivaRateFor(r.taxCategory)
@@ -141,7 +146,10 @@ export function taxBreakdown(filter: SaleFilter): TaxBreakdownReport {
       const base = round2(gross / (1 + rate))
       return { taxCategory: r.taxCategory, rate, gross, base, iva: round2(gross - base) }
     })
-    .sort((a, b) => order.indexOf(a.taxCategory) - order.indexOf(b.taxCategory))
+    .sort(
+      (a, b) =>
+        (TAX_CATEGORY_ORDER.get(a.taxCategory) ?? 99) - (TAX_CATEGORY_ORDER.get(b.taxCategory) ?? 99)
+    )
 
   return {
     regime: getAppSettings().taxRegime,
@@ -184,6 +192,15 @@ export function salesSummary(filter: SaleFilter): SalesSummaryReport {
   const discounts = cierreDiscounts(filter)
   const cashMovements = cashMovementTotalsForFilter(filter)
   const cashSales = paymentTotals(filter).cash
+  const profitRow = db
+    .prepare(
+      `SELECT COALESCE(SUM(si.line_total - COALESCE(p.cost_price, 0) * si.quantity), 0) AS profit
+       FROM sale_items si
+       JOIN sales s ON s.id = si.sale_id
+       JOIN products p ON p.id = si.product_id
+       ${where}`
+    )
+    .get(params) as { profit: number }
   const cash: PeriodCashTotals = {
     openingFloat: cashMovements.openingFloat,
     cashIn: cashMovements.cashIn,
@@ -197,23 +214,47 @@ export function salesSummary(filter: SaleFilter): SalesSummaryReport {
     returnsCount: returns.count,
     avgTicket: sales.txCount > 0 ? round2(sales.revenue / sales.txCount) : 0,
     totalDiscount: discounts.totalDiscount,
+    grossProfit: round2(profitRow.profit),
     cash
   }
 }
 
 export function topProducts(filter: SaleFilter, limit = 10): TopProductRow[] {
   const { where, params } = saleWhere(filter)
-  return getDb()
+  const rows = getDb()
     .prepare(
       `SELECT p.id AS productId, p.name AS name, p.barcode AS barcode,
-              SUM(si.quantity) AS quantity, COALESCE(SUM(si.line_total), 0) AS revenue
+              SUM(si.quantity) AS quantity,
+              COALESCE(SUM(si.line_total), 0) AS revenue,
+              COALESCE(SUM(si.line_total - COALESCE(p.cost_price, 0) * si.quantity), 0) AS profit
        FROM sale_items si
        JOIN sales s ON s.id = si.sale_id
        JOIN products p ON p.id = si.product_id
        ${where}
-       GROUP BY p.id ORDER BY quantity DESC LIMIT @limit`
+       GROUP BY p.id ORDER BY revenue DESC LIMIT @limit`
     )
-    .all({ ...params, limit }) as TopProductRow[]
+    .all({ ...params, limit }) as {
+    productId: number
+    name: string
+    barcode: string
+    quantity: number
+    revenue: number
+    profit: number
+  }[]
+
+  return rows.map((r) => {
+    const revenue = round2(r.revenue)
+    const profit = round2(r.profit)
+    return {
+      productId: r.productId,
+      name: r.name,
+      barcode: r.barcode,
+      quantity: r.quantity,
+      revenue,
+      profit,
+      marginPct: revenue > 0 ? round2((profit / revenue) * 100) : null
+    }
+  })
 }
 
 export function inventorySnapshot(): InventoryRow[] {

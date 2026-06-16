@@ -22,7 +22,7 @@ export function AccountsStep({ backupPath }: { backupPath: string }): React.JSX.
         <AccountsRoleGrid
           accounts={step.accounts}
           validation={step.validation}
-          roleFieldsetRefs={step.roleFieldsetRefs}
+          registerFieldsetRef={step.registerFieldsetRef}
           onFieldChange={step.setField}
         />
 

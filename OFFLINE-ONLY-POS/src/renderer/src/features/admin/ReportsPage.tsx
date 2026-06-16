@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
@@ -7,8 +7,8 @@ import { useToasts } from '@/lib/toast'
 import { RequireRole } from '@/features/shell/Shell'
 import { Button, Td, Th } from '@/components/ui'
 import { DateRangePicker } from '@/components/DateRangePicker'
-import { presetToday } from '@/components/dateRangePresets'
-import type { DateRange, ReportData, ReportType } from '@shared/types'
+import { rangeForReportPeriod } from '@/components/dateRangePresets'
+import type { DateRange, ReportData, ReportPeriodPreset, ReportType } from '@shared/types'
 
 const REPORT_TYPES: ReportType[] = [
   'summary',
@@ -17,6 +17,26 @@ const REPORT_TYPES: ReportType[] = [
   'inventory',
   'taxBreakdown'
 ]
+
+const PERIOD_PRESETS: ReportPeriodPreset[] = ['today', 'week', 'month']
+
+type ReportSearch = { type?: ReportType; period?: ReportPeriodPreset }
+
+function parseReportSearch(search: ReportSearch): { type: ReportType; range: DateRange } {
+  const type =
+    search.type && REPORT_TYPES.includes(search.type) ? search.type : 'summary'
+  const period =
+    search.period && PERIOD_PRESETS.includes(search.period) ? search.period : 'today'
+  return { type, range: rangeForReportPeriod(period) }
+}
+
+function periodFromRange(range: DateRange): ReportPeriodPreset | undefined {
+  for (const p of PERIOD_PRESETS) {
+    const preset = rangeForReportPeriod(p)
+    if (preset.from === range.from && preset.to === range.to) return p
+  }
+  return undefined
+}
 
 export function ReportsPage(): React.JSX.Element {
   return (
@@ -30,10 +50,31 @@ function Reports(): React.JSX.Element {
   const { t } = useTranslation()
   const toasts = useToasts()
   const queryClient = useQueryClient()
-  const [type, setType] = useState<ReportType>('summary')
-  const [range, setRange] = useState<DateRange>(() => presetToday())
+  const navigate = useNavigate()
+  const urlSearch = useSearch({ strict: false }) as ReportSearch
+  const { type, range } = parseReportSearch(urlSearch)
 
-  const { data: reportData } = useQuery({
+  const syncUrl = (nextType: ReportType, nextRange: DateRange): void => {
+    const period = periodFromRange(nextRange)
+    void navigate({
+      to: '/admin/reports',
+      search: {
+        type: nextType,
+        ...(period ? { period } : {})
+      },
+      replace: true
+    })
+  }
+
+  const selectType = (nextType: ReportType): void => {
+    syncUrl(nextType, range)
+  }
+
+  const selectRange = (nextRange: DateRange): void => {
+    syncUrl(type, nextRange)
+  }
+
+  const { data: reportData, isFetching } = useQuery({
     queryKey: ['report', type, range],
     queryFn: () => api.reports.run(type, range)
   })
@@ -52,7 +93,7 @@ function Reports(): React.JSX.Element {
     mutationFn: () => api.reports.exportPdf(type, range),
     onSuccess: (result) => {
       if (!result.canceled && result.path) toasts.success('reports.pdfDone', { path: result.path })
-      void queryClient.invalidateQueries({ queryKey: ['report', type, range] })
+      queryClient.setQueryData<ReportData | undefined>(['report', type, range], (current) => current)
     },
     onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
   })
@@ -61,13 +102,34 @@ function Reports(): React.JSX.Element {
 
   return (
     <div className="p-6">
-      <div className="mb-5 flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">{t('reports.title')}</h1>
+      <div className="mb-4">
+        <Link
+          to="/admin/dashboard"
+          className="text-[14px] font-semibold text-primary hover:underline"
+        >
+          ← {t('reports.backToDashboard')}
+        </Link>
+      </div>
+
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">{t('reports.title')}</h1>
+          <p className="mt-1 text-[14px] text-slate-500">{t('reports.subtitle')}</p>
+        </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => pdfMutation.mutate()} loading={pdfMutation.isPending} disabled={exportBusy}>
+          <Button
+            variant="outline"
+            onClick={() => pdfMutation.mutate()}
+            loading={pdfMutation.isPending}
+            disabled={exportBusy}
+          >
             {t('reports.exportPdf')}
           </Button>
-          <Button onClick={() => printMutation.mutate()} loading={printMutation.isPending} disabled={exportBusy}>
+          <Button
+            onClick={() => printMutation.mutate()}
+            loading={printMutation.isPending}
+            disabled={exportBusy}
+          >
             {t('reports.printReport')}
           </Button>
         </div>
@@ -78,7 +140,7 @@ function Reports(): React.JSX.Element {
           <button
             key={rt}
             type="button"
-            onClick={() => setType(rt)}
+            onClick={() => selectType(rt)}
             className={`min-h-[44px] rounded-md border-2 px-4 text-[15px] font-bold ${
               type === rt
                 ? 'border-primary bg-primary text-white'
@@ -91,12 +153,23 @@ function Reports(): React.JSX.Element {
       </div>
 
       <div className="mb-5">
-        <DateRangePicker value={range} onChange={setRange} />
+        <DateRangePicker value={range} onChange={selectRange} />
       </div>
 
       <div className="overflow-hidden rounded-lg border-2 border-line bg-white">
-        {reportData && <ReportTable report={reportData} />}
+        {isFetching && !reportData ? (
+          <p className="px-4 py-8 text-center text-slate-500">{t('common.loading')}</p>
+        ) : (
+          reportData && <ReportTable report={reportData} />
+        )}
       </div>
+
+      {type !== 'inventory' && (
+        <p className="mt-3 text-[13px] text-slate-500">{t('reports.profitHint')}</p>
+      )}
+      {type === 'inventory' && (
+        <p className="mt-3 text-[13px] text-slate-500">{t('reports.inventory.snapshotNote')}</p>
+      )}
     </div>
   )
 }
@@ -109,6 +182,7 @@ function ReportTable({ report }: { report: ReportData }): React.JSX.Element {
     const rows: [string, string][] = [
       [t('reports.summary.totalRevenue'), formatMoney(d.totalRevenue)],
       [t('reports.summary.totalDiscount'), formatMoney(d.totalDiscount)],
+      [t('reports.summary.grossProfit'), formatMoney(d.grossProfit)],
       [t('reports.summary.txCount'), String(d.txCount)],
       [t('reports.summary.itemsSold'), String(d.itemsSold)],
       [t('reports.summary.returnsCount'), String(d.returnsCount)],
@@ -175,12 +249,14 @@ function ReportTable({ report }: { report: ReportData }): React.JSX.Element {
             <Th>{t('products.barcode')}</Th>
             <Th className="text-right">{t('reports.top.qty')}</Th>
             <Th className="text-right">{t('reports.top.revenue')}</Th>
+            <Th className="text-right">{t('reports.top.profit')}</Th>
+            <Th className="text-right">{t('reports.top.margin')}</Th>
           </tr>
         </thead>
         <tbody>
           {report.data.length === 0 && (
             <tr>
-              <Td colSpan={4} className="py-6 text-center text-slate-500">
+              <Td colSpan={6} className="py-6 text-center text-slate-500">
                 {t('common.noData')}
               </Td>
             </tr>
@@ -191,6 +267,10 @@ function ReportTable({ report }: { report: ReportData }): React.JSX.Element {
               <Td className="font-mono text-[14px]">{row.barcode}</Td>
               <Td className="text-right font-bold">{row.quantity}</Td>
               <Td className="text-right">{formatMoney(row.revenue)}</Td>
+              <Td className="text-right">{formatMoney(row.profit)}</Td>
+              <Td className="text-right">
+                {row.marginPct != null ? `${row.marginPct}%` : '—'}
+              </Td>
             </tr>
           ))}
         </tbody>
