@@ -268,7 +268,7 @@
       },
       "importErrorsTitle": "导入错误",
       "row": "行",
-      "hint": "请使用与当前语言匹配的 CSV 模板。税务类别可填写：standard、canasta_basica、exempt 或对应的中文名称。",
+      "hint": "请使用与当前语言匹配的 CSV 模板。所有商品均适用标准 IVA 税率。",
       "empty": "CSV 文件为空",
       "missingColumns": "缺少必填列：条形码、名称、售价",
       "invalidTaxCategory": "无法识别的税务类别",

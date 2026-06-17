@@ -1,6 +1,6 @@
 import type Database from 'better-sqlite3'
 
-export const SCHEMA_VERSION = 7
+export const SCHEMA_VERSION = 8
 
 type Migration = (db: Database.Database) => void
 
@@ -251,6 +251,14 @@ const migrations: Record<number, Migration> = {
   // v7 — catalog unit price on overridden sale lines (cierre / receipt audit trail).
   7: (db) => {
     db.exec(`ALTER TABLE sale_items ADD COLUMN catalog_unit_price REAL;`)
+  },
+
+  // v8 — all products use standard IVA; drop legacy canasta/exempt categories.
+  8: (db) => {
+    db.exec(`
+      UPDATE products SET tax_category = 'standard' WHERE tax_category != 'standard';
+      UPDATE sale_items SET tax_category = 'standard' WHERE tax_category != 'standard';
+    `)
   }
 }
 

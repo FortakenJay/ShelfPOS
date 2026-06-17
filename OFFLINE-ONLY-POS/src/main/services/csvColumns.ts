@@ -1,5 +1,5 @@
 import { t } from './i18n'
-import type { Language, PaymentMethod, TaxCategory } from '../../shared/types'
+import type { Language, PaymentMethod } from '../../shared/types'
 
 export const SALES_CSV_KEYS = [
   'sale_id',
@@ -26,7 +26,6 @@ export const PRODUCT_CSV_KEYS = [
   'category',
   'stock',
   'stock_threshold',
-  'tax_category',
   'bulk_qty',
   'bulk_price',
   'factura_negativo'
@@ -76,31 +75,6 @@ export function mapProductCsvHeaders(headers: string[]): Partial<Record<ProductC
     if (key != null && map[key] === undefined) map[key] = index
   })
   return map
-}
-
-const TAX_ALIASES: Record<TaxCategory, string[]> = {
-  standard: ['standard', ...LANGUAGES.map((lang) => normalizeHeader(t(lang, 'tax.categories.standard')))],
-  canasta_basica: [
-    'canasta_basica',
-    'canasta basica',
-    ...LANGUAGES.map((lang) => normalizeHeader(t(lang, 'tax.categories.canasta_basica')))
-  ],
-  exempt: ['exempt', ...LANGUAGES.map((lang) => normalizeHeader(t(lang, 'tax.categories.exempt')))]
-}
-
-const NORMALIZED_TO_TAX_CATEGORY = new Map<string, TaxCategory>()
-for (const [category, aliases] of Object.entries(TAX_ALIASES) as [TaxCategory, string[]][]) {
-  for (const alias of aliases) {
-    if (!NORMALIZED_TO_TAX_CATEGORY.has(alias)) {
-      NORMALIZED_TO_TAX_CATEGORY.set(alias, category)
-    }
-  }
-}
-
-export function parseTaxCategory(raw: string): TaxCategory | null {
-  const norm = normalizeHeader(raw)
-  if (!norm) return 'standard'
-  return NORMALIZED_TO_TAX_CATEGORY.get(norm) ?? null
 }
 
 /** Parses 0/1 (or sí/no) for factura negativo. Empty → false. */

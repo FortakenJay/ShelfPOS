@@ -13,7 +13,6 @@ const OPTIONAL_COLS = [
   'category',
   'stock',
   'stock_threshold',
-  'tax_category',
   'bulk_qty',
   'bulk_price'
 ] as const
@@ -62,23 +61,6 @@ export function ProductCsvHelpModal({
             ))}
           </ul>
         </div>
-      </section>
-
-      <section className="mb-5 rounded-md border border-line bg-white p-4">
-        <h3 className="mb-1 text-[15px] font-bold">{t('products.csv.help.taxTitle')}</h3>
-        <p className="mb-2 text-[14px] text-slate-600">{t('products.csv.help.taxHint')}</p>
-        <ul className="list-disc space-y-1 pl-5 text-[14px] text-slate-700">
-          <li>
-            <code className="rounded bg-slate-100 px-1">standard</code> — {t('tax.categories.standard')}
-          </li>
-          <li>
-            <code className="rounded bg-slate-100 px-1">canasta_basica</code> —{' '}
-            {t('tax.categories.canasta_basica')}
-          </li>
-          <li>
-            <code className="rounded bg-slate-100 px-1">exempt</code> — {t('tax.categories.exempt')}
-          </li>
-        </ul>
       </section>
 
       <section className="mb-5 rounded-md border border-line bg-white p-4">

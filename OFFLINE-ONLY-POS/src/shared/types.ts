@@ -10,8 +10,8 @@ export type ReportType = 'summary' | 'byPayment' | 'topProducts' | 'inventory' |
 /** URL preset for report date ranges (matches dashboard KPI periods). */
 export type ReportPeriodPreset = 'today' | 'week' | 'month'
 
-/** Dormant under régimen simplificado; drives IVA breakdown under régimen tradicional. */
-export type TaxCategory = 'exempt' | 'canasta_basica' | 'standard'
+/** All products use the standard IVA rate. Stored on sale lines for audit. */
+export type TaxCategory = 'standard'
 export type TaxRegime = 'simplificado' | 'tradicional'
 /** Costa Rica identification document types. */
 export type IdType = 'fisica' | 'juridica' | 'dimex' | 'nite'
@@ -33,7 +33,6 @@ export interface AppSettings {
   // Tax regime + IVA rate mapping (IVA dormant while regime is 'simplificado').
   taxRegime: TaxRegime
   ivaRateStandard: number
-  ivaRateCanastaBasica: number
   // Emisor (store) data for Costa Rica receipts.
   branchCode: string
   terminalCode: string
@@ -682,7 +681,6 @@ export interface SettingsUpdateInput {
   stockThresholdDefault?: number
   scannerBurstMs?: number
   ivaRateStandard?: number
-  ivaRateCanastaBasica?: number
   branchCode?: string
   terminalCode?: string
   storeLegalName?: string

@@ -268,7 +268,7 @@
       },
       "importErrorsTitle": "Errores de importación",
       "row": "Fila",
-      "hint": "Use la plantilla CSV con encabezados en el idioma configurado. Para categoría de impuesto puede usar: standard, canasta_basica, exempt o el nombre traducido.",
+      "hint": "Use la plantilla CSV con encabezados en el idioma configurado. Todos los productos usan la tarifa general de IVA.",
       "empty": "El archivo CSV está vacío",
       "missingColumns": "Faltan columnas obligatorias: código de barras, nombre y precio",
       "invalidTaxCategory": "Categoría de impuesto no reconocida",

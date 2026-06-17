@@ -373,10 +373,9 @@ export function TaxSummarySection({ data }: { data: DashboardOverview }): React.
       <p className="mb-3 text-[13px] text-slate-500">
         {t('reports.tax.regime')}: {t(`tax.regime.${data.taxSummary.regime}`)}
       </p>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {[
           [t('dashboard.tax.taxable'), formatMoney(data.taxableSales)],
-          [t('dashboard.tax.exempt'), formatMoney(data.exemptSales)],
           [t('dashboard.tax.ivaCollected'), formatMoney(data.taxSummary.totalIva)],
           [t('dashboard.tax.monthlyLiability'), formatMoney(data.taxSummary.totalIva)]
         ].map(([label, value]) => (

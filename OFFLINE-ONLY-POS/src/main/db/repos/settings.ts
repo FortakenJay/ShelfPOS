@@ -1,5 +1,5 @@
 import { getDb } from '../index'
-import type { AppSettings, IdType, Language, TaxRegime } from '../../../shared/types'
+import type { AppSettings, IdType, Language, TaxCategory, TaxRegime } from '../../../shared/types'
 
 export const SETTING_KEYS = {
   language: 'language',
@@ -11,7 +11,6 @@ export const SETTING_KEYS = {
   cajaPinHash: 'caja_pin_hash',
   taxRegime: 'tax_regime',
   ivaRateStandard: 'iva_rate_standard',
-  ivaRateCanastaBasica: 'iva_rate_canasta_basica',
   branchCode: 'branch_code',
   terminalCode: 'terminal_code',
   consecutivoNext: 'consecutivo_next',
@@ -53,7 +52,6 @@ export function getAppSettings(): AppSettings {
     cajaPinConfigured: !!getSetting(SETTING_KEYS.cajaPinHash),
     taxRegime: (getSetting(SETTING_KEYS.taxRegime) as TaxRegime | null) ?? 'simplificado',
     ivaRateStandard: Number(getSetting(SETTING_KEYS.ivaRateStandard) ?? '13'),
-    ivaRateCanastaBasica: Number(getSetting(SETTING_KEYS.ivaRateCanastaBasica) ?? '1'),
     branchCode: getSetting(SETTING_KEYS.branchCode) ?? '001',
     terminalCode: getSetting(SETTING_KEYS.terminalCode) ?? '00001',
     storeLegalName: getSetting(SETTING_KEYS.storeLegalName) ?? '',
@@ -70,17 +68,9 @@ export function getAppSettings(): AppSettings {
   }
 }
 
-/** IVA rate (fraction, e.g. 0.13) for a tax category, from the configured mapping. */
-export function ivaRateFor(category: 'exempt' | 'canasta_basica' | 'standard'): number {
-  const s = getAppSettings()
-  switch (category) {
-    case 'exempt':
-      return 0
-    case 'canasta_basica':
-      return s.ivaRateCanastaBasica / 100
-    case 'standard':
-      return s.ivaRateStandard / 100
-  }
+/** IVA rate (fraction, e.g. 0.13) from settings. All products use the standard rate. */
+export function ivaRateFor(_category: TaxCategory): number {
+  return getAppSettings().ivaRateStandard / 100
 }
 
 export function currentLanguage(): Language {

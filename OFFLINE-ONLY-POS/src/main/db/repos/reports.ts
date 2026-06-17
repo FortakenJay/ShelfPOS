@@ -12,11 +12,7 @@ import type {
   TopProductRow
 } from '../../../shared/types'
 
-const TAX_CATEGORY_ORDER = new Map<TaxCategory, number>([
-  ['standard', 0],
-  ['canasta_basica', 1],
-  ['exempt', 2]
-])
+const TAX_CATEGORY_ORDER = new Map<TaxCategory, number>([['standard', 0]])
 
 function cashMovementTotalsForFilter(filter: SaleFilter): {
   openingFloat: number

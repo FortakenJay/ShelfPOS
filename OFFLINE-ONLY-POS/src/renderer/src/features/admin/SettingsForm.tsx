@@ -46,13 +46,11 @@ function commitSavedDraft(
   if (
     input.branchCode !== undefined ||
     input.terminalCode !== undefined ||
-    input.ivaRateStandard !== undefined ||
-    input.ivaRateCanastaBasica !== undefined
+    input.ivaRateStandard !== undefined
   ) {
     next.branchCode = draft.branchCode
     next.terminalCode = draft.terminalCode
     next.ivaStandard = draft.ivaStandard
-    next.ivaCanasta = draft.ivaCanasta
   }
   return next
 }
@@ -197,8 +195,7 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
             updateMutation.mutate({
               branchCode: draft.branchCode,
               terminalCode: draft.terminalCode,
-              ivaRateStandard: Number(draft.ivaStandard) || 0,
-              ivaRateCanastaBasica: Number(draft.ivaCanasta) || 0
+              ivaRateStandard: Number(draft.ivaStandard) || 0
             })
           }
         />

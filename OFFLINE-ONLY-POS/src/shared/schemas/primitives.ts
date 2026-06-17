@@ -38,7 +38,7 @@ export const roleSchema = z.enum(['sales', 'product_manager', 'admin'])
 
 export const paymentMethodSchema = z.enum(['cash', 'card', 'sinpe'])
 
-export const taxCategorySchema = z.enum(['exempt', 'canasta_basica', 'standard'])
+export const taxCategorySchema = z.literal('standard')
 
 export const idTypeSchema = z.enum(['fisica', 'juridica', 'dimex', 'nite'])
 

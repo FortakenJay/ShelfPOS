@@ -6,24 +6,23 @@ import { localNow } from '../db/helpers'
 import { applyStockDelta, getProductByBarcode } from '../db/repos/products'
 import { writeAudit } from '../db/repos/audit'
 import { parseCsv } from './csv'
-import { mapProductCsvHeaders, parseFacturaNegativo, parseTaxCategory, type ProductCsvKey } from './csvColumns'
+import { mapProductCsvHeaders, parseFacturaNegativo, type ProductCsvKey } from './csvColumns'
 import type {
   Product,
   ProductImportError,
   ProductImportPreview,
   ProductImportPreviewRow,
   ProductImportResult,
-  ProductInput,
-  TaxCategory
+  ProductInput
 } from '../../shared/types'
 import { roundColones } from '../../shared/money'
 
-const TAX_CATEGORIES: TaxCategory[] = ['exempt', 'canasta_basica', 'standard']
+const STANDARD_TAX: ProductInput['taxCategory'] = 'standard'
 
 export function validateProductInput(input: ProductInput): void {
   if (!input.barcode?.trim() || !input.name?.trim()) throw new AppError('errors.invalidInput')
   if (!Number.isFinite(input.price) || input.price < 0) throw new AppError('errors.invalidInput')
-  if (!TAX_CATEGORIES.includes(input.taxCategory)) throw new AppError('errors.invalidInput')
+  if (input.taxCategory !== STANDARD_TAX) throw new AppError('errors.invalidInput')
   const hasQty = input.bulkQty != null
   const hasPrice = input.bulkPrice != null
   if (hasQty !== hasPrice) throw new AppError('errors.invalidInput')
@@ -62,10 +61,6 @@ export function parseProductRow(
     throw new AppError('errors.invalidInput')
   }
 
-  const taxRaw = cell(row, columns.tax_category)
-  const taxCategory = taxRaw ? parseTaxCategory(taxRaw) : 'standard'
-  if (!taxCategory) throw new AppError('products.csv.invalidTaxCategory')
-
   const bulkQtyRaw = cell(row, columns.bulk_qty)
   const bulkPriceRaw = cell(row, columns.bulk_price)
   const hasBulk = bulkQtyRaw !== '' || bulkPriceRaw !== ''
@@ -92,7 +87,7 @@ export function parseProductRow(
     category: cell(row, columns.category) || null,
     stock: stock < 0 ? 0 : stock,
     stockThreshold: threshold != null && threshold >= 0 ? threshold : null,
-    taxCategory,
+    taxCategory: STANDARD_TAX,
     bulkQty,
     bulkPrice,
     facturaNegativo: parseFacturaNegativo(cell(row, columns.factura_negativo))
@@ -105,7 +100,6 @@ function productInputDiffers(existing: Product, input: ProductInput): boolean {
     existing.price !== input.price ||
     (existing.cost_price ?? null) !== input.costPrice ||
     (existing.category ?? null) !== (input.category?.trim() || null) ||
-    existing.tax_category !== input.taxCategory ||
     (existing.stock_threshold ?? null) !== input.stockThreshold ||
     (existing.bulk_qty ?? null) !== input.bulkQty ||
     (existing.bulk_price ?? null) !== input.bulkPrice ||

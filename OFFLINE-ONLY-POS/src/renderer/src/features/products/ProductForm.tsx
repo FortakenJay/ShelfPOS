@@ -4,12 +4,10 @@ import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
 import { parseColonesInput } from '@/lib/format'
 import { useToasts } from '@/lib/toast'
-import { Button, Field, Input, Modal, Select, Toggle } from '@/components/ui'
+import { Button, Field, Input, Modal, Toggle } from '@/components/ui'
 import { MoneyInput } from '@/components/MoneyInput'
 import { formatMoneyInputFromNumber, moneyInputIsEmpty } from '@shared/money'
-import type { Product, ProductInput, TaxCategory } from '@shared/types'
-
-const TAX_CATEGORIES: TaxCategory[] = ['standard', 'canasta_basica', 'exempt']
+import type { Product, ProductInput } from '@shared/types'
 
 function productFormState(product: Product | null) {
   return {
@@ -20,7 +18,6 @@ function productFormState(product: Product | null) {
     category: product?.category ?? '',
     stock: '0',
     threshold: product?.stock_threshold != null ? String(product.stock_threshold) : '',
-    taxCategory: (product?.tax_category ?? 'standard') as TaxCategory,
     bulkQty: product?.bulk_qty != null ? String(product.bulk_qty) : '',
     bulkPrice: product?.bulk_price != null ? formatMoneyInputFromNumber(product.bulk_price) : '',
     facturaNegativo: product?.factura_negativo === 1
@@ -88,7 +85,7 @@ export function ProductFormModal({
       category: form.category.trim() || null,
       stock: isEdit ? 0 : Math.trunc(Number(form.stock) || 0),
       stockThreshold: form.threshold.trim() === '' ? null : Math.trunc(Number(form.threshold)),
-      taxCategory: form.taxCategory,
+      taxCategory: 'standard',
       bulkQty: hasBulk ? bulkQtyNum : null,
       bulkPrice: hasBulk ? bulkPriceNum : null,
       facturaNegativo: form.facturaNegativo
@@ -180,18 +177,6 @@ export function ProductFormModal({
               onChange={(e) => patch({ threshold: e.target.value.replace(/\D/g, '') })}
               placeholder={t('products.thresholdHint', { value: defaultThreshold })}
             />
-          </Field>
-          <Field label={t('products.taxCategory')}>
-            <Select
-              value={form.taxCategory}
-              onChange={(e) => patch({ taxCategory: e.target.value as TaxCategory })}
-            >
-              {TAX_CATEGORIES.map((tc) => (
-                <option key={tc} value={tc}>
-                  {t(`tax.categories.${tc}`)}
-                </option>
-              ))}
-            </Select>
           </Field>
         </div>
 

@@ -47,7 +47,6 @@ export function registerSettingsHandlers(): void {
       setSetting(SETTING_KEYS.scannerBurstMs, String(v))
     }
     rate(SETTING_KEYS.ivaRateStandard, input.ivaRateStandard)
-    rate(SETTING_KEYS.ivaRateCanastaBasica, input.ivaRateCanastaBasica)
 
     if (input.branchCode !== undefined) {
       const v = input.branchCode.replace(/\D/g, '').slice(0, 3).padStart(3, '0')

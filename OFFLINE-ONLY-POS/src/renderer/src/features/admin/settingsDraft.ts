@@ -18,7 +18,6 @@ export interface SettingsDraft {
   branchCode: string
   terminalCode: string
   ivaStandard: string
-  ivaCanasta: string
 }
 
 export function draftFromSettings(s: AppSettings): SettingsDraft {
@@ -39,8 +38,7 @@ export function draftFromSettings(s: AppSettings): SettingsDraft {
     footer: s.receiptFooter,
     branchCode: s.branchCode,
     terminalCode: s.terminalCode,
-    ivaStandard: String(s.ivaRateStandard),
-    ivaCanasta: String(s.ivaRateCanastaBasica)
+    ivaStandard: String(s.ivaRateStandard)
   }
 }
 
@@ -58,7 +56,7 @@ const EMISOR_KEYS = [
   'address',
   'footer'
 ] as const
-const TAX_KEYS = ['branchCode', 'terminalCode', 'ivaStandard', 'ivaCanasta'] as const
+const TAX_KEYS = ['branchCode', 'terminalCode', 'ivaStandard'] as const
 
 function sectionDirty(
   draft: SettingsDraft,

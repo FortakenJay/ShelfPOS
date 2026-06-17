@@ -149,7 +149,6 @@ const settingsUpdateInputSchema = z.strictObject({
   stockThresholdDefault: z.number().int().min(0).max(1_000_000).optional(),
   scannerBurstMs: z.number().int().min(5).max(500).optional(),
   ivaRateStandard: z.number().finite().min(0).max(100).optional(),
-  ivaRateCanastaBasica: z.number().finite().min(0).max(100).optional(),
   branchCode: z.string().trim().max(10).optional(),
   terminalCode: z.string().trim().max(10).optional(),
   storeLegalName: optionalTextSchema.optional(),

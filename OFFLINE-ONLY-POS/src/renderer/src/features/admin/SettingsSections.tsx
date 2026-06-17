@@ -212,13 +212,6 @@ export function SettingsTaxSection({
             onChange={(e) => onChange({ ivaStandard: e.target.value.replace(/[^\d.]/g, '') })}
           />
         </Field>
-        <Field label={t('settings.tax.ivaCanasta')}>
-          <Input
-            inputMode="decimal"
-            value={draft.ivaCanasta}
-            onChange={(e) => onChange({ ivaCanasta: e.target.value.replace(/[^\d.]/g, '') })}
-          />
-        </Field>
       </div>
       <SettingsSaveRow saving={saving} disabled={!dirty} onSave={onSave} />
     </section>

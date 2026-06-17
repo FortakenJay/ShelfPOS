@@ -357,14 +357,8 @@ function roleSummaries(): DashboardRoleSummary[] {
   }))
 }
 
-function taxableExemptSales(report: TaxBreakdownReport): { taxable: number; exempt: number } {
-  let taxable = 0
-  let exempt = 0
-  for (const row of report.rows) {
-    if (row.taxCategory === 'exempt') exempt = round2(exempt + row.gross)
-    else taxable = round2(taxable + row.gross)
-  }
-  return { taxable, exempt }
+function taxableSalesTotal(report: TaxBreakdownReport): number {
+  return round2(report.rows.reduce((sum, row) => sum + row.gross, 0))
 }
 
 function mapAuditToActivity(row: AuditLogRow): DashboardActivityItem {
@@ -539,7 +533,7 @@ export function dashboardOverview(): DashboardOverview {
 
   const inventory = inventorySummary()
   const taxSummary = taxBreakdown({ fromTs: monthFrom, toTs: monthTo })
-  const { taxable, exempt } = taxableExemptSales(taxSummary)
+  const taxable = taxableSalesTotal(taxSummary)
 
   const cierreAlertCount = (
     getDb()
@@ -610,6 +604,6 @@ export function dashboardOverview(): DashboardOverview {
     alerts: buildAlerts(inventory, cierreAlertCount),
     taxSummary,
     taxableSales: taxable,
-    exemptSales: exempt
+    exemptSales: 0
   }
 }

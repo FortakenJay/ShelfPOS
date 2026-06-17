@@ -4,7 +4,6 @@ import ExcelJS from 'exceljs'
 import { AppError } from '../errors'
 import type { ParsedCsv } from './productCsvImport'
 import type { ProductCsvKey } from './csvColumns'
-import type { TaxCategory } from '../../shared/types'
 
 /** eFactura product export column letters (header row). */
 const EFACTURA_HEADERS = new Set(['a', 'b', 'p1'])
@@ -63,18 +62,6 @@ function cell(row: unknown[], cols: Record<string, number>, letter: string): str
   return normalizeCell(row[index])
 }
 
-/** eFactura tax code (column j) → ShelfPOS tax category. */
-export function parseEfacturaTaxCode(raw: string): TaxCategory {
-  const code = raw.trim()
-  if (code === '0') return 'exempt'
-  if (code === '1') return 'canasta_basica'
-  return 'standard'
-}
-
-function taxCategoryLabel(category: TaxCategory): string {
-  return category
-}
-
 function parseOptionalMoney(raw: string): number | null {
   if (!raw.trim()) return null
   const n = Number(raw.replace(/,/g, ''))
@@ -109,7 +96,6 @@ function efacturaRowToProductCsvRow(
   const bulkPrice =
     bulkPriceRaw === '' ? '' : String(parseOptionalMoney(bulkPriceRaw) ?? '')
 
-  const taxCategory = taxCategoryLabel(parseEfacturaTaxCode(cell(row, cols, 'j')))
   const facturaNegativo = cell(row, cols, 'g') === '1' ? '1' : '0'
 
   return [
@@ -120,7 +106,6 @@ function efacturaRowToProductCsvRow(
     '',
     stock,
     '',
-    taxCategory,
     bulkQty,
     bulkPrice,
     facturaNegativo
@@ -135,17 +120,16 @@ const NORMALIZED_CSV_COLUMNS: Record<ProductCsvKey, number> = {
   category: 4,
   stock: 5,
   stock_threshold: 6,
-  tax_category: 7,
-  bulk_qty: 8,
-  bulk_price: 9,
-  factura_negativo: 10
+  bulk_qty: 7,
+  bulk_price: 8,
+  factura_negativo: 9
 }
 
 /**
  * Reads an eFactura "productos" XLSX and normalizes rows for the existing CSV import pipeline.
  *
- * Mapped: a/k→barcode, b→name, p1→price, h→cost, c→stock, g→factura negativo, p2/p2a→mayorista, j→IVA.
- * Ignored: unit, discounts, category, stock alert, internal ts.
+ * Mapped: a/k→barcode, b→name, p1→price, h→cost, c→stock, g→factura negativo, p2/p2a→mayorista.
+ * Ignored: unit, discounts, category, stock alert, IVA code, internal ts.
  */
 export async function readEfacturaXlsx(filePath: string): Promise<ParsedCsv> {
   const buffer = readFileSync(filePath)
