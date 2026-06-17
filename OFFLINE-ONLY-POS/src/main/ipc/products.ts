@@ -220,15 +220,23 @@ export function registerProductHandlers(): void {
     return buildProductImportPreview(await readEfacturaXlsx(result.filePaths[0]))
   })
 
-  handle<{ filePath: string }, ProductImportResult>('products:importEfacturaConfirm', MANAGE, async ({ filePath }) => {
-    const user = session.require()
-    if (!filePath?.trim()) throw new AppError('errors.invalidInput')
-    return applyProductImport(await readEfacturaXlsx(filePath.trim()), user.id)
-  })
+  handle<{ filePath: string; stockMode?: 'add' | 'replace' }, ProductImportResult>(
+    'products:importEfacturaConfirm',
+    MANAGE,
+    async ({ filePath, stockMode }) => {
+      const user = session.require()
+      if (!filePath?.trim()) throw new AppError('errors.invalidInput')
+      return applyProductImport(await readEfacturaXlsx(filePath.trim()), user.id, stockMode ?? 'add')
+    }
+  )
 
-  handle<{ filePath: string }, ProductImportResult>('products:importCsvConfirm', MANAGE, ({ filePath }) => {
-    const user = session.require()
-    if (!filePath?.trim()) throw new AppError('errors.invalidInput')
-    return applyProductImport(filePath.trim(), user.id)
-  })
+  handle<{ filePath: string; stockMode?: 'add' | 'replace' }, ProductImportResult>(
+    'products:importCsvConfirm',
+    MANAGE,
+    ({ filePath, stockMode }) => {
+      const user = session.require()
+      if (!filePath?.trim()) throw new AppError('errors.invalidInput')
+      return applyProductImport(filePath.trim(), user.id, stockMode ?? 'add')
+    }
+  )
 }

@@ -3,7 +3,7 @@ import { basename } from 'node:path'
 import { AppError } from '../errors'
 import { getDb } from '../db'
 import { localNow } from '../db/helpers'
-import { applyStockDelta, getProductByBarcode } from '../db/repos/products'
+import { applyStockDelta, getProduct, getProductByBarcode } from '../db/repos/products'
 import { writeAudit } from '../db/repos/audit'
 import { parseCsv } from './csv'
 import { mapProductCsvHeaders, parseFacturaNegativo, type ProductCsvKey } from './csvColumns'
@@ -13,6 +13,7 @@ import type {
   ProductImportPreview,
   ProductImportPreviewRow,
   ProductImportResult,
+  ProductImportStockMode,
   ProductInput
 } from '../../shared/types'
 import { roundColones } from '../../shared/money'
@@ -124,6 +125,7 @@ function previewRow(
   if (existing) {
     base.currentName = existing.name
     base.currentPrice = existing.price
+    base.currentStock = existing.stock
   }
   return base
 }
@@ -196,7 +198,25 @@ export function buildProductImportPreview(parsed: ParsedCsv): ProductImportPrevi
   }
 }
 
-export function applyProductImport(filePathOrParsed: string | ParsedCsv, userId: number): ProductImportResult {
+export function applyImportStock(
+  productId: number,
+  importStock: number,
+  stockMode: ProductImportStockMode,
+  userId: number
+): boolean {
+  const product = getProduct(productId)
+  if (!product) return false
+  const delta = stockMode === 'add' ? importStock : importStock - product.stock
+  if (delta === 0) return false
+  applyStockDelta(productId, delta, userId, 'csv_import')
+  return true
+}
+
+export function applyProductImport(
+  filePathOrParsed: string | ParsedCsv,
+  userId: number,
+  stockMode: ProductImportStockMode = 'add'
+): ProductImportResult {
   const parsed = typeof filePathOrParsed === 'string' ? readProductCsv(filePathOrParsed) : filePathOrParsed
   const preview = buildProductImportPreview(parsed)
   const db = getDb()
@@ -243,12 +263,7 @@ export function applyProductImport(filePathOrParsed: string | ParsedCsv, userId:
     }
   }
 
-  const updateRow = (input: ProductInput, row: number): void => {
-    const existing = getProductByBarcode(input.barcode)
-    if (!existing) {
-      errors.push({ row, key: 'errors.productNotFound' })
-      return
-    }
+  const updateRow = (existing: Product, input: ProductInput, row: number): void => {
     try {
       db.transaction(() => {
         getDb()
@@ -270,6 +285,7 @@ export function applyProductImport(filePathOrParsed: string | ParsedCsv, userId:
             localNow(),
             existing.id
           )
+        applyImportStock(existing.id, input.stock, stockMode, userId)
         writeAudit('product_updated', {
           entity: 'product',
           entityId: existing.id,
@@ -277,6 +293,20 @@ export function applyProductImport(filePathOrParsed: string | ParsedCsv, userId:
         })
       })()
       updated++
+    } catch (err) {
+      const key = err instanceof AppError ? err.key : 'errors.unknown'
+      const detail = err instanceof Error && !(err instanceof AppError) ? err.message : undefined
+      errors.push({ row, key, detail })
+    }
+  }
+
+  const applyStockOnlyRow = (existing: Product, input: ProductInput, row: number): void => {
+    try {
+      let stockChanged = false
+      db.transaction(() => {
+        stockChanged = applyImportStock(existing.id, input.stock, stockMode, userId)
+      })()
+      if (stockChanged) updated++
     } catch (err) {
       const key = err instanceof AppError ? err.key : 'errors.unknown'
       const detail = err instanceof Error && !(err instanceof AppError) ? err.message : undefined
@@ -301,7 +331,9 @@ export function applyProductImport(filePathOrParsed: string | ParsedCsv, userId:
       if (!existing) {
         insertRow(input, i + 1)
       } else if (productInputDiffers(existing, input)) {
-        updateRow(input, i + 1)
+        updateRow(existing, input, i + 1)
+      } else {
+        applyStockOnlyRow(existing, input, i + 1)
       }
     } catch {
       // Already captured in preview.errors; skip invalid rows on apply.

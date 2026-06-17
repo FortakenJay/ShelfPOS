@@ -4,6 +4,7 @@ import { ProductFormModal } from '../ProductForm'
 import { AdjustStockModal } from '../AdjustStockModal'
 import { ProductCsvHelpModal } from '../ProductCsvHelpModal'
 import { ProductImportPreviewModal } from '../ProductImportPreviewModal'
+import type { ProductImportStockMode } from '@shared/types'
 import type { ProductManagerUiState } from '../hooks/useProductManager'
 
 interface ProductManagerModalsProps {
@@ -16,7 +17,7 @@ interface ProductManagerModalsProps {
   deletePending: boolean
   onDeleteConfirm: (id: number) => void
   onExportTemplate: () => void
-  onImportConfirm: (filePath: string, format: 'csv' | 'efactura') => void
+  onImportConfirm: (filePath: string, format: 'csv' | 'efactura', stockMode: ProductImportStockMode) => void
   onProductsSaved: () => void
 }
 
@@ -115,8 +116,8 @@ export function ProductManagerModals({
           }
           loading={importConfirmPending}
           onClose={() => setUi((u) => ({ ...u, importPreview: null }))}
-          onConfirm={() =>
-            onImportConfirm(ui.importPreview!.filePath as string, ui.importFormat)
+          onConfirm={(stockMode) =>
+            onImportConfirm(ui.importPreview!.filePath as string, ui.importFormat, stockMode)
           }
         />
       )}

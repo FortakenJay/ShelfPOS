@@ -1,14 +1,26 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatMoney } from '@/lib/format'
-import { Button, Modal, Td, Th } from '@/components/ui'
-import type { ProductImportPreview, ProductImportPreviewRow } from '@shared/types'
+import { Button, Modal, Td, Th, Toggle } from '@/components/ui'
+import type { ProductImportPreview, ProductImportPreviewRow, ProductImportStockMode } from '@shared/types'
 
 interface ProductImportPreviewModalProps {
   preview: ProductImportPreview
   titleKey?: string
   loading: boolean
-  onConfirm: () => void
+  onConfirm: (stockMode: ProductImportStockMode) => void
   onClose: () => void
+}
+
+function importHasStockChanges(
+  preview: ProductImportPreview,
+  stockMode: ProductImportStockMode
+): boolean {
+  const rows = [...preview.toCreate, ...preview.toUpdate, ...preview.unchanged]
+  if (stockMode === 'add') return rows.some((row) => row.stock > 0)
+  return rows.some(
+    (row) => row.currentStock != null && row.currentStock !== row.stock
+  )
 }
 
 function PreviewTable({
@@ -30,6 +42,7 @@ function PreviewTable({
             <Th>{t('products.barcode')}</Th>
             <Th>{t('products.name')}</Th>
             <Th className="text-right">{t('products.price')}</Th>
+            <Th className="text-right">{t('products.stock')}</Th>
             {mode === 'update' && <Th>{t('products.csv.preview.change')}</Th>}
           </tr>
         </thead>
@@ -40,6 +53,7 @@ function PreviewTable({
               <Td className="font-mono text-[13px]">{row.barcode}</Td>
               <Td className="font-semibold">{row.name}</Td>
               <Td className="text-right font-bold">{formatMoney(row.price)}</Td>
+              <Td className="text-right font-bold">{row.stock}</Td>
               {mode === 'update' && (
                 <Td className="text-[13px] text-slate-600">
                   {row.currentName && row.currentName !== row.name && (
@@ -50,6 +64,11 @@ function PreviewTable({
                   {row.currentPrice != null && row.currentPrice !== row.price && (
                     <div>
                       {t('products.price')}: {formatMoney(row.currentPrice)} → {formatMoney(row.price)}
+                    </div>
+                  )}
+                  {row.currentStock != null && row.currentStock !== row.stock && (
+                    <div>
+                      {t('products.stock')}: {row.currentStock} → {row.stock}
                     </div>
                   )}
                 </Td>
@@ -70,8 +89,12 @@ export function ProductImportPreviewModal({
   onClose
 }: ProductImportPreviewModalProps): React.JSX.Element {
   const { t } = useTranslation()
+  const [replaceStock, setReplaceStock] = useState(false)
+  const stockMode: ProductImportStockMode = replaceStock ? 'replace' : 'add'
 
-  const canApply = preview.toCreate.length > 0 || preview.toUpdate.length > 0
+  const hasFieldChanges = preview.toCreate.length > 0 || preview.toUpdate.length > 0
+  const hasStockChanges = importHasStockChanges(preview, stockMode)
+  const canApply = hasFieldChanges || hasStockChanges
 
   return (
     <Modal title={t(titleKey)} onClose={onClose} size="lg">
@@ -87,6 +110,19 @@ export function ProductImportPreviewModal({
         unchanged: preview.unchanged.length,
         errors: preview.errors.length
       })}</p>
+
+      <section className="mb-4 rounded-md border border-line bg-slate-50 px-4 py-3">
+        <Toggle
+          checked={replaceStock}
+          onChange={setReplaceStock}
+          label={t('products.csv.preview.replaceStockToggle')}
+        />
+        <p className="mt-2 text-[13px] text-slate-600">
+          {replaceStock
+            ? t('products.csv.preview.replaceStockHint')
+            : t('products.csv.preview.addStockHint')}
+        </p>
+      </section>
 
       {preview.toCreate.length > 0 && (
         <section className="mb-4">
@@ -148,7 +184,7 @@ export function ProductImportPreviewModal({
           className="flex-1"
           loading={loading}
           disabled={!canApply}
-          onClick={onConfirm}
+          onClick={() => onConfirm(stockMode)}
         >
           {t('products.csv.preview.confirm')}
         </Button>

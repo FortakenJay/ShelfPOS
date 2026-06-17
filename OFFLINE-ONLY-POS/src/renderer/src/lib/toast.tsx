@@ -2,7 +2,8 @@ import { createContext, use, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatMoney } from './format'
-import type { StockAlert } from '@shared/types'
+import { useSession } from './session'
+import type { Role, StockAlert } from '@shared/types'
 
 export interface ToastAction {
   labelKey: string
@@ -29,9 +30,24 @@ interface ToastApi {
 
 const ToastContext = createContext<ToastApi | null>(null)
 
-const TRANSIENT_MS = 4500
+const TRANSIENT_MS = 3000
+
+const NO_OP_TOAST_API: ToastApi = {
+  push: () => {},
+  success: () => {},
+  error: () => {},
+  info: () => {},
+  stockAlerts: () => {},
+  changeDue: () => {}
+}
+
+function toastsEnabledForRole(role: Role | undefined): boolean {
+  return role === 'admin' || role === 'product_manager'
+}
 
 export function ToastProvider({ children }: { children: ReactNode }): React.JSX.Element {
+  const { user } = useSession()
+  const enabled = toastsEnabledForRole(user?.role)
   const [toasts, setToasts] = useState<Toast[]>([])
   const nextId = useRef(1)
 
@@ -40,6 +56,7 @@ export function ToastProvider({ children }: { children: ReactNode }): React.JSX.
   }
 
   const push = (toast: Omit<Toast, 'id'>): void => {
+    if (!enabled) return
     const id = nextId.current++
     setToasts((prev) => [...prev.slice(-7), { ...toast, id }])
     if (!toast.persistent) {
@@ -47,29 +64,31 @@ export function ToastProvider({ children }: { children: ReactNode }): React.JSX.
     }
   }
 
-  const apiValue: ToastApi = {
-    push,
-    success: (key, vars) => push({ kind: 'success', key, vars }),
-    error: (key, vars) => push({ kind: 'error', key, vars }),
-    info: (key, vars) => push({ kind: 'info', key, vars }),
-    stockAlerts: (alerts) => {
-      for (const alert of alerts) {
-        push({
-          kind: alert.level === 'out' ? 'stock-out' : 'stock-low',
-          key: alert.level === 'out' ? 'toasts.stockOut' : 'toasts.stockLow',
-          vars: { name: alert.name, stock: alert.stock },
-          persistent: true
-        })
+  const apiValue: ToastApi = enabled
+    ? {
+        push,
+        success: (key, vars) => push({ kind: 'success', key, vars }),
+        error: (key, vars) => push({ kind: 'error', key, vars }),
+        info: (key, vars) => push({ kind: 'info', key, vars }),
+        stockAlerts: (alerts) => {
+          for (const alert of alerts) {
+            push({
+              kind: alert.level === 'out' ? 'stock-out' : 'stock-low',
+              key: alert.level === 'out' ? 'toasts.stockOut' : 'toasts.stockLow',
+              vars: { name: alert.name, stock: alert.stock },
+              persistent: true
+            })
+          }
+        },
+        changeDue: (amount) =>
+          push({ kind: 'success', key: 'toasts.changeDue', vars: { amount: formatMoney(amount) } })
       }
-    },
-    changeDue: (amount) =>
-      push({ kind: 'success', key: 'toasts.changeDue', vars: { amount: formatMoney(amount) } })
-  }
+    : NO_OP_TOAST_API
 
   return (
     <ToastContext.Provider value={apiValue}>
       {children}
-      <ToastViewport toasts={toasts} dismiss={dismiss} />
+      {enabled && <ToastViewport toasts={toasts} dismiss={dismiss} />}
     </ToastContext.Provider>
   )
 }
@@ -99,7 +118,7 @@ function ToastViewport({
 }): React.JSX.Element {
   const { t } = useTranslation()
   return (
-    <div className="pointer-events-none fixed top-4 right-4 z-[100] flex w-96 flex-col gap-2">
+    <div className="pointer-events-none fixed bottom-4 right-4 z-[100] flex w-96 flex-col gap-2">
       {toasts.map((toast) => (
         <div
           key={toast.id}

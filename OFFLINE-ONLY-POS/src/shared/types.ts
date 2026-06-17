@@ -102,6 +102,8 @@ export interface ProductImportError {
   detail?: string
 }
 
+export type ProductImportStockMode = 'add' | 'replace'
+
 export interface ProductImportPreviewRow {
   row: number
   barcode: string
@@ -112,6 +114,7 @@ export interface ProductImportPreviewRow {
   taxCategory: TaxCategory
   currentName?: string
   currentPrice?: number
+  currentStock?: number
 }
 
 export interface ProductImportPreview {

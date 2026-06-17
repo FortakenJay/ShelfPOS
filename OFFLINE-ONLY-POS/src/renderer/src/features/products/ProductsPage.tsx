@@ -85,7 +85,9 @@ function ProductManager({
         deletePending={pm.deleteMutation.isPending}
         onDeleteConfirm={(id) => pm.deleteMutation.mutate(id)}
         onExportTemplate={() => pm.exportTemplate.mutate()}
-        onImportConfirm={(filePath, format) => pm.importConfirmMutation.mutate({ filePath, format })}
+        onImportConfirm={(filePath, format, stockMode) =>
+          pm.importConfirmMutation.mutate({ filePath, format, stockMode })
+        }
         onProductsSaved={pm.invalidateProducts}
       />
     </div>

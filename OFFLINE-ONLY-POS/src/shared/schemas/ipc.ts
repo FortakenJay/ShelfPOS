@@ -224,9 +224,15 @@ export const IPC_SCHEMAS = {
   'products:adjustStock': adjustStockInputSchema,
   'products:exportCsv': z.strictObject({ template: z.boolean().optional() }).optional(),
   'products:importCsvPreview': voidInput,
-  'products:importCsvConfirm': z.strictObject({ filePath: filePathSchema }),
+  'products:importCsvConfirm': z.strictObject({
+    filePath: filePathSchema,
+    stockMode: z.enum(['add', 'replace']).optional()
+  }),
   'products:importEfacturaPreview': voidInput,
-  'products:importEfacturaConfirm': z.strictObject({ filePath: filePathSchema }),
+  'products:importEfacturaConfirm': z.strictObject({
+    filePath: filePathSchema,
+    stockMode: z.enum(['add', 'replace']).optional()
+  }),
   'products:byBarcode': z.strictObject({ barcode: barcodeSchema }),
   'products:search': z.strictObject({ query: z.string().trim().max(100) }),
   'sales:create': createSaleInputSchema,

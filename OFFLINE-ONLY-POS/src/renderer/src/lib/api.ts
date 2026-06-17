@@ -35,6 +35,7 @@ import type {
   ProductListResult,
   ProductImportPreview,
   ProductImportResult,
+  ProductImportStockMode,
   ProductInput,
   ReportData,
   ReportType,
@@ -105,10 +106,10 @@ export const api = {
       call<{ canceled: boolean; path?: string }>('products:exportCsv', { template }),
     importPreview: () => call<ProductImportPreview>('products:importCsvPreview'),
     importEfacturaPreview: () => call<ProductImportPreview>('products:importEfacturaPreview'),
-    importConfirm: (filePath: string) =>
-      call<ProductImportResult>('products:importCsvConfirm', { filePath }),
-    importEfacturaConfirm: (filePath: string) =>
-      call<ProductImportResult>('products:importEfacturaConfirm', { filePath })
+    importConfirm: (filePath: string, stockMode: ProductImportStockMode = 'add') =>
+      call<ProductImportResult>('products:importCsvConfirm', { filePath, stockMode }),
+    importEfacturaConfirm: (filePath: string, stockMode: ProductImportStockMode = 'add') =>
+      call<ProductImportResult>('products:importEfacturaConfirm', { filePath, stockMode })
   },
   sales: {
     create: (input: CreateSaleInput) => call<CreateSaleResult>('sales:create', input),

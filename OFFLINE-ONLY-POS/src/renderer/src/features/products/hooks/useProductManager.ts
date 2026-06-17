@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, ApiError } from '@/lib/api'
 import { useToasts } from '@/lib/toast'
 import { useDebouncedValue } from '@/lib/useScanner'
-import type { Product, ProductImportError, ProductImportPreview, StockStatus } from '@shared/types'
+import type { Product, ProductImportError, ProductImportPreview, ProductImportStockMode, StockStatus } from '@shared/types'
 
 export type ProductManagerUiState = {
   formProduct: Product | null | 'new'
@@ -136,10 +136,18 @@ export function useProductManager(options?: {
   })
 
   const importConfirmMutation = useMutation({
-    mutationFn: ({ filePath, format }: { filePath: string; format: 'csv' | 'efactura' }) =>
+    mutationFn: ({
+      filePath,
+      format,
+      stockMode
+    }: {
+      filePath: string
+      format: 'csv' | 'efactura'
+      stockMode: ProductImportStockMode
+    }) =>
       format === 'efactura'
-        ? api.products.importEfacturaConfirm(filePath)
-        : api.products.importConfirm(filePath),
+        ? api.products.importEfacturaConfirm(filePath, stockMode)
+        : api.products.importConfirm(filePath, stockMode),
     onSuccess: (result) => {
       if (result.canceled) return
       const created = result.created ?? 0
