@@ -77,8 +77,8 @@ export function SettingsGeneralSection({
   return (
     <section className="flex h-full flex-col rounded-lg border-2 border-line bg-white p-5">
       <h2 className="mb-3 text-lg font-bold">{t('settings.generalTitle')}</h2>
-      <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-3">
-        <Field label={t('settings.storeName')}>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:items-end">
+        <Field label={t('settings.storeName')} className="sm:col-span-2">
           <Input value={draft.storeName} onChange={(e) => onChange({ storeName: e.target.value })} />
         </Field>
         <Field label={t('settings.stockThresholdDefault')}>

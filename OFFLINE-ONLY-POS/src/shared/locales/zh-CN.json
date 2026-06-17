@@ -139,7 +139,8 @@
       "catalogPrice": "登记价格",
       "unitPrice": "销售价格",
       "reset": "使用登记价格",
-      "customApplied": "自定义价格"
+      "customApplied": "自定义价格",
+      "pinTitle": "授权改价的 PIN"
     },
     "discountBtn": "折扣",
     "cartDiscount": "整单折扣",
@@ -578,6 +579,12 @@
     "saleLineDiscount": "单品折扣",
     "saleDiscountTotal": "该单折扣合计",
     "noDiscounts": "本期无折扣",
+    "priceOverridesTitle": "改价记录",
+    "priceOverrideCatalog": "登记价格",
+    "priceOverrideApplied": "实际价格",
+    "priceOverrideVariance": "差额",
+    "totalPriceVariance": "差额合计（登记 − 实际）",
+    "noPriceOverrides": "本期无改价",
     "discrepancyAlertsTitle": "现金差额日结 ({{count}} 笔)",
     "discrepancyIncomplete": "{{date}} 的日结未平账（{{direction}} {{amount}}）。",
     "discrepancyOver": "多出",
@@ -619,6 +626,8 @@
   },
   "audit": {
     "title": "操作日志",
+    "pageOf": "第 {{page}} 页，共 {{pages}} 页",
+    "showing": "第 {{from}}–{{to}} 条，共 {{total}} 条",
     "user": "用户",
     "allUsers": "所有用户",
     "allActions": "所有操作",
@@ -643,6 +652,9 @@
       "pin_changed": "修改 PIN",
       "discount_authorized_caja": "折扣已授权（收银 PIN）",
       "discount_authorized_manager": "折扣已授权（经理 PIN）",
+      "price_override_authorized_caja": "改价已授权（收银 PIN）",
+      "price_override_authorized_manager": "改价已授权（经理 PIN）",
+      "price_override_sale": "销售含改价",
       "user_created": "创建用户",
       "user_updated": "更新用户",
       "user_deactivated": "停用用户"
@@ -791,6 +803,8 @@
       "finalConsumer": "最终消费者",
       "discount": "折扣",
       "discountTotal": "折扣合计",
+      "catalogPrice": "登记价格",
+      "priceOverride": "实际价格",
       "taxBase": "计税基数",
       "iva": "IVA"
     },
@@ -822,7 +836,10 @@
       "cartDiscountTotal": "整单折扣",
       "lineDiscountTotal": "单品折扣",
       "cartDiscount": "整单折扣",
-      "saleDiscountTotal": "该单合计"
+      "saleDiscountTotal": "该单合计",
+      "priceOverridesTitle": "改价记录",
+      "priceOverrideTotal": "差额合计",
+      "priceOverrideVariance": "行差额"
     }
   },
   "errors": {

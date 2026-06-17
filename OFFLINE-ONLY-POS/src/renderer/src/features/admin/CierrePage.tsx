@@ -10,7 +10,7 @@ import { Button, Field, Input, Td, Th } from '@/components/ui'
 import { MoneyInput } from '@/components/MoneyInput'
 import { CashDrawerSummary } from '@/features/pos/CashDrawerSummary'
 import { CierreDiscrepancyAlerts } from './CierreDiscrepancyAlerts'
-import type { CierreDiscountReport, CierrePreview, CierreRecord } from '@shared/types'
+import type { CierreDiscountReport, CierrePreview, CierrePriceOverrideReport, CierreRecord } from '@shared/types'
 
 type CierreStep = 'count' | 'confirm'
 
@@ -111,6 +111,7 @@ function Cierre(): React.JSX.Element {
           <>
             <CierreSummary preview={preview} pending={pending} />
             <CierreDiscounts discounts={preview?.discounts} />
+            <CierrePriceOverrides overrides={preview?.priceOverrides} />
           </>
         )}
 
@@ -368,6 +369,88 @@ function CierreDiscounts({
                       −{formatMoney(item.lineDiscount)}
                     </Td>
                     <Td />
+                  </tr>
+                ))}
+              </Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+function CierrePriceOverrides({
+  overrides
+}: {
+  overrides: CierrePriceOverrideReport | undefined
+}): React.JSX.Element | null {
+  const { t } = useTranslation()
+  if (!overrides) return null
+
+  if (overrides.sales.length === 0) {
+    return (
+      <div className="rounded-lg border-2 border-line bg-white p-5">
+        <h2 className="mb-2 text-lg font-bold">{t('cierre.priceOverridesTitle')}</h2>
+        <p className="text-[15px] text-slate-500">{t('cierre.noPriceOverrides')}</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-lg border-2 border-line bg-white p-5">
+      <h2 className="mb-4 text-lg font-bold">{t('cierre.priceOverridesTitle')}</h2>
+      <div className="mb-4">
+        <SummaryCell
+          label={t('cierre.totalPriceVariance')}
+          value={formatMoney(overrides.totalVariance)}
+        />
+      </div>
+      <div className="overflow-x-auto rounded-lg border border-line">
+        <table className="w-full">
+          <thead>
+            <tr>
+              <Th>{t('print.receipt.saleId')}</Th>
+              <Th>{t('common.date')}</Th>
+              <Th>{t('cierre.closedBy')}</Th>
+              <Th>{t('returns.item')}</Th>
+              <Th className="text-right">{t('cierre.priceOverrideCatalog')}</Th>
+              <Th className="text-right">{t('cierre.priceOverrideApplied')}</Th>
+              <Th className="text-right">{t('cierre.priceOverrideVariance')}</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {overrides.sales.map((sale) => (
+              <Fragment key={sale.saleId}>
+                {sale.items.map((item, idx) => (
+                  <tr key={item.saleItemId} className={idx === 0 ? 'border-t border-line' : 'bg-slate-50'}>
+                    {idx === 0 ? (
+                      <>
+                        <Td className="font-semibold">{sale.consecutivo ?? `#${sale.saleId}`}</Td>
+                        <Td>{formatDate(sale.createdAt, true)}</Td>
+                        <Td>{sale.cashier}</Td>
+                      </>
+                    ) : (
+                      <>
+                        <Td />
+                        <Td />
+                        <Td />
+                      </>
+                    )}
+                    <Td className={`text-[14px] text-slate-700 ${idx > 0 ? 'pl-8' : ''}`}>
+                      {item.productName} ×{item.quantity}
+                    </Td>
+                    <Td className="text-right text-[14px]">{formatMoney(item.catalogUnitPrice)}</Td>
+                    <Td className="text-right text-[14px] font-semibold">
+                      {formatMoney(item.unitPrice)}
+                    </Td>
+                    <Td
+                      className={`text-right text-[14px] font-semibold ${
+                        item.lineVariance < 0 ? 'text-danger' : 'text-warning'
+                      }`}
+                    >
+                      {formatMoney(item.lineVariance)}
+                    </Td>
                   </tr>
                 ))}
               </Fragment>

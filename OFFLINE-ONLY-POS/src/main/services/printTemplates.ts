@@ -4,6 +4,7 @@ import { localNow } from '../db/helpers'
 import type {
   AppSettings,
   CierreDiscountReport,
+  CierrePriceOverrideReport,
   IdType,
   InventoryRow,
   Language,
@@ -51,6 +52,7 @@ export interface ReceiptItemLine {
   name: string
   quantity: number
   unitPrice: number
+  catalogUnitPrice?: number | null
   discount: number
   lineTotal: number
 }
@@ -147,6 +149,21 @@ export function buildReceiptLines(args: ReceiptArgs, lang: Language): PrintLine[
       l: `  ${item.quantity} x ${money(item.unitPrice)}`,
       r: money(item.unitPrice * item.quantity)
     })
+    if (
+      item.catalogUnitPrice != null &&
+      Math.abs(item.catalogUnitPrice - item.unitPrice) >= 0.01
+    ) {
+      lines.push({
+        t: 'row',
+        l: `  ${t(lang, 'print.receipt.catalogPrice')}`,
+        r: money(item.catalogUnitPrice)
+      })
+      lines.push({
+        t: 'row',
+        l: `  ${t(lang, 'print.receipt.priceOverride')}`,
+        r: money(item.unitPrice)
+      })
+    }
     if (item.discount > 0) {
       lines.push({ t: 'row', l: `  ${t(lang, 'print.receipt.discount')}`, r: `-${money(item.discount)}` })
       lines.push({ t: 'row', l: '', r: money(item.lineTotal) })
@@ -386,6 +403,7 @@ export interface CierrePrintArgs {
   returnsCount: number
   topProducts: TopProductRow[]
   discounts: CierreDiscountReport
+  priceOverrides: CierrePriceOverrideReport
   storeName: string
   cash: CierreCashArgs
 }
@@ -462,6 +480,45 @@ function cierreDiscountLines(lang: Language, discounts: CierreDiscountReport): P
   return lines
 }
 
+function cierrePriceOverrideLines(
+  lang: Language,
+  priceOverrides: CierrePriceOverrideReport
+): PrintLine[] {
+  if (priceOverrides.sales.length === 0) return []
+  const money = (n: number): string => formatMoney(n, lang)
+  const lines: PrintLine[] = [
+    { t: 'hr' },
+    { t: 'text', v: t(lang, 'print.cierre.priceOverridesTitle'), bold: true },
+    {
+      t: 'row',
+      l: t(lang, 'print.cierre.priceOverrideTotal'),
+      r: money(priceOverrides.totalVariance),
+      bold: true
+    }
+  ]
+  for (const sale of priceOverrides.sales) {
+    lines.push({
+      t: 'row',
+      l: sale.consecutivo ?? `#${sale.saleId}`,
+      r: formatDate(sale.createdAt, lang, true)
+    })
+    lines.push({ t: 'text', v: `  ${sale.cashier}` })
+    for (const item of sale.items) {
+      lines.push({
+        t: 'row',
+        l: `  ${item.productName} x${item.quantity}`,
+        r: `${money(item.catalogUnitPrice)}→${money(item.unitPrice)}`
+      })
+      lines.push({
+        t: 'row',
+        l: `  ${t(lang, 'print.cierre.priceOverrideVariance')}`,
+        r: money(item.lineVariance)
+      })
+    }
+  }
+  return lines
+}
+
 export function buildCierreLines(args: CierrePrintArgs, lang: Language): PrintLine[] {
   const money = (n: number): string => formatMoney(n, lang)
   return [
@@ -473,6 +530,7 @@ export function buildCierreLines(args: CierrePrintArgs, lang: Language): PrintLi
     { t: 'hr' },
     ...paymentLines(lang, args.totals),
     ...cierreDiscountLines(lang, args.discounts),
+    ...cierrePriceOverrideLines(lang, args.priceOverrides),
     { t: 'hr' },
     ...cierreCashLines(lang, args.cash),
     { t: 'hr' },

@@ -1,11 +1,45 @@
-import { useState } from 'react'
+import { useReducer } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import { api, ApiError } from '@/lib/api'
 import { formatMoney, parseColonesInput } from '@/lib/format'
 import { formatMoneyInputFromNumber } from '@shared/money'
 import { Button, Field, Modal } from '@/components/ui'
 import { MoneyInput } from '@/components/MoneyInput'
+import { PinModal } from '@/components/PinModal'
 import { catalogUnitPrice } from '@/lib/pricing'
 import type { Product } from '@shared/types'
+
+interface PriceOverrideState {
+  value: string
+  pinOpen: boolean
+  pinError: string | null
+  pendingPrice: number
+}
+
+type PriceOverrideAction =
+  | { type: 'setValue'; value: string }
+  | { type: 'openPin'; price: number }
+  | { type: 'closePin' }
+  | { type: 'setPinError'; error: string | null }
+
+function priceOverrideReducer(
+  state: PriceOverrideState,
+  action: PriceOverrideAction
+): PriceOverrideState {
+  switch (action.type) {
+    case 'setValue':
+      return { ...state, value: action.value }
+    case 'openPin':
+      return { ...state, pendingPrice: action.price, pinOpen: true, pinError: null }
+    case 'closePin':
+      return { ...state, pinOpen: false, pinError: null }
+    case 'setPinError':
+      return { ...state, pinError: action.error }
+    default:
+      return state
+  }
+}
 
 export function PriceOverrideModal({
   product,
@@ -21,14 +55,60 @@ export function PriceOverrideModal({
   onClose: () => void
 }): React.JSX.Element {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
   const catalog = catalogUnitPrice(product, quantity)
   const current = currentOverride ?? catalog
-  const [value, setValue] = useState(() => formatMoneyInputFromNumber(current))
+  const [state, dispatch] = useReducer(priceOverrideReducer, {
+    value: formatMoneyInputFromNumber(current),
+    pinOpen: false,
+    pinError: null,
+    pendingPrice: catalog
+  })
+  const { value, pinOpen, pinError, pendingPrice } = state
 
-  const apply = (): void => {
+  const authorizeMutation = useMutation({
+    mutationFn: (pin: string) =>
+      api.priceOverride.authorize({
+        pin,
+        productId: product.id,
+        productName: product.name,
+        catalogUnitPrice: catalog,
+        overrideUnitPrice: pendingPrice,
+        quantity
+      }),
+    onSuccess: () => {
+      onApply(pendingPrice)
+      dispatch({ type: 'closePin' })
+      void queryClient.invalidateQueries({ queryKey: ['audit'] })
+    },
+    onError: (err) => {
+      dispatch({
+        type: 'setPinError',
+        error: t(err instanceof ApiError ? err.key : 'errors.unknown')
+      })
+    }
+  })
+
+  const requestApply = (): void => {
     const parsed = parseColonesInput(value)
     if (parsed == null || parsed <= 0) return
-    onApply(parsed === catalog ? undefined : parsed)
+    if (parsed === catalog) {
+      onApply(undefined)
+      return
+    }
+    dispatch({ type: 'openPin', price: parsed })
+  }
+
+  if (pinOpen) {
+    return (
+      <PinModal
+        title={t('pos.priceOverride.pinTitle')}
+        loading={authorizeMutation.isPending}
+        error={pinError}
+        onSubmit={(pin) => authorizeMutation.mutate(pin)}
+        onCancel={() => dispatch({ type: 'closePin' })}
+      />
+    )
   }
 
   return (
@@ -46,9 +126,9 @@ export function PriceOverrideModal({
         <MoneyInput
           autoFocus
           value={value}
-          onChange={setValue}
+          onChange={(next) => dispatch({ type: 'setValue', value: next })}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') apply()
+            if (e.key === 'Enter') requestApply()
           }}
           className="text-right text-2xl font-bold"
         />
@@ -61,7 +141,7 @@ export function PriceOverrideModal({
             {t('pos.priceOverride.reset')}
           </Button>
         )}
-        <Button variant="cta" size="lg" className="flex-1" onClick={apply}>
+        <Button variant="cta" size="lg" className="flex-1" onClick={requestApply}>
           {t('common.confirm')}
         </Button>
       </div>

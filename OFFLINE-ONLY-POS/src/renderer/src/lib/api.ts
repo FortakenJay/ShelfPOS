@@ -4,7 +4,7 @@ import type {
   AppSettings,
   AppUserRow,
   AuditLogFilter,
-  AuditLogRow,
+  AuditLogPage,
   AuditUser,
   BackupInfo,
   CashDrawerStatus,
@@ -29,6 +29,7 @@ import type {
   OpenFloatInput,
   PrintJobRow,
   PrintStatus,
+  PriceOverrideAuthorizeInput,
   Product,
   ProductFilters,
   ProductListResult,
@@ -120,6 +121,10 @@ export const api = {
   discount: {
     authorize: (input: DiscountAuthorizeInput) => call<null>('discount:authorize', input)
   },
+  priceOverride: {
+    authorize: (input: PriceOverrideAuthorizeInput) =>
+      call<null>('priceOverride:authorize', input)
+  },
   reports: {
     run: (type: ReportType, range: DateRange) => call<ReportData>('reports:run', { type, range }),
     print: (type: ReportType, range: DateRange) =>
@@ -145,7 +150,7 @@ export const api = {
     listMovements: (range: DateRange) => call<CashMovementRow[]>('cash:listMovements', range)
   },
   audit: {
-    list: (filter: AuditLogFilter) => call<AuditLogRow[]>('audit:list', filter),
+    list: (filter: AuditLogFilter) => call<AuditLogPage>('audit:list', filter),
     users: () => call<AuditUser[]>('audit:users'),
     actions: () => call<string[]>('audit:actions')
   },

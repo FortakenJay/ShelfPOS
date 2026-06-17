@@ -1,7 +1,13 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, Modal } from './ui'
+import { Button, Input, Modal } from './ui'
 import { NumPad } from './NumPad'
+
+const PIN_MAX_LENGTH = 6
+
+function normalizePin(value: string): string {
+  return value.replace(/\D/g, '').slice(0, PIN_MAX_LENGTH)
+}
 
 interface PinModalProps {
   title: string
@@ -28,17 +34,28 @@ export function PinModal({
   return (
     <Modal title={title} onClose={loading ? undefined : onCancel}>
       <div className="mx-auto max-w-xs">
-        <div
-          className="mb-3 flex min-h-[56px] items-center justify-center rounded-md border-2 border-line bg-slate-50 text-3xl font-bold tracking-[0.5em]"
+        <Input
+          type="password"
+          inputMode="numeric"
+          pattern="\d*"
+          autoComplete="off"
+          autoFocus
+          maxLength={PIN_MAX_LENGTH}
+          value={pin}
+          disabled={loading}
           aria-label={t('returns.pinLabel')}
-        >
-          {'●'.repeat(pin.length)}
-        </div>
+          placeholder="••••"
+          onChange={(e) => setPin(normalizePin(e.target.value))}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') submit()
+          }}
+          className="mb-3 min-h-[56px] text-center text-3xl font-bold tracking-[0.5em]"
+        />
         {error && (
           <p className="mb-3 text-center text-[15px] font-semibold text-danger">{error}</p>
         )}
         <NumPad
-          onDigit={(d) => setPin((p) => (p.length < 6 ? p + d : p))}
+          onDigit={(d) => setPin((p) => normalizePin(p + d))}
           onBackspace={() => setPin((p) => p.slice(0, -1))}
           onClear={() => setPin('')}
         />

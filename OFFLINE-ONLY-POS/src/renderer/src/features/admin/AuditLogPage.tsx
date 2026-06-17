@@ -1,14 +1,49 @@
-import { useState } from 'react'
+import { useReducer } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import i18n from 'i18next'
 import { api } from '@/lib/api'
 import { formatDate } from '@/lib/format'
 import { RequireRole } from '@/features/shell/Shell'
-import { Select, Td, Th } from '@/components/ui'
+import { Button, Select, Td, Th } from '@/components/ui'
 import { DateRangePicker } from '@/components/DateRangePicker'
 import { presetToday } from '@/components/dateRangePresets'
 import type { DateRange } from '@shared/types'
+
+const PAGE_SIZE_OPTIONS = [25, 50, 100] as const
+const DEFAULT_PAGE_SIZE = 50
+
+interface AuditLogState {
+  range: DateRange
+  userId: number | ''
+  action: string
+  page: number
+  pageSize: number
+}
+
+type AuditLogAction =
+  | { type: 'setRange'; range: DateRange }
+  | { type: 'setUserId'; userId: number | '' }
+  | { type: 'setAction'; action: string }
+  | { type: 'setPage'; page: number }
+  | { type: 'setPageSize'; pageSize: number }
+
+function auditLogReducer(state: AuditLogState, action: AuditLogAction): AuditLogState {
+  switch (action.type) {
+    case 'setRange':
+      return { ...state, range: action.range, page: 1 }
+    case 'setUserId':
+      return { ...state, userId: action.userId, page: 1 }
+    case 'setAction':
+      return { ...state, action: action.action, page: 1 }
+    case 'setPage':
+      return { ...state, page: action.page }
+    case 'setPageSize':
+      return { ...state, pageSize: action.pageSize, page: 1 }
+    default:
+      return state
+  }
+}
 
 export function AuditLogPage(): React.JSX.Element {
   return (
@@ -20,22 +55,34 @@ export function AuditLogPage(): React.JSX.Element {
 
 function AuditLog(): React.JSX.Element {
   const { t } = useTranslation()
-  const [range, setRange] = useState<DateRange>(() => presetToday())
-  const [userId, setUserId] = useState<number | ''>('')
-  const [action, setAction] = useState('')
+  const [{ range, userId, action, page, pageSize }, dispatch] = useReducer(auditLogReducer, undefined, () => ({
+    range: presetToday(),
+    userId: '' as number | '',
+    action: '',
+    page: 1,
+    pageSize: DEFAULT_PAGE_SIZE
+  }))
 
   const { data: auditUsers } = useQuery({ queryKey: ['auditUsers'], queryFn: api.audit.users })
   const { data: auditActions } = useQuery({ queryKey: ['auditActions'], queryFn: api.audit.actions })
-  const { data: auditRows } = useQuery({
-    queryKey: ['audit', range, userId, action],
+  const { data: auditPage, isFetching } = useQuery({
+    queryKey: ['audit', range, userId, action, page, pageSize],
     queryFn: () =>
       api.audit.list({
         range,
         userId: userId === '' ? undefined : Number(userId),
         action: action || undefined,
-        limit: 500
+        limit: pageSize,
+        offset: (page - 1) * pageSize
       })
   })
+
+  const total = auditPage?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const safePage = Math.min(page, totalPages)
+  const from = total === 0 ? 0 : (safePage - 1) * pageSize + 1
+  const to = Math.min(safePage * pageSize, total)
+  const rows = auditPage?.rows ?? []
 
   const actionLabel = (actionKey: string): string => {
     const key = `audit.actions.${actionKey}`
@@ -48,10 +95,18 @@ function AuditLog(): React.JSX.Element {
       <h1 className="mb-5 text-2xl font-bold">{t('audit.title')}</h1>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <DateRangePicker value={range} onChange={setRange} />
+        <DateRangePicker
+          value={range}
+          onChange={(next) => dispatch({ type: 'setRange', range: next })}
+        />
         <Select
           value={userId === '' ? '' : String(userId)}
-          onChange={(e) => setUserId(e.target.value === '' ? '' : Number(e.target.value))}
+          onChange={(e) =>
+            dispatch({
+              type: 'setUserId',
+              userId: e.target.value === '' ? '' : Number(e.target.value)
+            })
+          }
           className="w-52"
           aria-label={t('audit.user')}
         >
@@ -64,7 +119,7 @@ function AuditLog(): React.JSX.Element {
         </Select>
         <Select
           value={action}
-          onChange={(e) => setAction(e.target.value)}
+          onChange={(e) => dispatch({ type: 'setAction', action: e.target.value })}
           className="w-64"
           aria-label={t('audit.action')}
         >
@@ -89,14 +144,14 @@ function AuditLog(): React.JSX.Element {
             </tr>
           </thead>
           <tbody>
-            {auditRows?.length === 0 && (
+            {rows.length === 0 && (
               <tr>
                 <Td colSpan={5} className="py-6 text-center text-slate-500">
                   {t('common.noData')}
                 </Td>
               </tr>
             )}
-            {auditRows?.map((row) => (
+            {rows.map((row) => (
               <tr key={row.id}>
                 <Td className="whitespace-nowrap">{formatDate(row.created_at, true)}</Td>
                 <Td className="font-semibold">{row.username ?? '—'}</Td>
@@ -111,6 +166,53 @@ function AuditLog(): React.JSX.Element {
           </tbody>
         </table>
       </div>
+
+      {total > 0 && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[14px] text-slate-600">
+            {t('audit.showing', { from, to, total })}
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 text-[14px] text-slate-600">
+              <span>{t('products.pagination.perPage')}</span>
+              <Select
+                value={String(pageSize)}
+                onChange={(e) =>
+                  dispatch({ type: 'setPageSize', pageSize: Number(e.target.value) })
+                }
+                className="w-20"
+                aria-label={t('products.pagination.perPage')}
+                disabled={isFetching}
+              >
+                {PAGE_SIZE_OPTIONS.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </Select>
+            </label>
+            <span className="text-[14px] text-slate-600">
+              {t('audit.pageOf', { page: safePage, pages: totalPages })}
+            </span>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                disabled={safePage <= 1 || isFetching}
+                onClick={() => dispatch({ type: 'setPage', page: safePage - 1 })}
+              >
+                {t('common.back')}
+              </Button>
+              <Button
+                variant="outline"
+                disabled={safePage >= totalPages || isFetching}
+                onClick={() => dispatch({ type: 'setPage', page: safePage + 1 })}
+              >
+                {t('common.next')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

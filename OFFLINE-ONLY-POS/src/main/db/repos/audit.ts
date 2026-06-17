@@ -1,12 +1,33 @@
 import { getDb } from '../index'
 import { localNow, rangeBounds } from '../helpers'
 import { session } from '../../services/session'
-import type { AuditLogFilter, AuditLogRow, AuditUser } from '../../../shared/types'
+import type { AuditLogFilter, AuditLogPage, AuditLogRow, AuditUser } from '../../../shared/types'
 
 interface AuditMeta {
   entity?: string
   entityId?: string | number
   detail?: string
+}
+
+function auditWhere(filter: AuditLogFilter): { where: string; params: Record<string, unknown> } {
+  const conditions: string[] = []
+  const params: Record<string, unknown> = {}
+  if (filter.range) {
+    const [from, to] = rangeBounds(filter.range)
+    conditions.push('created_at >= @from AND created_at <= @to')
+    params.from = from
+    params.to = to
+  }
+  if (filter.userId) {
+    conditions.push('user_id = @userId')
+    params.userId = filter.userId
+  }
+  if (filter.action) {
+    conditions.push('action = @action')
+    params.action = filter.action
+  }
+  const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : ''
+  return { where, params }
 }
 
 /**
@@ -35,31 +56,31 @@ export function writeAudit(action: string, meta: AuditMeta = {}): void {
   }
 }
 
-export function listAudit(filter: AuditLogFilter): AuditLogRow[] {
-  const conditions: string[] = []
-  const params: Record<string, unknown> = {}
-  if (filter.range) {
-    const [from, to] = rangeBounds(filter.range)
-    conditions.push('created_at >= @from AND created_at <= @to')
-    params.from = from
-    params.to = to
-  }
-  if (filter.userId) {
-    conditions.push('user_id = @userId')
-    params.userId = filter.userId
-  }
-  if (filter.action) {
-    conditions.push('action = @action')
-    params.action = filter.action
-  }
-  const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : ''
-  const limit = Math.min(Math.max(filter.limit ?? 200, 1), 1000)
-  return getDb()
+export function countAudit(filter: AuditLogFilter): number {
+  const { where, params } = auditWhere(filter)
+  const row = getDb()
+    .prepare(`SELECT COUNT(*) AS count FROM audit_log ${where}`)
+    .get(params) as { count: number }
+  return row.count
+}
+
+export function listAuditPage(filter: AuditLogFilter): AuditLogPage {
+  const { where, params } = auditWhere(filter)
+  const limit = Math.min(Math.max(filter.limit ?? 50, 1), 200)
+  const offset = Math.max(filter.offset ?? 0, 0)
+  const rows = getDb()
     .prepare(
       `SELECT id, user_id, username, action, entity, entity_id, detail, created_at
-       FROM audit_log ${where} ORDER BY id DESC LIMIT @limit`
+       FROM audit_log ${where} ORDER BY id DESC LIMIT @limit OFFSET @offset`
     )
-    .all({ ...params, limit }) as AuditLogRow[]
+    .all({ ...params, limit, offset }) as AuditLogRow[]
+  const total = countAudit(filter)
+  return { rows, total, limit, offset }
+}
+
+/** @deprecated Use listAuditPage — kept for dashboard activity feed. */
+export function listAudit(filter: AuditLogFilter): AuditLogRow[] {
+  return listAuditPage({ ...filter, limit: filter.limit ?? 200, offset: 0 }).rows
 }
 
 export function listAuditUsers(): AuditUser[] {

@@ -1,6 +1,6 @@
 import type Database from 'better-sqlite3'
 
-export const SCHEMA_VERSION = 6
+export const SCHEMA_VERSION = 7
 
 type Migration = (db: Database.Database) => void
 
@@ -246,6 +246,11 @@ const migrations: Record<number, Migration> = {
       ALTER TABLE products ADD COLUMN factura_negativo INTEGER NOT NULL DEFAULT 0
         CHECK (factura_negativo IN (0, 1));
     `)
+  },
+
+  // v7 — catalog unit price on overridden sale lines (cierre / receipt audit trail).
+  7: (db) => {
+    db.exec(`ALTER TABLE sale_items ADD COLUMN catalog_unit_price REAL;`)
   }
 }
 

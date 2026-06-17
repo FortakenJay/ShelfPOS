@@ -107,61 +107,64 @@ export function UserFormModal({
   })
 
   return (
-    <Modal title={t(isEdit ? 'users.editTitle' : 'users.createTitle')} onClose={onClose}>
-      <Field label={t('users.username')} className="mb-3">
-        <Input
-          value={username}
-          onChange={(e) => dispatch({ type: 'usernameChanged', value: e.target.value })}
-          autoComplete="off"
-        />
-      </Field>
-      <Field label={t('users.role')} className="mb-3">
-        <Select
-          value={role}
-          onChange={(e) => dispatch({ type: 'roleChanged', value: e.target.value as Role })}
-        >
-          {MANAGED_ROLES.map((r) => (
-            <option key={r} value={r}>
-              {t(`roles.${r}`)}
-            </option>
-          ))}
-        </Select>
-      </Field>
-      <Field
-        label={isEdit ? t('users.newPassword') : t('firstRun.password')}
-        className="mb-3"
-      >
-        <Input
-          type="password"
-          value={password}
-          onChange={(e) => dispatch({ type: 'passwordChanged', value: e.target.value })}
-          autoComplete="new-password"
-        />
-      </Field>
-      {isEdit && (
-        <p className="-mt-2 mb-3 text-[14px] text-slate-500">{t('users.passwordOptional')}</p>
-      )}
-      <Field label={t('firstRun.confirmPassword')} className="mb-3">
-        <Input
-          type="password"
-          value={confirm}
-          onChange={(e) => dispatch({ type: 'confirmChanged', value: e.target.value })}
-          autoComplete="new-password"
-        />
-      </Field>
-      {isEdit && (
-        <label className="mb-4 flex items-center gap-2 text-[15px] font-semibold text-slate-700">
-          <input
-            type="checkbox"
-            checked={isActive}
-            onChange={(e) => dispatch({ type: 'isActiveChanged', value: e.target.checked })}
-            className="h-4 w-4"
+    <Modal
+      title={t(isEdit ? 'users.editTitle' : 'users.createTitle')}
+      onClose={onClose}
+      size="lg"
+    >
+      <div className="grid grid-cols-2 gap-4">
+        <Field label={t('users.username')}>
+          <Input
+            value={username}
+            onChange={(e) => dispatch({ type: 'usernameChanged', value: e.target.value })}
+            autoComplete="off"
           />
-          {t('users.active')}
-        </label>
+        </Field>
+        <Field label={t('users.role')}>
+          <Select
+            value={role}
+            onChange={(e) => dispatch({ type: 'roleChanged', value: e.target.value as Role })}
+          >
+            {MANAGED_ROLES.map((r) => (
+              <option key={r} value={r}>
+                {t(`roles.${r}`)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label={isEdit ? t('users.newPassword') : t('firstRun.password')}>
+          <Input
+            type="password"
+            value={password}
+            onChange={(e) => dispatch({ type: 'passwordChanged', value: e.target.value })}
+            autoComplete="new-password"
+          />
+        </Field>
+        <Field label={t('firstRun.confirmPassword')}>
+          <Input
+            type="password"
+            value={confirm}
+            onChange={(e) => dispatch({ type: 'confirmChanged', value: e.target.value })}
+            autoComplete="new-password"
+          />
+        </Field>
+      </div>
+      {isEdit && (
+        <>
+          <p className="mt-1 text-[14px] text-slate-500">{t('users.passwordOptional')}</p>
+          <label className="mt-3 flex items-center gap-2 text-[15px] font-semibold text-slate-700">
+            <input
+              type="checkbox"
+              checked={isActive}
+              onChange={(e) => dispatch({ type: 'isActiveChanged', value: e.target.checked })}
+              className="h-4 w-4"
+            />
+            {t('users.active')}
+          </label>
+        </>
       )}
-      {error && <p className="mb-3 text-[15px] font-bold text-danger">{error}</p>}
-      <div className="flex gap-3">
+      {error && <p className="mt-3 text-[15px] font-bold text-danger">{error}</p>}
+      <div className="mt-4 flex gap-3">
         <Button variant="outline" size="lg" className="flex-1" onClick={onClose}>
           {t('common.cancel')}
         </Button>

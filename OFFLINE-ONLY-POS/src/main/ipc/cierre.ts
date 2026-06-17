@@ -6,6 +6,7 @@ import { getDb } from '../db'
 import { localNow, round2 } from '../db/helpers'
 import {
   cierreDiscounts,
+  cierrePriceOverrides,
   paymentTotals,
   periodOpenedAt,
   returnsCountBetween,
@@ -87,6 +88,7 @@ function cierrePrintLines(cierre: CierreRecord, lang: Language): PrintLine[] {
       returnsCount: returnsCountBetween(cierre.opened_at, cierre.closed_at),
       topProducts: topProducts({ cierreId: cierre.id }),
       discounts: cierreDiscounts({ cierreId: cierre.id }),
+      priceOverrides: cierrePriceOverrides({ cierreId: cierre.id }),
       storeName,
       cash: {
         openingFloat: cierre.opening_float,
@@ -118,7 +120,8 @@ export function registerCierreHandlers(backup: BackupService): void {
       totals,
       returnsCount: returnsCountSince(openedAt),
       cash,
-      discounts: cierreDiscounts({ cierrePending: true })
+      discounts: cierreDiscounts({ cierrePending: true }),
+      priceOverrides: cierrePriceOverrides({ cierrePending: true })
     }
   })
 
@@ -148,6 +151,7 @@ export function registerCierreHandlers(backup: BackupService): void {
       const top = topProducts({ fromTs: openedAt, toTs: now })
       const cash = openCashSummary()
       const discounts = cierreDiscounts({ cierrePending: true })
+      const priceOverrides = cierrePriceOverrides({ cierrePending: true })
 
       const difference = round2(countedCash - cash.expectedCash)
       const shiftLabel = input.shiftLabel?.trim() || formatDate(now, lang, true)
@@ -194,6 +198,7 @@ export function registerCierreHandlers(backup: BackupService): void {
           returnsCount,
           topProducts: top,
           discounts,
+          priceOverrides,
           storeName,
           cash: {
             openingFloat: cash.openingFloat,

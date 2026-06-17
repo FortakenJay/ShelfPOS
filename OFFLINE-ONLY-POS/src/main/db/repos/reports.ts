@@ -408,3 +408,109 @@ export function cierreDiscounts(filter: SaleFilter): {
     sales
   }
 }
+
+interface PriceOverrideSaleRow {
+  saleId: number
+  consecutivo: string | null
+  createdAt: string
+  cashier: string
+}
+
+interface PriceOverrideItemRow {
+  saleId: number
+  saleItemId: number
+  productName: string
+  quantity: number
+  catalogUnitPrice: number
+  unitPrice: number
+}
+
+/** Custom unit prices applied during the shift (admin review + cierre print). */
+export function cierrePriceOverrides(filter: SaleFilter): {
+  totalVariance: number
+  sales: {
+    saleId: number
+    consecutivo: string | null
+    createdAt: string
+    cashier: string
+    items: {
+      saleItemId: number
+      productName: string
+      quantity: number
+      catalogUnitPrice: number
+      unitPrice: number
+      lineVariance: number
+    }[]
+  }[]
+} {
+  const { where, params } = saleWhere(filter)
+  const overrideWhere = where
+    ? `${where} AND si.catalog_unit_price IS NOT NULL`
+    : 'WHERE si.catalog_unit_price IS NOT NULL'
+
+  const itemRows = getDb()
+    .prepare(
+      `SELECT si.sale_id AS saleId, si.id AS saleItemId, p.name AS productName, si.quantity,
+              si.catalog_unit_price AS catalogUnitPrice, si.unit_price AS unitPrice
+       FROM sale_items si
+       JOIN products p ON p.id = si.product_id
+       JOIN sales s ON s.id = si.sale_id
+       ${overrideWhere}
+       ORDER BY si.sale_id, si.id`
+    )
+    .all(params) as PriceOverrideItemRow[]
+
+  if (itemRows.length === 0) {
+    return { totalVariance: 0, sales: [] }
+  }
+
+  const saleIds = [...new Set(itemRows.map((r) => r.saleId))]
+  const salePlaceholders = saleIds.map((_, i) => `@sid${i}`).join(',')
+  const saleParams: Record<string, unknown> = { ...params }
+  saleIds.forEach((id, i) => {
+    saleParams[`sid${i}`] = id
+  })
+
+  const salesRows = getDb()
+    .prepare(
+      `SELECT s.id AS saleId, s.consecutivo, s.created_at AS createdAt, u.username AS cashier
+       FROM sales s JOIN users u ON u.id = s.user_id
+       WHERE s.id IN (${salePlaceholders})
+       ORDER BY s.created_at`
+    )
+    .all(saleParams) as PriceOverrideSaleRow[]
+
+  const itemsBySale = new Map<number, PriceOverrideItemRow[]>()
+  for (const row of itemRows) {
+    const list = itemsBySale.get(row.saleId) ?? []
+    list.push(row)
+    itemsBySale.set(row.saleId, list)
+  }
+
+  let totalVariance = 0
+  const sales = salesRows.map((sale) => {
+    const items = (itemsBySale.get(sale.saleId) ?? []).map((item) => {
+      const catalogUnitPrice = round2(item.catalogUnitPrice)
+      const unitPrice = round2(item.unitPrice)
+      const lineVariance = round2((catalogUnitPrice - unitPrice) * item.quantity)
+      totalVariance = round2(totalVariance + lineVariance)
+      return {
+        saleItemId: item.saleItemId,
+        productName: item.productName,
+        quantity: item.quantity,
+        catalogUnitPrice,
+        unitPrice,
+        lineVariance
+      }
+    })
+    return {
+      saleId: sale.saleId,
+      consecutivo: sale.consecutivo,
+      createdAt: sale.createdAt,
+      cashier: sale.cashier,
+      items
+    }
+  })
+
+  return { totalVariance, sales }
+}

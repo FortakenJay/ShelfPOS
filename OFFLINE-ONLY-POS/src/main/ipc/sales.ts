@@ -95,12 +95,15 @@ export function registerSalesHandlers(): void {
         assertSaleStock(product, item.quantity)
         const unitPrice =
           item.unitPrice != null ? round2(item.unitPrice) : effectiveUnitPrice(product, item.quantity)
+        const catalogUnitPrice = effectiveUnitPrice(product, item.quantity)
+        const priceOverridden = Math.abs(unitPrice - catalogUnitPrice) >= 0.01
         const gross = round2(unitPrice * item.quantity)
         const lineDiscount = round2(Math.min(item.discount ?? 0, gross))
         return {
           product,
           quantity: item.quantity,
           unitPrice,
+          catalogUnitPrice: priceOverridden ? catalogUnitPrice : null,
           gross,
           lineDiscount,
           afterLineDiscount: round2(gross - lineDiscount)
@@ -196,7 +199,7 @@ export function registerSalesHandlers(): void {
       )
 
       const insertItem = db.prepare(
-        'INSERT INTO sale_items (sale_id, product_id, quantity, unit_price, discount, line_discount, line_total, tax_category) VALUES (?,?,?,?,?,?,?,?)'
+        'INSERT INTO sale_items (sale_id, product_id, quantity, unit_price, catalog_unit_price, discount, line_discount, line_total, tax_category) VALUES (?,?,?,?,?,?,?,?,?)'
       )
       const insertPayment = db.prepare(
         'INSERT INTO sale_payments (sale_id, method, amount, ref) VALUES (?,?,?,?)'
@@ -214,6 +217,7 @@ export function registerSalesHandlers(): void {
           productId,
           line.quantity,
           line.unitPrice,
+          line.catalogUnitPrice,
           line.discount,
           line.lineDiscount,
           line.lineTotal,
@@ -245,6 +249,7 @@ export function registerSalesHandlers(): void {
             name: l.product.name,
             quantity: l.quantity,
             unitPrice: l.unitPrice,
+            catalogUnitPrice: l.catalogUnitPrice,
             discount: l.discount,
             lineTotal: l.lineTotal
           })),
@@ -266,6 +271,15 @@ export function registerSalesHandlers(): void {
         lang
       )
       const printJobId = insertPrintJob('receipt', saleId, { lang, lines: receiptLines })
+
+      const priceOverrideLines = finalized.filter((l) => l.catalogUnitPrice != null)
+      for (const line of priceOverrideLines) {
+        writeAudit('price_override_sale', {
+          entity: 'sale',
+          entityId: saleId,
+          detail: `${consecutivo} · ${line.product.name} · cat ${line.catalogUnitPrice} → ${line.unitPrice} x${line.quantity}`
+        })
+      }
 
       writeAudit('sale_created', {
         entity: 'sale',

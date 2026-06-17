@@ -115,6 +115,15 @@ const discountAuthorizeInputSchema = z.strictObject({
   productName: z.string().trim().max(200).optional()
 })
 
+const priceOverrideAuthorizeInputSchema = z.strictObject({
+  pin: pinSchema,
+  productId: positiveIdSchema,
+  productName: z.string().trim().min(1).max(200),
+  catalogUnitPrice: moneySchema.refine((n) => n > 0, 'catalog price must be positive'),
+  overrideUnitPrice: moneySchema.refine((n) => n > 0, 'override price must be positive'),
+  quantity: z.number().int().min(1).max(9999)
+})
+
 const firstRunSetupInputSchema = z.strictObject({
   username: usernameSchema,
   password: passwordSchema,
@@ -161,7 +170,8 @@ const auditLogFilterSchema = z
     range: dateRangeSchema.optional(),
     userId: positiveIdSchema.optional(),
     action: z.string().trim().min(1).max(64).optional(),
-    limit: z.number().int().min(1).max(5000).optional()
+    limit: z.number().int().min(1).max(200).optional(),
+    offset: z.number().int().min(0).max(1_000_000).optional()
   })
   .optional()
 
@@ -227,6 +237,7 @@ export const IPC_SCHEMAS = {
   }),
   'returns:create': createReturnInputSchema,
   'discount:authorize': discountAuthorizeInputSchema,
+  'priceOverride:authorize': priceOverrideAuthorizeInputSchema,
   'reports:run': reportPayloadSchema,
   'reports:print': reportPayloadSchema,
   'reports:exportPdf': reportPayloadSchema,

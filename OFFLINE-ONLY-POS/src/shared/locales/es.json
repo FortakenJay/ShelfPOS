@@ -139,7 +139,8 @@
       "catalogPrice": "Precio registrado",
       "unitPrice": "Precio de venta",
       "reset": "Usar precio registrado",
-      "customApplied": "Precio personalizado"
+      "customApplied": "Precio personalizado",
+      "pinTitle": "PIN para autorizar precio"
     },
     "discountBtn": "Descuento",
     "cartDiscount": "Descuento de la venta",
@@ -578,6 +579,12 @@
     "saleLineDiscount": "Descuento por artículo",
     "saleDiscountTotal": "Total descuento venta",
     "noDiscounts": "Sin descuentos en este periodo",
+    "priceOverridesTitle": "Precios modificados",
+    "priceOverrideCatalog": "Precio registrado",
+    "priceOverrideApplied": "Precio aplicado",
+    "priceOverrideVariance": "Diferencia",
+    "totalPriceVariance": "Diferencia total (cat. − aplicado)",
+    "noPriceOverrides": "Sin precios modificados en este periodo",
     "discrepancyAlertsTitle": "Cierres con diferencia ({{count}} cierres)",
     "discrepancyIncomplete": "El cierre del {{date}} no fue completo ({{direction}} {{amount}}).",
     "discrepancyOver": "sobró",
@@ -619,6 +626,8 @@
   },
   "audit": {
     "title": "Bitácora de actividad",
+    "pageOf": "Página {{page}} de {{pages}}",
+    "showing": "{{from}}–{{to}} de {{total}}",
     "user": "Usuario",
     "allUsers": "Todos los usuarios",
     "allActions": "Todas las acciones",
@@ -643,6 +652,9 @@
       "pin_changed": "PIN cambiado",
       "discount_authorized_caja": "Descuento autorizado (PIN caja)",
       "discount_authorized_manager": "Descuento autorizado (PIN gerente)",
+      "price_override_authorized_caja": "Precio modificado autorizado (PIN caja)",
+      "price_override_authorized_manager": "Precio modificado autorizado (PIN gerente)",
+      "price_override_sale": "Venta con precio modificado",
       "user_created": "Usuario creado",
       "user_updated": "Usuario actualizado",
       "user_deactivated": "Usuario desactivado"
@@ -791,6 +803,8 @@
       "finalConsumer": "Consumidor final",
       "discount": "Descuento",
       "discountTotal": "Descuento total",
+      "catalogPrice": "Precio registrado",
+      "priceOverride": "Precio aplicado",
       "taxBase": "Base imponible",
       "iva": "IVA"
     },
@@ -822,7 +836,10 @@
       "cartDiscountTotal": "Desc. venta (carrito)",
       "lineDiscountTotal": "Desc. por artículo",
       "cartDiscount": "Descuento venta",
-      "saleDiscountTotal": "Total venta"
+      "saleDiscountTotal": "Total venta",
+      "priceOverridesTitle": "PRECIOS MODIFICADOS",
+      "priceOverrideTotal": "Diferencia total",
+      "priceOverrideVariance": "Diferencia línea"
     }
   },
   "errors": {

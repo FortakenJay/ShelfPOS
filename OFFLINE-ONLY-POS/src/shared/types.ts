@@ -530,6 +530,28 @@ export interface CierreDiscountReport {
   sales: CierreDiscountSale[]
 }
 
+export interface CierrePriceOverrideItem {
+  saleItemId: number
+  productName: string
+  quantity: number
+  catalogUnitPrice: number
+  unitPrice: number
+  lineVariance: number
+}
+
+export interface CierrePriceOverrideSale {
+  saleId: number
+  consecutivo: string | null
+  createdAt: string
+  cashier: string
+  items: CierrePriceOverrideItem[]
+}
+
+export interface CierrePriceOverrideReport {
+  totalVariance: number
+  sales: CierrePriceOverrideSale[]
+}
+
 export interface CierrePreview {
   pendingSales: number
   /** Full totals for admin; cajero may receive only `{ sinpe }`. */
@@ -541,6 +563,8 @@ export interface CierrePreview {
   cash?: CashSummary
   /** Admin-only. */
   discounts?: CierreDiscountReport
+  /** Admin-only. */
+  priceOverrides?: CierrePriceOverrideReport
 }
 
 export interface CierreRecord {
@@ -607,6 +631,15 @@ export interface DiscountAuthorizeInput {
   kind: 'line' | 'cart'
   amount: number
   productName?: string
+}
+
+export interface PriceOverrideAuthorizeInput {
+  pin: string
+  productId: number
+  productName: string
+  catalogUnitPrice: number
+  overrideUnitPrice: number
+  quantity: number
 }
 
 export interface FirstRunSetupInput {
@@ -710,6 +743,14 @@ export interface AuditLogFilter {
   userId?: number
   action?: string
   limit?: number
+  offset?: number
+}
+
+export interface AuditLogPage {
+  rows: AuditLogRow[]
+  total: number
+  limit: number
+  offset: number
 }
 
 export interface AuditUser {
@@ -775,6 +816,7 @@ export const IPC_CHANNELS = [
   'sales:findForReturn',
   'returns:create',
   'discount:authorize',
+  'priceOverride:authorize',
   'reports:run',
   'reports:print',
   'reports:exportPdf',
