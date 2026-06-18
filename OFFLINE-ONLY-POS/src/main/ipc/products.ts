@@ -7,11 +7,13 @@ import { localNow } from '../db/helpers'
 import {
   alertsForProducts,
   applyStockDelta,
+  enqueueProductSync,
   getProduct,
   getProductByBarcode,
   listCategories,
   listProducts,
-  searchProducts
+  searchProducts,
+  softDeleteProduct
 } from '../db/repos/products'
 import { currentLanguage } from '../db/repos/settings'
 import { session } from '../services/session'
@@ -85,6 +87,7 @@ export function registerProductHandlers(): void {
           )
         const id = Number(result.lastInsertRowid)
         if (input.stock) applyStockDelta(id, Math.floor(input.stock), user.id, 'initial_stock')
+        else enqueueProductSync(id, 'insert', db)
         writeAudit('product_created', { entity: 'product', entityId: id, detail: input.name.trim() })
         return getProduct(id) as Product
       })()
@@ -98,12 +101,12 @@ export function registerProductHandlers(): void {
     validateProductInput(input)
     if (!getProduct(input.id)) throw new AppError('errors.productNotFound')
     try {
-      getDb()
-        .prepare(
+      const db = getDb()
+      db.transaction(() => {
+        db.prepare(
           `UPDATE products SET barcode = ?, name = ?, price = ?, cost_price = ?, category = ?, stock_threshold = ?, tax_category = ?, bulk_qty = ?, bulk_price = ?, factura_negativo = ?, updated_at = ?
            WHERE id = ?`
-        )
-        .run(
+        ).run(
           input.barcode.trim(),
           input.name.trim(),
           input.price,
@@ -117,6 +120,8 @@ export function registerProductHandlers(): void {
           localNow(),
           input.id
         )
+        enqueueProductSync(input.id, 'update', db)
+      })()
     } catch (err) {
       if (isUniqueViolation(err)) throw new AppError('errors.barcodeExists')
       throw err
@@ -126,11 +131,10 @@ export function registerProductHandlers(): void {
   })
 
   handle<{ id: number }, null>('products:delete', MANAGE, ({ id }) => {
-    const db = getDb()
+    if (!getProduct(id, true)) throw new AppError('errors.productNotFound')
     try {
-      db.transaction(() => {
-        db.prepare('DELETE FROM stock_adjustments WHERE product_id = ?').run(id)
-        db.prepare('DELETE FROM products WHERE id = ?').run(id)
+      getDb().transaction(() => {
+        softDeleteProduct(id)
         writeAudit('product_deleted', { entity: 'product', entityId: id })
       })()
     } catch (err) {

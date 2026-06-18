@@ -33,13 +33,15 @@ export function registerFirstRunHandlers(backupDir: string): void {
   handle<FirstRunSetupInput, null>('firstRun:complete', 'public', async (input) => {
     assertFirstRun()
 
-    if (!input?.username?.trim() || !input.password) {
+    if (!input?.storeName?.trim() || !input?.username?.trim() || !input.password) {
       throw new AppError('errors.invalidInput')
     }
     if (!PIN_RE.test(input.pin)) throw new AppError('firstRun.errors.pinFormat')
 
-    const passwordHash = await bcrypt.hash(input.password, 10)
-    const pinHash = await bcrypt.hash(input.pin, 10)
+    const [passwordHash, pinHash] = await Promise.all([
+      bcrypt.hash(input.password, 10),
+      bcrypt.hash(input.pin, 10),
+    ])
 
     const db = getDb()
     const now = localNow()
@@ -47,6 +49,7 @@ export function registerFirstRunHandlers(backupDir: string): void {
       db.prepare(
         'INSERT INTO users (username, password_hash, role, is_active, created_at) VALUES (?,?,?,1,?)'
       ).run(input.username.trim(), passwordHash, 'admin', now)
+      setSetting(SETTING_KEYS.storeName, input.storeName.trim())
       setSetting(SETTING_KEYS.managerPinHash, pinHash)
       setSetting(SETTING_KEYS.firstRunComplete, '1')
     })()

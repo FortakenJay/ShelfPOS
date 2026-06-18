@@ -125,6 +125,7 @@ const priceOverrideAuthorizeInputSchema = z.strictObject({
 })
 
 const firstRunSetupInputSchema = z.strictObject({
+  storeName: z.string().trim().min(1).max(200),
   username: usernameSchema,
   password: passwordSchema,
   pin: pinSchema

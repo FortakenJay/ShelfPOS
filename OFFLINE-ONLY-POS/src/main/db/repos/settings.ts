@@ -24,7 +24,11 @@ export const SETTING_KEYS = {
   storeCanton: 'store_canton',
   storeDistrict: 'store_district',
   storeAddress: 'store_address',
-  receiptFooter: 'receipt_footer'
+  receiptFooter: 'receipt_footer',
+  /** Multi-store sync identity stamped on every Supabase row (store_a / store_b). */
+  syncStoreId: 'sync_store_id',
+  /** Updated by the POS app while running; sync service mirrors to Supabase. */
+  posLastSeenAt: 'pos_last_seen_at'
 } as const
 
 export function getSetting(key: string): string | null {

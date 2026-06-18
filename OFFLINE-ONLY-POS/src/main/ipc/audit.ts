@@ -1,6 +1,6 @@
 import { handle } from './helpers'
 import { listAuditPage, listAuditActions, listAuditUsers } from '../db/repos/audit'
-import type { AuditLogFilter, AuditLogPage, AuditLogRow, AuditUser } from '../../shared/types'
+import type { AuditLogFilter, AuditLogPage, AuditUser } from '../../shared/types'
 
 export function registerAuditHandlers(): void {
   handle<AuditLogFilter, AuditLogPage>('audit:list', ['admin'], (filter) =>

@@ -645,6 +645,7 @@ export interface PriceOverrideAuthorizeInput {
 }
 
 export interface FirstRunSetupInput {
+  storeName: string
   username: string
   password: string
   pin: string

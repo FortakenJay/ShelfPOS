@@ -1,6 +1,7 @@
 import { getDb } from '../index'
 import { localNow, round2 } from '../helpers'
 import { paymentTotals, periodOpenedAt } from './reports'
+import { enqueueSync } from './syncQueue'
 import type { CashDrawerStatus, CashMovementRow, CashMovementType, CashSummary } from '../../../shared/types'
 
 /** Aggregated opening float / cash-in / cash-out for the current open period. */
@@ -101,12 +102,15 @@ export function insertCashMovement(
   reason: string | null,
   userId: number
 ): number {
-  const result = getDb()
+  const db = getDb()
+  const result = db
     .prepare(
       'INSERT INTO cash_movements (type, amount, reason, user_id, created_at) VALUES (?,?,?,?,?)'
     )
     .run(type, round2(amount), reason, userId, localNow())
-  return Number(result.lastInsertRowid)
+  const id = Number(result.lastInsertRowid)
+  enqueueSync('cash_movements', id, 'insert', db)
+  return id
 }
 
 export function hasOpeningFloat(): boolean {
