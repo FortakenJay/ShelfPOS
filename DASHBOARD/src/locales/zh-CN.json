@@ -1,0 +1,187 @@
+{
+  "common": {
+    "retry": "重试",
+    "refresh": "刷新",
+    "refreshing": "刷新中…",
+    "switchLanguage": "切换语言",
+    "dash": "—",
+    "vsPrevious": "对比上期",
+    "noData": "暂无数据"
+  },
+  "nav": {
+    "admin": "管理",
+    "dashboard": "面板",
+    "reports": "报表",
+    "cashMovements": "现金变动",
+    "cierres": "日结",
+    "audit": "日志",
+    "logout": "退出登录",
+    "menu": "菜单",
+    "stores": "门店",
+    "adminOnline": "在线管理"
+  },
+  "login": {
+    "subtitle": "管理面板",
+    "email": "邮箱",
+    "password": "密码",
+    "submit": "登录",
+    "submitting": "登录中…",
+    "missingEnv": "请在 <code>.env.local</code> 中配置 VITE_SUPABASE_URL 和 VITE_SUPABASE_ANON_KEY。",
+    "missingEnvProd": "请在 <code>.env.local</code>（本地）或 Vercel（生产）中配置 VITE_SUPABASE_URL 和 VITE_SUPABASE_ANON_KEY。"
+  },
+  "status": {
+    "online": "在线",
+    "offline": "离线",
+    "noActivity": "无活动",
+    "noPosSignal": "无 POS 历史信号",
+    "lastSignal": "最后信号"
+  },
+  "relative": {
+    "justNow": "刚刚",
+    "minutes": "{{count}} 分钟前",
+    "hours": "{{count}} 小时前",
+    "days": "{{count}} 天前"
+  },
+  "errors": {
+    "loadDashboard": "无法加载面板",
+    "loadCierres": "加载日结失败",
+    "loadAudit": "加载日志失败",
+    "loadMovements": "加载现金变动失败",
+    "noStores": "没有已注册的门店。请确认 sync 服务正在运行，且 Supabase 中存在 <code>stores</code> 表。"
+  },
+  "dashboard": {
+    "overviewTitle": "概览",
+    "overviewDesc": "所选门店的关键指标",
+    "profitHint": "从门店同步的数据（只读）。",
+    "paymentsMonth": "本月收款",
+    "outOfStockList": "缺货商品",
+    "viewAudit": "查看完整日志",
+    "tabs": {
+      "label": "面板分区",
+      "home": "首页",
+      "analytics": "分析",
+      "inventory": "库存",
+      "team": "团队"
+    },
+    "sections": {
+      "salesAnalytics": "销售分析",
+      "salesAnalyticsDesc": "收入、交易和收款方式趋势。",
+      "productAnalytics": "商品分析",
+      "productAnalyticsDesc": "本月商品销售表现。",
+      "inventoryAnalytics": "库存分析",
+      "inventoryAnalyticsDesc": "价值、库存健康与临界商品。",
+      "employees": "员工管理",
+      "employeesDesc": "团队表现与活动。",
+      "activityAlerts": "活动与提醒",
+      "activityAlertsDesc": "从门店同步的近期事件。",
+      "homeCharts": "可视化概览",
+      "homeChartsDesc": "收入趋势、收款方式和按小时销售。"
+    },
+    "charts": {
+      "revenueTrend": "收入趋势",
+      "transactionTrend": "交易量",
+      "paymentMethods": "收款方式",
+      "salesByHour": "按小时销售",
+      "categoryPerformance": "分类表现",
+      "last30Days": "近 30 天",
+      "today": "今日"
+    },
+    "activity": {
+      "title": "近期活动"
+    },
+    "employees": {
+      "active": "活跃用户（30 天）",
+      "performance": "收银员表现（本月）",
+      "performanceHint": "基于本月日结数据。",
+      "name": "员工",
+      "cierres": "日结次数",
+      "volume": "销售额",
+      "avgTicket": "平均客单价",
+      "recentActivity": "团队近期活动"
+    },
+    "salesToday": "今日销售",
+    "salesMonth": "本月销售",
+    "txToday": "今日笔数",
+    "avgTicket": "平均客单价",
+    "lowStock": "低库存",
+    "outOfStock": "缺货",
+    "salesTrend": "销售趋势（30 天）",
+    "paymentsToday": "今日收款",
+    "topProductsMonth": "本月热销",
+    "inventory": "库存",
+    "inventorySummary": "库存概览",
+    "activeProducts": "在售商品",
+    "retailValue": "零售价值",
+    "lowStockList": "低库存",
+    "noSales30": "近 30 天无销售",
+    "noProductsMonth": "本月无销售商品",
+    "noLowStock": "无低库存商品",
+    "method": "方式",
+    "transactions": "笔数",
+    "total": "合计",
+    "product": "商品",
+    "sku": "SKU",
+    "units": "数量",
+    "revenue": "收入"
+  },
+  "reports": {
+    "title": "报表",
+    "description": "所选门店的销售与收款（只读）",
+    "today": "今日",
+    "week": "本周",
+    "month": "本月",
+    "last7": "近 7 天",
+    "thisMonth": "本月",
+    "summary": "摘要 — {{period}}",
+    "txCount": "笔数",
+    "sales": "销售",
+    "avgTicket": "平均客单价",
+    "discounts": "折扣",
+    "paymentsMonth": "本月收款",
+    "topProductsMonth": "本月热销"
+  },
+  "cierres": {
+    "title": "日结",
+    "description": "从门店同步的历史记录（只读）",
+    "empty": "暂无日结记录",
+    "id": "ID",
+    "closed": "日结时间",
+    "shift": "班次",
+    "cashier": "收银员",
+    "sales": "销售",
+    "cash": "现金",
+    "card": "卡",
+    "sinpe": "Sinpe",
+    "difference": "差异"
+  },
+  "audit": {
+    "title": "日志",
+    "description": "门店同步的活动记录",
+    "empty": "暂无记录",
+    "date": "日期",
+    "user": "用户",
+    "action": "操作",
+    "detail": "详情"
+  },
+  "payment": {
+    "cash": "现金",
+    "card": "卡",
+    "sinpe": "Sinpe"
+  },
+  "movements": {
+    "title": "现金变动",
+    "description": "同步的入款、出款和开班备用金（只读）",
+    "empty": "暂无变动记录",
+    "date": "日期",
+    "type": "类型",
+    "amount": "金额",
+    "reason": "原因",
+    "cierre": "日结",
+    "types": {
+      "opening_float": "开班备用金",
+      "cash_in": "入款",
+      "cash_out": "出款",
+      "unknown": "其他"
+    }
+  }
+}

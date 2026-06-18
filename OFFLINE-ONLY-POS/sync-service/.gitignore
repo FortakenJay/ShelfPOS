@@ -1,14 +1,10 @@
 node_modules/
-out/
 dist/
-private/
-*.local
+
 .env
 sync.env
 !.env.example
 !sync.env.example
-.DS_Store
+
 *.log
-coverage/
-.vite/
-*.tsbuildinfo
+.DS_Store

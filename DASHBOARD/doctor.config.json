@@ -1,0 +1,8 @@
+{
+  "$schema": "https://www.react.doctor/schema/doctor.config.v1.json",
+  "include": ["src/**/*.ts", "src/**/*.tsx", "SUPA.sql"],
+  "ignore": ["dist/**", "node_modules/**", ".output/**", "**/dist/**"],
+  "rules": {
+    "react-doctor/artifact-baas-authority-surface": "off"
+  }
+}
