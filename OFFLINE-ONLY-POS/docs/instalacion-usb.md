@@ -26,7 +26,7 @@ Guía repetible para instalar ShelfPOS en el PC de un cliente llevando el instal
 | Windows 10/11 (64-bit) | Mismo equipo donde correrá el POS |
 | Puerto USB libre | Para la memoria (y opcionalmente impresora) |
 | Usuario con permisos de instalación | Admin local si el instalador lo pide |
-| Impresora Epson (opcional) | TM-T20II u otra ESC/POS USB — se configura después |
+| Impresora Epson (opcional) | TM-T81III / TM-T20 — instalar APD de Epson; ShelfPOS detecta la cola automáticamente |
 
 ### Qué puede ir en el USB
 

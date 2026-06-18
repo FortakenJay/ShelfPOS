@@ -12,48 +12,88 @@ import type { Language, PrintLine, PrintPayload, PrintStatus } from '../../share
 
 const execFileAsync = promisify(execFile)
 
-const DEFAULT_PRINTER_NAME = 'EPSON TM-T20III Receipt'
-// 80mm TM-T20III renders 48 columns in Font A. Override with SHELFPOS_LINE_WIDTH.
+/** Windows queue names tried in order when SHELFPOS_PRINTER_NAME is not set. */
+const KNOWN_RECEIPT_PRINTER_NAMES = [
+  'EPSON TM-T81III Receipt',
+  'EPSON TM-T81III',
+  'TM-T81III',
+  'EPSON TM-T20III Receipt',
+  'EPSON TM-T20II Receipt',
+  'EPSON TM-T20 Receipt'
+] as const
+
+// 80mm Epson TM models render 48 columns in Font A. Override with SHELFPOS_LINE_WIDTH.
 const LINE_WIDTH = Number(process.env.SHELFPOS_LINE_WIDTH) || 48
 
 let cachedRawPrintScriptPath: string | null = null
-let verifiedPrinterName: string | null = null
+let resolvedPrinterName: string | null = null
 let printerReady = false
 
 const PROBE_TIMEOUT_MS = 2_500
 
-function getPrinterName(): string {
-  return process.env.SHELFPOS_PRINTER_NAME?.trim() || DEFAULT_PRINTER_NAME
+function configuredPrinterName(): string | null {
+  const name = process.env.SHELFPOS_PRINTER_NAME?.trim()
+  return name || null
 }
 
-/** Whether startup probe found the configured receipt printer. */
+/** Best-known printer name for logging/errors before probe succeeds. */
+function fallbackPrinterName(): string {
+  return configuredPrinterName() ?? KNOWN_RECEIPT_PRINTER_NAMES[0]
+}
+
+function getActivePrinterName(): string {
+  return resolvedPrinterName ?? fallbackPrinterName()
+}
+
+const PROBE_PRINTERS_PS = `
+$ErrorActionPreference = 'SilentlyContinue'
+$configured = $env:SHELFPOS_PRINTER_NAME
+if ($configured) {
+  if (Get-Printer -Name $configured) { Write-Output $configured; exit 0 }
+  exit 2
+}
+$known = @(
+  'EPSON TM-T81III Receipt',
+  'EPSON TM-T81III',
+  'TM-T81III',
+  'EPSON TM-T20III Receipt',
+  'EPSON TM-T20II Receipt',
+  'EPSON TM-T20 Receipt'
+)
+foreach ($n in $known) {
+  if (Get-Printer -Name $n) { Write-Output $n; exit 0 }
+}
+$p = @(Get-Printer | Where-Object { $_.Name -match 'T81III|TM-T81' }) | Select-Object -First 1
+if ($p) { Write-Output $p.Name; exit 0 }
+$p = @(Get-Printer | Where-Object { $_.Name -match 'TM-T20|T20III|T20II' }) | Select-Object -First 1
+if ($p) { Write-Output $p.Name; exit 0 }
+exit 2
+`.trim()
+
+/** Whether startup probe found a receipt printer. */
 export function isPrinterReady(): boolean {
   return printerReady
 }
 
 /** Fast Windows printer probe — run once at startup (and on manual retry). */
 export async function probePrinter(): Promise<boolean> {
-  const printerName = getPrinterName()
   try {
-    await Promise.race([
-      execFileAsync('powershell.exe', [
-        '-NoProfile',
-        '-NonInteractive',
-        '-Command',
-        `if (-not (Get-Printer -Name '${printerName.replace(/'/g, "''")}' -ErrorAction SilentlyContinue)) { exit 2 }`
-      ]),
+    const { stdout } = await Promise.race([
+      execFileAsync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', PROBE_PRINTERS_PS]),
       new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error('printer probe timeout')), PROBE_TIMEOUT_MS)
       })
     ])
-    verifiedPrinterName = printerName
+    const printerName = stdout.toString().trim()
+    if (!printerName) throw new Error('printer probe returned empty name')
+    resolvedPrinterName = printerName
     printerReady = true
     console.log(`[printer] ready: ${printerName}`)
     return true
   } catch {
-    verifiedPrinterName = null
+    resolvedPrinterName = null
     printerReady = false
-    console.log(`[printer] not available: ${printerName}`)
+    console.log(`[printer] not available (looked for TM-T81III / TM-T20, override: ${configuredPrinterName() ?? 'none'})`)
     return false
   }
 }
@@ -218,7 +258,7 @@ Add-Type -TypeDefinition $src -Language CSharp
 
 async function ensurePrinterExists(printerName: string): Promise<void> {
   if (!printerReady) throw new AppError('errors.printerNotFound')
-  if (verifiedPrinterName === printerName) return
+  if (resolvedPrinterName === printerName) return
   const ready = await probePrinter()
   if (!ready) throw new AppError('errors.printerNotFound')
 }
@@ -256,7 +296,7 @@ async function sendRawToPrinter(data: Buffer, printerName: string): Promise<void
 }
 
 export async function printLines(lines: PrintLine[], _lang?: Language): Promise<void> {
-  const printerName = getPrinterName()
+  const printerName = getActivePrinterName()
   await ensurePrinterExists(printerName)
   await sendRawToPrinter(toEscPos(lines), printerName)
 }
@@ -292,7 +332,7 @@ export async function attemptPrintJob(jobId: number): Promise<PrintStatus> {
     console.error(`[printer] job ${jobId} failed`, err)
     if (err instanceof AppError && err.key === 'errors.printerNotFound') {
       printerReady = false
-      verifiedPrinterName = null
+      resolvedPrinterName = null
       return 'failed'
     }
     markPrintJob(jobId, 'failed')

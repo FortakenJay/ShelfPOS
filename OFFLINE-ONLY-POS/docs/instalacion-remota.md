@@ -26,7 +26,7 @@ Guía repetible para instalar ShelfPOS en el PC de un cliente por TeamViewer, ac
 | Windows 10/11 (64-bit) | Mismo equipo donde correrá el POS |
 | TeamViewer (Host o QuickSupport) | El cliente te da ID y contraseña |
 | Usuario con permisos de instalación | Admin local si el instalador lo pide |
-| Impresora Epson (opcional) | TM-T20II u otra ESC/POS USB — se configura después |
+| Impresora Epson (opcional) | TM-T81III / TM-T20 — instalar APD de Epson; ShelfPOS detecta la cola automáticamente |
 
 ### Archivos que llevas al cliente
 

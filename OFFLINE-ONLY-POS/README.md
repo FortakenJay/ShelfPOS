@@ -8,7 +8,7 @@ Fully offline, single-device Windows desktop POS system for small retail shops i
 - React 19, TanStack Router (code-based), TanStack Query v5
 - SQLite via `better-sqlite3` (main process only, WAL mode)
 - Tailwind CSS v4, i18next
-- `@node-escpos/core` + `@node-escpos/usb-adapter` for Epson TM-T20II receipt printing
+- `@node-escpos/core` + `@node-escpos/usb-adapter` (legacy; production printing uses Windows RAW ESC/POS)
 
 ## Development
 
@@ -35,8 +35,10 @@ The installer never touches `%APPDATA%\shelfpos` — user data survives updates 
 
 ## Printer notes
 
-- Epson TM-T20II via USB. On Windows the `usb` library may require the WinUSB driver for the printer interface (installable with Zadig).
-- Spanish receipts print with code page PC850. Chinese printing requires a CJK-capable printer (GB18030); a capability test runs on first launch when 中文 is selected. If the printer is not CJK-capable, printing is skipped in Chinese mode (the sale still completes) and the job lands in the retryable print queue.
+- Epson **TM-T81III** and **TM-T20** series via USB on Windows, using the Epson Advanced Printer Driver (APD) and RAW ESC/POS.
+- Install the APD package (e.g. `APD_612_T81III_WM` for TM-T81III). ShelfPOS auto-detects the Windows print queue on startup.
+- Override detection with env var `SHELFPOS_PRINTER_NAME` if the queue has a custom name.
+- Spanish receipts print with code page PC850.
 
 ## First run
 
