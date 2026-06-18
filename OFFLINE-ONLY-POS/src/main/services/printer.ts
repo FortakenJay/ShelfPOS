@@ -45,6 +45,10 @@ function getActivePrinterName(): string {
   return resolvedPrinterName ?? fallbackPrinterName()
 }
 
+function psQuote(value: string): string {
+  return `'${value.replace(/'/g, "''")}'`
+}
+
 const PROBE_PRINTERS_PS = `
 $ErrorActionPreference = 'SilentlyContinue'
 $configured = $env:SHELFPOS_PRINTER_NAME
@@ -53,12 +57,7 @@ if ($configured) {
   exit 2
 }
 $known = @(
-  'EPSON TM-T81III Receipt',
-  'EPSON TM-T81III',
-  'TM-T81III',
-  'EPSON TM-T20III Receipt',
-  'EPSON TM-T20II Receipt',
-  'EPSON TM-T20 Receipt'
+${KNOWN_RECEIPT_PRINTER_NAMES.map((name) => `  ${psQuote(name)}`).join(',\n')}
 )
 foreach ($n in $known) {
   if (Get-Printer -Name $n) { Write-Output $n; exit 0 }
@@ -155,6 +154,19 @@ const size = (big: boolean): number[] => [GS, 0x21, big ? 0x11 : 0x00] // double
 const FEED = (n: number): number[] => [ESC, 0x64, n] // ESC d n
 const PARTIAL_CUT = [GS, 0x56, 0x42, 0x00] // GS V 66 0 — feed + partial cut
 const LF = 0x0a
+const DRAWER_ON_TIME = 0x19 // 25 × 2 ms
+const DRAWER_OFF_TIME = 0xfa // 250 × 2 ms
+
+function drawerKickBytes(): Buffer {
+  // ESC p m t1 t2 — pulse DK port (m=0 pin 2, m=1 pin 5). Override with SHELFPOS_DRAWER_PIN=1.
+  const pin = Number(process.env.SHELFPOS_DRAWER_PIN) === 1 ? 1 : 0
+  return Buffer.from([...INIT, ESC, 0x70, pin, DRAWER_ON_TIME, DRAWER_OFF_TIME])
+}
+
+async function ensurePrinterReady(): Promise<boolean> {
+  if (printerReady) return true
+  return probePrinter()
+}
 
 /** Renders the abstract print lines into a raw ESC/POS byte stream (Spanish / CP850). */
 function toEscPos(lines: PrintLine[]): Buffer {
@@ -301,6 +313,20 @@ export async function printLines(lines: PrintLine[], _lang?: Language): Promise<
   await sendRawToPrinter(toEscPos(lines), printerName)
 }
 
+/** Pulses the cash drawer (RJ11 on printer DK port). Best-effort — never throws. */
+export async function openCashDrawer(): Promise<void> {
+  if (!(await ensurePrinterReady())) {
+    console.log('[printer] cash drawer skipped — no printer')
+    return
+  }
+  try {
+    await sendRawToPrinter(drawerKickBytes(), getActivePrinterName())
+    console.log('[printer] cash drawer opened')
+  } catch (err) {
+    console.error('[printer] cash drawer failed', err)
+  }
+}
+
 /**
  * Queues a print job without blocking checkout. Jobs stay `pending` in the DB
  * when no printer is connected; otherwise printing runs on the next event-loop tick.
@@ -319,10 +345,7 @@ export function schedulePrintJob(jobId: number): PrintStatus {
 export async function attemptPrintJob(jobId: number): Promise<PrintStatus> {
   const job = getPrintJob(jobId)
   if (!job) return 'failed'
-  if (!printerReady) {
-    const found = await probePrinter()
-    if (!found) return 'failed'
-  }
+  if (!(await ensurePrinterReady())) return 'failed'
   const payload = JSON.parse(job.payload) as PrintPayload
   try {
     await printLines(payload.lines, payload.lang)

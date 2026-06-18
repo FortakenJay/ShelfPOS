@@ -14,6 +14,7 @@ import {
 export function useAccountsStep() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const [storeName, setStoreName] = useState('')
   const [account, setAccount] = useState<AccountDraft>({ ...EMPTY_ACCOUNT_DRAFT })
   const [pinFields, setPinFields] = useState<PinFieldsState>({ ...EMPTY_PIN_FIELDS })
   const [submitState, setSubmitState] = useState({ error: null as string | null, busy: false })
@@ -52,7 +53,7 @@ export function useAccountsStep() {
     setValidation(EMPTY_VALIDATION)
     setSubmitState({ error: null, busy: false })
 
-    if (!account.username.trim() || !account.password) {
+    if (!storeName.trim() || !account.username.trim() || !account.password) {
       setSubmitState({ error: t('firstRun.errors.fillAll'), busy: false })
       return
     }
@@ -80,6 +81,7 @@ export function useAccountsStep() {
     setSubmitState({ error: null, busy: true })
     try {
       await api.firstRun.complete({
+        storeName: storeName.trim(),
         username: account.username.trim(),
         password: account.password,
         pin: pinFields.pin
@@ -91,6 +93,8 @@ export function useAccountsStep() {
   }
 
   return {
+    storeName,
+    setStoreName,
     account,
     setField,
     pinFields,

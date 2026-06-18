@@ -1,7 +1,10 @@
 node_modules/
 out/
 dist/
+release/
+.cache/
 private/
+sync-service/sync.env
 *.local
 .DS_Store
 *.log

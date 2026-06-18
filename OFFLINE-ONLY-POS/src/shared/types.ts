@@ -63,6 +63,7 @@ export interface Product {
   bulk_price: number | null
   /** 1 = allow sales when stock is insufficient (eFactura "facturar negativo"). */
   factura_negativo: number
+  deleted_at: string | null
   created_at: string
   updated_at: string
 }
@@ -645,6 +646,7 @@ export interface PriceOverrideAuthorizeInput {
 }
 
 export interface FirstRunSetupInput {
+  storeName: string
   username: string
   password: string
   pin: string

@@ -3,7 +3,7 @@ import { basename } from 'node:path'
 import { AppError } from '../errors'
 import { getDb } from '../db'
 import { localNow } from '../db/helpers'
-import { applyStockDelta, getProduct, getProductByBarcode } from '../db/repos/products'
+import { applyStockDelta, enqueueProductSync, getProduct, getProductByBarcode } from '../db/repos/products'
 import { writeAudit } from '../db/repos/audit'
 import { parseCsv } from './csv'
 import { mapProductCsvHeaders, parseFacturaNegativo, type ProductCsvKey } from './csvColumns'
@@ -170,7 +170,7 @@ export function buildProductImportPreview(parsed: ParsedCsv): ProductImportPrevi
       }
       seenBarcodes.add(barcodeKey)
 
-      const existing = getProductByBarcode(input.barcode)
+      const existing = getProductByBarcode(input.barcode, true)
       if (!existing) {
         toCreate.push(previewRow(i + 1, input))
         continue
@@ -248,6 +248,7 @@ export function applyProductImport(
             now
           )
         const id = Number(insert.lastInsertRowid)
+        enqueueProductSync(id, 'insert', db)
         if (input.stock) applyStockDelta(id, input.stock, userId, 'csv_import')
         writeAudit('product_created', {
           entity: 'product',
@@ -266,7 +267,7 @@ export function applyProductImport(
   const updateRow = (existing: Product, input: ProductInput, row: number): void => {
     try {
       db.transaction(() => {
-        getDb()
+        db
           .prepare(
             `UPDATE products SET barcode = ?, name = ?, price = ?, cost_price = ?, category = ?, stock_threshold = ?, tax_category = ?, bulk_qty = ?, bulk_price = ?, factura_negativo = ?, updated_at = ?
              WHERE id = ?`
@@ -285,6 +286,7 @@ export function applyProductImport(
             localNow(),
             existing.id
           )
+        enqueueProductSync(existing.id, 'update', db)
         applyImportStock(existing.id, input.stock, stockMode, userId)
         writeAudit('product_updated', {
           entity: 'product',
@@ -327,7 +329,7 @@ export function applyProductImport(
       if (seenBarcodes.has(barcodeKey)) continue
       seenBarcodes.add(barcodeKey)
 
-      const existing = getProductByBarcode(input.barcode)
+      const existing = getProductByBarcode(input.barcode, true)
       if (!existing) {
         insertRow(input, i + 1)
       } else if (productInputDiffers(existing, input)) {

@@ -1,0 +1,187 @@
+{
+  "common": {
+    "retry": "Reintentar",
+    "refresh": "Actualizar",
+    "refreshing": "Actualizando…",
+    "switchLanguage": "Cambiar idioma",
+    "dash": "—",
+    "vsPrevious": "vs anterior",
+    "noData": "Sin datos"
+  },
+  "nav": {
+    "admin": "Administración",
+    "dashboard": "Panel",
+    "reports": "Reportes",
+    "cashMovements": "Movimiento de efectivo",
+    "cierres": "Cierres",
+    "audit": "Bitácora",
+    "logout": "Cerrar sesión",
+    "menu": "Menú",
+    "stores": "Tiendas",
+    "adminOnline": "Admin en línea"
+  },
+  "login": {
+    "subtitle": "Panel administrativo",
+    "email": "Correo",
+    "password": "Contraseña",
+    "submit": "Iniciar sesión",
+    "submitting": "Entrando…",
+    "missingEnv": "Faltan VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en <code>.env.local</code>.",
+    "missingEnvProd": "Faltan VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en <code>.env.local</code> (local) o en Vercel (producción)."
+  },
+  "status": {
+    "online": "En línea",
+    "offline": "Sin conexión",
+    "noActivity": "sin actividad",
+    "noPosSignal": "sin señal previa del POS",
+    "lastSignal": "última señal"
+  },
+  "relative": {
+    "justNow": "hace un momento",
+    "minutes": "hace {{count}} min",
+    "hours": "hace {{count}} h",
+    "days": "hace {{count}} d"
+  },
+  "errors": {
+    "loadDashboard": "No se pudo cargar el panel",
+    "loadCierres": "Error al cargar cierres",
+    "loadAudit": "Error al cargar bitácora",
+    "loadMovements": "Error al cargar movimientos de efectivo",
+    "noStores": "No hay tiendas registradas. Verifique que el servicio de sync esté activo y que la tabla <code>stores</code> exista en Supabase."
+  },
+  "dashboard": {
+    "overviewTitle": "Resumen",
+    "overviewDesc": "Indicadores clave de la tienda seleccionada",
+    "profitHint": "Datos sincronizados desde la tienda (solo lectura).",
+    "paymentsMonth": "Pagos del mes",
+    "outOfStockList": "Sin existencias",
+    "viewAudit": "Ver bitácora completa",
+    "tabs": {
+      "label": "Secciones del panel",
+      "home": "Inicio",
+      "analytics": "Analítica",
+      "inventory": "Inventario",
+      "team": "Equipo"
+    },
+    "sections": {
+      "salesAnalytics": "Analítica de ventas",
+      "salesAnalyticsDesc": "Tendencias de ingresos, transacciones y métodos de pago.",
+      "productAnalytics": "Analítica de productos",
+      "productAnalyticsDesc": "Rendimiento por producto del mes.",
+      "inventoryAnalytics": "Analítica de inventario",
+      "inventoryAnalyticsDesc": "Valor, salud del stock y productos críticos.",
+      "employees": "Gestión de empleados",
+      "employeesDesc": "Desempeño y actividad del equipo.",
+      "activityAlerts": "Actividad y alertas",
+      "activityAlertsDesc": "Eventos recientes sincronizados desde la tienda.",
+      "homeCharts": "Resumen visual",
+      "homeChartsDesc": "Tendencia de ingresos, métodos de pago y ventas por hora."
+    },
+    "charts": {
+      "revenueTrend": "Tendencia de ingresos",
+      "transactionTrend": "Volumen de transacciones",
+      "paymentMethods": "Métodos de pago",
+      "salesByHour": "Ventas por hora",
+      "categoryPerformance": "Rendimiento por categoría",
+      "last30Days": "Últimos 30 días",
+      "today": "Hoy"
+    },
+    "activity": {
+      "title": "Actividad reciente"
+    },
+    "employees": {
+      "active": "Usuarios activos (30 días)",
+      "performance": "Desempeño por cajero (mes)",
+      "performanceHint": "Basado en cierres de caja del mes.",
+      "name": "Empleado",
+      "cierres": "Cierres",
+      "volume": "Volumen de ventas",
+      "avgTicket": "Ticket promedio",
+      "recentActivity": "Actividad reciente del equipo"
+    },
+    "salesToday": "Ventas hoy",
+    "salesMonth": "Ventas del mes",
+    "txToday": "Transacciones hoy",
+    "avgTicket": "Ticket promedio",
+    "lowStock": "Stock bajo",
+    "outOfStock": "Sin stock",
+    "salesTrend": "Tendencia de ventas (30 días)",
+    "paymentsToday": "Pagos hoy",
+    "topProductsMonth": "Top productos del mes",
+    "inventory": "Inventario",
+    "inventorySummary": "Resumen inventario",
+    "activeProducts": "Productos activos",
+    "retailValue": "Valor retail",
+    "lowStockList": "Stock bajo",
+    "noSales30": "Sin ventas en los últimos 30 días",
+    "noProductsMonth": "Sin productos vendidos este mes",
+    "noLowStock": "Ningún producto con stock bajo",
+    "method": "Método",
+    "transactions": "Transacciones",
+    "total": "Total",
+    "product": "Producto",
+    "sku": "SKU",
+    "units": "Unidades",
+    "revenue": "Ingresos"
+  },
+  "reports": {
+    "title": "Reportes",
+    "description": "Ventas y pagos de la tienda seleccionada (solo lectura)",
+    "today": "Hoy",
+    "week": "Semana",
+    "month": "Mes",
+    "last7": "Últimos 7 días",
+    "thisMonth": "Este mes",
+    "summary": "Resumen — {{period}}",
+    "txCount": "Transacciones",
+    "sales": "Ventas",
+    "avgTicket": "Ticket promedio",
+    "discounts": "Descuentos",
+    "paymentsMonth": "Pagos del mes",
+    "topProductsMonth": "Top productos (mes)"
+  },
+  "cierres": {
+    "title": "Cierres de caja",
+    "description": "Historial sincronizado desde la tienda (solo lectura)",
+    "empty": "Sin cierres registrados",
+    "id": "ID",
+    "closed": "Cierre",
+    "shift": "Turno",
+    "cashier": "Cajero",
+    "sales": "Ventas",
+    "cash": "Efectivo",
+    "card": "Tarjeta",
+    "sinpe": "Sinpe",
+    "difference": "Diferencia"
+  },
+  "audit": {
+    "title": "Bitácora",
+    "description": "Actividad sincronizada de la tienda",
+    "empty": "Sin registros",
+    "date": "Fecha",
+    "user": "Usuario",
+    "action": "Acción",
+    "detail": "Detalle"
+  },
+  "payment": {
+    "cash": "Efectivo",
+    "card": "Tarjeta",
+    "sinpe": "Sinpe"
+  },
+  "movements": {
+    "title": "Movimiento de efectivo",
+    "description": "Entradas, salidas y fondo inicial sincronizados (solo lectura)",
+    "empty": "Sin movimientos registrados",
+    "date": "Fecha",
+    "type": "Tipo",
+    "amount": "Monto",
+    "reason": "Motivo",
+    "cierre": "Cierre",
+    "types": {
+      "opening_float": "Fondo inicial",
+      "cash_in": "Entrada",
+      "cash_out": "Salida",
+      "unknown": "Otro"
+    }
+  }
+}

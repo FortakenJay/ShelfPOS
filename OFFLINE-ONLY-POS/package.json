@@ -19,6 +19,7 @@
     "postinstall": "electron-builder install-app-deps",
     "dist": "electron-vite build && electron-builder --win",
     "dist:dir": "electron-vite build && electron-builder --win --dir",
+    "release:win": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-release.ps1",
     "doctor": "react-doctor",
     "license:machine-id": "tsx scripts/get-machine-id.ts",
     "license:generate": "tsx scripts/generate-license.ts",

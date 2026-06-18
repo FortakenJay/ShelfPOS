@@ -1,6 +1,7 @@
 import { getDb } from '../index'
 import { localNow, rangeBounds } from '../helpers'
 import { session } from '../../services/session'
+import { enqueueSync } from './syncQueue'
 import type { AuditLogFilter, AuditLogPage, AuditLogRow, AuditUser } from '../../../shared/types'
 
 interface AuditMeta {
@@ -37,7 +38,8 @@ function auditWhere(filter: AuditLogFilter): { where: string; params: Record<str
 export function writeAudit(action: string, meta: AuditMeta = {}): void {
   try {
     const user = session.get()
-    getDb()
+    const db = getDb()
+    const result = db
       .prepare(
         `INSERT INTO audit_log (user_id, username, action, entity, entity_id, detail, created_at)
          VALUES (?,?,?,?,?,?,?)`
@@ -51,6 +53,7 @@ export function writeAudit(action: string, meta: AuditMeta = {}): void {
         meta.detail ?? null,
         localNow()
       )
+    enqueueSync('audit_log', Number(result.lastInsertRowid), 'insert', db)
   } catch (err) {
     console.error('[audit] failed to record', action, err)
   }

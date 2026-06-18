@@ -17,6 +17,7 @@ import {
 import { openCashSummary } from '../db/repos/cash'
 import { insertPrintJob } from '../db/repos/printJobs'
 import { writeAudit } from '../db/repos/audit'
+import { enqueueSync } from '../db/repos/syncQueue'
 import { currentLanguage, getAppSettings, receiptLanguage } from '../db/repos/settings'
 import { session } from '../services/session'
 import { schedulePrintJob } from '../services/printer'
@@ -160,15 +161,16 @@ export function registerCierreHandlers(backup: BackupService): void {
         db
           .prepare(
             `INSERT INTO cierres
-               (opened_at, closed_at, closed_by_user_id, shift_label, total_cash, total_card,
+               (opened_at, closed_at, closed_by_user_id, closed_by_username, shift_label, total_cash, total_card,
                 total_sinpe, total_sales, opening_float, cash_in, cash_out, expected_cash,
                 counted_cash, cash_difference, notes)
-             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
           )
           .run(
             openedAt,
             now,
             user.id,
+            user.username,
             shiftLabel,
             totals.cash,
             totals.card,
@@ -187,6 +189,19 @@ export function registerCierreHandlers(backup: BackupService): void {
       // Lock this period's sales and cash movements to the new cierre.
       db.prepare('UPDATE sales SET cierre_id = ? WHERE cierre_id IS NULL').run(id)
       db.prepare('UPDATE cash_movements SET cierre_id = ? WHERE cierre_id IS NULL').run(id)
+      enqueueSync('cierres', id, 'insert', db)
+      const linkedSales = db
+        .prepare('SELECT id FROM sales WHERE cierre_id = ?')
+        .all(id) as { id: number }[]
+      for (const row of linkedSales) {
+        enqueueSync('sales', row.id, 'update', db)
+      }
+      const linkedMovements = db
+        .prepare('SELECT id FROM cash_movements WHERE cierre_id = ?')
+        .all(id) as { id: number }[]
+      for (const row of linkedMovements) {
+        enqueueSync('cash_movements', row.id, 'update', db)
+      }
 
       const lines = buildCierreLines(
         {

@@ -12,6 +12,7 @@ import {
 import { round2 } from '../db/helpers'
 import { writeAudit } from '../db/repos/audit'
 import { session } from '../services/session'
+import { openCashDrawer } from '../services/printer'
 import type {
   CashDrawerStatus,
   CashMovementInput,
@@ -73,6 +74,9 @@ export function registerCashHandlers(): void {
         detail
       })
     })()
+    setImmediate(() => {
+      void openCashDrawer()
+    })
     return cashDrawerStatus()
   })
 }

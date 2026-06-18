@@ -1,4 +1,5 @@
 import { getDb } from '../index'
+import { ACTIVE_PRODUCT_SQL } from './products'
 import { getAppSettings, ivaRateFor } from './settings'
 import { localNow, round2 } from '../helpers'
 import type {
@@ -260,7 +261,7 @@ export function inventorySnapshot(): InventoryRow[] {
       `SELECT id, barcode, name, category, stock,
               COALESCE(stock_threshold, @def) AS threshold,
               price, ROUND(stock * price, 2) AS value
-       FROM products ORDER BY name COLLATE NOCASE`
+       FROM products WHERE ${ACTIVE_PRODUCT_SQL} ORDER BY name COLLATE NOCASE`
     )
     .all({ def }) as InventoryRow[]
 }

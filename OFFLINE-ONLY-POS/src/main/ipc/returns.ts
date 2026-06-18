@@ -2,7 +2,8 @@ import { handle } from './helpers'
 import { AppError } from '../errors'
 import { getDb } from '../db'
 import { localNow } from '../db/helpers'
-import { alertsForProducts } from '../db/repos/products'
+import { alertsForProducts, enqueueProductSync } from '../db/repos/products'
+import { enqueueSync } from '../db/repos/syncQueue'
 import { hasOpeningFloat } from '../db/repos/cash'
 import { writeAudit } from '../db/repos/audit'
 import { session } from '../services/session'
@@ -49,7 +50,7 @@ export function registerReturnHandlers(): void {
           const sold = (soldStmt.get(input.saleId, item.productId) as { qty: number }).qty
           const returned = (returnedStmt.get(input.saleId, item.productId) as { qty: number }).qty
           if (item.quantity > sold - returned) throw new AppError('errors.returnQtyExceeds')
-          insertReturn.run(
+          const returnResult = insertReturn.run(
             input.saleId,
             item.productId,
             item.quantity,
@@ -57,7 +58,11 @@ export function registerReturnHandlers(): void {
             now,
             user.id
           )
-          if (input.restock) restock.run(item.quantity, now, item.productId)
+          enqueueSync('return_items', Number(returnResult.lastInsertRowid), 'insert', db)
+          if (input.restock) {
+            restock.run(item.quantity, now, item.productId)
+            enqueueProductSync(item.productId, 'update', db)
+          }
         }
         const totalQty = input.items.reduce((acc, i) => acc + i.quantity, 0)
         writeAudit('return_created', {

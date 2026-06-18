@@ -87,7 +87,7 @@ export async function writePrintLinesPdf(lines: PrintLine[], filePath: string): 
   const win = new BrowserWindow({
     show: false,
     webPreferences: {
-      sandbox: false,
+      sandbox: true,
       contextIsolation: true,
       nodeIntegration: false
     }

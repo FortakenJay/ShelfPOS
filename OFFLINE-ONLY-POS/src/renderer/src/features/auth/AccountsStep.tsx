@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/components/ui'
+import { Button, Field, Input } from '@/components/ui'
 import { AccountsPinFields } from './components/AccountsPinFields'
 import { AdminAccountFields } from './components/AdminAccountFields'
 import { useAccountsStep } from './hooks/useAccountsStep'
@@ -19,6 +19,17 @@ export function AccountsStep({ backupPath }: { backupPath: string }): React.JSX.
           void step.submit()
         }}
       >
+        <Field label={t('firstRun.storeName')} className="mb-6">
+          <Input
+            value={step.storeName}
+            onChange={(e) => step.setStoreName(e.target.value)}
+            placeholder={t('settings.storeName')}
+            required
+            autoFocus
+          />
+          <p className="mt-1 text-[13px] text-slate-500">{t('firstRun.storeNameHint')}</p>
+        </Field>
+
         <AdminAccountFields
           account={step.account}
           validation={step.validation}

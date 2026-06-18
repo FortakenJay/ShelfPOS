@@ -4,6 +4,7 @@ import { getAppSettings, getSetting, SETTING_KEYS } from './settings'
 import { listAudit } from './audit'
 import { listQueuedPrintJobs } from './printJobs'
 import { paymentTotals, salesSummary, taxBreakdown } from './reports'
+import { ACTIVE_PRODUCT_SQL } from './products'
 import type {
   AuditLogRow,
   DashboardActivityItem,
@@ -128,7 +129,7 @@ function inventorySummary(): DashboardInventorySummary {
               COALESCE(SUM(CASE WHEN stock = 0 THEN 1 ELSE 0 END), 0) AS outOfStock,
               COALESCE(SUM(CASE WHEN stock < 0 THEN 1 ELSE 0 END), 0) AS negativeStock,
               COALESCE(SUM(CASE WHEN stock > 0 AND stock <= COALESCE(stock_threshold, @def) THEN 1 ELSE 0 END), 0) AS lowStock
-       FROM products`
+       FROM products WHERE ${ACTIVE_PRODUCT_SQL}`
     )
     .get({ def }) as DashboardInventorySummary
   return {
@@ -151,7 +152,7 @@ function inventoryHealth(): DashboardInventoryHealth {
          COALESCE(SUM(CASE WHEN stock = 0 THEN 1 ELSE 0 END), 0) AS critical,
          COALESCE(SUM(CASE WHEN stock > 0 AND stock <= COALESCE(stock_threshold, @def) THEN 1 ELSE 0 END), 0) AS low,
          COALESCE(SUM(CASE WHEN stock > COALESCE(stock_threshold, @def) THEN 1 ELSE 0 END), 0) AS healthy
-       FROM products`
+       FROM products WHERE ${ACTIVE_PRODUCT_SQL}`
     )
     .get({ def }) as DashboardInventoryHealth
   return row
@@ -168,7 +169,7 @@ function inventoryProductRows(
       `SELECT id, name, barcode, stock, category, updated_at,
               COALESCE(stock_threshold, @def) AS minimum
        FROM products
-       WHERE ${whereSql}
+       WHERE ${ACTIVE_PRODUCT_SQL} AND (${whereSql})
        ORDER BY ${orderBy}
        LIMIT @limit`
     )
@@ -219,6 +220,7 @@ function productPerformance(
        LEFT JOIN sale_items si ON si.product_id = p.id
        LEFT JOIN sales s ON s.id = si.sale_id
          AND s.created_at >= @fromTs AND s.created_at <= @toTs
+       WHERE p.${ACTIVE_PRODUCT_SQL}
        GROUP BY p.id
        ${having}
        ORDER BY ${orderClause}
@@ -263,6 +265,7 @@ function categoryPerformance(filter: { fromTs: string; toTs: string }): Dashboar
        LEFT JOIN sale_items si ON si.product_id = p.id
        LEFT JOIN sales s ON s.id = si.sale_id
          AND s.created_at >= @fromTs AND s.created_at <= @toTs
+       WHERE p.${ACTIVE_PRODUCT_SQL}
        GROUP BY category
        ORDER BY revenue DESC`
     )
@@ -482,7 +485,7 @@ function buildAlerts(inventory: DashboardInventorySummary, cierreAlerts: number)
 
 function productCountAt(monthStart: string): number {
   const row = getDb()
-    .prepare('SELECT COUNT(*) AS count FROM products WHERE created_at < @monthStart')
+    .prepare(`SELECT COUNT(*) AS count FROM products WHERE ${ACTIVE_PRODUCT_SQL} AND created_at < @monthStart`)
     .get({ monthStart: `${monthStart} 00:00:00` }) as { count: number }
   return row.count
 }
@@ -494,7 +497,8 @@ function lowStockCountWeekAgo(): number {
     .prepare(
       `SELECT COUNT(*) AS count
        FROM products p
-       WHERE p.stock > 0 AND p.stock <= COALESCE(p.stock_threshold, @def)
+       WHERE p.${ACTIVE_PRODUCT_SQL}
+         AND p.stock > 0 AND p.stock <= COALESCE(p.stock_threshold, @def)
          AND p.updated_at <= @weekAgo`
     )
     .get({ def, weekAgo }) as { count: number }
@@ -505,7 +509,7 @@ function outOfStockWeekAgo(): number {
   const weekAgo = `${daysAgoLocal(7)} 23:59:59`
   const row = getDb()
     .prepare(
-      `SELECT COUNT(*) AS count FROM products WHERE stock = 0 AND updated_at <= @weekAgo`
+      `SELECT COUNT(*) AS count FROM products WHERE ${ACTIVE_PRODUCT_SQL} AND stock = 0 AND updated_at <= @weekAgo`
     )
     .get({ weekAgo }) as { count: number }
   return row.count
@@ -578,7 +582,7 @@ export function dashboardOverview(): DashboardOverview {
         .prepare(
           `SELECT id AS productId, name, barcode AS sku, stock, category,
                   0 AS unitsSold, 0 AS revenue, 0 AS profit
-           FROM products ORDER BY created_at DESC LIMIT 8`
+           FROM products WHERE ${ACTIVE_PRODUCT_SQL} ORDER BY created_at DESC LIMIT 8`
         )
         .all() as Omit<DashboardProductPerformanceRow, 'marginPct'>[]
     ).map((r) => ({ ...r, marginPct: null })),

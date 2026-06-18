@@ -1,0 +1,24 @@
+{
+  "name": "@shelfpos/sync-service",
+  "version": "1.0.0",
+  "description": "Background OS service: SQLite sync_queue → Supabase mirror",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "install:windows": "node scripts/install-windows-service.cjs"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.10.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.9.3",
+    "node-windows": "^1.0.0-beta.8",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
+  }
+}

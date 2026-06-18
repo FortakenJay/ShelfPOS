@@ -16,7 +16,7 @@ const nodeFiles = [
 
 export default tseslint.config(
   {
-    ignores: ['out/**', 'dist/**', 'node_modules/**', 'private/**', '**/*.d.ts']
+    ignores: ['out/**', 'dist/**', 'node_modules/**', 'private/**', 'sync-service/**', '**/*.d.ts']
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

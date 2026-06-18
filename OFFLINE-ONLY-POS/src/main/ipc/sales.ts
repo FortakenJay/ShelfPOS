@@ -2,7 +2,8 @@ import { handle } from './helpers'
 import { AppError } from '../errors'
 import { getDb } from '../db'
 import { localNow, round2 } from '../db/helpers'
-import { alertsForProducts, getProduct } from '../db/repos/products'
+import { alertsForProducts, enqueueProductSync, getProduct } from '../db/repos/products'
+import { enqueueSync } from '../db/repos/syncQueue'
 import { hasOpeningFloat } from '../db/repos/cash'
 import { assertSaleStock } from '../db/repos/stock'
 import { insertPrintJob } from '../db/repos/printJobs'
@@ -28,6 +29,9 @@ import type {
 const SELL: 'sales'[] = ['sales']
 const ID_TYPES: IdType[] = ['fisica', 'juridica', 'dimex', 'nite']
 const PAYMENT_METHODS = new Set<PaymentMethod>(['cash', 'card', 'sinpe'])
+
+/** Legacy NOT NULL column — sale_payments is the canonical payment source. */
+const DEPRECATED_SALE_PAYMENT_METHOD = 'cash'
 
 /** Effective unit price: bulk price when the line qualifies for the bulk tier. */
 function effectiveUnitPrice(product: Product, quantity: number): number {
@@ -151,8 +155,7 @@ export function registerSalesHandlers(): void {
           : null
       if (change != null && change < 0) throw new AppError('pos.insufficient')
 
-      // Legacy single-method column: the largest tender is the "primary" method.
-      const primary = input.payments.reduce((best, p) => (p.amount > best.amount ? p : best))
+      // Legacy single-method column (deprecated): sale_payments holds authoritative tenders.
       const sinpeRef = input.payments.find((p) => p.method === 'sinpe' && p.ref?.trim())?.ref?.trim()
 
       const customer: SaleCustomer = {
@@ -180,7 +183,7 @@ export function registerSalesHandlers(): void {
           )
           .run(
             user.id,
-            primary.method,
+            DEPRECATED_SALE_PAYMENT_METHOD,
             subtotal,
             discountTotal,
             cartDiscount,
@@ -199,7 +202,9 @@ export function registerSalesHandlers(): void {
       )
 
       const insertItem = db.prepare(
-        'INSERT INTO sale_items (sale_id, product_id, quantity, unit_price, catalog_unit_price, discount, line_discount, line_total, tax_category) VALUES (?,?,?,?,?,?,?,?,?)'
+        `INSERT INTO sale_items
+           (sale_id, product_id, quantity, unit_price, catalog_unit_price, discount, line_discount, line_total, tax_category, product_name_snapshot)
+         VALUES (?,?,?,?,?,?,?,?,?,?)`
       )
       const insertPayment = db.prepare(
         'INSERT INTO sale_payments (sale_id, method, amount, ref) VALUES (?,?,?,?)'
@@ -212,7 +217,8 @@ export function registerSalesHandlers(): void {
       )
       for (const line of finalized) {
         const productId = line.product.id
-        insertItem.run(
+        // line_discount = explicit per-line discount; discount = line + cart share.
+        const itemResult = insertItem.run(
           saleId,
           productId,
           line.quantity,
@@ -221,8 +227,10 @@ export function registerSalesHandlers(): void {
           line.discount,
           line.lineDiscount,
           line.lineTotal,
-          line.taxCategory
+          line.taxCategory,
+          line.product.name
         )
+        enqueueSync('sale_items', Number(itemResult.lastInsertRowid), 'insert', db)
         const stockStmt =
           line.product.factura_negativo === 1 ? decrementStockUnlimited : decrementStock
         const stockResult =
@@ -233,10 +241,13 @@ export function registerSalesHandlers(): void {
           const current = getProduct(productId) ?? line.product
           assertSaleStock(current, line.quantity)
         }
+        enqueueProductSync(productId, 'update', db)
       }
       for (const pay of input.payments) {
-        insertPayment.run(saleId, pay.method, round2(pay.amount), cleanText(pay.ref))
+        const payResult = insertPayment.run(saleId, pay.method, round2(pay.amount), cleanText(pay.ref))
+        enqueueSync('sale_payments', Number(payResult.lastInsertRowid), 'insert', db)
       }
+      enqueueSync('sales', saleId, 'insert', db)
 
       const receiptLines = buildReceiptLines(
         {
@@ -345,7 +356,7 @@ export function registerSalesHandlers(): void {
       }
 
       const itemsStmt = db.prepare(
-        `SELECT si.product_id AS productId, p.name AS name, p.barcode AS barcode,
+        `SELECT si.product_id AS productId, COALESCE(si.product_name_snapshot, p.name) AS name, p.barcode AS barcode,
                 si.quantity AS quantity, si.unit_price AS unitPrice, si.discount AS discount,
                 si.line_total AS lineTotal, si.tax_category AS taxCategory,
                 COALESCE((SELECT SUM(ri.quantity) FROM return_items ri

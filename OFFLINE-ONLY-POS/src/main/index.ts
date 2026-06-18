@@ -16,6 +16,8 @@ import { purgeExpiredReportData } from './services/dataRetention'
 
 import { initPrinter, flushPendingPrintJobs } from './services/printer'
 
+import { startPosHeartbeat, stopPosHeartbeat } from './services/posHeartbeat'
+
 import { registerIpcHandlers } from './ipc'
 
 import { registerLicenseHandlers } from './ipc/license'
@@ -107,6 +109,8 @@ async function initData(): Promise<BackupService> {
 
 
   db.pragma('journal_mode = WAL')
+
+  db.pragma('busy_timeout = 5000')
 
   db.pragma('synchronous = NORMAL')
 
@@ -232,7 +236,7 @@ function createMainWindow(): void {
 
       nodeIntegration: false,
 
-      sandbox: false,
+      sandbox: true,
 
       spellcheck: false
 
@@ -288,6 +292,8 @@ async function startLicensedApp(): Promise<void> {
 
   registerIpcHandlers(backup)
 
+  startPosHeartbeat()
+
   createMainWindow()
 
   void flushPendingPrintJobs()
@@ -340,6 +346,10 @@ app.on('window-all-closed', () => {
 
   app.quit()
 
+})
+
+app.on('before-quit', () => {
+  stopPosHeartbeat()
 })
 
 

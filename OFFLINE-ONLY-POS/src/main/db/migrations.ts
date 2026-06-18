@@ -1,6 +1,6 @@
 import type Database from 'better-sqlite3'
 
-export const SCHEMA_VERSION = 8
+export const SCHEMA_VERSION = 9
 
 type Migration = (db: Database.Database) => void
 
@@ -258,6 +258,37 @@ const migrations: Record<number, Migration> = {
     db.exec(`
       UPDATE products SET tax_category = 'standard' WHERE tax_category != 'standard';
       UPDATE sale_items SET tax_category = 'standard' WHERE tax_category != 'standard';
+    `)
+  },
+
+  // v9 — sync pipeline: soft deletes, snapshots, sync_queue, indexes.
+  // sales.payment_method is DEPRECATED — sale_payments is the canonical payment source.
+  9: (db) => {
+    db.exec(`
+      ALTER TABLE products ADD COLUMN deleted_at TEXT;
+      ALTER TABLE sale_items ADD COLUMN product_name_snapshot TEXT;
+      ALTER TABLE cierres ADD COLUMN closed_by_username TEXT;
+
+      CREATE TABLE sync_queue (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        table_name  TEXT NOT NULL,
+        row_id      INTEGER NOT NULL,
+        operation   TEXT NOT NULL CHECK (operation IN ('insert', 'update', 'delete')),
+        status      TEXT NOT NULL DEFAULT 'pending'
+                      CHECK (status IN ('pending', 'synced', 'error')),
+        created_at  TEXT NOT NULL,
+        synced_at   TEXT,
+        error       TEXT,
+        retry_count INTEGER NOT NULL DEFAULT 0
+      );
+
+      CREATE INDEX idx_sync_queue_status ON sync_queue(status);
+      CREATE INDEX idx_sync_queue_created ON sync_queue(created_at);
+      CREATE INDEX IF NOT EXISTS idx_cierres_closed ON cierres(closed_at);
+      CREATE INDEX IF NOT EXISTS idx_stock_adj_product ON stock_adjustments(product_id);
+      CREATE INDEX IF NOT EXISTS idx_stock_adj_created ON stock_adjustments(created_at);
+
+      INSERT OR IGNORE INTO settings (key, value) VALUES ('sync_store_id', 'store_a');
     `)
   }
 }

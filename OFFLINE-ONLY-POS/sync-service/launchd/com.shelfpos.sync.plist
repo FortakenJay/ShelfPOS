@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.shelfpos.sync</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/node</string>
+    <string>/path/to/OFFLINE-ONLY-POS/sync-service/dist/index.js</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>SUPABASE_URL</key>
+    <string>https://your-project.supabase.co</string>
+    <key>SUPABASE_SERVICE_KEY</key>
+    <string>your-service-role-key</string>
+    <key>SQLITE_PATH</key>
+    <string>/Users/You/Library/Application Support/shelfpos/shelf.db</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/tmp/shelfpos-sync.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/shelfpos-sync.err.log</string>
+</dict>
+</plist>
