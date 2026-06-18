@@ -6,7 +6,7 @@
     "#/*": "./src/*"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=24.0.0"
   },
   "scripts": {
     "dev": "vite dev --port 3000",

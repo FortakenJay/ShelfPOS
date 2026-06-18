@@ -4,6 +4,9 @@
   "description": "Background OS service: SQLite sync_queue → Supabase mirror",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc",

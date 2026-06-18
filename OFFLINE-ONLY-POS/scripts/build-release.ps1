@@ -11,63 +11,117 @@ $BundleName = "ShelfPOS-$Version-win"
 $OutDir = Join-Path $Root 'release'
 $StageDir = Join-Path $OutDir $BundleName
 $ZipPath = Join-Path $OutDir "$BundleName.zip"
-$NodeCache = Join-Path $Root '.cache\node-win-x64'
-$NodeVersion = '22.14.0'
+$NodeVersion = '24.16.0'
+$NodeDir = Join-Path $Root ".cache\node-v$NodeVersion-win-x64"
+$NodeExe = Join-Path $NodeDir 'node.exe'
+
+function Ensure-PortableNode {
+  if (Test-Path $NodeExe) { return }
+
+  New-Item -ItemType Directory -Path (Split-Path $NodeDir -Parent) -Force | Out-Null
+  $Zip = Join-Path $env:TEMP "node-v$NodeVersion-win-x64.zip"
+  $Url = "https://nodejs.org/dist/v$NodeVersion/node-v$NodeVersion-win-x64.zip"
+  Write-Host "  Downloading Node.js v$NodeVersion..."
+  Write-Host "  $Url"
+  Invoke-WebRequest -Uri $Url -OutFile $Zip -UseBasicParsing
+  $ExtractTemp = Join-Path $env:TEMP "node-v$NodeVersion-win-x64-extract"
+  if (Test-Path $ExtractTemp) { Remove-Item -Recurse -Force $ExtractTemp }
+  Expand-Archive -Path $Zip -DestinationPath $ExtractTemp -Force
+  if (Test-Path $NodeDir) { Remove-Item -Recurse -Force $NodeDir }
+  Move-Item (Join-Path $ExtractTemp "node-v$NodeVersion-win-x64") $NodeDir
+  Remove-Item $Zip -Force -ErrorAction SilentlyContinue
+  Remove-Item $ExtractTemp -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+function Remove-NodeModulesJunk([string]$NodeModulesPath) {
+  if (-not (Test-Path $NodeModulesPath)) { return }
+
+  $junkDirNames = @('test', 'tests', '__tests__', 'docs', 'doc', 'example', 'examples', '.github')
+  Get-ChildItem $NodeModulesPath -Recurse -Directory -ErrorAction SilentlyContinue |
+    Where-Object { $junkDirNames -contains $_.Name } |
+    Sort-Object { $_.FullName.Length } -Descending |
+    ForEach-Object {
+      Remove-Item $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+function New-ReleaseZip([string]$SourceDir, [string]$Destination) {
+  if (Test-Path $Destination) { Remove-Item $Destination -Force }
+
+  $parent = Split-Path $SourceDir -Parent
+  $name = Split-Path $SourceDir -Leaf
+  Push-Location $parent
+  try {
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+      & tar.exe -a -c -f $Destination $name
+      if ($LASTEXITCODE -eq 0) { return }
+      Write-Host "  ZIP attempt $attempt failed; retrying in 2s..." -ForegroundColor DarkYellow
+      Start-Sleep -Seconds 2
+    }
+    throw "Failed to create ZIP at $Destination"
+  } finally {
+    Pop-Location
+  }
+}
 
 Write-Host "=== ShelfPOS release build v$Version ===" -ForegroundColor Cyan
 
+# --- Portable Node.js (must match better-sqlite3 native ABI in sync bundle) ---
+Write-Host ''
+Write-Host '[1/5] Preparing portable Node.js...' -ForegroundColor Yellow
+Ensure-PortableNode
+$BundledNodeVersion = & $NodeExe -v
+Write-Host "  Bundled Node: $BundledNodeVersion" -ForegroundColor DarkGray
+
 # --- Electron installer ---
 Write-Host ''
-Write-Host '[1/4] Building Electron app (npm run dist)...' -ForegroundColor Yellow
+Write-Host '[2/5] Building Electron app (npm run dist)...' -ForegroundColor Yellow
 npm run dist
 if ($LASTEXITCODE -ne 0) { throw 'electron dist failed' }
 
 $NsisExe = Get-ChildItem (Join-Path $Root 'dist') -Filter 'ShelfPOS Setup*.exe' | Select-Object -First 1
 if (-not $NsisExe) { throw 'ShelfPOS Setup*.exe not found in dist/' }
 
-# --- Sync service ---
+# --- Sync service (install + compile native modules with bundled Node) ---
 Write-Host ''
-Write-Host '[2/4] Building sync-service...' -ForegroundColor Yellow
-Push-Location (Join-Path $Root 'sync-service')
-npm ci --omit=dev
-if ($LASTEXITCODE -ne 0) { throw 'sync-service npm ci failed' }
-npm run build
-if ($LASTEXITCODE -ne 0) { throw 'sync-service build failed' }
-Pop-Location
-
-# --- Portable Node.js (bundled so customer machine does not need Node installed) ---
-Write-Host ''
-Write-Host '[3/4] Preparing portable Node.js...' -ForegroundColor Yellow
-$NodeExe = Join-Path $NodeCache 'node.exe'
-if (-not (Test-Path $NodeExe)) {
-  New-Item -ItemType Directory -Path $NodeCache -Force | Out-Null
-  $Zip = Join-Path $env:TEMP "node-v$NodeVersion-win-x64.zip"
-  $Url = "https://nodejs.org/dist/v$NodeVersion/node-v$NodeVersion-win-x64.zip"
-  Write-Host "  Downloading $Url"
-  Invoke-WebRequest -Uri $Url -OutFile $Zip -UseBasicParsing
-  Expand-Archive -Path $Zip -DestinationPath $NodeCache -Force
-  $Extracted = Join-Path $NodeCache "node-v$NodeVersion-win-x64\node.exe"
-  Copy-Item $Extracted $NodeExe
-  Remove-Item $Zip -Force -ErrorAction SilentlyContinue
+Write-Host "[3/5] Building sync-service (Node $NodeVersion)..." -ForegroundColor Yellow
+$SyncDir = Join-Path $Root 'sync-service'
+$PreviousPath = $env:PATH
+$env:PATH = "$NodeDir;$PreviousPath"
+try {
+  Push-Location $SyncDir
+  if (Test-Path 'node_modules') { Remove-Item -Recurse -Force 'node_modules' }
+  npm ci --omit=dev
+  if ($LASTEXITCODE -ne 0) { throw 'sync-service npm ci failed' }
+  npm run build
+  if ($LASTEXITCODE -ne 0) { throw 'sync-service build failed' }
+  npm rebuild better-sqlite3
+  if ($LASTEXITCODE -ne 0) { throw 'better-sqlite3 rebuild failed' }
+  Pop-Location
+} finally {
+  $env:PATH = $PreviousPath
 }
+Start-Sleep -Seconds 2
 
 # --- Stage bundle ---
 Write-Host ''
-Write-Host '[4/4] Staging release bundle...' -ForegroundColor Yellow
+Write-Host '[4/5] Staging release bundle...' -ForegroundColor Yellow
 if (Test-Path $StageDir) { Remove-Item -Recurse -Force $StageDir }
 New-Item -ItemType Directory -Path $StageDir -Force | Out-Null
 
 Copy-Item $NsisExe.FullName $StageDir
 Copy-Item (Join-Path $Root 'scripts\install-shelfpos.ps1') $StageDir
+Copy-Item (Join-Path $Root 'scripts\uninstall-shelfpos.ps1') $StageDir
 
 $SyncStage = Join-Path $StageDir 'sync-service'
 New-Item -ItemType Directory -Path $SyncStage -Force | Out-Null
-Copy-Item -Recurse (Join-Path $Root 'sync-service\dist') (Join-Path $SyncStage 'dist')
-Copy-Item -Recurse (Join-Path $Root 'sync-service\node_modules') (Join-Path $SyncStage 'node_modules')
-Copy-Item (Join-Path $Root 'sync-service\package.json') $SyncStage
+Copy-Item -Recurse (Join-Path $SyncDir 'dist') (Join-Path $SyncStage 'dist')
+Copy-Item -Recurse (Join-Path $SyncDir 'node_modules') (Join-Path $SyncStage 'node_modules')
+Copy-Item (Join-Path $SyncDir 'package.json') $SyncStage
 New-Item -ItemType Directory -Path (Join-Path $SyncStage 'scripts') -Force | Out-Null
-Copy-Item (Join-Path $Root 'sync-service\scripts\set-store-id.cjs') (Join-Path $SyncStage 'scripts\set-store-id.cjs')
+Copy-Item (Join-Path $SyncDir 'scripts\set-store-id.cjs') (Join-Path $SyncStage 'scripts\set-store-id.cjs')
 Copy-Item $NodeExe (Join-Path $SyncStage 'node.exe')
+Remove-NodeModulesJunk (Join-Path $SyncStage 'node_modules')
 
 @'
 ShelfPOS — instalación en Windows
@@ -81,6 +135,10 @@ ShelfPOS — instalación en Windows
 Install-ShelfPOS.ps1 SOLO instala el servicio "ShelfPOS Sync" (sincronización en segundo plano).
 La app POS se instala por separado con el Setup.exe (paso 2).
 
+Desinstalar (PowerShell como Administrador):
+  .\Uninstall-ShelfPOS.ps1
+  .\Uninstall-ShelfPOS.ps1 -RemoveData   # también borra %APPDATA%\shelfpos (base de datos, licencia)
+
 Requisitos: Windows 10/11, conexión a Internet para Supabase.
 
 Si el servicio no inicia, abra PowerShell como Admin y ejecute:
@@ -88,12 +146,14 @@ Si el servicio no inicia, abra PowerShell como Admin y ejecute:
   Get-Content "$env:ProgramFiles\ShelfPOS\sync-service\sync.env"
 '@ | Set-Content (Join-Path $StageDir 'LEEME.txt') -Encoding UTF8
 
-if (Test-Path $ZipPath) { Remove-Item $ZipPath -Force }
-Compress-Archive -Path $StageDir -DestinationPath $ZipPath -Force
+Write-Host ''
+Write-Host '[5/5] Creating ZIP...' -ForegroundColor Yellow
+New-ReleaseZip -SourceDir $StageDir -Destination $ZipPath
 
 Write-Host ''
 Write-Host "Release ready:" -ForegroundColor Green
 Write-Host "  Folder: $StageDir"
 Write-Host "  Zip:    $ZipPath"
+Write-Host "  Sync Node: $BundledNodeVersion (matches bundled node.exe)"
 Write-Host ''
 Write-Host 'Send the ZIP to the customer. They install Setup.exe, then run Install-ShelfPOS.ps1 as Administrator.' -ForegroundColor Cyan
