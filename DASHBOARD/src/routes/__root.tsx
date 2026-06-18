@@ -9,8 +9,10 @@ import { I18nextProvider } from 'react-i18next'
 import appCss from '../styles.css?url'
 import i18n from '#/lib/i18n'
 import { DashboardI18nSync } from '#/components/DashboardI18nSync'
+import { NotFoundPage } from '#/components/NotFoundPage'
 
 export const Route = createRootRoute({
+  notFoundComponent: NotFoundPage,
   head: () => ({
     meta: [
       { charSet: 'utf-8' },

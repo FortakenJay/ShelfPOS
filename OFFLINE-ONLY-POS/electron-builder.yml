@@ -13,7 +13,7 @@ asarUnpack:
   - '**/node_modules/usb/**'
   - '**/node_modules/@node-escpos/**'
 win:
-  icon: public/ShelfPOS.png
+  icon: build/icon.ico
   target:
     - nsis
 mac:

@@ -14,6 +14,7 @@ $ZipPath = Join-Path $OutDir "$BundleName.zip"
 $NodeVersion = '24.16.0'
 $NodeDir = Join-Path $Root ".cache\node-v$NodeVersion-win-x64"
 $NodeExe = Join-Path $NodeDir 'node.exe'
+$ElectronDistDir = Join-Path $Root ".release-dist-$((Get-Date -Format 'yyyyMMdd-HHmmss'))"
 
 function Ensure-PortableNode {
   if (Test-Path $NodeExe) { return }
@@ -64,23 +65,68 @@ function New-ReleaseZip([string]$SourceDir, [string]$Destination) {
   }
 }
 
-function Invoke-Npm([string[]]$Args) {
-  & npm @Args
+function Invoke-Npm([Parameter(Mandatory = $true)][string[]]$NpmArgs) {
+  Write-Host "  > npm $($NpmArgs -join ' ')" -ForegroundColor DarkGray
+  & npm @NpmArgs
   if ($LASTEXITCODE -ne 0) {
-    throw "npm $($Args -join ' ') failed with exit code $LASTEXITCODE"
+    throw "npm $($NpmArgs -join ' ') failed with exit code $LASTEXITCODE"
+  }
+}
+
+function Stop-BuildLockingProcesses() {
+  foreach ($name in @('ShelfPOS', 'electron')) {
+    Get-Process -Name $name -ErrorAction SilentlyContinue | ForEach-Object {
+      Write-Host "  Stopping $($_.ProcessName) (PID $($_.Id))..." -ForegroundColor DarkYellow
+      Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
+    }
+  }
+  Start-Sleep -Seconds 1
+}
+
+function Try-RemovePath([string]$Path) {
+  if (-not (Test-Path $Path)) { return }
+  try {
+    Remove-Item -LiteralPath $Path -Recurse -Force -ErrorAction Stop
+  } catch {
+    Write-Host "  Could not remove $Path (continuing — output goes to a fresh folder)" -ForegroundColor DarkYellow
   }
 }
 
 function Remove-BuildOutputs([string]$Root) {
-  $paths = @(
-    (Join-Path $Root 'out'),
-    (Join-Path $Root 'dist')
-  )
-  foreach ($path in $paths) {
-    if (Test-Path $path) {
-      Write-Host "  Removing $path" -ForegroundColor DarkGray
-      Remove-Item -Recurse -Force $path
+  Stop-BuildLockingProcesses
+  Write-Host '  Clearing out/ (best effort)' -ForegroundColor DarkGray
+  Try-RemovePath (Join-Path $Root 'out')
+}
+
+function Ensure-WindowsIcon([string]$Root) {
+  $ico = Join-Path $Root 'build\icon.ico'
+  if (Test-Path $ico) { return }
+
+  $buildDir = Join-Path $Root 'build'
+  $png = Join-Path $Root 'public\ShelfPOS.png'
+  if (-not (Test-Path $png)) { throw "Missing app icon PNG: $png" }
+
+  New-Item -ItemType Directory -Path $buildDir -Force | Out-Null
+  Write-Host '  Generating build/icon.ico (skips Node 24 icon-tool crash)...' -ForegroundColor DarkGray
+  cmd /c "npx --yes png-to-ico `"$png`" > `"$ico`""
+  if ($LASTEXITCODE -ne 0 -or -not (Test-Path $ico)) { throw 'Failed to generate build/icon.ico' }
+}
+
+function Invoke-ElectronDist([string]$Root, [string]$DistDir) {
+  Ensure-WindowsIcon $Root
+  Invoke-Npm @('run', 'build')
+  $relativeDist = Split-Path $DistDir -Leaf
+  Write-Host "  > npx electron-builder --win (output $relativeDist)" -ForegroundColor DarkGray
+  $env:NODE_OPTIONS = '--max-old-space-size=8192'
+  Push-Location $Root
+  try {
+    & npx electron-builder --win "--config.directories.output=$relativeDist"
+    if ($LASTEXITCODE -ne 0) {
+      throw "electron-builder failed with exit code $LASTEXITCODE"
     }
+  } finally {
+    Remove-Item Env:NODE_OPTIONS -ErrorAction SilentlyContinue
+    Pop-Location
   }
 }
 
@@ -96,14 +142,14 @@ Write-Host "  Bundled Node: $BundledNodeVersion" -ForegroundColor DarkGray
 
 # --- Electron installer (always clean + full rebuild) ---
 Write-Host ''
-Write-Host '[2/5] Building Electron app (clean out/ + dist/, then npm run dist)...' -ForegroundColor Yellow
+Write-Host "[2/5] Building Electron app (output: $(Split-Path $ElectronDistDir -Leaf))..." -ForegroundColor Yellow
 Remove-BuildOutputs $Root
-Invoke-Npm @('run', 'dist')
+Invoke-ElectronDist $Root $ElectronDistDir
 
-$NsisExe = Get-ChildItem (Join-Path $Root 'dist') -Filter 'ShelfPOS Setup*.exe' |
+$NsisExe = Get-ChildItem $ElectronDistDir -Filter 'ShelfPOS Setup*.exe' |
   Sort-Object LastWriteTime -Descending |
   Select-Object -First 1
-if (-not $NsisExe) { throw 'ShelfPOS Setup*.exe not found in dist/' }
+if (-not $NsisExe) { throw "ShelfPOS Setup*.exe not found in $ElectronDistDir" }
 if ($NsisExe.LastWriteTime -lt $BuildStartedAt) {
   throw "NSIS installer is older than this release run ($($NsisExe.FullName)). dist build did not refresh."
 }

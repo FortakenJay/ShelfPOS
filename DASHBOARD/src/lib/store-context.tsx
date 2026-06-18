@@ -5,11 +5,11 @@ import {
 } from 'react'
 import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Trans } from 'react-i18next'
 import { fetchStores } from '#/lib/queries/stores'
 import { QUERY_GC_MS, STORES_STALE_MS } from '#/lib/stores'
 import type { StoreId, StoreInfo } from '#/lib/stores'
 import { FullScreenSpinner } from '#/components/ui'
+import { NoStoresPage } from '#/components/NoStoresPage'
 
 interface StoreContextValue {
   stores: StoreInfo[]
@@ -30,7 +30,7 @@ function resolveStoreId(stores: StoreInfo[]): StoreId {
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const { data: stores = [], isPending, isError } = useQuery({
+  const { data: stores = [], isPending, isError, isFetching, refetch } = useQuery({
     queryKey: ['stores'],
     queryFn: fetchStores,
     staleTime: STORES_STALE_MS,
@@ -57,16 +57,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   if (isError || stores.length === 0) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-6 text-center">
-        <p className="text-[16px] font-semibold text-danger">
-          <Trans
-            i18nKey="errors.noStores"
-            components={{
-              code: <code className="rounded bg-surface px-1" />,
-            }}
-          />
-        </p>
-      </div>
+      <NoStoresPage
+        loadFailed={isError}
+        retrying={isFetching}
+        onRetry={() => {
+          void refetch()
+        }}
+      />
     )
   }
 

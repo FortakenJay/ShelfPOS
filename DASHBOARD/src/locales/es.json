@@ -47,7 +47,19 @@
     "loadCierres": "Error al cargar cierres",
     "loadAudit": "Error al cargar bitácora",
     "loadMovements": "Error al cargar movimientos de efectivo",
-    "noStores": "No hay tiendas registradas. Verifique que el servicio de sync esté activo y que la tabla <code>stores</code> exista en Supabase."
+    "noStoresTitle": "No hay tiendas registradas",
+    "noStores": "Verifique que el servicio de sync esté activo y que la tabla <code>stores</code> exista en Supabase.",
+    "noStoresLoadFailed": "No se pudo consultar la lista de tiendas. Compruebe la conexión a Supabase e intente de nuevo.",
+    "noStoresChecklistTitle": "Qué revisar en cada tienda",
+    "noStoresStepSync": "El servicio Windows «ShelfPOS Sync» está en ejecución (Install-ShelfPOS.ps1).",
+    "noStoresStepInstall": "sync.env tiene la URL y la service role key de Supabase, y sync_store_id está configurado.",
+    "noStoresStepSupabase": "En Supabase ejecutó <code>SUPA.sql</code> y la tabla stores tiene al menos una fila.",
+    "noStoresStepPos": "ShelfPOS se abrió al menos una vez en la caja para registrar el nombre de la tienda."
+  },
+  "notFound": {
+    "title": "Página no encontrada",
+    "description": "La ruta que buscó no existe o fue movida. Use el menú lateral o vuelva al panel.",
+    "backHome": "Ir al panel"
   },
   "dashboard": {
     "overviewTitle": "Resumen",

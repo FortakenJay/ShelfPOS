@@ -47,7 +47,19 @@
     "loadCierres": "加载日结失败",
     "loadAudit": "加载日志失败",
     "loadMovements": "加载现金变动失败",
-    "noStores": "没有已注册的门店。请确认 sync 服务正在运行，且 Supabase 中存在 <code>stores</code> 表。"
+    "noStoresTitle": "没有已注册的门店",
+    "noStores": "请确认 sync 服务正在运行，且 Supabase 中存在 <code>stores</code> 表。",
+    "noStoresLoadFailed": "无法加载门店列表。请检查 Supabase 连接后重试。",
+    "noStoresChecklistTitle": "各门店请检查",
+    "noStoresStepSync": "Windows 服务「ShelfPOS Sync」正在运行（Install-ShelfPOS.ps1）。",
+    "noStoresStepInstall": "sync.env 已配置 Supabase URL、service role key 和 sync_store_id。",
+    "noStoresStepSupabase": "已在 Supabase 执行 <code>SUPA.sql</code>，stores 表至少有一条记录。",
+    "noStoresStepPos": "收银机至少打开过一次 ShelfPOS 以注册门店名称。"
+  },
+  "notFound": {
+    "title": "页面未找到",
+    "description": "您访问的路径不存在或已移动。请使用侧栏菜单或返回面板。",
+    "backHome": "返回面板"
   },
   "dashboard": {
     "overviewTitle": "概览",
