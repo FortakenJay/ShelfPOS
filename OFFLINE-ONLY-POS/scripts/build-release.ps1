@@ -64,7 +64,28 @@ function New-ReleaseZip([string]$SourceDir, [string]$Destination) {
   }
 }
 
+function Invoke-Npm([string[]]$Args) {
+  & npm @Args
+  if ($LASTEXITCODE -ne 0) {
+    throw "npm $($Args -join ' ') failed with exit code $LASTEXITCODE"
+  }
+}
+
+function Remove-BuildOutputs([string]$Root) {
+  $paths = @(
+    (Join-Path $Root 'out'),
+    (Join-Path $Root 'dist')
+  )
+  foreach ($path in $paths) {
+    if (Test-Path $path) {
+      Write-Host "  Removing $path" -ForegroundColor DarkGray
+      Remove-Item -Recurse -Force $path
+    }
+  }
+}
+
 Write-Host "=== ShelfPOS release build v$Version ===" -ForegroundColor Cyan
+$BuildStartedAt = Get-Date
 
 # --- Portable Node.js (must match better-sqlite3 native ABI in sync bundle) ---
 Write-Host ''
@@ -73,14 +94,20 @@ Ensure-PortableNode
 $BundledNodeVersion = & $NodeExe -v
 Write-Host "  Bundled Node: $BundledNodeVersion" -ForegroundColor DarkGray
 
-# --- Electron installer ---
+# --- Electron installer (always clean + full rebuild) ---
 Write-Host ''
-Write-Host '[2/5] Building Electron app (npm run dist)...' -ForegroundColor Yellow
-npm run dist
-if ($LASTEXITCODE -ne 0) { throw 'electron dist failed' }
+Write-Host '[2/5] Building Electron app (clean out/ + dist/, then npm run dist)...' -ForegroundColor Yellow
+Remove-BuildOutputs $Root
+Invoke-Npm @('run', 'dist')
 
-$NsisExe = Get-ChildItem (Join-Path $Root 'dist') -Filter 'ShelfPOS Setup*.exe' | Select-Object -First 1
+$NsisExe = Get-ChildItem (Join-Path $Root 'dist') -Filter 'ShelfPOS Setup*.exe' |
+  Sort-Object LastWriteTime -Descending |
+  Select-Object -First 1
 if (-not $NsisExe) { throw 'ShelfPOS Setup*.exe not found in dist/' }
+if ($NsisExe.LastWriteTime -lt $BuildStartedAt) {
+  throw "NSIS installer is older than this release run ($($NsisExe.FullName)). dist build did not refresh."
+}
+Write-Host "  Installer: $($NsisExe.Name) ($($NsisExe.LastWriteTime))" -ForegroundColor DarkGray
 
 # --- Sync service (install + compile native modules with bundled Node) ---
 Write-Host ''
@@ -91,12 +118,10 @@ $env:PATH = "$NodeDir;$PreviousPath"
 try {
   Push-Location $SyncDir
   if (Test-Path 'node_modules') { Remove-Item -Recurse -Force 'node_modules' }
-  npm ci --omit=dev
-  if ($LASTEXITCODE -ne 0) { throw 'sync-service npm ci failed' }
-  npm run build
-  if ($LASTEXITCODE -ne 0) { throw 'sync-service build failed' }
-  npm rebuild better-sqlite3
-  if ($LASTEXITCODE -ne 0) { throw 'better-sqlite3 rebuild failed' }
+  if (Test-Path 'dist') { Remove-Item -Recurse -Force 'dist' }
+  Invoke-Npm @('ci', '--omit=dev')
+  Invoke-Npm @('run', 'build')
+  Invoke-Npm @('rebuild', 'better-sqlite3')
   Pop-Location
 } finally {
   $env:PATH = $PreviousPath
@@ -122,6 +147,23 @@ New-Item -ItemType Directory -Path (Join-Path $SyncStage 'scripts') -Force | Out
 Copy-Item (Join-Path $SyncDir 'scripts\set-store-id.cjs') (Join-Path $SyncStage 'scripts\set-store-id.cjs')
 Copy-Item $NodeExe (Join-Path $SyncStage 'node.exe')
 Remove-NodeModulesJunk (Join-Path $SyncStage 'node_modules')
+
+$GitSha = 'unknown'
+try {
+  $GitSha = (git -C $Root rev-parse --short HEAD 2>$null)
+  if (-not $GitSha) { $GitSha = 'unknown' }
+} catch {
+  $GitSha = 'unknown'
+}
+
+@(
+  "ShelfPOS release build",
+  "Version: $Version",
+  "Built: $(Get-Date -Format o)",
+  "Git: $GitSha",
+  "Installer: $($NsisExe.Name)",
+  "Node (sync): $BundledNodeVersion"
+) | Set-Content (Join-Path $StageDir 'BUILD_INFO.txt') -Encoding UTF8
 
 @'
 ShelfPOS — instalación en Windows
