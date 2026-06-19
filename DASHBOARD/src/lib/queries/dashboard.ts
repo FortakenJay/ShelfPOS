@@ -222,7 +222,7 @@ async function productPerformanceForSales(
       unitsSold: 0,
       revenue: 0,
       stock: p ? Number(p.stock) : 0,
-      category: p ? (p.category as string | null) : null,
+      category: p ? p.category : null,
     }
     existing.unitsSold += item.quantity ?? 0
     existing.revenue = round2(existing.revenue + (item.line_total ?? 0))
@@ -280,7 +280,7 @@ function inventorySummaryFromProducts(products: ProductLookupRow[]): {
     const threshold = p.stock_threshold ?? def
     retailValue = round2(retailValue + stock * (p.price ?? 0))
     const base = {
-      productId: p.id as number,
+      productId: p.id,
       name: p.name as string,
       sku: String(p.barcode ?? '—'),
       stock,
