@@ -40,6 +40,19 @@ function kpiTrend(current: number, previous: number): DashboardKpiTrend {
 }
 
 type SaleRow = { id: number; total: number | null; discount_total?: number | null; created_at?: string }
+type SalePaymentRow = { sale_id: number | null; method: string | null; amount: number | null }
+type ProductLookupRow = {
+  id: number
+  name: string | null
+  barcode: string | null
+  stock: number | null
+  stock_threshold: number | null
+  price: number | null
+  category: string | null
+  deleted_at: string | null
+}
+
+const DASHBOARD_CHUNK_SIZE = 500
 
 async function salesInRange(
   storeId: StoreId,
@@ -75,29 +88,26 @@ function summarizeSales(
 async function paymentsForSaleIds(
   storeId: StoreId,
   saleIds: number[],
-): Promise<PaymentMethodReport> {
+): Promise<SalePaymentRow[]> {
   if (saleIds.length === 0) {
-    return {
-      cash: 0,
-      card: 0,
-      sinpe: 0,
-      cashCount: 0,
-      cardCount: 0,
-      sinpeCount: 0,
-      total: 0,
-    }
+    return []
   }
 
-  const pays = await fetchInChunks(saleIds, 200, async (chunk) => {
+  return fetchInChunks(saleIds, DASHBOARD_CHUNK_SIZE, async (chunk) => {
     const { data, error } = await getSupabase()
       .from('sale_payments')
-      .select('method, amount')
+      .select('sale_id, method, amount')
       .eq('store_id', storeId)
       .in('sale_id', chunk)
     if (error) throw error
     return data
   })
+}
 
+function summarizePayments(
+  pays: SalePaymentRow[],
+  onlySaleIds?: Set<number>,
+): PaymentMethodReport {
   const report: PaymentMethodReport = {
     cash: 0,
     card: 0,
@@ -108,6 +118,8 @@ async function paymentsForSaleIds(
     total: 0,
   }
   for (const p of pays) {
+    const saleId = Number(p.sale_id)
+    if (onlySaleIds && !onlySaleIds.has(saleId)) continue
     const amt = p.amount ?? 0
     report.total = round2(report.total + amt)
     if (p.method === 'cash') {
@@ -122,6 +134,18 @@ async function paymentsForSaleIds(
     }
   }
   return report
+}
+
+function normalizeDbTs(value: string | null | undefined): string {
+  if (!value) return ''
+  return value.includes('T') ? value.replace('T', ' ') : value
+}
+
+function salesInDbRange(rows: SaleRow[], from: string, to: string): SaleRow[] {
+  return rows.filter((row) => {
+    const ts = normalizeDbTs(row.created_at)
+    return ts !== '' && ts >= from && ts <= to
+  })
 }
 
 function buildSalesTrend(
@@ -165,6 +189,7 @@ function buildSalesByHour(rows: SaleRow[]): SalesByHourPoint[] {
 async function productPerformanceForSales(
   storeId: StoreId,
   sales: SaleRow[],
+  products: ProductLookupRow[],
 ): Promise<{
   topProducts: ProductPerformanceRow[]
   categoryPerformance: CategoryPerformanceRow[]
@@ -174,24 +199,15 @@ async function productPerformanceForSales(
     return { topProducts: [], categoryPerformance: [] }
   }
 
-  const [items, productsResult] = await Promise.all([
-    fetchInChunks(saleIds, 200, async (chunk) => {
-      const { data, error } = await getSupabase()
-        .from('sale_items')
-        .select('product_id, product_name_snapshot, quantity, line_total')
-        .eq('store_id', storeId)
-        .in('sale_id', chunk)
-      if (error) throw error
-      return data
-    }),
-    getSupabase()
-      .from('products')
-      .select('id, barcode, stock, category, deleted_at')
-      .eq('store_id', storeId),
-  ])
-
-  const { data: products, error: pErr } = productsResult
-  if (pErr) throw pErr
+  const items = await fetchInChunks(saleIds, DASHBOARD_CHUNK_SIZE, async (chunk) => {
+    const { data, error } = await getSupabase()
+      .from('sale_items')
+      .select('product_id, product_name_snapshot, quantity, line_total')
+      .eq('store_id', storeId)
+      .in('sale_id', chunk)
+    if (error) throw error
+    return data
+  })
 
   const productMap = new Map(products.map((p) => [p.id, p]))
   const agg = new Map<number, ProductPerformanceRow>()
@@ -237,18 +253,21 @@ function categoryPerformance(
     .slice(0, 8)
 }
 
-async function inventorySummary(storeId: StoreId): Promise<{
+async function loadProducts(storeId: StoreId): Promise<ProductLookupRow[]> {
+  const { data, error } = await getSupabase()
+    .from('products')
+    .select('id, name, barcode, stock, stock_threshold, price, category, deleted_at')
+    .eq('store_id', storeId)
+  if (error) throw error
+  return data
+}
+
+function inventorySummaryFromProducts(products: ProductLookupRow[]): {
   inventory: InventorySummary
   lowStockProducts: InventoryProductRow[]
   outOfStockProducts: InventoryProductRow[]
-}> {
-  const { data, error } = await getSupabase()
-    .from('products')
-    .select('id, name, barcode, stock, stock_threshold, price, deleted_at')
-    .eq('store_id', storeId)
-    .is('deleted_at', null)
-  if (error) throw error
-  const rows = data
+} {
+  const rows = products.filter((p) => p.deleted_at == null)
   const def = 5
   let lowStock = 0
   let outOfStock = 0
@@ -372,50 +391,43 @@ export async function fetchDashboard(storeId: StoreId): Promise<DashboardData> {
   })()
   const lastMonthB = rangeBounds(lastMonthFrom, lastMonthLastDay)
 
-  const salesByRange = new Map<string, Promise<SaleRow[]>>()
-  const loadSales = (from: string, to: string): Promise<SaleRow[]> => {
-    const key = `${from}\0${to}`
-    let pending = salesByRange.get(key)
-    if (!pending) {
-      pending = salesInRange(storeId, from, to)
-      salesByRange.set(key, pending)
-    }
-    return pending
-  }
+  const overallFrom = lastMonthB.from < trendB.from ? lastMonthB.from : trendB.from
+  const overallTo = todayB.to
 
   const [
-    todaySales,
-    yesterdaySales,
-    monthSales,
-    lastMonthSales,
-    trendSales,
-    inv,
+    allSales,
+    products,
     auditRows,
     cashiers,
     activeUsers,
   ] = await Promise.all([
-    loadSales(todayB.from, todayB.to),
-    loadSales(yesterdayB.from, yesterdayB.to),
-    loadSales(monthB.from, monthB.to),
-    loadSales(lastMonthB.from, lastMonthB.to),
-    loadSales(trendB.from, trendB.to),
-    inventorySummary(storeId),
+    salesInRange(storeId, overallFrom, overallTo),
+    loadProducts(storeId),
     recentAudit(storeId),
     cashierPerformance(storeId, monthFrom),
     activeUsernames(storeId, rangeBounds(daysAgoLocal(30), today).from),
   ])
 
-  const [paymentToday, paymentMonth, monthPerf] = await Promise.all([
-    paymentsForSaleIds(
-      storeId,
-      todaySales.map((s) => s.id),
-    ),
+  const todaySales = salesInDbRange(allSales, todayB.from, todayB.to)
+  const yesterdaySales = salesInDbRange(allSales, yesterdayB.from, yesterdayB.to)
+  const monthSales = salesInDbRange(allSales, monthB.from, monthB.to)
+  const lastMonthSales = salesInDbRange(allSales, lastMonthB.from, lastMonthB.to)
+  const trendSales = salesInDbRange(allSales, trendB.from, trendB.to)
+  const inv = inventorySummaryFromProducts(products)
+
+  const [monthPaymentRows, monthPerf] = await Promise.all([
     paymentsForSaleIds(
       storeId,
       monthSales.map((s) => s.id),
     ),
-    productPerformanceForSales(storeId, monthSales),
+    productPerformanceForSales(storeId, monthSales, products),
   ])
+
+  const paymentMonth = summarizePayments(monthPaymentRows)
+  const paymentToday = summarizePayments(
+    monthPaymentRows,
+    new Set(todaySales.map((s) => s.id)),
+  )
 
   const todayS = summarizeSales(todaySales)
   const yesterdayS = summarizeSales(yesterdaySales)

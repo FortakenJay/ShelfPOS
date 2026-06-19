@@ -29,9 +29,20 @@ svc.on('uninstall', () => {
   finish(0, 'ShelfPOSSync service removed.')
 })
 
-svc.on('error', (err) => {
-  finish(1, `Service uninstall failed: ${err}`)
+svc.on('alreadyuninstalled', () => {
+  finish(0, 'ShelfPOSSync service already removed.')
 })
+
+svc.on('error', (err) => {
+  const message = String(err ?? '')
+  if (/skipped because process does not exist/i.test(message)) {
+    finish(0, 'ShelfPOSSync service already removed.')
+    return
+  }
+  finish(1, `Service uninstall failed: ${message}`)
+})
+
+console.log('Removing Windows service ShelfPOSSync…')
 
 setTimeout(() => {
   finish(1, 'Service uninstall timed out.')

@@ -248,8 +248,8 @@ Desinstalar: doble clic en Uninstall-ShelfPOS.cmd (Administrador), o en PowerShe
 Requisitos: Windows 10/11, conexión a Internet para Supabase.
 
 Si el servicio no inicia, abra PowerShell como Admin y ejecute:
-  sc.exe query ShelfPOSSync
-  Get-Service ShelfPOSSync
+  sc.exe query shelfpossync.exe
+  Get-Service shelfpossync.exe
   Get-Content "$env:ProgramFiles\ShelfPOS\sync-service\sync.env"
 
 Nombre interno del servicio: shelfpossync.exe (use: sc.exe query shelfpossync.exe)
@@ -262,7 +262,8 @@ $requiredBundleFiles = @(
   (Join-Path $StageDir 'Uninstall-ShelfPOS.ps1'),
   (Join-Path $SyncStage 'node.exe'),
   (Join-Path $SyncStage 'node_modules\node-windows'),
-  (Join-Path $SyncStage 'scripts\install-windows-service.cjs')
+  (Join-Path $SyncStage 'scripts\install-windows-service.cjs'),
+  (Join-Path $SyncStage 'scripts\uninstall-windows-service.cjs')
 )
 foreach ($path in $requiredBundleFiles) {
   if (-not (Test-Path $path)) {
