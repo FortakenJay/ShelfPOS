@@ -31,7 +31,11 @@ export async function fetchStores(): Promise<StoreInfo[]> {
     .from('stores')
     .select('store_id, display_name')
 
-  if (!registryError && registry.length) {
+  if (registryError) {
+    throw registryError
+  }
+
+  if (registry?.length) {
     for (const row of registry) {
       const id = row.store_id
       const name = row.display_name.trim()

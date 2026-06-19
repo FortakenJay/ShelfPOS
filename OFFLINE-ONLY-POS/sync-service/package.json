@@ -15,12 +15,12 @@
     "install:windows": "node scripts/install-windows-service.cjs"
   },
   "dependencies": {
-    "better-sqlite3": "^12.10.0"
+    "better-sqlite3": "^12.10.0",
+    "node-windows": "^1.0.0-beta.8"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.9.3",
-    "node-windows": "^1.0.0-beta.8",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"
   }

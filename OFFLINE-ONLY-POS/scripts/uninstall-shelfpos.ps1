@@ -1,10 +1,9 @@
-#Requires -RunAsAdministrator
 <#
 .SYNOPSIS
   Removes ShelfPOS sync service and the ShelfPOS desktop app on Windows.
 
 .DESCRIPTION
-  Right-click this script -> Run with PowerShell as Administrator.
+  Double-click Uninstall-ShelfPOS.cmd (recommended), or run this script in PowerShell as Administrator.
 
   1. Stops and deletes the "ShelfPOS Sync" Windows service
   2. Removes C:\Program Files\ShelfPOS\sync-service
@@ -34,6 +33,29 @@ $SyncServiceNames = @('ShelfPOSSync', 'ShelfPOS Sync')
 $SyncInstallDir = Join-Path ${env:ProgramFiles} 'ShelfPOS\sync-service'
 $ShelfPosProgramDir = Join-Path ${env:ProgramFiles} 'ShelfPOS'
 $AppDataDir = Join-Path $env:APPDATA 'shelfpos'
+
+function Test-IsAdministrator {
+  $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+  $principal = New-Object Security.Principal.WindowsPrincipal $identity
+  return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
+function Ensure-Administrator {
+  if (Test-IsAdministrator) { return }
+
+  Write-Host ''
+  Write-Host 'Administrator rights are required to uninstall.' -ForegroundColor Yellow
+  Write-Host 'Requesting elevation (approve the UAC prompt)...' -ForegroundColor Yellow
+  Write-Host ''
+
+  $argList = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $PSCommandPath)
+  if ($RemoveData) { $argList += '-RemoveData' }
+  if ($SkipApp) { $argList += '-SkipApp' }
+  if ($SkipSync) { $argList += '-SkipSync' }
+
+  $proc = Start-Process -FilePath 'powershell.exe' -Verb RunAs -ArgumentList $argList -PassThru -Wait
+  exit $(if ($null -ne $proc.ExitCode) { $proc.ExitCode } else { 1 })
+}
 
 function Write-Step([string]$Message) {
   Write-Host $Message -ForegroundColor Yellow
@@ -73,17 +95,35 @@ function Stop-AndRemove-Service([string]$Name) {
   return $true
 }
 
-function Find-ShelfPosUninstaller {
-  $candidates = @(
-    (Join-Path $env:LOCALAPPDATA 'Programs\ShelfPOS\Uninstall ShelfPOS.exe'),
-    (Join-Path ${env:ProgramFiles} 'ShelfPOS\Uninstall ShelfPOS.exe'),
-    (Join-Path ${env:ProgramFiles(x86)} 'ShelfPOS\Uninstall ShelfPOS.exe')
-  )
+function Remove-ShelfPosWindowsService([string]$InstallDir) {
+  $uninstallJs = Join-Path $InstallDir 'scripts\uninstall-windows-service.cjs'
+  $nodeExe = Join-Path $InstallDir 'node.exe'
+  if (-not (Test-Path $uninstallJs) -or -not (Test-Path $nodeExe)) {
+    return $false
+  }
+  Write-Step 'Removing ShelfPOSSync via node-windows…'
+  & $nodeExe $uninstallJs $InstallDir 2>&1 | Out-Host
+  Start-Sleep -Seconds 2
+  return $true
+}
 
-  foreach ($path in $candidates) {
-    if (Test-Path $path) { return $path }
+function Stop-ShelfPosAppProcesses {
+  Get-Process -Name 'ShelfPOS' -ErrorAction SilentlyContinue | ForEach-Object {
+    Write-Step "Closing process: ShelfPOS (pid $($_.Id))"
+    Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
   }
 
+  Get-CimInstance Win32_Process -Filter "Name = 'electron.exe'" -ErrorAction SilentlyContinue |
+    Where-Object { $_.ExecutablePath -like '*ShelfPOS*' } |
+    ForEach-Object {
+      Write-Step "Closing process: electron (pid $($_.ProcessId))"
+      Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+    }
+
+  Start-Sleep -Seconds 2
+}
+
+function Get-ShelfPosUninstallSpec {
   $registryRoots = @(
     'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*',
     'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*'
@@ -100,18 +140,45 @@ function Find-ShelfPosUninstaller {
     foreach ($entry in $entries) {
       if ($entry.UninstallString) {
         $raw = $entry.UninstallString.Trim()
-        if ($raw -match '^"(?<path>[^"]+)"') {
+        if ($raw -match '^"(?<path>[^"]+)"(?<args>.*)$') {
           $exe = $Matches.path
-        } elseif ($raw -match '^(?<path>\S+\.exe)') {
+          $args = $Matches.args.Trim()
+        } elseif ($raw -match '^(?<path>\S+\.exe)(?<args>\s+.*)?$') {
           $exe = $Matches.path
+          $args = if ($Matches.args) { $Matches.args.Trim() } else { '' }
         } else {
           continue
         }
-        if (Test-Path $exe) { return $exe }
+        if (Test-Path $exe) {
+          return [PSCustomObject]@{
+            Exe = $exe
+            Arguments = $args
+          }
+        }
       }
       if ($entry.InstallLocation) {
         $fromLocation = Join-Path $entry.InstallLocation.Trim('"') 'Uninstall ShelfPOS.exe'
-        if (Test-Path $fromLocation) { return $fromLocation }
+        if (Test-Path $fromLocation) {
+          return [PSCustomObject]@{
+            Exe = $fromLocation
+            Arguments = ''
+          }
+        }
+      }
+    }
+  }
+
+  $candidates = @(
+    (Join-Path $env:LOCALAPPDATA 'Programs\ShelfPOS\Uninstall ShelfPOS.exe'),
+    (Join-Path ${env:ProgramFiles} 'ShelfPOS\Uninstall ShelfPOS.exe'),
+    (Join-Path ${env:ProgramFiles(x86)} 'ShelfPOS\Uninstall ShelfPOS.exe')
+  )
+
+  foreach ($path in $candidates) {
+    if (Test-Path $path) {
+      return [PSCustomObject]@{
+        Exe = $path
+        Arguments = ''
       }
     }
   }
@@ -119,13 +186,51 @@ function Find-ShelfPosUninstaller {
   return $null
 }
 
+function Invoke-ShelfPosUninstaller {
+  param(
+    [Parameter(Mandatory = $true)][string]$Exe,
+    [string]$ExtraArgs = '',
+    [int]$TimeoutSec = 120
+  )
+
+  $argList = @('/S')
+  if ($ExtraArgs) {
+    $argList += ($ExtraArgs -split '\s+' | Where-Object { $_ -and $_ -ne '/S' })
+  }
+
+  Write-Step "Running uninstaller: $Exe $($argList -join ' ')"
+
+  $proc = Start-Process -FilePath $Exe -ArgumentList $argList -PassThru
+  $finished = $proc.WaitForExit($TimeoutSec * 1000)
+  if (-not $finished) {
+    try { $proc.Kill() } catch { }
+    Write-Host "  Uninstaller timed out after ${TimeoutSec}s (ShelfPOS may still be open or waiting for input)." -ForegroundColor Red
+    Write-Host '  Close ShelfPOS from the taskbar, then run Settings -> Apps -> ShelfPOS -> Uninstall.' -ForegroundColor Yellow
+    return $false
+  }
+
+  if ($proc.ExitCode -eq 0) {
+    Write-Ok '  ShelfPOS app uninstalled.'
+    return $true
+  }
+
+  Write-Host "  Uninstaller exited with code $($proc.ExitCode). You may need to remove it from Settings -> Apps." -ForegroundColor Red
+  return $false
+}
+
+Ensure-Administrator
+
 Write-Host ''
 Write-Host '=== ShelfPOS uninstaller ===' -ForegroundColor Cyan
 Write-Host ''
 
+try {
 if (-not $SkipSync) {
   Write-Host '[1/3] Sync service' -ForegroundColor Cyan
   $removedAnyService = $false
+  if (Test-Path $SyncInstallDir) {
+    if (Remove-ShelfPosWindowsService $SyncInstallDir) { $removedAnyService = $true }
+  }
   $serviceNames = @($SyncServiceNames + (Get-ShelfPosSyncServices)) | Select-Object -Unique
   foreach ($name in $serviceNames) {
     if (Stop-AndRemove-Service $name) { $removedAnyService = $true }
@@ -152,15 +257,10 @@ if (-not $SkipSync) {
 Write-Host ''
 if (-not $SkipApp) {
   Write-Host '[2/3] ShelfPOS app' -ForegroundColor Cyan
-  $uninstaller = Find-ShelfPosUninstaller
-  if ($uninstaller) {
-    Write-Step "Running uninstaller: $uninstaller"
-    $proc = Start-Process -FilePath $uninstaller -ArgumentList '/S' -PassThru -Wait
-    if ($proc.ExitCode -eq 0) {
-      Write-Ok '  ShelfPOS app uninstalled.'
-    } else {
-      Write-Host "  Uninstaller exited with code $($proc.ExitCode). You may need to remove it from Settings -> Apps." -ForegroundColor Red
-    }
+  Stop-ShelfPosAppProcesses
+  $uninstallSpec = Get-ShelfPosUninstallSpec
+  if ($uninstallSpec) {
+    Invoke-ShelfPosUninstaller -Exe $uninstallSpec.Exe -ExtraArgs $uninstallSpec.Arguments | Out-Null
   } else {
     Write-Skip '  ShelfPOS uninstaller not found (app may already be removed).'
     Write-Skip '  Tip: Settings -> Apps -> Installed apps -> ShelfPOS -> Uninstall'
@@ -190,3 +290,10 @@ if ($RemoveData) {
 
 Write-Host ''
 Write-Ok 'Uninstall finished.'
+
+} catch {
+  Write-Host ''
+  Write-Host "Uninstall failed: $($_.Exception.Message)" -ForegroundColor Red
+  if ($Host.Name -eq 'ConsoleHost') { Read-Host 'Press Enter to close' }
+  exit 1
+}

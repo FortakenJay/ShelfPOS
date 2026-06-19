@@ -168,6 +168,12 @@ try {
   Invoke-Npm @('ci', '--omit=dev')
   Invoke-Npm @('run', 'build')
   Invoke-Npm @('rebuild', 'better-sqlite3')
+  $syncModules = Join-Path $SyncDir 'node_modules'
+  foreach ($pkg in @('node-windows', 'better-sqlite3')) {
+    if (-not (Test-Path (Join-Path $syncModules $pkg))) {
+      throw "sync-service missing required dependency '$pkg' after npm ci. Check sync-service/package.json and package-lock.json."
+    }
+  }
   Pop-Location
 } finally {
   $env:PATH = $PreviousPath
@@ -181,8 +187,10 @@ if (Test-Path $StageDir) { Remove-Item -Recurse -Force $StageDir }
 New-Item -ItemType Directory -Path $StageDir -Force | Out-Null
 
 Copy-Item $NsisExe.FullName $StageDir
-Copy-Item (Join-Path $Root 'scripts\install-shelfpos.ps1') $StageDir
-Copy-Item (Join-Path $Root 'scripts\uninstall-shelfpos.ps1') $StageDir
+Copy-Item (Join-Path $Root 'scripts\install-shelfpos.ps1') (Join-Path $StageDir 'Install-ShelfPOS.ps1')
+Copy-Item (Join-Path $Root 'scripts\uninstall-shelfpos.ps1') (Join-Path $StageDir 'Uninstall-ShelfPOS.ps1')
+Copy-Item (Join-Path $Root 'scripts\Install-ShelfPOS.cmd') $StageDir
+Copy-Item (Join-Path $Root 'scripts\Uninstall-ShelfPOS.cmd') $StageDir
 
 $SyncStage = Join-Path $StageDir 'sync-service'
 New-Item -ItemType Directory -Path $SyncStage -Force | Out-Null
@@ -191,8 +199,15 @@ Copy-Item -Recurse (Join-Path $SyncDir 'node_modules') (Join-Path $SyncStage 'no
 Copy-Item (Join-Path $SyncDir 'package.json') $SyncStage
 New-Item -ItemType Directory -Path (Join-Path $SyncStage 'scripts') -Force | Out-Null
 Copy-Item (Join-Path $SyncDir 'scripts\set-store-id.cjs') (Join-Path $SyncStage 'scripts\set-store-id.cjs')
+Copy-Item (Join-Path $SyncDir 'scripts\install-windows-service.cjs') (Join-Path $SyncStage 'scripts\install-windows-service.cjs')
+Copy-Item (Join-Path $SyncDir 'scripts\uninstall-windows-service.cjs') (Join-Path $SyncStage 'scripts\uninstall-windows-service.cjs')
 Copy-Item $NodeExe (Join-Path $SyncStage 'node.exe')
 Remove-NodeModulesJunk (Join-Path $SyncStage 'node_modules')
+foreach ($pkg in @('node-windows', 'better-sqlite3')) {
+  if (-not (Test-Path (Join-Path $SyncStage "node_modules\$pkg"))) {
+    throw "Release bundle missing sync dependency '$pkg'. sync-service npm ci may have failed."
+  }
+}
 
 $GitSha = 'unknown'
 try {
@@ -217,13 +232,16 @@ ShelfPOS — instalación en Windows
 
 1. Extraiga este ZIP en una carpeta (ej. Escritorio\ShelfPOS-install).
 2. Doble clic en "ShelfPOS Setup *.exe" e instale la aplicación de caja.
-3. Clic derecho en Install-ShelfPOS.ps1 -> "Ejecutar con PowerShell" (como Administrador).
+3. Doble clic en Install-ShelfPOS.cmd (pide permisos de Administrador automáticamente).
 4. Ingrese la URL de Supabase, la service role key y store_a o store_b.
 
-Install-ShelfPOS.ps1 SOLO instala el servicio "ShelfPOS Sync" (sincronización en segundo plano).
+Ejemplo (PowerShell como Administrador, UNA sola línea):
+  .\Install-ShelfPOS.ps1 -SupabaseUrl "https://xxx.supabase.co" -SupabaseServiceKey "eyJ..." -StoreId store_a
+
+Install-ShelfPOS.cmd / Install-ShelfPOS.ps1 SOLO instalan el servicio "ShelfPOS Sync" (sincronización en segundo plano).
 La app POS se instala por separado con el Setup.exe (paso 2).
 
-Desinstalar (PowerShell como Administrador):
+Desinstalar: doble clic en Uninstall-ShelfPOS.cmd (Administrador), o en PowerShell:
   .\Uninstall-ShelfPOS.ps1
   .\Uninstall-ShelfPOS.ps1 -RemoveData   # también borra %APPDATA%\shelfpos (base de datos, licencia)
 
@@ -231,8 +249,28 @@ Requisitos: Windows 10/11, conexión a Internet para Supabase.
 
 Si el servicio no inicia, abra PowerShell como Admin y ejecute:
   sc.exe query ShelfPOSSync
+  Get-Service ShelfPOSSync
   Get-Content "$env:ProgramFiles\ShelfPOS\sync-service\sync.env"
+
+Nombre interno del servicio: shelfpossync.exe (use: sc.exe query shelfpossync.exe)
 '@ | Set-Content (Join-Path $StageDir 'LEEME.txt') -Encoding UTF8
+
+$requiredBundleFiles = @(
+  (Join-Path $StageDir 'Install-ShelfPOS.cmd'),
+  (Join-Path $StageDir 'Install-ShelfPOS.ps1'),
+  (Join-Path $StageDir 'Uninstall-ShelfPOS.cmd'),
+  (Join-Path $StageDir 'Uninstall-ShelfPOS.ps1'),
+  (Join-Path $SyncStage 'node.exe'),
+  (Join-Path $SyncStage 'node_modules\node-windows'),
+  (Join-Path $SyncStage 'scripts\install-windows-service.cjs')
+)
+foreach ($path in $requiredBundleFiles) {
+  if (-not (Test-Path $path)) {
+    throw "Release bundle incomplete — missing $path"
+  }
+}
+$setupExe = Get-ChildItem $StageDir -Filter 'ShelfPOS Setup*.exe' | Select-Object -First 1
+if (-not $setupExe) { throw "Release bundle incomplete — missing ShelfPOS Setup*.exe in $StageDir" }
 
 Write-Host ''
 Write-Host '[5/5] Creating ZIP...' -ForegroundColor Yellow
@@ -244,4 +282,4 @@ Write-Host "  Folder: $StageDir"
 Write-Host "  Zip:    $ZipPath"
 Write-Host "  Sync Node: $BundledNodeVersion (matches bundled node.exe)"
 Write-Host ''
-Write-Host 'Send the ZIP to the customer. They install Setup.exe, then run Install-ShelfPOS.ps1 as Administrator.' -ForegroundColor Cyan
+Write-Host 'Send the ZIP to the customer. They install Setup.exe, then double-click Install-ShelfPOS.cmd.' -ForegroundColor Cyan

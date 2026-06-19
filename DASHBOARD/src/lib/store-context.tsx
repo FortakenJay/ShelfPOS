@@ -5,6 +5,7 @@ import {
 } from 'react'
 import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useAuth } from '#/lib/auth'
 import { fetchStores } from '#/lib/queries/stores'
 import { QUERY_GC_MS, STORES_STALE_MS } from '#/lib/stores'
 import type { StoreId, StoreInfo } from '#/lib/stores'
@@ -30,9 +31,11 @@ function resolveStoreId(stores: StoreInfo[]): StoreId {
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
+  const { user, loading: authLoading } = useAuth()
   const { data: stores = [], isPending, isError, isFetching, refetch } = useQuery({
-    queryKey: ['stores'],
+    queryKey: ['stores', user?.id],
     queryFn: fetchStores,
+    enabled: !authLoading && Boolean(user),
     staleTime: STORES_STALE_MS,
     gcTime: QUERY_GC_MS,
     refetchIntervalInBackground: false,
@@ -51,7 +54,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const value = { stores, storeId, storeLabel, setStoreId }
 
-  if (isPending) {
+  if (authLoading || (user && isPending)) {
     return <FullScreenSpinner />
   }
 
