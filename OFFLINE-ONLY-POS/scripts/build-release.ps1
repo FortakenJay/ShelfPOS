@@ -233,10 +233,10 @@ ShelfPOS — instalación en Windows
 1. Extraiga este ZIP en una carpeta (ej. Escritorio\ShelfPOS-install).
 2. Doble clic en "ShelfPOS Setup *.exe" e instale la aplicación de caja.
 3. Doble clic en Install-ShelfPOS.cmd (pide permisos de Administrador automáticamente).
-4. Ingrese la URL de Supabase, la service role key y store_a o store_b.
+4. Ingrese la URL de Supabase, la service role key y el nombre de la tienda/caja.
 
 Ejemplo (PowerShell como Administrador, UNA sola línea):
-  .\Install-ShelfPOS.ps1 -SupabaseUrl "https://xxx.supabase.co" -SupabaseServiceKey "eyJ..." -StoreId store_a
+  .\Install-ShelfPOS.ps1 -SupabaseUrl "https://xxx.supabase.co" -SupabaseServiceKey "eyJ..." -StoreName "Store A Register 1"
 
 Install-ShelfPOS.cmd / Install-ShelfPOS.ps1 SOLO instalan el servicio "ShelfPOS Sync" (sincronización en segundo plano).
 La app POS se instala por separado con el Setup.exe (paso 2).

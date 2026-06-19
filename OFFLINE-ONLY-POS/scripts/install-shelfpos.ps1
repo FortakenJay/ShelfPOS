@@ -16,13 +16,18 @@
 .PARAMETER SupabaseServiceKey
   Service role key (Project Settings -> API). NOT the anon key.
 
+.PARAMETER StoreName
+  Human-readable store/register name (e.g. "Leo Bazaar Register 1").
+  Installer converts it to a stable store_id (store_leo_bazaar_register_1).
+
 .PARAMETER StoreId
-  store_a or store_b — stamped on every row pushed to Supabase.
+  Optional explicit store_id override (store_xxx). If omitted, StoreName is used.
 #>
 param(
   [string]$SupabaseUrl,
   [string]$SupabaseServiceKey,
-  [string]$StoreId = 'store_a'
+  [string]$StoreName,
+  [string]$StoreId
 )
 
 $ErrorActionPreference = 'Stop'
@@ -50,7 +55,8 @@ function Ensure-Administrator {
   )
   if ($SupabaseUrl) { $argList += '-SupabaseUrl'; $argList += $SupabaseUrl }
   if ($SupabaseServiceKey) { $argList += '-SupabaseServiceKey'; $argList += $SupabaseServiceKey }
-  if ($StoreId -and $StoreId -ne 'store_a') { $argList += '-StoreId'; $argList += $StoreId }
+  if ($StoreName) { $argList += '-StoreName'; $argList += $StoreName }
+  if ($StoreId) { $argList += '-StoreId'; $argList += $StoreId }
 
   $proc = Start-Process -FilePath 'powershell.exe' -Verb RunAs -ArgumentList $argList -PassThru -Wait
   exit $(if ($null -ne $proc.ExitCode) { $proc.ExitCode } else { 1 })
@@ -74,6 +80,20 @@ function Prompt-Required([string]$Label, [switch]$Secret) {
   return Read-Host $Label
 }
 
+function ConvertTo-StoreId([string]$Name) {
+  $raw = ''
+  if ($null -ne $Name) { $raw = $Name.Trim().ToLowerInvariant() }
+  if (-not $raw) { throw 'Store name is required.' }
+
+  # Keep only a-z, 0-9 and underscore to match SQLite/Supabase-friendly IDs.
+  $slug = $raw -replace '[^a-z0-9]+', '_'
+  $slug = $slug.Trim('_')
+  if (-not $slug) {
+    throw "Store name '$Name' cannot be converted to a valid store_id. Use letters/numbers."
+  }
+  return "store_$slug"
+}
+
 Ensure-Administrator
 
 Write-Host ''
@@ -89,18 +109,29 @@ if (-not $SupabaseServiceKey) {
   $SupabaseServiceKey = Prompt-Required 'Supabase service role key' -Secret
 }
 
-$StoreId = ($StoreId).Trim()
+$StoreId = if ($null -ne $StoreId) { $StoreId.Trim() } else { '' }
+$StoreName = if ($null -ne $StoreName) { $StoreName.Trim() } else { '' }
+
 if (-not $StoreId -or $StoreId -eq '-StoreId' -or $StoreId -match '^-') {
-  Write-Host 'StoreId missing or invalid in command line — using store_a (one register / one PC).' -ForegroundColor DarkYellow
-  Write-Host '  Tip: run on one line, e.g. .\install-shelfpos.ps1 -SupabaseUrl "https://xxx.supabase.co" -SupabaseServiceKey "eyJ..." -StoreId store_a' -ForegroundColor DarkGray
-  $StoreId = 'store_a'
+  $StoreId = ''
+}
+
+if (-not $StoreId) {
+  if (-not $StoreName -or $StoreName -eq '-StoreName' -or $StoreName -match '^-') {
+    $StoreName = Prompt-Required "What's the store name? (e.g. Leo Bazaar Register 1)"
+  }
+  $StoreId = ConvertTo-StoreId $StoreName
+  Write-Host "Store name '$StoreName' mapped to store_id '$StoreId'." -ForegroundColor DarkGray
+} elseif ($StoreName) {
+  Write-Host "StoreId provided ($StoreId). StoreName '$StoreName' will be ignored." -ForegroundColor DarkGray
 }
 if ($StoreId -notmatch '^store_[a-z0-9_]+$') {
   throw @"
-Invalid StoreId: '$StoreId' (use store_a, store_b, etc.)
+Invalid StoreId: '$StoreId'
+Expected format: store_<letters_numbers_underscores>
 
 Example (single line, PowerShell as Administrator):
-  .\install-shelfpos.ps1 -SupabaseUrl "https://YOUR.supabase.co" -SupabaseServiceKey "YOUR_SERVICE_ROLE_KEY" -StoreId store_a
+  .\install-shelfpos.ps1 -SupabaseUrl "https://YOUR.supabase.co" -SupabaseServiceKey "YOUR_SERVICE_ROLE_KEY" -StoreName "Store A Register 1"
 "@
 }
 

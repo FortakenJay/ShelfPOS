@@ -1,6 +1,6 @@
 /**
  * Sets sync_store_id in the local ShelfPOS SQLite database.
- * Usage: node set-store-id.cjs <sqlite-path> <store_a|store_b>
+ * Usage: node set-store-id.cjs <sqlite-path> <store_id>
  */
 const Database = require('better-sqlite3')
 
