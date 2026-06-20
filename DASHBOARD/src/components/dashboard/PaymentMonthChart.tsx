@@ -26,9 +26,9 @@ export function PaymentMonthChart({
   return (
     <ChartFrame>
       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-        <BarChart data={chartData}>
+        <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-          <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+          <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} />
           <YAxis tick={{ fontSize: 11 }} />
           <Tooltip formatter={(v) => formatMoney(Number(v))} />
           <Bar dataKey="total" fill="#2563eb" radius={[4, 4, 0, 0]} />

@@ -15,11 +15,14 @@ import {
   searchProducts,
   softDeleteProduct
 } from '../db/repos/products'
-import { currentLanguage } from '../db/repos/settings'
+import { currentLanguage, receiptLanguage } from '../db/repos/settings'
 import { session } from '../services/session'
 import { writeAudit } from '../db/repos/audit'
 import { buildCsv } from '../services/csv'
 import { PRODUCT_CSV_KEYS, productCsvHeaders } from '../services/csvColumns'
+import { buildShelfLabelLines } from '../services/printTemplates'
+import { insertPrintJob } from '../db/repos/printJobs'
+import { attemptPrintJob, probePrinter, isPrintableCode128Barcode } from '../services/printer'
 import {
   applyProductImport,
   buildProductImportPreview,
@@ -35,6 +38,7 @@ import type {
   ProductImportPreview,
   ProductImportResult,
   ProductInput,
+  PrintStatus,
   StockAlert
 } from '../../shared/types'
 
@@ -57,6 +61,46 @@ export function registerProductHandlers(): void {
 
   handle<{ query: string }, Product[]>('products:search', 'authed', ({ query }) =>
     query?.trim() ? searchProducts(query.trim()) : []
+  )
+
+  handle<{ productId: number; copies?: number }, { printStatus: PrintStatus }>(
+    'products:printLabel',
+    MANAGE,
+    async ({ productId, copies }) => {
+      const product = getProduct(productId)
+      if (!product) throw new AppError('errors.productNotFound')
+      if (!product.barcode.trim()) throw new AppError('errors.invalidInput')
+      if (!isPrintableCode128Barcode(product.barcode)) throw new AppError('errors.invalidInput')
+
+      const labelCopies = Math.max(1, Math.min(20, Math.trunc(copies ?? 1)))
+      const lang = receiptLanguage()
+      await probePrinter()
+      let printStatus: PrintStatus = 'printed'
+      let printedCopies = 0
+      for (let i = 0; i < labelCopies; i++) {
+        const printJobId = insertPrintJob('label', null, {
+          lang,
+          lines: buildShelfLabelLines(
+            {
+              productName: product.name,
+              price: product.price,
+              barcode: product.barcode
+            },
+            lang
+          )
+        })
+        if ((await attemptPrintJob(printJobId)) === 'printed') printedCopies++
+        else printStatus = 'failed'
+      }
+      if (printedCopies > 0) {
+        writeAudit('product_label_printed', {
+          entity: 'product',
+          entityId: productId,
+          detail: `${product.name} x${printedCopies}`
+        })
+      }
+      return { printStatus }
+    }
   )
 
   handle<ProductInput, Product>('products:create', MANAGE, (input) => {

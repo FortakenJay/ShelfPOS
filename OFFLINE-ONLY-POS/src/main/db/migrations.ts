@@ -1,6 +1,6 @@
 import type Database from 'better-sqlite3'
 
-export const SCHEMA_VERSION = 9
+export const SCHEMA_VERSION = 10
 
 type Migration = (db: Database.Database) => void
 
@@ -288,6 +288,38 @@ const migrations: Record<number, Migration> = {
       CREATE INDEX IF NOT EXISTS idx_stock_adj_created ON stock_adjustments(created_at);
 
       INSERT OR IGNORE INTO settings (key, value) VALUES ('sync_store_id', 'store_a');
+    `)
+  },
+
+  // v10 — misc POS lines (price*) without a catalog product.
+  10: (db) => {
+    db.exec(`
+      CREATE TABLE sale_items_new (
+        id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+        sale_id               INTEGER NOT NULL REFERENCES sales(id),
+        product_id            INTEGER REFERENCES products(id),
+        quantity              INTEGER NOT NULL,
+        unit_price            REAL NOT NULL,
+        line_total            REAL NOT NULL,
+        discount              REAL NOT NULL DEFAULT 0,
+        tax_category          TEXT NOT NULL DEFAULT 'standard',
+        line_discount         REAL NOT NULL DEFAULT 0,
+        catalog_unit_price    REAL,
+        product_name_snapshot TEXT
+      );
+
+      INSERT INTO sale_items_new (
+        id, sale_id, product_id, quantity, unit_price, line_total,
+        discount, tax_category, line_discount, catalog_unit_price, product_name_snapshot
+      )
+      SELECT
+        id, sale_id, product_id, quantity, unit_price, line_total,
+        discount, tax_category, line_discount, catalog_unit_price, product_name_snapshot
+      FROM sale_items;
+
+      DROP TABLE sale_items;
+      ALTER TABLE sale_items_new RENAME TO sale_items;
+      CREATE INDEX IF NOT EXISTS idx_sale_items_sale ON sale_items(sale_id);
     `)
   }
 }

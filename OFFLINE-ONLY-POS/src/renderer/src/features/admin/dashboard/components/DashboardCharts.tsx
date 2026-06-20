@@ -4,6 +4,7 @@ import type { DashboardOverview } from '@shared/types'
 import { useRechartsModule } from '../hooks/useRechartsModule'
 import { DashboardCard, DashboardEmpty } from './DashboardPrimitives'
 import { DashboardChartFallback } from './DashboardChartFallback'
+import { PaymentMethodsPieChart } from './PaymentMethodsPieChart'
 
 const CHART_COLORS = ['#2563eb', '#16a34a', '#d97706', '#7c3aed', '#0891b2']
 
@@ -54,12 +55,8 @@ export function SalesAnalyticsSection({ data }: { data: DashboardOverview }): Re
     Bar,
     BarChart,
     CartesianGrid,
-    Cell,
-    Legend,
     Line,
     LineChart,
-    Pie,
-    PieChart,
     ResponsiveContainer,
     Tooltip,
     XAxis,
@@ -131,19 +128,7 @@ export function SalesAnalyticsSection({ data }: { data: DashboardOverview }): Re
           {paymentSlices.length === 0 ? (
             <DashboardEmpty message={t('common.noData')} />
           ) : (
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={paymentSlices} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={72} label>
-                    {paymentSlices.map((slice, index) => (
-                      <Cell key={slice.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(v) => formatMoney(Number(v ?? 0))} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+            <PaymentMethodsPieChart slices={paymentSlices} />
           )}
         </DashboardCard>
       </div>

@@ -16,7 +16,17 @@ const nodeFiles = [
 
 export default tseslint.config(
   {
-    ignores: ['out/**', 'dist/**', 'node_modules/**', 'private/**', '**/*.d.ts']
+    ignores: [
+      'out/**',
+      'dist/**',
+      'release/**',
+      'node_modules/**',
+      'private/**',
+      'sync-service/dist/**',
+      'sync-service/scripts/**',
+      'electron.vite.config.*.mjs',
+      '**/*.d.ts'
+    ]
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

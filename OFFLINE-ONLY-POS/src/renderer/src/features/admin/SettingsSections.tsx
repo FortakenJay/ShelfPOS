@@ -1,9 +1,26 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { api, ApiError } from '@/lib/api'
+import { useToasts } from '@/lib/toast'
 import { Button, Field, Input, Select } from '@/components/ui'
 import type { SettingsDraft } from './settingsDraft'
-import type { AppSettings, IdType, Language } from '@shared/types'
+import type { ActionShortcutKey, AppSettings, IdType, Language } from '@shared/types'
 
 const ID_TYPES: IdType[] = ['fisica', 'juridica', 'dimex', 'nite']
+const SHORTCUT_OPTIONS: ActionShortcutKey[] = [
+  'F1',
+  'F2',
+  'F3',
+  'F4',
+  'F5',
+  'F6',
+  'F7',
+  'F8',
+  'F9',
+  'F10',
+  'F11',
+  'F12'
+]
 
 function SettingsSaveRow({
   saving,
@@ -214,6 +231,119 @@ export function SettingsTaxSection({
         </Field>
       </div>
       <SettingsSaveRow saving={saving} disabled={!dirty} onSave={onSave} />
+    </section>
+  )
+}
+
+export function SettingsShortcutsSection({
+  draft,
+  onChange,
+  saving,
+  dirty,
+  hasConflict,
+  onSave
+}: {
+  draft: SettingsDraft
+  onChange: (patch: Partial<SettingsDraft>) => void
+  saving: boolean
+  dirty: boolean
+  hasConflict: boolean
+  onSave: () => void
+}): React.JSX.Element {
+  const { t } = useTranslation()
+  const toasts = useToasts()
+  const [colonTestPending, setColonTestPending] = useState(false)
+  const runColonTest = (): void => {
+    if (colonTestPending) return
+    setColonTestPending(true)
+    void api.printer
+      .colonTest()
+      .then(() => toasts.success('settings.colonTestSent'))
+      .catch((err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown'))
+      .finally(() => setColonTestPending(false))
+  }
+  const optionLabel = (k: ActionShortcutKey): string => t(`settings.shortcuts.options.${k}`, k)
+
+  return (
+    <section className="rounded-lg border-2 border-line bg-white p-5">
+      <h2 className="mb-1 text-lg font-bold">{t('settings.shortcuts.title')}</h2>
+      <p className="mb-4 text-[13px] text-slate-500">{t('settings.shortcuts.hint')}</p>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <Field label={t('settings.shortcuts.openFloat')}>
+          <Select
+            value={draft.shortcutOpenFloat}
+            onChange={(e) => onChange({ shortcutOpenFloat: e.target.value as ActionShortcutKey })}
+          >
+            {SHORTCUT_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {optionLabel(opt)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label={t('settings.shortcuts.cashIn')}>
+          <Select
+            value={draft.shortcutCashIn}
+            onChange={(e) => onChange({ shortcutCashIn: e.target.value as ActionShortcutKey })}
+          >
+            {SHORTCUT_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {optionLabel(opt)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label={t('settings.shortcuts.cashOut')}>
+          <Select
+            value={draft.shortcutCashOut}
+            onChange={(e) => onChange({ shortcutCashOut: e.target.value as ActionShortcutKey })}
+          >
+            {SHORTCUT_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {optionLabel(opt)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label={t('settings.shortcuts.drawerAction')}>
+          <Select
+            value={draft.shortcutDrawerAction}
+            onChange={(e) => onChange({ shortcutDrawerAction: e.target.value as ActionShortcutKey })}
+          >
+            {SHORTCUT_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {optionLabel(opt)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label={t('settings.shortcuts.printLabel')}>
+          <Select
+            value={draft.shortcutPrintLabel}
+            onChange={(e) => onChange({ shortcutPrintLabel: e.target.value as ActionShortcutKey })}
+          >
+            {SHORTCUT_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {optionLabel(opt)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      </div>
+      {hasConflict && <p className="mt-3 text-[14px] font-semibold text-danger">{t('settings.shortcuts.conflict')}</p>}
+      <div className="mt-5 border-t border-line pt-4">
+        <p className="mb-2 text-[14px] font-semibold text-slate-700">{t('settings.colonTest')}</p>
+        <p className="mb-3 text-[13px] text-slate-500">{t('settings.colonTestHint')}</p>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={colonTestPending}
+          onClick={runColonTest}
+        >
+          {t('settings.colonTest')}
+        </Button>
+      </div>
+      <SettingsSaveRow saving={saving} disabled={!dirty || hasConflict} onSave={onSave} />
     </section>
   )
 }

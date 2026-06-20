@@ -10,9 +10,11 @@ import type {
   CashDrawerStatus,
   CashMovementInput,
   CashMovementRow,
+  CartRemoveAuthorizeInput,
   CierreConfirmInput,
   CierreConfirmResult,
   CierreDiscrepancyAlert,
+  CierreHistoryFilter,
   CierrePreview,
   CierreRecord,
   CreateReturnInput,
@@ -39,7 +41,9 @@ import type {
   ProductInput,
   ReportData,
   ReportType,
+  ReprintReceiptResult,
   SaleDetail,
+  SaleReprintRow,
   SessionUser,
   SettingsUpdateInput,
   StockAlert,
@@ -109,18 +113,27 @@ export const api = {
     importConfirm: (filePath: string, stockMode: ProductImportStockMode = 'add') =>
       call<ProductImportResult>('products:importCsvConfirm', { filePath, stockMode }),
     importEfacturaConfirm: (filePath: string, stockMode: ProductImportStockMode = 'add') =>
-      call<ProductImportResult>('products:importEfacturaConfirm', { filePath, stockMode })
+      call<ProductImportResult>('products:importEfacturaConfirm', { filePath, stockMode }),
+    printLabel: (productId: number, copies = 1) =>
+      call<{ printStatus: PrintStatus }>('products:printLabel', { productId, copies })
   },
   sales: {
     create: (input: CreateSaleInput) => call<CreateSaleResult>('sales:create', input),
     findForReturn: (params: { saleId?: number; date?: string }) =>
-      call<SaleDetail[]>('sales:findForReturn', params)
+      call<SaleDetail[]>('sales:findForReturn', params),
+    listForReprint: () => call<SaleReprintRow[]>('sales:listForReprint'),
+    reprintReceipt: (saleId: number) =>
+      call<ReprintReceiptResult>('sales:reprintReceipt', { saleId })
   },
   returns: {
     create: (input: CreateReturnInput) => call<CreateReturnResult>('returns:create', input)
   },
   discount: {
     authorize: (input: DiscountAuthorizeInput) => call<null>('discount:authorize', input)
+  },
+  cart: {
+    removeAuthorize: (input: CartRemoveAuthorizeInput) =>
+      call<null>('cart:removeAuthorize', input)
   },
   priceOverride: {
     authorize: (input: PriceOverrideAuthorizeInput) =>
@@ -139,7 +152,7 @@ export const api = {
   cierre: {
     preview: () => call<CierrePreview>('cierre:preview'),
     confirm: (input: CierreConfirmInput) => call<CierreConfirmResult>('cierre:confirm', input),
-    history: () => call<CierreRecord[]>('cierre:history'),
+    history: (filter: CierreHistoryFilter) => call<CierreRecord[]>('cierre:history', filter),
     discrepancyAlerts: () => call<CierreDiscrepancyAlert[]>('cierre:discrepancyAlerts'),
     exportPdf: (cierreId: number) =>
       call<{ canceled: boolean; path?: string }>('cierre:exportPdf', { cierreId })
@@ -164,6 +177,10 @@ export const api = {
   printQueue: {
     list: () => call<PrintJobRow[]>('printQueue:list'),
     retry: (id: number) => call<{ printStatus: PrintStatus }>('printQueue:retry', { id })
+  },
+  printer: {
+    openDrawer: () => call<null>('printer:openDrawer'),
+    colonTest: () => call<null>('printer:colonTest')
   },
   backup: {
     info: () => call<BackupInfo>('backup:info'),

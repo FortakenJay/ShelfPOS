@@ -18,6 +18,7 @@ import { findPresence } from '#/lib/store-presence'
 const NAV = [
   { to: '/dashboard', labelKey: 'nav.dashboard', search: { tab: 'home' as const } },
   { to: '/reports', labelKey: 'nav.reports' },
+  { to: '/cierres', labelKey: 'nav.cierres' },
   { to: '/movements', labelKey: 'nav.cashMovements' },
   { to: '/audit', labelKey: 'nav.audit' },
 ] as const

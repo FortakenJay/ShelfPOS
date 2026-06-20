@@ -1,7 +1,14 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatMoney } from '@/lib/format'
-import { catalogUnitPrice, lineTotal, lineUnitPrice } from '@/lib/pricing'
+import {
+  cartLineDisplayName,
+  cartLineHasCustomPrice,
+  cartLineKey,
+  cartLineShowsBulk,
+  cartLineTotal,
+  cartLineUnitPrice
+} from '@/lib/cartLine'
 import type { CartLine } from './types'
 import { commitEditableOnEnter } from './posKeyboard'
 
@@ -53,13 +60,14 @@ export function POSCartPanel({
   cart: CartLine[]
   itemsGross: number
   discountTotal: number
-  onLineDiscount: (productId: number) => void
-  onLinePrice: (productId: number) => void
+  onLineDiscount: (lineKey: string) => void
+  onLinePrice: (lineKey: string) => void
   onCartDiscount: () => void
-  onSetQuantity: (productId: number, quantity: number) => void
-  onRemoveLine: (productId: number) => void
+  onSetQuantity: (lineKey: string, quantity: number) => void
+  onRemoveLine: (lineKey: string) => void
 }): React.JSX.Element {
   const { t } = useTranslation()
+  const miscLabel = t('pos.miscItemName')
 
   return (
     <>
@@ -89,16 +97,22 @@ export function POSCartPanel({
             </thead>
             <tbody>
               {cart.map((line) => {
-                const unit = lineUnitPrice(line.product, line.quantity, line.priceOverride)
-                const isBulk =
-                  line.priceOverride == null &&
-                  catalogUnitPrice(line.product, line.quantity) !== line.product.price
-                const hasCustomPrice = line.priceOverride != null
+                const lineKey = cartLineKey(line)
+                const unit = cartLineUnitPrice(line)
+                const isBulk = cartLineShowsBulk(line)
+                const hasCustomPrice = cartLineHasCustomPrice(line)
                 return (
-                  <tr key={line.product.id} className="border-b border-line bg-white">
+                  <tr key={lineKey} className="border-b border-line bg-white">
                     <td className="px-4 py-3">
-                      <span className="block text-[17px] font-semibold">{line.product.name}</span>
+                      <span className="block text-[17px] font-semibold">
+                        {cartLineDisplayName(line, miscLabel)}
+                      </span>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-[16px]">
+                        {line.kind === 'misc' && (
+                          <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[14px] font-bold text-slate-700">
+                            {t('pos.miscItemBadge')}
+                          </span>
+                        )}
                         {isBulk && (
                           <span className="rounded bg-cta/10 px-1.5 py-0.5 text-[14px] font-bold text-cta">
                             {t('pos.bulkApplied')}
@@ -116,14 +130,14 @@ export function POSCartPanel({
                         )}
                         <button
                           type="button"
-                          onClick={() => onLinePrice(line.product.id)}
+                          onClick={() => onLinePrice(lineKey)}
                           className="text-[16px] font-bold text-primary hover:underline"
                         >
                           {t('pos.priceBtn')}
                         </button>
                         <button
                           type="button"
-                          onClick={() => onLineDiscount(line.product.id)}
+                          onClick={() => onLineDiscount(lineKey)}
                           className="text-[16px] font-bold text-primary hover:underline"
                         >
                           {t('pos.discountBtn')}
@@ -134,7 +148,7 @@ export function POSCartPanel({
                       <div className="flex items-center justify-center gap-1">
                         <button
                           type="button"
-                          onClick={() => onSetQuantity(line.product.id, line.quantity - 1)}
+                          onClick={() => onSetQuantity(lineKey, line.quantity - 1)}
                           className="h-11 w-11 rounded-md border-2 border-line text-xl font-bold hover:border-primary"
                           aria-label="-"
                         >
@@ -142,12 +156,12 @@ export function POSCartPanel({
                         </button>
                         <CartQtyInput
                           value={line.quantity}
-                          onCommit={(qty) => onSetQuantity(line.product.id, qty)}
+                          onCommit={(qty) => onSetQuantity(lineKey, qty)}
                           ariaLabel={t('pos.qty')}
                         />
                         <button
                           type="button"
-                          onClick={() => onSetQuantity(line.product.id, line.quantity + 1)}
+                          onClick={() => onSetQuantity(lineKey, line.quantity + 1)}
                           className="h-11 w-11 rounded-md border-2 border-line text-xl font-bold hover:border-primary"
                           aria-label="+"
                         >
@@ -157,14 +171,12 @@ export function POSCartPanel({
                     </td>
                     <td className="px-2 py-3 text-right text-[16px]">{formatMoney(unit)}</td>
                     <td className="px-2 py-3 text-right text-[17px] font-bold">
-                      {formatMoney(
-                        lineTotal(line.product, line.quantity, line.discount, line.priceOverride)
-                      )}
+                      {formatMoney(cartLineTotal(line))}
                     </td>
                     <td className="px-2 py-2 text-center">
                       <button
                         type="button"
-                        onClick={() => onRemoveLine(line.product.id)}
+                        onClick={() => onRemoveLine(lineKey)}
                         aria-label={t('pos.remove')}
                         className="h-11 w-11 rounded-md text-xl font-bold text-danger hover:bg-red-50"
                       >
@@ -179,24 +191,32 @@ export function POSCartPanel({
         )}
       </div>
 
-      <div className="border-t-2 border-line bg-white p-4">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-[18px] font-semibold text-slate-500">{t('pos.subtotal')}</span>
-          <span className="text-[18px] font-bold">{formatMoney(itemsGross)}</span>
+      <div className="border-t-2 border-line bg-slate-50 px-4 py-3">
+        <div className="flex items-center justify-between text-[16px]">
+          <span className="font-semibold text-slate-600">{t('pos.subtotal')}</span>
+          <span className="font-bold">{formatMoney(itemsGross)}</span>
         </div>
-        <div className="flex items-center justify-between">
+        {discountTotal > 0 && (
+          <div className="mt-1 flex items-center justify-between text-[16px] text-danger">
+            <button
+              type="button"
+              onClick={onCartDiscount}
+              className="font-semibold hover:underline"
+            >
+              {t('pos.cartDiscount')}
+            </button>
+            <span className="font-bold">−{formatMoney(discountTotal)}</span>
+          </div>
+        )}
+        {discountTotal <= 0 && cart.length > 0 && (
           <button
             type="button"
             onClick={onCartDiscount}
-            disabled={cart.length === 0}
-            className="text-[18px] font-bold text-primary hover:underline disabled:text-slate-300"
+            className="mt-2 text-[15px] font-bold text-primary hover:underline"
           >
             {t('pos.cartDiscount')}
           </button>
-          <span className="text-[18px] font-bold text-danger">
-            {discountTotal > 0 ? `−${formatMoney(discountTotal)}` : '—'}
-          </span>
-        </div>
+        )}
       </div>
     </>
   )

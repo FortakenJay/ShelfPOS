@@ -49,10 +49,15 @@ function monthRange(monthsAgo: number): DateRange {
 function grossProfit(filter: { fromTs: string; toTs: string }): number {
   const row = getDb()
     .prepare(
-      `SELECT COALESCE(SUM(si.line_total - COALESCE(p.cost_price, 0) * si.quantity), 0) AS profit
+      `SELECT COALESCE(SUM(
+         si.line_total - CASE
+           WHEN si.product_id IS NULL THEN 0
+           ELSE COALESCE(p.cost_price, 0) * si.quantity
+         END
+       ), 0) AS profit
        FROM sale_items si
        JOIN sales s ON s.id = si.sale_id
-       JOIN products p ON p.id = si.product_id
+       LEFT JOIN products p ON p.id = si.product_id
        WHERE s.created_at >= @fromTs AND s.created_at <= @toTs`
     )
     .get(filter) as { profit: number }

@@ -10,13 +10,21 @@ import { Button, Field, Input, Td, Th } from '@/components/ui'
 import { MoneyInput } from '@/components/MoneyInput'
 import { CashDrawerSummary } from '@/features/pos/CashDrawerSummary'
 import { CierreDiscrepancyAlerts } from './CierreDiscrepancyAlerts'
-import type { CierreDiscountReport, CierrePreview, CierrePriceOverrideReport, CierreRecord } from '@shared/types'
+import { DateRangePicker } from '@/components/DateRangePicker'
+import { rangeForReportPeriod } from '@/components/dateRangePresets'
+import type {
+  CierreDiscountReport,
+  CierrePreview,
+  CierrePriceOverrideReport,
+  CierreRecord,
+  DateRange
+} from '@shared/types'
 
 type CierreStep = 'count' | 'confirm'
 
 export function CierrePage(): React.JSX.Element {
   return (
-    <RequireRole roles={['sales']}>
+    <RequireRole roles={['sales', 'admin']}>
       <Cierre />
     </RequireRole>
   )
@@ -32,15 +40,17 @@ function Cierre(): React.JSX.Element {
   const [step, setStep] = useState<CierreStep>('count')
   const [countedCash, setCountedCash] = useState('')
   const [notes, setNotes] = useState('')
+  const [adminRange, setAdminRange] = useState<DateRange>(() => rangeForReportPeriod('today'))
 
   const { data: preview, isLoading: previewLoading } = useQuery({
     queryKey: ['cierrePreview', 2],
     queryFn: api.cierre.preview,
-    staleTime: 0
+    staleTime: 0,
+    enabled: !isAdmin
   })
   const { data: historyRows } = useQuery({
-    queryKey: ['cierreHistory'],
-    queryFn: api.cierre.history,
+    queryKey: ['cierreHistory', adminRange.from, adminRange.to],
+    queryFn: () => api.cierre.history({ range: adminRange }),
     enabled: isAdmin
   })
 
@@ -77,6 +87,7 @@ function Cierre(): React.JSX.Element {
       void queryClient.invalidateQueries({ queryKey: ['cierreHistory'] })
       void queryClient.invalidateQueries({ queryKey: ['cierreDiscrepancyAlerts'] })
       void queryClient.invalidateQueries({ queryKey: ['cashStatus'] })
+      void queryClient.invalidateQueries({ queryKey: ['salesForReprint'] })
     },
     onError: (err) => {
       const key = err instanceof ApiError ? err.key : 'errors.unknown'
@@ -98,6 +109,33 @@ function Cierre(): React.JSX.Element {
       return
     }
     mutation.mutate({ notes, countedCash: countedNum })
+  }
+
+  if (isAdmin) {
+    const adminRows = historyRows ?? []
+    const adminRowsTruncated = adminRows.length > 500
+    const adminVisibleRows = adminRowsTruncated ? adminRows.slice(0, 500) : adminRows
+    const adminFilteredRows = adminVisibleRows.filter((row) => {
+      if (!row.closed_at) return false
+      const day = row.closed_at.slice(0, 10)
+      return day >= adminRange.from && day <= adminRange.to
+    })
+
+    return (
+      <div className="p-6">
+        <div className="mx-auto w-full max-w-6xl space-y-6">
+          <h1 className="text-2xl font-bold">{t('cierre.title')}</h1>
+          <CierreDiscrepancyAlerts />
+          <AdminCierreSummary
+            filteredRows={adminFilteredRows}
+            range={adminRange}
+            onRangeChange={setAdminRange}
+            truncated={adminRowsTruncated}
+          />
+          <CierreHistory historyRows={adminFilteredRows} />
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -205,10 +243,65 @@ function Cierre(): React.JSX.Element {
             </div>
           )}
         </div>
-
-        {isAdmin && <CierreHistory historyRows={historyRows} />}
       </div>
     </div>
+  )
+}
+
+function AdminCierreSummary({
+  filteredRows,
+  range,
+  onRangeChange,
+  truncated
+}: {
+  filteredRows: CierreRecord[]
+  range: DateRange
+  onRangeChange: (range: DateRange) => void
+  truncated: boolean
+}): React.JSX.Element {
+  const { t } = useTranslation()
+
+  const totals = filteredRows.reduce(
+    (acc, row) => {
+      acc.sales += row.total_sales ?? 0
+      acc.cash += row.total_cash ?? 0
+      acc.card += row.total_card ?? 0
+      acc.sinpe += row.total_sinpe ?? 0
+      return acc
+    },
+    { sales: 0, cash: 0, card: 0, sinpe: 0 }
+  )
+
+  const countLabel =
+    truncated && filteredRows.length >= 500
+      ? `${filteredRows.length}+`
+      : String(filteredRows.length)
+
+  return (
+    <section className="rounded-lg border-2 border-line bg-white p-5">
+      <h2 className="mb-3 text-lg font-bold">{t('cierre.history')}</h2>
+      <div className="mb-4">
+        <DateRangePicker value={range} onChange={onRangeChange} />
+      </div>
+      <div className="mb-4 text-[13px] text-slate-500">
+        {t('cierre.filteredRangeSummary', {
+          from: range.from,
+          to: range.to,
+          count: countLabel
+        })}
+      </div>
+      {truncated && (
+        <p className="mb-4 text-[13px] font-semibold text-warning">
+          {t('cierre.historyTruncatedWarning')}
+        </p>
+      )}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <SummaryCell label={t('cierre.totalSales')} value={truncated ? t('common.dash') : formatMoney(totals.sales)} />
+        <SummaryCell label={t('cierre.totalCash')} value={truncated ? t('common.dash') : formatMoney(totals.cash)} />
+        <SummaryCell label={t('cierre.totalCard')} value={truncated ? t('common.dash') : formatMoney(totals.card)} />
+        <SummaryCell label={t('cierre.totalSinpe')} value={truncated ? t('common.dash') : formatMoney(totals.sinpe)} />
+      </div>
+    </section>
   )
 }
 

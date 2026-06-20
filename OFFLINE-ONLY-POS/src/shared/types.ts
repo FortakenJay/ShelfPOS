@@ -2,8 +2,21 @@ export type Role = 'sales' | 'product_manager' | 'admin'
 export type PaymentMethod = 'cash' | 'card' | 'sinpe'
 export type Language = 'es' | 'zh-CN'
 export type StockStatus = 'all' | 'low' | 'zero' | 'negative'
+export type ActionShortcutKey =
+  | 'F1'
+  | 'F2'
+  | 'F3'
+  | 'F4'
+  | 'F5'
+  | 'F6'
+  | 'F7'
+  | 'F8'
+  | 'F9'
+  | 'F10'
+  | 'F11'
+  | 'F12'
 export type PrintJobStatus = 'pending' | 'printed' | 'failed'
-export type PrintJobType = 'receipt' | 'report' | 'cierre'
+export type PrintJobType = 'receipt' | 'report' | 'cierre' | 'label'
 export type PrintStatus = 'printed' | 'failed'
 export type ReportType = 'summary' | 'byPayment' | 'topProducts' | 'inventory' | 'taxBreakdown'
 
@@ -28,6 +41,11 @@ export interface AppSettings {
   storeName: string
   stockThresholdDefault: number
   scannerBurstMs: number
+  shortcutOpenFloat: ActionShortcutKey
+  shortcutCashIn: ActionShortcutKey
+  shortcutCashOut: ActionShortcutKey
+  shortcutDrawerAction: ActionShortcutKey
+  shortcutPrintLabel: ActionShortcutKey
   firstRunComplete: boolean
   cajaPinConfigured: boolean
   // Tax regime + IVA rate mapping (IVA dormant while regime is 'simplificado').
@@ -173,8 +191,19 @@ export interface CreateSaleItemInput {
   unitPrice?: number
 }
 
+export interface CreateSaleMiscItemInput {
+  miscItem: true
+  quantity: number
+  unitPrice: number
+  /** Original typed price when the cashier changed it before checkout. */
+  catalogUnitPrice?: number
+  discount?: number
+}
+
+export type CreateSaleLineInput = CreateSaleItemInput | CreateSaleMiscItemInput
+
 export interface CreateSaleInput {
-  items: CreateSaleItemInput[]
+  items: CreateSaleLineInput[]
   payments: SalePaymentInput[]
   /** Absolute discount (₡) applied to the whole cart, on top of line discounts. */
   cartDiscount?: number
@@ -183,6 +212,8 @@ export interface CreateSaleInput {
   tendered?: number
   /** Required when any line or cart discount is applied. Caja or manager PIN. */
   discountPin?: string
+  /** When false, sale completes without sending the receipt to the printer. Default true. */
+  printReceipt?: boolean
 }
 
 export interface CreateSaleResult {
@@ -191,6 +222,19 @@ export interface CreateSaleResult {
   total: number
   change: number | null
   stockAlerts: StockAlert[]
+  printJobId: number
+  printStatus: PrintStatus
+}
+
+export interface SaleReprintRow {
+  saleId: number
+  consecutivo: string | null
+  total: number
+  createdAt: string
+  cashier: string
+}
+
+export interface ReprintReceiptResult {
   printJobId: number
   printStatus: PrintStatus
 }
@@ -607,6 +651,10 @@ export interface CierreConfirmInput {
   countedCash: number
 }
 
+export interface CierreHistoryFilter {
+  range: DateRange
+}
+
 export interface CierreConfirmResult {
   cierreId: number
   printStatus: PrintStatus
@@ -633,6 +681,12 @@ export interface DiscountAuthorizeInput {
   kind: 'line' | 'cart'
   amount: number
   productName?: string
+}
+
+export interface CartRemoveAuthorizeInput {
+  pin: string
+  productName: string
+  quantity: number
 }
 
 export interface PriceOverrideAuthorizeInput {
@@ -698,6 +752,11 @@ export interface SettingsUpdateInput {
   storeDistrict?: string
   storeAddress?: string
   receiptFooter?: string
+  shortcutOpenFloat?: ActionShortcutKey
+  shortcutCashIn?: ActionShortcutKey
+  shortcutCashOut?: ActionShortcutKey
+  shortcutDrawerAction?: ActionShortcutKey
+  shortcutPrintLabel?: ActionShortcutKey
 }
 
 // --- cash drawer ---
@@ -765,6 +824,7 @@ export interface AuditUser {
 export type PrintLine =
   | { t: 'text'; v: string; align?: 'lt' | 'ct' | 'rt'; bold?: boolean; big?: boolean }
   | { t: 'row'; l: string; r: string; bold?: boolean }
+  | { t: 'barcode'; v: string; h?: number; w?: number; align?: 'lt' | 'ct' | 'rt' }
   | { t: 'hr' }
   | { t: 'feed'; n?: number }
 
@@ -812,12 +872,16 @@ export const IPC_CHANNELS = [
   'products:importCsvConfirm',
   'products:importEfacturaPreview',
   'products:importEfacturaConfirm',
+  'products:printLabel',
   'products:byBarcode',
   'products:search',
   'sales:create',
   'sales:findForReturn',
+  'sales:listForReprint',
+  'sales:reprintReceipt',
   'returns:create',
   'discount:authorize',
+  'cart:removeAuthorize',
   'priceOverride:authorize',
   'reports:run',
   'reports:print',
@@ -841,6 +905,8 @@ export const IPC_CHANNELS = [
   'users:delete',
   'printQueue:list',
   'printQueue:retry',
+  'printer:openDrawer',
+  'printer:colonTest',
   'backup:info',
   'backup:runManual',
   'backup:exportCsv'

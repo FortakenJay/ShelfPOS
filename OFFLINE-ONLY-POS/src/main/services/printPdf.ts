@@ -39,6 +39,11 @@ function printLinesToHtml(lines: PrintLine[]): string {
         body.push(`<div class="${cls}">${escapeHtml(line.v)}</div>`)
         break
       }
+      case 'barcode': {
+        const align = line.align === 'rt' ? 'rt' : line.align === 'ct' ? 'ct' : 'lt'
+        body.push(`<div class="text ${align}">[${escapeHtml(line.v)}]</div>`)
+        break
+      }
     }
   }
 

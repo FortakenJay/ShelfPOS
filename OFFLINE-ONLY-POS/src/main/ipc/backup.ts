@@ -45,11 +45,13 @@ export function registerBackupHandlers(backup: BackupService): void {
         .prepare(
           `SELECT s.id AS sale_id, s.created_at, u.username AS cashier, s.payment_method,
                   s.sinpe_ref, s.total AS sale_total, s.cierre_id,
-                  p.barcode, p.name AS product, si.quantity, si.unit_price, si.line_total
+                  COALESCE(p.barcode, '') AS barcode,
+                  COALESCE(si.product_name_snapshot, p.name) AS product,
+                  si.quantity, si.unit_price, si.line_total
            FROM sales s
            JOIN users u ON u.id = s.user_id
            JOIN sale_items si ON si.sale_id = s.id
-           JOIN products p ON p.id = si.product_id
+           LEFT JOIN products p ON p.id = si.product_id
            WHERE s.created_at >= ? AND s.created_at <= ?
            ORDER BY s.id, si.id`
         )

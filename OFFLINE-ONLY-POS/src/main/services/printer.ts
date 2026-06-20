@@ -140,7 +140,14 @@ function sanitizeForCp850(s: string): string {
   return s.replace(/₡/g, 'C').replace(/[\u00A0\u202F]/g, ' ')
 }
 
-function encodeText(s: string): Buffer {
+/** Shelf labels: ₡ → ¢ (CP850 0xBD on TM-T81III; not IBM 0x9B). */
+function encodeLabelText(s: string): Buffer {
+  const text = s.replace(/₡/g, '¢').replace(/[\u00A0\u202F]/g, ' ')
+  return iconv.encode(text, 'cp850')
+}
+
+function encodeText(s: string, label = false): Buffer {
+  if (label) return encodeLabelText(s)
   return iconv.encode(sanitizeForCp850(s), 'cp850')
 }
 
@@ -149,21 +156,39 @@ const ESC = 0x1b
 const GS = 0x1d
 const INIT = [ESC, 0x40] // ESC @ — reset
 const CODEPAGE_PC850 = [ESC, 0x74, 0x02] // ESC t 2
+const CODEPAGE_PC437 = [ESC, 0x74, 0x00] // ESC t 0
+const BARCODE_CODE128 = 0x49 // GS k 73
 const align = (a: 'lt' | 'ct' | 'rt'): number[] => [ESC, 0x61, a === 'ct' ? 1 : a === 'rt' ? 2 : 0]
 const bold = (on: boolean): number[] => [ESC, 0x45, on ? 1 : 0]
 const size = (big: boolean): number[] => [GS, 0x21, big ? 0x11 : 0x00] // double width+height
 const FEED = (n: number): number[] => [ESC, 0x64, n] // ESC d n
 const PARTIAL_CUT = [GS, 0x56, 0x42, 0x00] // GS V 66 0 — feed + partial cut
+const OPEN_CASH_DRAWER = [ESC, 0x70, 0x00, 0x19, 0xfa] // ESC p 0 25 250
 const LF = 0x0a
 
+function barcodeDataCode128(value: string): Buffer | null {
+  const cleaned = value.replace(/[^\x20-\x7e]/g, '').trim()
+  if (!cleaned) return null
+  const payload = `{B${cleaned}` // CODE128 subset B
+  const bytes = Buffer.from(payload, 'ascii')
+  if (bytes.length < 2 || bytes.length > 255) return null
+  return bytes
+}
+
+/** Whether a product barcode can be rendered as ESC/POS CODE128. */
+export function isPrintableCode128Barcode(value: string): boolean {
+  return barcodeDataCode128(value) !== null
+}
+
 /** Renders the abstract print lines into a raw ESC/POS byte stream (Spanish / CP850). */
-function toEscPos(lines: PrintLine[]): Buffer {
+function toEscPos(lines: PrintLine[], options?: { openDrawer?: boolean; label?: boolean }): Buffer {
+  const isLabel = options?.label === true
   const chunks: Buffer[] = []
   const cmd = (...bytes: number[]): void => {
     chunks.push(Buffer.from(bytes))
   }
   const write = (s: string): void => {
-    chunks.push(encodeText(s))
+    chunks.push(encodeText(s, isLabel))
   }
 
   cmd(...INIT)
@@ -189,10 +214,27 @@ function toEscPos(lines: PrintLine[]): Buffer {
         write(line.v)
         cmd(LF, ...size(false), ...bold(false))
         break
+      case 'barcode': {
+        const data = barcodeDataCode128(line.v)
+        if (!data) break
+        const height = Math.max(24, Math.min(255, line.h ?? (isLabel ? 24 : 40)))
+        const width = Math.max(2, Math.min(6, line.w ?? 2))
+        cmd(...align(line.align ?? 'ct'))
+        cmd(GS, 0x48, 0x00) // HRI off
+        cmd(GS, 0x68, height)
+        cmd(GS, 0x77, width)
+        cmd(GS, 0x6b, BARCODE_CODE128, data.length)
+        chunks.push(data)
+        cmd(LF)
+        break
+      }
     }
   }
 
-  cmd(...align('lt'), ...FEED(4), ...PARTIAL_CUT)
+  if (options?.openDrawer) {
+    cmd(...OPEN_CASH_DRAWER)
+  }
+  cmd(...align('lt'), ...FEED(isLabel ? 1 : 4), ...PARTIAL_CUT)
   return Buffer.concat(chunks)
 }
 
@@ -295,10 +337,147 @@ async function sendRawToPrinter(data: Buffer, printerName: string): Promise<void
   }
 }
 
-export async function printLines(lines: PrintLine[], _lang?: Language): Promise<void> {
+export async function printLines(
+  lines: PrintLine[],
+  _lang?: Language,
+  options?: { openDrawer?: boolean; label?: boolean }
+): Promise<void> {
   const printerName = getActivePrinterName()
   await ensurePrinterExists(printerName)
-  await sendRawToPrinter(toEscPos(lines), printerName)
+  await sendRawToPrinter(toEscPos(lines, options), printerName)
+}
+
+/** Sends only the cash-drawer pulse (no receipt body, no cut). */
+export async function openCashDrawer(): Promise<void> {
+  const printerName = getActivePrinterName()
+  await ensurePrinterExists(printerName)
+  const pulse = Buffer.from([...(INIT as number[]), ...(OPEN_CASH_DRAWER as number[])])
+  await sendRawToPrinter(pulse, printerName)
+}
+
+/** Best-effort drawer pulse — cash operations must not fail when the printer is offline. */
+export async function tryOpenCashDrawer(): Promise<void> {
+  try {
+    await openCashDrawer()
+  } catch (err) {
+    console.warn('[printer] drawer pulse skipped', err)
+  }
+}
+
+/** 24×12 dot pattern for Costa Rican colón (Font A, ESC & y=3). */
+const COLON_SIGN_MATRIX = [
+  '000111110000',
+  '001000001000',
+  '010000000100',
+  '010000000100',
+  '100000000010',
+  '100000000010',
+  '100000000010',
+  '111111000010',
+  '100000000010',
+  '100000000010',
+  '111111000010',
+  '100000000010',
+  '100000000010',
+  '010000000100',
+  '010000000100',
+  '001000001000',
+  '000111110000',
+  '000000000000',
+  '000000000000',
+  '000000000000',
+  '000000000000',
+  '000000000000',
+  '000000000000',
+  '000000000000'
+] as const
+
+const COLON_GLYPH_CHAR = 0x7e // ~
+
+function matrixToUserDefinedChar(charCode: number, rows: readonly string[]): Buffer {
+  const width = rows[0]?.length ?? 12
+  const height = rows.length
+  const y = 3
+  const columns: number[] = []
+  for (let col = 0; col < width; col++) {
+    const colBytes = [0, 0, 0]
+    for (let row = 0; row < height; row++) {
+      if (rows[row]?.[col] === '1') {
+        const byteIdx = Math.floor(row / 8)
+        const bitIdx = 7 - (row % 8)
+        colBytes[byteIdx] |= 1 << bitIdx
+      }
+    }
+    columns.push(...colBytes)
+  }
+  return Buffer.from([ESC, 0x26, y, charCode, charCode, width, ...columns])
+}
+
+const DEFINE_COLON_GLYPH = matrixToUserDefinedChar(COLON_GLYPH_CHAR, COLON_SIGN_MATRIX)
+const SELECT_USER_CHARS = [ESC, 0x25, 1] as const
+const CANCEL_USER_CHARS = [ESC, 0x25, 0] as const
+
+type TestStripWriter = {
+  chunks: Buffer[]
+  cmd: (...bytes: number[]) => void
+  cp850: (s: string) => Buffer
+}
+
+function appendColonTestStrip(
+  w: TestStripWriter,
+  n: number,
+  desc: string,
+  codepage: readonly number[],
+  priceLine: Buffer,
+  opts?: { userGlyphs?: boolean; cancelGlyphs?: boolean }
+): void {
+  w.cmd(...INIT, ...codepage)
+  if (opts?.userGlyphs) w.chunks.push(DEFINE_COLON_GLYPH)
+  if (opts?.userGlyphs) w.cmd(...SELECT_USER_CHARS)
+  w.cmd(...align('ct'), ...bold(true))
+  w.chunks.push(w.cp850(`PRUEBA ${n}`))
+  w.cmd(LF, ...bold(false), ...align('ct'))
+  w.chunks.push(w.cp850(desc))
+  w.cmd(LF, ...align('ct'), ...bold(true), ...size(true))
+  w.chunks.push(priceLine)
+  w.cmd(LF, ...size(false), ...bold(false))
+  if (opts?.cancelGlyphs) w.cmd(...CANCEL_USER_CHARS)
+  w.cmd(...align('lt'), ...FEED(1), ...PARTIAL_CUT)
+}
+
+/** Prints 7 mini-labels, each testing a different colón/¢ encoding. */
+function buildColonSymbolTestBuffer(): Buffer {
+  const chunks: Buffer[] = []
+  const cmd = (...bytes: number[]): void => {
+    chunks.push(Buffer.from(bytes))
+  }
+  const cp850 = (s: string): Buffer => iconv.encode(s, 'cp850')
+  const w: TestStripWriter = { chunks, cmd, cp850 }
+  const amount = cp850('3 000')
+
+  appendColonTestStrip(w, 1, 'CP850 byte 9B (cent)', CODEPAGE_PC850, Buffer.concat([Buffer.from([0x9b]), amount]))
+  appendColonTestStrip(w, 2, 'CP850 byte BD (iconv)', CODEPAGE_PC850, Buffer.concat([Buffer.from([0xbd]), amount]))
+  appendColonTestStrip(w, 3, 'Letra C', CODEPAGE_PC850, cp850('C3 000'))
+  appendColonTestStrip(w, 4, 'Unicode cent iconv', CODEPAGE_PC850, Buffer.concat([cp850('¢'), amount]))
+  appendColonTestStrip(w, 5, 'UTF-8 colón', [], Buffer.from('₡3 000', 'utf8'))
+  appendColonTestStrip(w, 6, 'PC437 byte 9B', CODEPAGE_PC437, Buffer.concat([Buffer.from([0x9b]), amount]))
+  appendColonTestStrip(
+    w,
+    7,
+    'Glyph ESC & (~)',
+    CODEPAGE_PC850,
+    Buffer.concat([Buffer.from([COLON_GLYPH_CHAR]), amount]),
+    { userGlyphs: true, cancelGlyphs: true }
+  )
+
+  return Buffer.concat(chunks)
+}
+
+/** Diagnostic: print all colón encoding variants (admin troubleshooting). */
+export async function printColonSymbolTest(): Promise<void> {
+  const printerName = getActivePrinterName()
+  await ensurePrinterExists(printerName)
+  await sendRawToPrinter(buildColonSymbolTestBuffer(), printerName)
 }
 
 /**
@@ -325,7 +504,7 @@ export async function attemptPrintJob(jobId: number): Promise<PrintStatus> {
   }
   const payload = JSON.parse(job.payload) as PrintPayload
   try {
-    await printLines(payload.lines, payload.lang)
+    await printLines(payload.lines, payload.lang, { label: job.job_type === 'label' })
     markPrintJob(jobId, 'printed')
     return 'printed'
   } catch (err) {

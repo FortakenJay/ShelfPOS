@@ -22,7 +22,7 @@ export function DashboardCard({
   return (
     <section
       id={id}
-      className={`rounded-xl border-2 border-line bg-white p-5 shadow-sm hover:border-slate-300 ${className}`}
+      className={`min-w-0 rounded-xl border-2 border-line bg-white p-5 shadow-sm hover:border-slate-300 ${className}`}
     >
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>

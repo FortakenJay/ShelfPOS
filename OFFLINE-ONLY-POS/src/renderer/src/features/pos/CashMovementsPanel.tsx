@@ -1,8 +1,9 @@
-import { useState, type ReactNode } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
 import { formatDate, formatMoney, parseColonesInput } from '@/lib/format'
+import { eventToShortcutKey } from '@/lib/shortcuts'
 import { useToasts } from '@/lib/toast'
 import { PinModal } from '@/components/PinModal'
 import { Button, Field, Input, Td, Th } from '@/components/ui'
@@ -30,10 +31,12 @@ export function CashMovementsPanel({
   const { t } = useTranslation()
   const toasts = useToasts()
   const queryClient = useQueryClient()
+  const { data: settings } = useQuery({ queryKey: ['settings'], queryFn: api.settings.get })
   const [moveAmount, setMoveAmount] = useState('')
   const [moveReason, setMoveReason] = useState('')
   const [pending, setPending] = useState<PendingMovement | null>(null)
   const [pinError, setPinError] = useState<string | null>(null)
+  const reasonInputRef = useRef<HTMLInputElement>(null)
 
   const movementLabel = (type: CashMovementType): string => t(`cash.types.${type}`)
 
@@ -96,6 +99,69 @@ export function CashMovementsPanel({
     setPending({ type })
   }
 
+  useEffect(() => {
+    if (!canEdit || !floatOpened || pending || movement.isPending) return
+    const cashInShortcut = settings?.shortcutCashIn
+    const cashOutShortcut = settings?.shortcutCashOut
+    const drawerShortcut = settings?.shortcutDrawerAction
+    if (!cashInShortcut && !cashOutShortcut && !drawerShortcut) return
+
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.defaultPrevented) return
+      if (event.target === reasonInputRef.current) return
+      const shortcut = eventToShortcutKey(event)
+      if (!shortcut) return
+
+      if (shortcut === drawerShortcut) {
+        event.preventDefault()
+        void api.printer
+          .openDrawer()
+          .then(() => toasts.success('cash.drawerOpenedToast'))
+          .catch((err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown'))
+        return
+      }
+      if (shortcut === cashInShortcut) {
+        event.preventDefault()
+        if (!moneyInputIsEmpty(moveAmount)) {
+          setPending({ type: 'cash_in' })
+        }
+        return
+      }
+      if (shortcut === cashOutShortcut) {
+        event.preventDefault()
+        const amount = parseColonesInput(moveAmount)
+        if (
+          amount != null &&
+          expectedCash != null &&
+          amount > expectedCash
+        ) {
+          toasts.error('errors.insufficientCash', {
+            available: formatMoney(expectedCash),
+            requested: formatMoney(amount)
+          })
+          return
+        }
+        if (!moneyInputIsEmpty(moveAmount)) {
+          setPending({ type: 'cash_out' })
+        }
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [
+    canEdit,
+    floatOpened,
+    movement.isPending,
+    pending,
+    expectedCash,
+    moveAmount,
+    settings?.shortcutCashIn,
+    settings?.shortcutCashOut,
+    settings?.shortcutDrawerAction,
+    toasts
+  ])
+
   const movementForm = canEdit ? (
     <section className="rounded-lg border-2 border-line bg-white p-5">
       <h2 className="mb-4 text-lg font-bold">{t('cash.movementTitle')}</h2>
@@ -109,6 +175,7 @@ export function CashMovementsPanel({
       </Field>
       <Field label={`${t('cash.reason')} (${t('common.optional')})`} className="mb-4">
         <Input
+          ref={reasonInputRef}
           value={moveReason}
           disabled={!floatOpened}
           onChange={(e) => setMoveReason(e.target.value)}

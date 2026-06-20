@@ -21,14 +21,14 @@ export function POSSidebar({
   const { t } = useTranslation()
 
   return (
-    <div className="flex w-80 shrink-0 flex-col justify-between bg-white p-5">
-      <div>
+    <div className="flex h-full w-80 shrink-0 flex-col bg-white p-5">
+      <div className="shrink-0">
         <div className="text-[16px] font-semibold text-slate-500 uppercase">{t('pos.total')}</div>
-        <div className="mt-1 text-5xl font-extrabold tracking-tight">{formatMoney(total)}</div>
+        <div className="mt-1 text-4xl font-extrabold tracking-tight">{formatMoney(total)}</div>
         <button
           type="button"
           onClick={onCustomerOpen}
-          className="mt-4 w-full rounded-md border-2 border-line px-3 py-2 text-left text-[14px] font-semibold hover:border-primary"
+          className="mt-3 w-full rounded-md border-2 border-line px-3 py-2 text-left text-[14px] font-semibold hover:border-primary"
         >
           <span className="block text-[12px] text-slate-500 uppercase">{t('pos.customer.title')}</span>
           <span className="block truncate">
@@ -36,7 +36,8 @@ export function POSSidebar({
           </span>
         </button>
       </div>
-      <div className="space-y-3">
+
+      <div className="mt-4 shrink-0 space-y-3 border-t-2 border-line pt-4">
         <Button variant="cta" size="xl" className="w-full" disabled={cartEmpty} onClick={onPayOpen}>
           {t('pos.chargeShortcut')}
         </Button>

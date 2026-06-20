@@ -7,22 +7,28 @@ import { enqueueSync } from '../db/repos/syncQueue'
 import { hasOpeningFloat } from '../db/repos/cash'
 import { assertSaleStock } from '../db/repos/stock'
 import { insertPrintJob } from '../db/repos/printJobs'
+import { listPendingCierreSalesForReprint, reprintSaleReceipt } from '../db/repos/salesReceipt'
 import { getAppSettings, receiptLanguage, getSetting, setSetting, SETTING_KEYS } from '../db/repos/settings'
 import { writeAudit } from '../db/repos/audit'
 import { session } from '../services/session'
 import { schedulePrintJob } from '../services/printer'
 import { buildReceiptLines, emisorFromSettings } from '../services/printTemplates'
 import type { ReceiptPaymentLine } from '../services/printTemplates'
+import { t } from '../services/i18n'
 import type {
   CreateSaleInput,
+  CreateSaleLineInput,
+  CreateSaleMiscItemInput,
   CreateSaleResult,
   IdType,
   PaymentMethod,
   Product,
+  ReprintReceiptResult,
   SaleCustomer,
   SaleDetail,
   SaleItemDetail,
   SalePaymentDetail,
+  SaleReprintRow,
   TaxCategory
 } from '../../shared/types'
 
@@ -56,6 +62,23 @@ function cleanText(v: string | undefined): string | null {
   return t ? t : null
 }
 
+function isMiscSaleLine(item: CreateSaleLineInput): item is CreateSaleMiscItemInput {
+  return 'miscItem' in item && item.miscItem === true
+}
+
+interface PricedSaleLine {
+  product: Product | null
+  displayName: string
+  quantity: number
+  unitPrice: number
+  catalogUnitPrice: number | null
+  gross: number
+  lineDiscount: number
+  afterLineDiscount: number
+  taxCategory: TaxCategory
+  isMisc: boolean
+}
+
 export function registerSalesHandlers(): void {
   handle<CreateSaleInput, CreateSaleResult>('sales:create', SELL, async (input) => {
     const user = session.require()
@@ -69,7 +92,17 @@ export function registerSalesHandlers(): void {
       if (item.discount != null && (!Number.isFinite(item.discount) || item.discount < 0)) {
         throw new AppError('errors.invalidInput')
       }
-      if (item.unitPrice != null && (!Number.isFinite(item.unitPrice) || item.unitPrice <= 0)) {
+      if (isMiscSaleLine(item)) {
+        if (!Number.isFinite(item.unitPrice) || item.unitPrice <= 0) {
+          throw new AppError('errors.invalidInput')
+        }
+        if (
+          item.catalogUnitPrice != null &&
+          (!Number.isFinite(item.catalogUnitPrice) || item.catalogUnitPrice <= 0)
+        ) {
+          throw new AppError('errors.invalidInput')
+        }
+      } else if (item.unitPrice != null && (!Number.isFinite(item.unitPrice) || item.unitPrice <= 0)) {
         throw new AppError('errors.invalidInput')
       }
     }
@@ -91,9 +124,31 @@ export function registerSalesHandlers(): void {
     const lang = receiptLanguage()
     const now = localNow()
 
+    const miscItemName = t(lang, 'pos.miscItemName')
+
     const result = db.transaction((): Omit<CreateSaleResult, 'printStatus'> => {
-      // 1. Price each line (bulk tier) and apply the explicit per-line discount.
-      const lines = input.items.map((item) => {
+      const lines: PricedSaleLine[] = input.items.map((item) => {
+        if (isMiscSaleLine(item)) {
+          const unitPrice = round2(item.unitPrice)
+          const catalogRaw = round2(item.catalogUnitPrice ?? unitPrice)
+          const catalogUnitPrice =
+            Math.abs(unitPrice - catalogRaw) >= 0.01 ? catalogRaw : null
+          const gross = round2(unitPrice * item.quantity)
+          const lineDiscount = round2(Math.min(item.discount ?? 0, gross))
+          return {
+            product: null,
+            displayName: miscItemName,
+            quantity: item.quantity,
+            unitPrice,
+            catalogUnitPrice,
+            gross,
+            lineDiscount,
+            afterLineDiscount: round2(gross - lineDiscount),
+            taxCategory: 'standard',
+            isMisc: true
+          }
+        }
+
         const product = getProduct(item.productId)
         if (!product) throw new AppError('errors.productNotFound')
         assertSaleStock(product, item.quantity)
@@ -105,12 +160,15 @@ export function registerSalesHandlers(): void {
         const lineDiscount = round2(Math.min(item.discount ?? 0, gross))
         return {
           product,
+          displayName: product.name,
           quantity: item.quantity,
           unitPrice,
           catalogUnitPrice: priceOverridden ? catalogUnitPrice : null,
           gross,
           lineDiscount,
-          afterLineDiscount: round2(gross - lineDiscount)
+          afterLineDiscount: round2(gross - lineDiscount),
+          taxCategory: product.tax_category as TaxCategory,
+          isMisc: false
         }
       })
 
@@ -136,7 +194,7 @@ export function registerSalesHandlers(): void {
           lineDiscount: l.lineDiscount,
           discount: round2(l.gross - lineTotal),
           lineTotal,
-          taxCategory: l.product.tax_category as TaxCategory
+          taxCategory: l.taxCategory
         }
       })
 
@@ -216,11 +274,9 @@ export function registerSalesHandlers(): void {
         'UPDATE products SET stock = stock - ?, updated_at = ? WHERE id = ?'
       )
       for (const line of finalized) {
-        const productId = line.product.id
-        // line_discount = explicit per-line discount; discount = line + cart share.
         const itemResult = insertItem.run(
           saleId,
-          productId,
+          line.isMisc ? null : line.product!.id,
           line.quantity,
           line.unitPrice,
           line.catalogUnitPrice,
@@ -228,9 +284,12 @@ export function registerSalesHandlers(): void {
           line.lineDiscount,
           line.lineTotal,
           line.taxCategory,
-          line.product.name
+          line.displayName
         )
         enqueueSync('sale_items', Number(itemResult.lastInsertRowid), 'insert', db)
+        if (line.isMisc || !line.product) continue
+
+        const productId = line.product.id
         const stockStmt =
           line.product.factura_negativo === 1 ? decrementStockUnlimited : decrementStock
         const stockResult =
@@ -257,7 +316,7 @@ export function registerSalesHandlers(): void {
           createdAt: now,
           cashier: user.username,
           items: finalized.map((l) => ({
-            name: l.product.name,
+            name: l.displayName,
             quantity: l.quantity,
             unitPrice: l.unitPrice,
             catalogUnitPrice: l.catalogUnitPrice,
@@ -281,14 +340,17 @@ export function registerSalesHandlers(): void {
         },
         lang
       )
-      const printJobId = insertPrintJob('receipt', saleId, { lang, lines: receiptLines })
+      const printJobId =
+        input.printReceipt === false
+          ? 0
+          : insertPrintJob('receipt', saleId, { lang, lines: receiptLines })
 
       const priceOverrideLines = finalized.filter((l) => l.catalogUnitPrice != null)
       for (const line of priceOverrideLines) {
         writeAudit('price_override_sale', {
           entity: 'sale',
           entityId: saleId,
-          detail: `${consecutivo} · ${line.product.name} · cat ${line.catalogUnitPrice} → ${line.unitPrice} x${line.quantity}`
+          detail: `${consecutivo} · ${line.displayName} · cat ${line.catalogUnitPrice} → ${line.unitPrice} x${line.quantity}`
         })
       }
 
@@ -306,12 +368,17 @@ export function registerSalesHandlers(): void {
         consecutivo,
         total,
         change,
-        stockAlerts: alertsForProducts(finalized.map((l) => l.product.id)),
+        stockAlerts: alertsForProducts(
+          finalized.filter((l) => !l.isMisc && l.product).map((l) => l.product!.id)
+        ),
         printJobId
       }
     })()
 
-    const printStatus = schedulePrintJob(result.printJobId)
+    const printStatus =
+      input.printReceipt === false || result.printJobId === 0
+        ? 'printed'
+        : schedulePrintJob(result.printJobId)
     return { ...result, printStatus }
   })
 
@@ -356,39 +423,55 @@ export function registerSalesHandlers(): void {
       }
 
       const itemsStmt = db.prepare(
-        `SELECT si.product_id AS productId, COALESCE(si.product_name_snapshot, p.name) AS name, p.barcode AS barcode,
+        `SELECT si.product_id AS productId, COALESCE(si.product_name_snapshot, p.name) AS name,
+                COALESCE(p.barcode, '') AS barcode,
                 si.quantity AS quantity, si.unit_price AS unitPrice, si.discount AS discount,
                 si.line_total AS lineTotal, si.tax_category AS taxCategory,
                 COALESCE((SELECT SUM(ri.quantity) FROM return_items ri
                           WHERE ri.sale_id = si.sale_id AND ri.product_id = si.product_id), 0) AS returnedQty
-         FROM sale_items si JOIN products p ON p.id = si.product_id
-         WHERE si.sale_id = ?`
+         FROM sale_items si
+         LEFT JOIN products p ON p.id = si.product_id
+         WHERE si.sale_id = ? AND si.product_id IS NOT NULL`
       )
       const paymentsStmt = db.prepare(
         'SELECT method, amount, ref FROM sale_payments WHERE sale_id = ?'
       )
-      return saleRows.map((sale) => ({
-        id: sale.id,
-        consecutivo: sale.consecutivo,
-        createdAt: sale.created_at,
-        cashier: sale.cashier,
-        paymentMethod: sale.payment_method,
-        payments: paymentsStmt.all(sale.id) as SalePaymentDetail[],
-        subtotal: sale.subtotal,
-        discountTotal: sale.discount_total,
-        total: sale.total,
-        sinpeRef: sale.sinpe_ref,
-        cierreId: sale.cierre_id,
-        customer: {
-          name: sale.customer_name,
-          idType: sale.customer_id_type,
-          id: sale.customer_id,
-          phone: sale.customer_phone,
-          email: sale.customer_email,
-          activityCode: sale.customer_activity_code
-        },
-        items: itemsStmt.all(sale.id) as SaleItemDetail[]
-      }))
+      return saleRows
+        .map((sale) => ({
+          id: sale.id,
+          consecutivo: sale.consecutivo,
+          createdAt: sale.created_at,
+          cashier: sale.cashier,
+          paymentMethod: sale.payment_method,
+          payments: paymentsStmt.all(sale.id) as SalePaymentDetail[],
+          subtotal: sale.subtotal,
+          discountTotal: sale.discount_total,
+          total: sale.total,
+          sinpeRef: sale.sinpe_ref,
+          cierreId: sale.cierre_id,
+          customer: {
+            name: sale.customer_name,
+            idType: sale.customer_id_type,
+            id: sale.customer_id,
+            phone: sale.customer_phone,
+            email: sale.customer_email,
+            activityCode: sale.customer_activity_code
+          },
+          items: itemsStmt.all(sale.id) as SaleItemDetail[]
+        }))
+        .filter((sale) => sale.items.length > 0)
     }
+  )
+
+  handle<void, SaleReprintRow[]>(
+    'sales:listForReprint',
+    SELL,
+    () => listPendingCierreSalesForReprint()
+  )
+
+  handle<{ saleId: number }, ReprintReceiptResult>(
+    'sales:reprintReceipt',
+    SELL,
+    async ({ saleId }) => reprintSaleReceipt(saleId)
   )
 }

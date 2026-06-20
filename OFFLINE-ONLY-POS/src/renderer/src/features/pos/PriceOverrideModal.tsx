@@ -7,8 +7,6 @@ import { formatMoneyInputFromNumber } from '@shared/money'
 import { Button, Field, Modal } from '@/components/ui'
 import { MoneyInput } from '@/components/MoneyInput'
 import { PinModal } from '@/components/PinModal'
-import { catalogUnitPrice } from '@/lib/pricing'
-import type { Product } from '@shared/types'
 
 interface PriceOverrideState {
   value: string
@@ -42,13 +40,17 @@ function priceOverrideReducer(
 }
 
 export function PriceOverrideModal({
-  product,
+  productName,
+  productId,
+  catalogUnitPrice,
   quantity,
   currentOverride,
   onApply,
   onClose
 }: {
-  product: Product
+  productName: string
+  productId: number
+  catalogUnitPrice: number
   quantity: number
   currentOverride?: number
   onApply: (unitPrice: number | undefined) => void
@@ -56,7 +58,7 @@ export function PriceOverrideModal({
 }): React.JSX.Element {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const catalog = catalogUnitPrice(product, quantity)
+  const catalog = catalogUnitPrice
   const current = currentOverride ?? catalog
   const [state, dispatch] = useReducer(priceOverrideReducer, {
     value: formatMoneyInputFromNumber(current),
@@ -70,8 +72,8 @@ export function PriceOverrideModal({
     mutationFn: (pin: string) =>
       api.priceOverride.authorize({
         pin,
-        productId: product.id,
-        productName: product.name,
+        productId,
+        productName,
         catalogUnitPrice: catalog,
         overrideUnitPrice: pendingPrice,
         quantity
@@ -113,7 +115,7 @@ export function PriceOverrideModal({
 
   return (
     <Modal title={t('pos.priceOverride.title')} onClose={onClose}>
-      <p className="mb-4 text-[16px] font-semibold text-slate-800">{product.name}</p>
+      <p className="mb-4 text-[16px] font-semibold text-slate-800">{productName}</p>
 
       <div className="mb-4 flex items-center justify-between rounded-md bg-slate-100 px-4 py-3">
         <span className="text-[15px] font-semibold text-slate-600">

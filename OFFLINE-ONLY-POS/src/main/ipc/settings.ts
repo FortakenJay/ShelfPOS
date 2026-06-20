@@ -4,10 +4,26 @@ import { AppError } from '../errors'
 import { getAppSettings, getSetting, setSetting, SETTING_KEYS } from '../db/repos/settings'
 import { writeAudit } from '../db/repos/audit'
 import { session } from '../services/session'
-import type { AppSettings, IdType, Language, SettingsUpdateInput } from '../../shared/types'
+import type {
+  ActionShortcutKey,
+  AppSettings,
+  IdType,
+  Language,
+  SettingsUpdateInput
+} from '../../shared/types'
 
 const PIN_RE = /^\d{4,6}$/
 const ID_TYPES: IdType[] = ['fisica', 'juridica', 'dimex', 'nite']
+const SHORTCUT_KEYS: (keyof Pick<
+  SettingsUpdateInput,
+  'shortcutOpenFloat' | 'shortcutCashIn' | 'shortcutCashOut' | 'shortcutDrawerAction' | 'shortcutPrintLabel'
+>)[] = [
+  'shortcutOpenFloat',
+  'shortcutCashIn',
+  'shortcutCashOut',
+  'shortcutDrawerAction',
+  'shortcutPrintLabel'
+]
 
 export function registerSettingsHandlers(): void {
   // Public: the renderer needs the language before any login (e.g. login screen).
@@ -20,6 +36,17 @@ export function registerSettingsHandlers(): void {
   })
 
   handle<SettingsUpdateInput, AppSettings>('settings:update', ['admin'], (input) => {
+    const current = getAppSettings()
+    const shortcutValues: Record<(typeof SHORTCUT_KEYS)[number], ActionShortcutKey> = {
+      shortcutOpenFloat: input.shortcutOpenFloat ?? current.shortcutOpenFloat,
+      shortcutCashIn: input.shortcutCashIn ?? current.shortcutCashIn,
+      shortcutCashOut: input.shortcutCashOut ?? current.shortcutCashOut,
+      shortcutDrawerAction: input.shortcutDrawerAction ?? current.shortcutDrawerAction,
+      shortcutPrintLabel: input.shortcutPrintLabel ?? current.shortcutPrintLabel
+    }
+    const uniqueShortcutCount = new Set(Object.values(shortcutValues)).size
+    if (uniqueShortcutCount !== SHORTCUT_KEYS.length) throw new AppError('errors.invalidInput')
+
     // Optional free-text emisor/receipt fields (trimmed; empty allowed except storeName).
     const text = (key: string, value?: string): void => {
       if (value !== undefined) setSetting(key, value.trim())
@@ -70,6 +97,17 @@ export function registerSettingsHandlers(): void {
     text(SETTING_KEYS.storeDistrict, input.storeDistrict)
     text(SETTING_KEYS.storeAddress, input.storeAddress)
     text(SETTING_KEYS.receiptFooter, input.receiptFooter)
+    if (input.shortcutOpenFloat !== undefined) {
+      setSetting(SETTING_KEYS.shortcutOpenFloat, input.shortcutOpenFloat)
+    }
+    if (input.shortcutCashIn !== undefined) setSetting(SETTING_KEYS.shortcutCashIn, input.shortcutCashIn)
+    if (input.shortcutCashOut !== undefined) setSetting(SETTING_KEYS.shortcutCashOut, input.shortcutCashOut)
+    if (input.shortcutDrawerAction !== undefined) {
+      setSetting(SETTING_KEYS.shortcutDrawerAction, input.shortcutDrawerAction)
+    }
+    if (input.shortcutPrintLabel !== undefined) {
+      setSetting(SETTING_KEYS.shortcutPrintLabel, input.shortcutPrintLabel)
+    }
 
     writeAudit('settings_updated', { entity: 'settings' })
     return getAppSettings()

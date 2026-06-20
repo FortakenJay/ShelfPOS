@@ -73,6 +73,6 @@ export default [
   reactDoctor.configs['tanstack-start'],
   reactDoctor.configs['tanstack-query'],
   {
-    ignores: ['eslint.config.js', 'prettier.config.js', 'dist/**', '.output/**'],
+    ignores: ['eslint.config.js', 'prettier.config.js', 'vitest.config.ts', 'dist/**', '.output/**'],
   },
 ]

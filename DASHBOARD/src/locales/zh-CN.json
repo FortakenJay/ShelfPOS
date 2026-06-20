@@ -6,7 +6,9 @@
     "switchLanguage": "切换语言",
     "dash": "—",
     "vsPrevious": "对比上期",
-    "noData": "暂无数据"
+    "noData": "暂无数据",
+    "total": "合计",
+    "actions": "操作"
   },
   "nav": {
     "admin": "管理",
@@ -47,6 +49,7 @@
     "loadCierres": "加载日结失败",
     "loadAudit": "加载日志失败",
     "loadMovements": "加载现金变动失败",
+    "pdfExportFailed": "无法生成 PDF",
     "noStoresTitle": "没有已注册的门店",
     "noStores": "请确认 sync 服务正在运行，且 Supabase 中存在 <code>stores</code> 表。",
     "noStoresLoadFailed": "无法加载门店列表。请检查 Supabase 连接后重试。",
@@ -155,6 +158,17 @@
   "cierres": {
     "title": "日结",
     "description": "从门店同步的历史记录（只读）",
+    "previous": "历史日结",
+    "from": "起始",
+    "to": "截止",
+    "range": "范围",
+    "rangeApplied": "应用范围：{{from}} 至 {{to}}",
+    "filteredRangeSummary": "范围 {{from}} - {{to}} · 共 {{count}} 笔日结",
+    "truncatedWarning": "当前显示 {{shown}} / {{total}} 笔日结。请缩小范围后再完整导出。",
+    "truncatedWarningUnknownTotal": "当前显示前 {{shown}} 笔日结。请缩小范围后再完整导出。",
+    "downloadPdf": "下载 PDF",
+    "exportingPdf": "正在生成 PDF...",
+    "savePdf": "保存 PDF",
     "empty": "暂无日结记录",
     "id": "ID",
     "closed": "日结时间",
@@ -164,16 +178,39 @@
     "cash": "现金",
     "card": "卡",
     "sinpe": "Sinpe",
-    "difference": "差异"
+    "difference": "差异",
+    "notes": "备注",
+    "pdf": {
+      "title": "日结报表",
+      "store": "门店",
+      "range": "范围",
+      "generatedAt": "生成时间",
+      "page": "页"
+    }
   },
   "audit": {
     "title": "日志",
     "description": "门店同步的活动记录",
     "empty": "暂无记录",
+    "allTime": "全部",
+    "allTimeSummary": "完整历史 · 共 {{count}} 条记录",
+    "rangeSummary": "范围 {{from}} - {{to}} · 共 {{count}} 条记录",
+    "showing": "第 {{from}}–{{to}} 条，共 {{total}} 条",
+    "pageOf": "第 {{page}} 页，共 {{pages}} 页",
+    "pageUnknownTotal": "第 {{page}} 页",
+    "pageOutOfRange": "当前页在该筛选条件下已不存在。",
+    "resetPage": "返回第一页",
+    "prev": "上一页",
+    "next": "下一页",
     "date": "日期",
     "user": "用户",
     "action": "操作",
-    "detail": "详情"
+    "entity": "对象",
+    "detail": "详情",
+    "actions": {
+      "cart_line_removed_caja": "已从购物车移除商品（收银 PIN）",
+      "cart_line_removed_manager": "已从购物车移除商品（经理 PIN）"
+    }
   },
   "payment": {
     "cash": "现金",

@@ -568,3 +568,17 @@ export function buildTaxReportLines(
   lines.push({ t: 'row', l: t(lang, 'reports.tax.totalGross'), r: money(taxSum(rows, 'gross')), bold: true })
   return lines
 }
+
+export function buildShelfLabelLines(args: {
+  productName: string
+  price: number
+  barcode: string
+}, lang: Language): PrintLine[] {
+  const name = args.productName.trim()
+  const barcode = args.barcode.trim()
+  return [
+    { t: 'barcode', v: barcode, h: 24, w: 2, align: 'ct' },
+    { t: 'text', v: name, align: 'ct', big: true },
+    { t: 'text', v: formatMoney(args.price, lang), align: 'ct', bold: true, big: true }
+  ]
+}

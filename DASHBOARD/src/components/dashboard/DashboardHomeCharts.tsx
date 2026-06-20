@@ -7,9 +7,8 @@ import {
 } from '#/components/dashboard/DashboardPrimitives'
 import { ChartFrame } from '#/components/dashboard/ChartFrame'
 import { ChartLoading } from '#/components/dashboard/ChartLoading'
+import { PaymentMethodsPieChart } from '#/components/dashboard/PaymentMethodsPieChart'
 import { useRechartsModule } from '#/hooks/useRechartsModule'
-
-const CHART_COLORS = ['#2563eb', '#16a34a', '#d97706', '#7c3aed', '#0891b2']
 
 export function DashboardHomeCharts({
   data,
@@ -51,10 +50,6 @@ export function DashboardHomeCharts({
     Bar,
     BarChart,
     CartesianGrid,
-    Cell,
-    Legend,
-    Pie,
-    PieChart,
     ResponsiveContainer,
     Tooltip,
     XAxis,
@@ -102,30 +97,7 @@ export function DashboardHomeCharts({
         {paymentSlices.length === 0 ? (
           <DashboardEmpty message={t('common.noData')} />
         ) : (
-          <ChartFrame>
-            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-              <PieChart>
-                <Pie
-                  data={paymentSlices}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={64}
-                  label
-                >
-                  {paymentSlices.map((slice, index) => (
-                    <Cell
-                      key={slice.name}
-                      fill={CHART_COLORS[index % CHART_COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(v) => formatMoney(Number(v))} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </ChartFrame>
+          <PaymentMethodsPieChart slices={paymentSlices} />
         )}
       </DashboardCard>
 

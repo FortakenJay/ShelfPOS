@@ -11,9 +11,11 @@ import { registerAuditHandlers } from './audit'
 import { registerPrintQueueHandlers } from './printQueue'
 import { registerBackupHandlers } from './backup'
 import { registerDiscountHandlers } from './discount'
+import { registerCartHandlers } from './cart'
 import { registerPriceOverrideHandlers } from './priceOverride'
 import { registerDashboardHandlers } from './dashboard'
 import { registerUserHandlers } from './users'
+import { registerPrinterHandlers } from './printer'
 import type { BackupService } from '../services/backup'
 
 export function registerIpcHandlers(backup: BackupService): void {
@@ -30,7 +32,9 @@ export function registerIpcHandlers(backup: BackupService): void {
   registerPrintQueueHandlers()
   registerBackupHandlers(backup)
   registerDiscountHandlers()
+  registerCartHandlers()
   registerPriceOverrideHandlers()
   registerDashboardHandlers()
   registerUserHandlers()
+  registerPrinterHandlers()
 }

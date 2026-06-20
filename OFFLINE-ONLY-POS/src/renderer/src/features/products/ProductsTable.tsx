@@ -10,6 +10,7 @@ export function ProductsTable({
   stockCellClass,
   onQuickAdjust,
   onAdjust,
+  onPrintLabel,
   onEdit,
   onDelete
 }: {
@@ -19,6 +20,7 @@ export function ProductsTable({
   stockCellClass: (p: Product) => string
   onQuickAdjust: (productId: number, delta: number) => void
   onAdjust: (product: Product) => void
+  onPrintLabel: (product: Product) => void
   onEdit: (product: Product) => void
   onDelete: (product: Product) => void
 }): React.JSX.Element {
@@ -79,6 +81,9 @@ export function ProductsTable({
               <Td className="text-right whitespace-nowrap">
                 <Button variant="ghost" onClick={() => onAdjust(p)} className="!min-h-9">
                   {t('products.adjust.title')}
+                </Button>
+                <Button variant="ghost" onClick={() => onPrintLabel(p)} className="!min-h-9">
+                  {t('products.printLabel')}
                 </Button>
                 <Button variant="ghost" onClick={() => onEdit(p)} className="!min-h-9">
                   {t('common.edit')}

@@ -36,6 +36,21 @@ export const languageSchema = z.enum(['es', 'zh-CN'])
 
 export const roleSchema = z.enum(['sales', 'product_manager', 'admin'])
 
+export const actionShortcutKeySchema = z.enum([
+  'F1',
+  'F2',
+  'F3',
+  'F4',
+  'F5',
+  'F6',
+  'F7',
+  'F8',
+  'F9',
+  'F10',
+  'F11',
+  'F12'
+])
+
 export const paymentMethodSchema = z.enum(['cash', 'card', 'sinpe'])
 
 export const taxCategorySchema = z.literal('standard')

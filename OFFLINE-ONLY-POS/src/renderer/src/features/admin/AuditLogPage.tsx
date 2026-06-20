@@ -5,16 +5,16 @@ import i18n from 'i18next'
 import { api } from '@/lib/api'
 import { formatDate } from '@/lib/format'
 import { RequireRole } from '@/features/shell/Shell'
-import { Button, Select, Td, Th } from '@/components/ui'
-import { DateRangePicker } from '@/components/DateRangePicker'
-import { presetToday } from '@/components/dateRangePresets'
-import type { DateRange } from '@shared/types'
+import { Button, Input, Select, Td, Th } from '@/components/ui'
+import { rangeForReportPeriod } from '@/components/dateRangePresets'
+import type { DateRange, ReportPeriodPreset } from '@shared/types'
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const
 const DEFAULT_PAGE_SIZE = 50
 
 interface AuditLogState {
-  range: DateRange
+  period: ReportPeriodPreset | 'all' | 'range'
+  range: DateRange | null
   userId: number | ''
   action: string
   page: number
@@ -22,7 +22,8 @@ interface AuditLogState {
 }
 
 type AuditLogAction =
-  | { type: 'setRange'; range: DateRange }
+  | { type: 'setPeriod'; period: ReportPeriodPreset | 'all' | 'range' }
+  | { type: 'setRange'; range: DateRange | null }
   | { type: 'setUserId'; userId: number | '' }
   | { type: 'setAction'; action: string }
   | { type: 'setPage'; page: number }
@@ -30,8 +31,16 @@ type AuditLogAction =
 
 function auditLogReducer(state: AuditLogState, action: AuditLogAction): AuditLogState {
   switch (action.type) {
+    case 'setPeriod':
+      if (action.period === 'all') {
+        return { ...state, period: action.period, range: null, page: 1 }
+      }
+      if (action.period === 'range') {
+        return { ...state, period: action.period, range: state.range ?? rangeForReportPeriod('today'), page: 1 }
+      }
+      return { ...state, period: action.period, range: rangeForReportPeriod(action.period), page: 1 }
     case 'setRange':
-      return { ...state, range: action.range, page: 1 }
+      return { ...state, range: action.range, period: action.range ? 'range' : 'all', page: 1 }
     case 'setUserId':
       return { ...state, userId: action.userId, page: 1 }
     case 'setAction':
@@ -55,8 +64,9 @@ export function AuditLogPage(): React.JSX.Element {
 
 function AuditLog(): React.JSX.Element {
   const { t } = useTranslation()
-  const [{ range, userId, action, page, pageSize }, dispatch] = useReducer(auditLogReducer, undefined, () => ({
-    range: presetToday(),
+  const [{ period, range, userId, action, page, pageSize }, dispatch] = useReducer(auditLogReducer, undefined, () => ({
+    period: 'all' as ReportPeriodPreset | 'all' | 'range',
+    range: null as DateRange | null,
     userId: '' as number | '',
     action: '',
     page: 1,
@@ -69,7 +79,7 @@ function AuditLog(): React.JSX.Element {
     queryKey: ['audit', range, userId, action, page, pageSize],
     queryFn: () =>
       api.audit.list({
-        range,
+        range: range ?? undefined,
         userId: userId === '' ? undefined : Number(userId),
         action: action || undefined,
         limit: pageSize,
@@ -79,10 +89,12 @@ function AuditLog(): React.JSX.Element {
 
   const total = auditPage?.total ?? 0
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
-  const safePage = Math.min(page, totalPages)
-  const from = total === 0 ? 0 : (safePage - 1) * pageSize + 1
-  const to = Math.min(safePage * pageSize, total)
   const rows = auditPage?.rows ?? []
+  const from = rows.length === 0 ? 0 : (page - 1) * pageSize + 1
+  const to = rows.length === 0 ? 0 : from + rows.length - 1
+  const outOfRangePage =
+    (total > 0 && page > totalPages) || (page > 1 && rows.length === 0 && !isFetching)
+  const summaryCount = isFetching ? t('common.dash') : String(total)
 
   const actionLabel = (actionKey: string): string => {
     const key = `audit.actions.${actionKey}`
@@ -94,11 +106,65 @@ function AuditLog(): React.JSX.Element {
     <div className="p-6">
       <h1 className="mb-5 text-2xl font-bold">{t('audit.title')}</h1>
 
+      <div className="mb-3 flex flex-wrap gap-2">
+        <Button
+          variant={period === 'all' ? 'primary' : 'outline'}
+          onClick={() => dispatch({ type: 'setPeriod', period: 'all' })}
+        >
+          {t('audit.allTime')}
+        </Button>
+        <Button
+          variant={period === 'today' ? 'primary' : 'outline'}
+          onClick={() => dispatch({ type: 'setPeriod', period: 'today' })}
+        >
+          {t('reports.presets.today')}
+        </Button>
+        <Button
+          variant={period === 'week' ? 'primary' : 'outline'}
+          onClick={() => dispatch({ type: 'setPeriod', period: 'week' })}
+        >
+          {t('reports.presets.week')}
+        </Button>
+        <Button
+          variant={period === 'month' ? 'primary' : 'outline'}
+          onClick={() => dispatch({ type: 'setPeriod', period: 'month' })}
+        >
+          {t('reports.presets.month')}
+        </Button>
+        <Button
+          variant={period === 'range' ? 'primary' : 'outline'}
+          onClick={() => dispatch({ type: 'setPeriod', period: 'range' })}
+        >
+          {t('audit.range')}
+        </Button>
+      </div>
+
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <DateRangePicker
-          value={range}
-          onChange={(next) => dispatch({ type: 'setRange', range: next })}
-        />
+        {period === 'range' && range && (
+          <>
+            <label className="text-[13px] font-semibold text-slate-600">
+              {t('reports.from')}
+              <Input
+                type="date"
+                className="mt-1 w-44"
+                value={range.from}
+                max={range.to}
+                onChange={(e) => e.target.value && dispatch({ type: 'setRange', range: { ...range, from: e.target.value } })}
+              />
+            </label>
+            <label className="text-[13px] font-semibold text-slate-600">
+              {t('reports.to')}
+              <Input
+                type="date"
+                className="mt-1 w-44"
+                value={range.to}
+                min={range.from}
+                onChange={(e) => e.target.value && dispatch({ type: 'setRange', range: { ...range, to: e.target.value } })}
+              />
+            </label>
+          </>
+        )}
+        {period === 'all' && <p className="text-[14px] text-slate-600">{t('audit.allTimeSummary', { count: summaryCount, total: summaryCount })}</p>}
         <Select
           value={userId === '' ? '' : String(userId)}
           onChange={(e) =>
@@ -166,6 +232,19 @@ function AuditLog(): React.JSX.Element {
           </tbody>
         </table>
       </div>
+      {outOfRangePage && (
+        <div className="mt-3 rounded-lg border-2 border-warning bg-amber-50 px-3 py-2 text-[14px] font-semibold text-warning">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span>{t('audit.pageOutOfRange')}</span>
+            <Button
+              variant="outline"
+              onClick={() => dispatch({ type: 'setPage', page: 1 })}
+            >
+              {t('audit.resetPage')}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {total > 0 && (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
@@ -192,20 +271,20 @@ function AuditLog(): React.JSX.Element {
               </Select>
             </label>
             <span className="text-[14px] text-slate-600">
-              {t('audit.pageOf', { page: safePage, pages: totalPages })}
+              {t('audit.pageOf', { page, pages: totalPages })}
             </span>
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                disabled={safePage <= 1 || isFetching}
-                onClick={() => dispatch({ type: 'setPage', page: safePage - 1 })}
+                disabled={page <= 1 || isFetching}
+                onClick={() => dispatch({ type: 'setPage', page: page - 1 })}
               >
                 {t('common.back')}
               </Button>
               <Button
                 variant="outline"
-                disabled={safePage >= totalPages || isFetching}
-                onClick={() => dispatch({ type: 'setPage', page: safePage + 1 })}
+                disabled={page >= totalPages || isFetching}
+                onClick={() => dispatch({ type: 'setPage', page: page + 1 })}
               >
                 {t('common.next')}
               </Button>

@@ -1,4 +1,7 @@
+import { useEffect } from 'react'
 import { useSearch } from '@tanstack/react-router'
+import { eventToShortcutKey, shouldIgnoreShortcutTarget } from '@/lib/shortcuts'
+import { useToasts } from '@/lib/toast'
 import { RequireRole } from '@/features/shell/Shell'
 import type { StockStatus } from '@shared/types'
 import { ProductsPagination } from './ProductsPagination'
@@ -29,6 +32,39 @@ function ProductManager({
   q?: string
 }): React.JSX.Element {
   const pm = useProductManager({ initialStockStatus: stock, initialSearch: q })
+  const toasts = useToasts()
+
+  useEffect(() => {
+    const shortcut = pm.settingsData?.shortcutPrintLabel
+    if (!shortcut) return
+    if (pm.ui.formProduct || pm.ui.adjustProduct || pm.ui.deleteProduct || pm.ui.importPreview) return
+
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.defaultPrevented) return
+      if (shouldIgnoreShortcutTarget(event.target)) return
+      if (eventToShortcutKey(event) !== shortcut) return
+      const rows = pm.productList?.items ?? []
+      if (rows.length !== 1) {
+        toasts.info('products.printLabelSingleHint')
+        return
+      }
+      event.preventDefault()
+      pm.printLabel.mutate({ productId: rows[0].id, copies: 1 })
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [
+    pm.productList?.items,
+    pm.printLabel,
+    pm.settingsData?.shortcutPrintLabel,
+    pm.ui.adjustProduct,
+    pm.ui.deleteProduct,
+    pm.ui.formProduct,
+    pm.ui.importPreview,
+    toasts
+  ])
+
   return (
     <div className="p-6">
       <ProductsPageToolbar
@@ -59,6 +95,7 @@ function ProductManager({
         stockCellClass={pm.stockCellClass}
         onQuickAdjust={(productId, delta) => pm.quickAdjust.mutate({ productId, delta })}
         onAdjust={(p) => pm.setUi((u) => ({ ...u, adjustProduct: p }))}
+        onPrintLabel={(p) => pm.printLabel.mutate({ productId: p.id, copies: 1 })}
         onEdit={(p) => pm.setUi((u) => ({ ...u, formProduct: p }))}
         onDelete={(p) => pm.setUi((u) => ({ ...u, deleteProduct: p }))}
       />

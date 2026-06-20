@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { handle } from './helpers'
 import { AppError } from '../errors'
 import { getDb } from '../db'
-import { localNow, round2 } from '../db/helpers'
+import { localNow, rangeBounds, round2 } from '../db/helpers'
 import {
   cierreDiscounts,
   cierrePriceOverrides,
@@ -38,6 +38,7 @@ import type {
 
 const CIERRE: 'sales'[] = ['sales']
 const CIERRE_ADMIN: 'admin'[] = ['admin']
+const CIERRE_EXPORT: ('sales' | 'admin')[] = ['sales', 'admin']
 
 function formatCashDifferenceAuditDetail(
   difference: number,
@@ -255,17 +256,23 @@ export function registerCierreHandlers(backup: BackupService): void {
     return { cierreId, printStatus }
   })
 
-  handle<void, CierreRecord[]>('cierre:history', CIERRE_ADMIN, () => {
-    return getDb()
-      .prepare(
-        `SELECT c.id, c.opened_at, c.closed_at, c.shift_label, c.total_cash, c.total_card,
-                c.total_sinpe, c.total_sales, c.opening_float, c.cash_in, c.cash_out,
-                c.expected_cash, c.counted_cash, c.cash_difference, c.notes, u.username AS closed_by
-         FROM cierres c JOIN users u ON u.id = c.closed_by_user_id
-         ORDER BY c.id DESC LIMIT 30`
-      )
-      .all() as CierreRecord[]
-  })
+  handle<{ range: { from: string; to: string } }, CierreRecord[]>(
+    'cierre:history',
+    CIERRE_ADMIN,
+    ({ range }) => {
+      const [from, to] = rangeBounds(range)
+      return getDb()
+        .prepare(
+          `SELECT c.id, c.opened_at, c.closed_at, c.shift_label, c.total_cash, c.total_card,
+                  c.total_sinpe, c.total_sales, c.opening_float, c.cash_in, c.cash_out,
+                  c.expected_cash, c.counted_cash, c.cash_difference, c.notes, u.username AS closed_by
+           FROM cierres c JOIN users u ON u.id = c.closed_by_user_id
+           WHERE c.closed_at >= ? AND c.closed_at <= ?
+           ORDER BY c.id DESC LIMIT 501`
+        )
+        .all(from, to) as CierreRecord[]
+    }
+  )
 
   handle<void, CierreDiscrepancyAlert[]>('cierre:discrepancyAlerts', CIERRE_ADMIN, () =>
     listCierreDiscrepancyAlerts()
@@ -273,7 +280,7 @@ export function registerCierreHandlers(backup: BackupService): void {
 
   handle<{ cierreId: number }, { canceled: boolean; path?: string }>(
     'cierre:exportPdf',
-    CIERRE,
+    CIERRE_EXPORT,
     async ({ cierreId }) => {
       if (!Number.isInteger(cierreId) || cierreId < 1) throw new AppError('errors.invalidInput')
       const cierre = getCierreById(cierreId)

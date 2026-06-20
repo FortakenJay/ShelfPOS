@@ -10,7 +10,7 @@ const SELL: 'sales'[] = ['sales']
 export function registerPriceOverrideHandlers(): void {
   handle<PriceOverrideAuthorizeInput, null>('priceOverride:authorize', SELL, async (input) => {
     if (!input?.pin?.trim()) throw new AppError('errors.invalidPin')
-    if (!Number.isInteger(input.productId) || input.productId < 1) {
+    if (!Number.isInteger(input.productId) || input.productId < 0) {
       throw new AppError('errors.invalidInput')
     }
     const catalog = round2(input.catalogUnitPrice)
@@ -26,7 +26,11 @@ export function registerPriceOverrideHandlers(): void {
     const product = input.productName.trim()
     const detail = `${product} · cat ${catalog} → ${override} x${input.quantity}`
 
-    writeAudit(action, { entity: 'product', entityId: input.productId, detail })
+    writeAudit(action, {
+      entity: input.productId > 0 ? 'product' : 'sale',
+      entityId: input.productId > 0 ? input.productId : undefined,
+      detail
+    })
     return null
   })
 }

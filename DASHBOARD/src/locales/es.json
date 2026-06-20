@@ -6,7 +6,9 @@
     "switchLanguage": "Cambiar idioma",
     "dash": "—",
     "vsPrevious": "vs anterior",
-    "noData": "Sin datos"
+    "noData": "Sin datos",
+    "total": "Total",
+    "actions": "Acciones"
   },
   "nav": {
     "admin": "Administración",
@@ -47,6 +49,7 @@
     "loadCierres": "Error al cargar cierres",
     "loadAudit": "Error al cargar bitácora",
     "loadMovements": "Error al cargar movimientos de efectivo",
+    "pdfExportFailed": "No se pudo generar el PDF",
     "noStoresTitle": "No hay tiendas registradas",
     "noStores": "Verifique que el servicio de sync esté activo y que la tabla <code>stores</code> exista en Supabase.",
     "noStoresLoadFailed": "No se pudo consultar la lista de tiendas. Compruebe la conexión a Supabase e intente de nuevo.",
@@ -155,6 +158,17 @@
   "cierres": {
     "title": "Cierres de caja",
     "description": "Historial sincronizado desde la tienda (solo lectura)",
+    "previous": "Cierres anteriores",
+    "from": "Desde",
+    "to": "Hasta",
+    "range": "Rango",
+    "rangeApplied": "Rango aplicado: {{from}} a {{to}}",
+    "filteredRangeSummary": "Rango {{from}} - {{to}} · {{count}} cierres",
+    "truncatedWarning": "Mostrando {{shown}} de {{total}} cierres. Ajuste el rango para exportar todo.",
+    "truncatedWarningUnknownTotal": "Mostrando los primeros {{shown}} cierres. Ajuste el rango para exportar todo.",
+    "downloadPdf": "Descargar PDF",
+    "exportingPdf": "Generando PDF...",
+    "savePdf": "Guardar PDF",
     "empty": "Sin cierres registrados",
     "id": "ID",
     "closed": "Cierre",
@@ -164,16 +178,39 @@
     "cash": "Efectivo",
     "card": "Tarjeta",
     "sinpe": "Sinpe",
-    "difference": "Diferencia"
+    "difference": "Diferencia",
+    "notes": "Notas",
+    "pdf": {
+      "title": "Cierre de caja",
+      "store": "Tienda",
+      "range": "Rango",
+      "generatedAt": "Generado",
+      "page": "Página"
+    }
   },
   "audit": {
     "title": "Bitácora",
     "description": "Actividad sincronizada de la tienda",
     "empty": "Sin registros",
+    "allTime": "Todo",
+    "allTimeSummary": "Historial completo · {{count}} registros",
+    "rangeSummary": "Rango {{from}} - {{to}} · {{count}} registros",
+    "showing": "{{from}}–{{to}} de {{total}}",
+    "pageOf": "Página {{page}} de {{pages}}",
+    "pageUnknownTotal": "Página {{page}}",
+    "pageOutOfRange": "La página actual ya no existe para este filtro.",
+    "resetPage": "Volver a la primera página",
+    "prev": "Anterior",
+    "next": "Siguiente",
     "date": "Fecha",
     "user": "Usuario",
     "action": "Acción",
-    "detail": "Detalle"
+    "entity": "Entidad",
+    "detail": "Detalle",
+    "actions": {
+      "cart_line_removed_caja": "Artículo quitado del carrito (PIN caja)",
+      "cart_line_removed_manager": "Artículo quitado del carrito (PIN gerente)"
+    }
   },
   "payment": {
     "cash": "Efectivo",

@@ -92,6 +92,28 @@ function Try-RemovePath([string]$Path) {
   }
 }
 
+function Remove-PathWithRetry([string]$Path, [int]$MaxAttempts = 5) {
+  if (-not (Test-Path $Path)) { return }
+
+  for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+    try {
+      Remove-Item -LiteralPath $Path -Recurse -Force -ErrorAction Stop
+      return
+    } catch {
+      if ($attempt -eq $MaxAttempts) {
+        throw @"
+Could not remove '$Path' after $MaxAttempts attempts.
+It is likely locked by another process (for example Explorer, ShelfPOS, or sync-service node.exe).
+Close File Explorer windows opened inside the release folder, then retry.
+"@
+      }
+      Write-Host "  '$Path' is locked (attempt $attempt/$MaxAttempts). Retrying in 2s..." -ForegroundColor DarkYellow
+      Stop-BuildLockingProcesses
+      Start-Sleep -Seconds 2
+    }
+  }
+}
+
 function Remove-BuildOutputs([string]$Root) {
   Stop-BuildLockingProcesses
   Write-Host '  Clearing out/ (best effort)' -ForegroundColor DarkGray
@@ -183,7 +205,7 @@ Start-Sleep -Seconds 2
 # --- Stage bundle ---
 Write-Host ''
 Write-Host '[4/5] Staging release bundle...' -ForegroundColor Yellow
-if (Test-Path $StageDir) { Remove-Item -Recurse -Force $StageDir }
+if (Test-Path $StageDir) { Remove-PathWithRetry $StageDir }
 New-Item -ItemType Directory -Path $StageDir -Force | Out-Null
 
 Copy-Item $NsisExe.FullName $StageDir

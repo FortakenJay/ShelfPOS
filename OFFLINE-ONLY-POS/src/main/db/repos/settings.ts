@@ -1,5 +1,12 @@
 import { getDb } from '../index'
-import type { AppSettings, IdType, Language, TaxCategory, TaxRegime } from '../../../shared/types'
+import type {
+  ActionShortcutKey,
+  AppSettings,
+  IdType,
+  Language,
+  TaxCategory,
+  TaxRegime
+} from '../../../shared/types'
 
 export const SETTING_KEYS = {
   language: 'language',
@@ -25,6 +32,11 @@ export const SETTING_KEYS = {
   storeDistrict: 'store_district',
   storeAddress: 'store_address',
   receiptFooter: 'receipt_footer',
+  shortcutOpenFloat: 'shortcut_open_float',
+  shortcutCashIn: 'shortcut_cash_in',
+  shortcutCashOut: 'shortcut_cash_out',
+  shortcutDrawerAction: 'shortcut_drawer_action',
+  shortcutPrintLabel: 'shortcut_print_label',
   /** Multi-store sync identity stamped on every Supabase row (store_a / store_b). */
   syncStoreId: 'sync_store_id',
   /** Updated by the POS app while running; sync service mirrors to Supabase. */
@@ -47,11 +59,19 @@ export function setSetting(key: string, value: string): void {
 }
 
 export function getAppSettings(): AppSettings {
+  const shortcutOrDefault = (key: string, fallback: ActionShortcutKey): ActionShortcutKey =>
+    (getSetting(key) as ActionShortcutKey | null) ?? fallback
+
   return {
     language: (getSetting(SETTING_KEYS.language) as Language | null) ?? null,
     storeName: getSetting(SETTING_KEYS.storeName) ?? 'ShelfPOS',
     stockThresholdDefault: Number(getSetting(SETTING_KEYS.stockThresholdDefault) ?? '5'),
     scannerBurstMs: Number(getSetting(SETTING_KEYS.scannerBurstMs) ?? '30'),
+    shortcutOpenFloat: shortcutOrDefault(SETTING_KEYS.shortcutOpenFloat, 'F7'),
+    shortcutCashIn: shortcutOrDefault(SETTING_KEYS.shortcutCashIn, 'F8'),
+    shortcutCashOut: shortcutOrDefault(SETTING_KEYS.shortcutCashOut, 'F9'),
+    shortcutDrawerAction: shortcutOrDefault(SETTING_KEYS.shortcutDrawerAction, 'F10'),
+    shortcutPrintLabel: shortcutOrDefault(SETTING_KEYS.shortcutPrintLabel, 'F6'),
     firstRunComplete: getSetting(SETTING_KEYS.firstRunComplete) === '1',
     cajaPinConfigured: !!getSetting(SETTING_KEYS.cajaPinHash),
     taxRegime: (getSetting(SETTING_KEYS.taxRegime) as TaxRegime | null) ?? 'simplificado',

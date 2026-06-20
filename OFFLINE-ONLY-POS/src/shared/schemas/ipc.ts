@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { IpcChannel } from '../types'
 import {
+  actionShortcutKeySchema,
   barcodeSchema,
   dateRangeSchema,
   filePathSchema,
@@ -68,12 +69,22 @@ const salePaymentInputSchema = z.strictObject({
   ref: z.string().trim().max(64).optional()
 })
 
-const createSaleItemInputSchema = z.strictObject({
+const createSaleProductItemSchema = z.strictObject({
   productId: positiveIdSchema,
   quantity: quantitySchema,
   discount: moneySchema.optional(),
   unitPrice: moneySchema.optional()
 })
+
+const createSaleMiscItemSchema = z.strictObject({
+  miscItem: z.literal(true),
+  quantity: quantitySchema,
+  unitPrice: moneySchema.refine((n) => n > 0, 'unit price must be positive'),
+  catalogUnitPrice: moneySchema.optional(),
+  discount: moneySchema.optional()
+})
+
+const createSaleItemInputSchema = z.union([createSaleProductItemSchema, createSaleMiscItemSchema])
 
 const customerInputSchema = z.strictObject({
   name: z.string().trim().max(200).optional(),
@@ -90,7 +101,8 @@ export const createSaleInputSchema = z.strictObject({
   cartDiscount: moneySchema.optional(),
   customer: customerInputSchema.optional(),
   tendered: moneySchema.optional(),
-  discountPin: pinSchema.optional()
+  discountPin: pinSchema.optional(),
+  printReceipt: z.boolean().optional()
 })
 
 const createReturnInputSchema = z.strictObject({
@@ -117,7 +129,7 @@ const discountAuthorizeInputSchema = z.strictObject({
 
 const priceOverrideAuthorizeInputSchema = z.strictObject({
   pin: pinSchema,
-  productId: positiveIdSchema,
+  productId: z.number().int().min(0),
   productName: z.string().trim().min(1).max(200),
   catalogUnitPrice: moneySchema.refine((n) => n > 0, 'catalog price must be positive'),
   overrideUnitPrice: moneySchema.refine((n) => n > 0, 'override price must be positive'),
@@ -162,7 +174,12 @@ const settingsUpdateInputSchema = z.strictObject({
   storeCanton: z.string().trim().max(64).optional(),
   storeDistrict: z.string().trim().max(64).optional(),
   storeAddress: optionalLongTextSchema.optional(),
-  receiptFooter: optionalLongTextSchema.optional()
+  receiptFooter: optionalLongTextSchema.optional(),
+  shortcutOpenFloat: actionShortcutKeySchema.optional(),
+  shortcutCashIn: actionShortcutKeySchema.optional(),
+  shortcutCashOut: actionShortcutKeySchema.optional(),
+  shortcutDrawerAction: actionShortcutKeySchema.optional(),
+  shortcutPrintLabel: actionShortcutKeySchema.optional()
 })
 
 const auditLogFilterSchema = z
@@ -234,6 +251,10 @@ export const IPC_SCHEMAS = {
     filePath: filePathSchema,
     stockMode: z.enum(['add', 'replace']).optional()
   }),
+  'products:printLabel': z.strictObject({
+    productId: positiveIdSchema,
+    copies: z.number().int().min(1).max(20).optional()
+  }),
   'products:byBarcode': z.strictObject({ barcode: barcodeSchema }),
   'products:search': z.strictObject({ query: z.string().trim().max(100) }),
   'sales:create': createSaleInputSchema,
@@ -241,8 +262,15 @@ export const IPC_SCHEMAS = {
     saleId: positiveIdSchema.optional(),
     date: localDateSchema.optional()
   }),
+  'sales:listForReprint': voidInput,
+  'sales:reprintReceipt': z.strictObject({ saleId: positiveIdSchema }),
   'returns:create': createReturnInputSchema,
   'discount:authorize': discountAuthorizeInputSchema,
+  'cart:removeAuthorize': z.strictObject({
+    pin: pinSchema,
+    productName: z.string().trim().min(1).max(200),
+    quantity: quantitySchema
+  }),
   'priceOverride:authorize': priceOverrideAuthorizeInputSchema,
   'reports:run': reportPayloadSchema,
   'reports:print': reportPayloadSchema,
@@ -250,7 +278,7 @@ export const IPC_SCHEMAS = {
   'dashboard:overview': voidInput,
   'cierre:preview': voidInput,
   'cierre:confirm': cierreConfirmInputSchema,
-  'cierre:history': voidInput,
+  'cierre:history': z.strictObject({ range: dateRangeSchema }),
   'cierre:discrepancyAlerts': voidInput,
   'cierre:exportPdf': z.strictObject({ cierreId: positiveIdSchema }),
   'cash:status': voidInput,
@@ -266,6 +294,8 @@ export const IPC_SCHEMAS = {
   'users:delete': z.strictObject({ id: positiveIdSchema }),
   'printQueue:list': voidInput,
   'printQueue:retry': z.strictObject({ id: positiveIdSchema }),
+  'printer:openDrawer': voidInput,
+  'printer:colonTest': voidInput,
   'backup:info': voidInput,
   'backup:runManual': voidInput,
   'backup:exportCsv': z.strictObject({ range: dateRangeSchema })

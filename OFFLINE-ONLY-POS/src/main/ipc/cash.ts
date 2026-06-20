@@ -12,6 +12,7 @@ import {
 import { round2 } from '../db/helpers'
 import { writeAudit } from '../db/repos/audit'
 import { session } from '../services/session'
+import { tryOpenCashDrawer } from '../services/printer'
 import type {
   CashDrawerStatus,
   CashMovementInput,
@@ -38,7 +39,7 @@ export function registerCashHandlers(): void {
     return listCashMovements({ fromTs, toTs })
   })
 
-  handle<OpenFloatInput, CashDrawerStatus>('cash:openFloat', CASH, (input) => {
+  handle<OpenFloatInput, CashDrawerStatus>('cash:openFloat', CASH, async (input) => {
     const user = session.require()
     if (!Number.isFinite(input?.amount) || input.amount < 0) throw new AppError('errors.invalidInput')
     if (hasOpeningFloat()) throw new AppError('errors.floatAlreadyOpen')
@@ -46,6 +47,7 @@ export function registerCashHandlers(): void {
       insertCashMovement('opening_float', input.amount, null, user.id)
       writeAudit('cash_opening_float', { entity: 'cash', detail: String(input.amount) })
     })()
+    await tryOpenCashDrawer()
     return cashDrawerStatus()
   })
 
@@ -73,6 +75,7 @@ export function registerCashHandlers(): void {
         detail
       })
     })()
+    await tryOpenCashDrawer()
     return cashDrawerStatus()
   })
 }

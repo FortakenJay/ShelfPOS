@@ -1,15 +1,20 @@
 import { useTranslation } from 'react-i18next'
+import { Toggle } from '@/components/ui'
 import type { PaymentMethod } from '@shared/types'
 import { PaymentMethodButtons } from './PaymentMethodButtons'
 
 export function PaymentMethodSidebar({
   splitPayment,
   method,
+  printReceipt,
+  onPrintReceiptChange,
   onSelectMethod,
   onToggleSplit
 }: {
   splitPayment: boolean
   method: PaymentMethod
+  printReceipt: boolean
+  onPrintReceiptChange: (value: boolean) => void
   onSelectMethod: (method: PaymentMethod) => void
   onToggleSplit: () => void
 }): React.JSX.Element {
@@ -41,6 +46,12 @@ export function PaymentMethodSidebar({
       >
         {t('pos.splitPayment')}
       </button>
+
+      <Toggle
+        checked={printReceipt}
+        onChange={onPrintReceiptChange}
+        label={t('pos.printReceiptToggle')}
+      />
     </aside>
   )
 }

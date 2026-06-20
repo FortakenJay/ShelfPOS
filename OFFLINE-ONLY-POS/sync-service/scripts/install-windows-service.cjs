@@ -2,11 +2,11 @@
  * Registers ShelfPOSSync as a Windows Service via node-windows (WinSW wrapper).
  * Usage: node.exe scripts/install-windows-service.cjs "C:\Program Files\ShelfPOS\sync-service"
  */
-const { join } = require('node:path')
+const { join, resolve } = require('node:path')
 const { existsSync, mkdirSync } = require('node:fs')
 const { Service } = require('node-windows')
 
-const installDir = process.argv[2] ? join(process.argv[2]) : join(__dirname, '..')
+const installDir = process.argv[2] ? resolve(process.argv[2]) : join(__dirname, '..')
 const scriptPath = join(installDir, 'dist', 'index.js')
 const nodeExe = join(installDir, 'node.exe')
 const syncEnv = join(installDir, 'sync.env')
@@ -34,6 +34,8 @@ const svc = new Service({
   description: 'Pushes ShelfPOS SQLite changes to Supabase (one-way sync)',
   script: scriptPath,
   execPath: nodeExe,
+  // node-windows expects workingDirectory (camelCase). Keep legacy key too for safety.
+  workingDirectory: installDir,
   workingdirectory: installDir,
   nodeOptions: ['--enable-source-maps'],
   env: [{ name: 'SHELFPOS_SYNC_CONFIG', value: syncEnv }],

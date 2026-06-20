@@ -7,6 +7,7 @@ import { FullScreenSpinner } from '@/components/ui'
 import { CierreDiscrepancyBanner } from '@/features/admin/CierreDiscrepancyAlerts'
 import { NotificationsCenter } from '@/features/admin/dashboard/components/NotificationsCenter'
 import { useDashboard } from '@/features/admin/dashboard/useDashboard'
+import { POSReprintList } from '@/features/pos/POSReprintList'
 import { AppLogo } from '@/components/AppLogo'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import type { ReactNode } from 'react'
@@ -29,6 +30,7 @@ const NAV_ITEMS: NavItem[] = [
 const ADMIN_ITEMS: NavItem[] = [
   { to: '/admin/dashboard', labelKey: 'nav.dashboard', roles: ['admin'] },
   { to: '/admin/reports', labelKey: 'nav.reports', roles: ['admin'] },
+  { to: '/admin/cierre', labelKey: 'nav.cierre', roles: ['admin'] },
   { to: '/products', labelKey: 'nav.products', roles: ['admin'] },
   { to: '/admin/cash', labelKey: 'nav.cashMovements', roles: ['admin'] },
   { to: '/admin/users', labelKey: 'nav.users', roles: ['admin'] },
@@ -83,6 +85,11 @@ export function Shell(): React.JSX.Element {
             </Link>
           ))}
         </nav>
+        {user.role === 'sales' && (
+          <div className="max-h-56 min-h-0 shrink-0 border-t border-chrome-light px-3 py-3">
+            <POSReprintList variant="shell" />
+          </div>
+        )}
         <div className="shrink-0 border-t border-chrome-light px-5 py-4">
           <div className="text-[15px] font-bold text-white">{user.username}</div>
           <div className="mb-3 text-[13px] text-slate-400">{t(`roles.${user.role}`)}</div>

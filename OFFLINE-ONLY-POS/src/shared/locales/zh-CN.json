@@ -100,13 +100,18 @@
     "backToLanguage": "Idioma / 语言"
   },
   "pos": {
-    "searchPlaceholder": "扫描条码或输入商品名称…（空行 Enter = 收款）",
+    "searchPlaceholder": "扫描条码、输入商品名称或带 * 的价格（如 3000*）…（空行 Enter = 收款）",
+    "miscItemName": "无码商品",
+    "miscItemBadge": "无码",
     "noResults": "没有结果",
     "cartEmpty": "购物车是空的",
     "qty": "数量",
     "price": "单价",
     "lineTotal": "小计",
     "remove": "移除",
+    "removeLine": {
+      "pinTitle": "移除商品需 PIN — {{name}}"
+    },
     "subtotal": "小计",
     "total": "合计",
     "paymentMethod": "支付方式",
@@ -127,7 +132,12 @@
     "confirmPayment": "确认收款",
     "saleCompleted": "销售已记录",
     "printFailed": "打印失败 — 是否重试？",
+    "printReceiptToggle": "打印收据",
     "printRetried": "已重新发送打印",
+    "reprintTitle": "本班次收据",
+    "reprintEmpty": "本班次暂无销售",
+    "reprintAction": "重打",
+    "reprintSuccess": "收据已发送打印",
     "amount": "金额",
     "paymentMethod": "支付方式",
     "splitPayment": "组合支付",
@@ -234,6 +244,9 @@
     "created": "商品已创建",
     "updated": "商品已更新",
     "deleted": "商品已删除",
+    "printLabel": "打印标签",
+    "labelPrinted": "标签已发送到打印队列",
+    "printLabelSingleHint": "请先筛选到仅显示一个商品，再使用标签快捷键。",
     "csv": {
       "barcode": "条形码",
       "name": "名称",
@@ -330,6 +343,9 @@
   "reports": {
     "title": "报表",
     "subtitle": "与管理面板一致的可导出明细。",
+    "today": "今天",
+    "week": "本周",
+    "month": "本月",
     "backToDashboard": "返回面板",
     "profitHint": "毛利按商品当前成本价计算（非销售时的历史成本）。",
     "types": {
@@ -596,7 +612,9 @@
     "discrepancyShort": "缺少",
     "discrepancyBy": "操作人：{{user}}",
     "discrepancyDifference": "差额：{{amount}}",
-    "discrepancyBanner": "({{count}} 笔日结) 现金有差额 — 请查看报表或日志"
+    "discrepancyBanner": "({{count}} 笔日结) 现金有差额 — 请查看日结",
+    "filteredRangeSummary": "范围 {{from}} - {{to}} · 共 {{count}} 笔日结",
+    "historyTruncatedWarning": "当前仅显示该范围前 500 笔日结。请缩小范围以查看全部。"
   },
   "cash": {
     "title": "现金 / 钱箱",
@@ -627,15 +645,21 @@
       "cash_out": "支出"
     },
     "floatOpenedToast": "已记录备用金",
-    "movementToast": "已记录进出"
+    "movementToast": "已记录进出",
+    "drawerOpenedToast": "钱箱已打开"
   },
   "audit": {
     "title": "操作日志",
+    "allTime": "全部",
+    "allTimeSummary": "完整历史 · 共 {{total}} 条记录",
     "pageOf": "第 {{page}} 页，共 {{pages}} 页",
+    "pageOutOfRange": "当前页在该筛选条件下已不存在。",
+    "resetPage": "返回第一页",
     "showing": "第 {{from}}–{{to}} 条，共 {{total}} 条",
     "user": "用户",
     "allUsers": "所有用户",
     "allActions": "所有操作",
+    "range": "范围",
     "action": "操作",
     "entity": "对象",
     "detail": "详情",
@@ -660,6 +684,9 @@
       "price_override_authorized_caja": "改价已授权（收银 PIN）",
       "price_override_authorized_manager": "改价已授权（经理 PIN）",
       "price_override_sale": "销售含改价",
+      "cart_line_removed_caja": "已从购物车移除商品（收银 PIN）",
+      "cart_line_removed_manager": "已从购物车移除商品（经理 PIN）",
+      "product_label_printed": "打印商品标签",
       "user_created": "创建用户",
       "user_updated": "更新用户",
       "user_deactivated": "停用用户"
@@ -702,7 +729,8 @@
     "types": {
       "receipt": "小票",
       "report": "报表",
-      "cierre": "日结"
+      "cierre": "日结",
+      "label": "标签"
     },
     "saleRef": "销售单",
     "createdAt": "创建时间",
@@ -746,6 +774,33 @@
     "stockThresholdDefault": "低库存警戒值（全局）",
     "scannerBurstMs": "扫描枪阈值（毫秒）",
     "scannerHint": "识别扫描枪输入的最大按键间隔。默认：30 毫秒。",
+    "shortcuts": {
+      "title": "操作快捷键",
+      "hint": "为应用内快速操作分配按键。",
+      "openFloat": "开班开箱",
+      "cashIn": "现金存入",
+      "cashOut": "现金取出",
+      "drawerAction": "收银箱专用快捷键",
+      "printLabel": "打印商品标签",
+      "conflict": "同一个按键不能分配给多个动作。",
+      "options": {
+        "F1": "F1",
+        "F2": "F2",
+        "F3": "F3",
+        "F4": "F4",
+        "F5": "F5",
+        "F6": "F6",
+        "F7": "F7",
+        "F8": "F8",
+        "F9": "F9",
+        "F10": "F10",
+        "F11": "F11",
+        "F12": "F12"
+      }
+    },
+    "colonTest": "打印科朗符号测试",
+    "colonTestHint": "将打印 7 条测试带（PRUEBA 1–7）。请说明哪一条在价格前显示了正确符号。",
+    "colonTestSent": "测试已发送到打印机",
     "saved": "设置已保存",
     "emisor": {
       "title": "开票方与小票信息",

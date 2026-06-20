@@ -18,6 +18,11 @@ export interface SettingsDraft {
   branchCode: string
   terminalCode: string
   ivaStandard: string
+  shortcutOpenFloat: AppSettings['shortcutOpenFloat']
+  shortcutCashIn: AppSettings['shortcutCashIn']
+  shortcutCashOut: AppSettings['shortcutCashOut']
+  shortcutDrawerAction: AppSettings['shortcutDrawerAction']
+  shortcutPrintLabel: AppSettings['shortcutPrintLabel']
 }
 
 export function draftFromSettings(s: AppSettings): SettingsDraft {
@@ -38,7 +43,12 @@ export function draftFromSettings(s: AppSettings): SettingsDraft {
     footer: s.receiptFooter,
     branchCode: s.branchCode,
     terminalCode: s.terminalCode,
-    ivaStandard: String(s.ivaRateStandard)
+    ivaStandard: String(s.ivaRateStandard),
+    shortcutOpenFloat: s.shortcutOpenFloat,
+    shortcutCashIn: s.shortcutCashIn,
+    shortcutCashOut: s.shortcutCashOut,
+    shortcutDrawerAction: s.shortcutDrawerAction,
+    shortcutPrintLabel: s.shortcutPrintLabel
   }
 }
 
@@ -57,6 +67,13 @@ const EMISOR_KEYS = [
   'footer'
 ] as const
 const TAX_KEYS = ['branchCode', 'terminalCode', 'ivaStandard'] as const
+const SHORTCUT_KEYS = [
+  'shortcutOpenFloat',
+  'shortcutCashIn',
+  'shortcutCashOut',
+  'shortcutDrawerAction',
+  'shortcutPrintLabel'
+] as const
 
 function sectionDirty(
   draft: SettingsDraft,
@@ -76,4 +93,8 @@ export function emisorDraftDirty(draft: SettingsDraft, saved: SettingsDraft): bo
 
 export function taxDraftDirty(draft: SettingsDraft, saved: SettingsDraft): boolean {
   return sectionDirty(draft, saved, TAX_KEYS)
+}
+
+export function shortcutsDraftDirty(draft: SettingsDraft, saved: SettingsDraft): boolean {
+  return sectionDirty(draft, saved, SHORTCUT_KEYS)
 }

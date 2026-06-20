@@ -1,8 +1,9 @@
-import { useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
 import { parseColonesInput } from '@/lib/format'
+import { eventToShortcutKey } from '@/lib/shortcuts'
 import { useToasts } from '@/lib/toast'
 import { Button, Field, Modal } from '@/components/ui'
 import { MoneyInput } from '@/components/MoneyInput'
@@ -13,6 +14,7 @@ export function OpenFloatModal({ onOpened }: { onOpened: () => void }): React.JS
   const toasts = useToasts()
   const queryClient = useQueryClient()
   const [amount, setAmount] = useState('')
+  const { data: settings } = useQuery({ queryKey: ['settings'], queryFn: api.settings.get })
 
   const openFloat = useMutation({
     mutationFn: () => {
@@ -28,6 +30,19 @@ export function OpenFloatModal({ onOpened }: { onOpened: () => void }): React.JS
     },
     onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
   })
+
+  useEffect(() => {
+    const shortcut = settings?.shortcutOpenFloat
+    if (!shortcut || openFloat.isPending || moneyInputIsEmpty(amount)) return
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.defaultPrevented) return
+      if (eventToShortcutKey(event) !== shortcut) return
+      event.preventDefault()
+      openFloat.mutate()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [amount, openFloat, settings?.shortcutOpenFloat])
 
   return (
     <Modal title={t('cash.openFloatTitle')}>

@@ -190,10 +190,15 @@ export function salesSummary(filter: SaleFilter): SalesSummaryReport {
   const cashSales = paymentTotals(filter).cash
   const profitRow = db
     .prepare(
-      `SELECT COALESCE(SUM(si.line_total - COALESCE(p.cost_price, 0) * si.quantity), 0) AS profit
+      `SELECT COALESCE(SUM(
+         si.line_total - CASE
+           WHEN si.product_id IS NULL THEN 0
+           ELSE COALESCE(p.cost_price, 0) * si.quantity
+         END
+       ), 0) AS profit
        FROM sale_items si
        JOIN sales s ON s.id = si.sale_id
-       JOIN products p ON p.id = si.product_id
+       LEFT JOIN products p ON p.id = si.product_id
        ${where}`
     )
     .get(params) as { profit: number }
@@ -219,15 +224,18 @@ export function topProducts(filter: SaleFilter, limit = 10): TopProductRow[] {
   const { where, params } = saleWhere(filter)
   const rows = getDb()
     .prepare(
-      `SELECT p.id AS productId, p.name AS name, p.barcode AS barcode,
+      `SELECT COALESCE(p.id, 0) AS productId,
+              COALESCE(si.product_name_snapshot, p.name) AS name,
+              COALESCE(p.barcode, '') AS barcode,
               SUM(si.quantity) AS quantity,
               COALESCE(SUM(si.line_total), 0) AS revenue,
               COALESCE(SUM(si.line_total - COALESCE(p.cost_price, 0) * si.quantity), 0) AS profit
        FROM sale_items si
        JOIN sales s ON s.id = si.sale_id
-       JOIN products p ON p.id = si.product_id
+       LEFT JOIN products p ON p.id = si.product_id
        ${where}
-       GROUP BY p.id ORDER BY revenue DESC LIMIT @limit`
+       GROUP BY COALESCE(p.id, 0), COALESCE(si.product_name_snapshot, p.name)
+       ORDER BY revenue DESC LIMIT @limit`
     )
     .all({ ...params, limit }) as {
     productId: number
@@ -355,10 +363,11 @@ export function cierreDiscounts(filter: SaleFilter): {
 
   const itemRows = getDb()
     .prepare(
-      `SELECT si.sale_id AS saleId, si.id AS saleItemId, p.name AS productName, si.quantity,
+      `SELECT si.sale_id AS saleId, si.id AS saleItemId,
+              COALESCE(si.product_name_snapshot, p.name) AS productName, si.quantity,
               si.line_discount AS lineDiscount
        FROM sale_items si
-       JOIN products p ON p.id = si.product_id
+       LEFT JOIN products p ON p.id = si.product_id
        JOIN sales s ON s.id = si.sale_id
        ${itemWhere}
        ORDER BY si.sale_id, si.id`
@@ -446,10 +455,11 @@ export function cierrePriceOverrides(filter: SaleFilter): {
 
   const itemRows = getDb()
     .prepare(
-      `SELECT si.sale_id AS saleId, si.id AS saleItemId, p.name AS productName, si.quantity,
+      `SELECT si.sale_id AS saleId, si.id AS saleItemId,
+              COALESCE(si.product_name_snapshot, p.name) AS productName, si.quantity,
               si.catalog_unit_price AS catalogUnitPrice, si.unit_price AS unitPrice
        FROM sale_items si
-       JOIN products p ON p.id = si.product_id
+       LEFT JOIN products p ON p.id = si.product_id
        JOIN sales s ON s.id = si.sale_id
        ${overrideWhere}
        ORDER BY si.sale_id, si.id`

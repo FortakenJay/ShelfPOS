@@ -94,6 +94,37 @@ function ConvertTo-StoreId([string]$Name) {
   return "store_$slug"
 }
 
+function Get-ExistingStoreIdByName(
+  [string]$SupabaseUrl,
+  [string]$SupabaseServiceKey,
+  [string]$DisplayName
+) {
+  if (-not $DisplayName) { return $null }
+
+  $escapedName = [Uri]::EscapeDataString($DisplayName)
+  $uri = "$SupabaseUrl/rest/v1/stores?select=store_id,display_name&display_name=eq.$escapedName&limit=1"
+  $headers = @{
+    apikey        = $SupabaseServiceKey
+    Authorization = "Bearer $SupabaseServiceKey"
+  }
+
+  try {
+    $rows = Invoke-RestMethod -Method Get -Uri $uri -Headers $headers -TimeoutSec 10
+    if ($null -eq $rows) { return $null }
+    if ($rows -is [System.Array]) {
+      if ($rows.Count -gt 0) { return $rows[0].store_id }
+      return $null
+    }
+    if ($rows.PSObject.Properties['store_id']) {
+      return $rows.store_id
+    }
+  } catch {
+    Write-Host "Could not validate existing stores for '$DisplayName' (continuing with derived store_id)." -ForegroundColor DarkYellow
+    return $null
+  }
+  return $null
+}
+
 Ensure-Administrator
 
 Write-Host ''
@@ -111,9 +142,12 @@ if (-not $SupabaseServiceKey) {
 
 $StoreId = if ($null -ne $StoreId) { $StoreId.Trim() } else { '' }
 $StoreName = if ($null -ne $StoreName) { $StoreName.Trim() } else { '' }
+$StoreIdProvided = $false
 
 if (-not $StoreId -or $StoreId -eq '-StoreId' -or $StoreId -match '^-') {
   $StoreId = ''
+} else {
+  $StoreIdProvided = $true
 }
 
 if (-not $StoreId) {
@@ -125,6 +159,15 @@ if (-not $StoreId) {
 } elseif ($StoreName) {
   Write-Host "StoreId provided ($StoreId). StoreName '$StoreName' will be ignored." -ForegroundColor DarkGray
 }
+
+if (-not $StoreIdProvided -and $StoreName) {
+  $existingStoreId = Get-ExistingStoreIdByName -SupabaseUrl $SupabaseUrl -SupabaseServiceKey $SupabaseServiceKey -DisplayName $StoreName
+  if ($existingStoreId -and $existingStoreId -ne $StoreId) {
+    Write-Host "Found existing store entry '$existingStoreId' with same display name '$StoreName'." -ForegroundColor Yellow
+    Write-Host "Keeping derived store_id '$StoreId' to avoid merging separate registers." -ForegroundColor DarkGray
+  }
+}
+
 if ($StoreId -notmatch '^store_[a-z0-9_]+$') {
   throw @"
 Invalid StoreId: '$StoreId'
@@ -296,7 +339,12 @@ sc.exe stop $ServiceName 2>$null | Out-Null
 sc.exe delete $ServiceName 2>$null | Out-Null
 Start-Sleep -Seconds 1
 
-& $NodeExe $InstallServiceJs $InstallDir
+Push-Location $InstallDir
+try {
+  & $NodeExe $InstallServiceJs $InstallDir
+} finally {
+  Pop-Location
+}
 if ($LASTEXITCODE -ne 0) {
   Write-Host ''
   Write-Host 'Service registration failed. Run in foreground to see the error:' -ForegroundColor Red

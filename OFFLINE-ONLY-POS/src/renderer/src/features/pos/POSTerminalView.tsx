@@ -24,6 +24,7 @@ export function POSTerminalView(state: POSTerminalState): React.JSX.Element {
     returnOpen,
     discountTarget,
     priceTarget,
+    removeTarget,
     customerOpen,
     setModals,
     setSale,
@@ -76,13 +77,13 @@ export function POSTerminalView(state: POSTerminalState): React.JSX.Element {
             cart={cart}
             itemsGross={itemsGross}
             discountTotal={discountTotal}
-            onLineDiscount={(productId) =>
-              setModals((m) => ({ ...m, discountTarget: { kind: 'line', productId } }))
+            onLineDiscount={(lineKey) =>
+              setModals((m) => ({ ...m, discountTarget: { kind: 'line', lineKey } }))
             }
-            onLinePrice={(productId) => setModals((m) => ({ ...m, priceTarget: productId }))}
+            onLinePrice={(lineKey) => setModals((m) => ({ ...m, priceTarget: lineKey }))}
             onCartDiscount={() => setModals((m) => ({ ...m, discountTarget: { kind: 'cart' } }))}
             onSetQuantity={setQuantity}
-            onRemoveLine={removeLine}
+            onRemoveLine={(lineKey) => setModals((m) => ({ ...m, removeTarget: lineKey }))}
           />
         </div>
 
@@ -108,6 +109,7 @@ export function POSTerminalView(state: POSTerminalState): React.JSX.Element {
           returnOpen={returnOpen}
           discountTarget={discountTarget}
           priceTarget={priceTarget}
+          removeTarget={removeTarget}
           customerOpen={customerOpen}
           afterLineDiscounts={afterLineDiscounts}
           discountModalBase={discountModalBase()}
@@ -122,12 +124,18 @@ export function POSTerminalView(state: POSTerminalState): React.JSX.Element {
           }}
           onDiscountClose={() => setModals((m) => ({ ...m, discountTarget: null }))}
           onPriceClose={() => setModals((m) => ({ ...m, priceTarget: null }))}
+          onRemoveClose={() => setModals((m) => ({ ...m, removeTarget: null }))}
+          onRemoveConfirmed={(lineKey) => {
+            removeLine(lineKey)
+            setModals((m) => ({ ...m, removeTarget: null }))
+            focusSearch()
+          }}
           onCustomerClose={() => setModals((m) => ({ ...m, customerOpen: false }))}
           onSaleCompleted={onSaleCompleted}
           onDiscountApply={(amount, authPin) => {
             if (authPin) setDiscountAuthPin(authPin)
             if (discountTarget?.kind === 'cart') setSale((s) => ({ ...s, cartDiscount: amount }))
-            else if (discountTarget?.kind === 'line') setLineDiscount(discountTarget.productId, amount)
+            else if (discountTarget?.kind === 'line') setLineDiscount(discountTarget.lineKey, amount)
             setModals((m) => ({ ...m, discountTarget: null }))
             focusSearch()
           }}

@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
 import { toastApiError } from '@/lib/errors'
@@ -6,7 +7,7 @@ import { parseColonesInput } from '@/lib/format'
 import { useToasts } from '@/lib/toast'
 import { roundColones, appendMoneyInputDigit, backspaceMoneyInput } from '@shared/money'
 import { Modal } from '@/components/ui'
-import type { CreateSaleItemInput, CustomerInput, PrintStatus } from '@shared/types'
+import type { CreateSaleLineInput, CustomerInput, PrintStatus } from '@shared/types'
 import { usePaymentModalState } from './paymentModalState'
 import { PaymentCheckoutPanel } from './PaymentCheckoutPanel'
 import { PaymentCheckoutPad } from './PaymentCheckoutPad'
@@ -15,7 +16,7 @@ import { PaymentSplitSection } from './PaymentSplitSection'
 import { usePaymentKeyboard } from './usePaymentKeyboard'
 
 interface PaymentModalProps {
-  items: CreateSaleItemInput[]
+  items: CreateSaleLineInput[]
   total: number
   cartDiscount: number
   discountPin: string | null
@@ -43,6 +44,7 @@ export function PaymentModal({
   const toasts = useToasts()
   const queryClient = useQueryClient()
   const { state, dispatch } = usePaymentModalState('cash')
+  const [printReceipt, setPrintReceipt] = useState(true)
   const { splitPayment, singleMethod, sinpeRef, entries, tendered } = state
 
   const splitPaid = round2(entries.reduce((acc, e) => acc + entryAmount(e.amount), 0))
@@ -87,13 +89,16 @@ export function PaymentModal({
 
   const mutation = useMutation({
     mutationFn: api.sales.create,
-    onSuccess: (result) => {
+    onSuccess: (result, variables) => {
       toasts.stockAlerts(result.stockAlerts)
-      notifyPrint(result.printStatus, result.printJobId)
+      if (variables.printReceipt !== false) {
+        notifyPrint(result.printStatus, result.printJobId)
+      }
       void queryClient.invalidateQueries({ queryKey: ['posSearch'] })
       void queryClient.invalidateQueries({ queryKey: ['products'] })
       void queryClient.invalidateQueries({ queryKey: ['cashStatus'] })
       void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
+      void queryClient.invalidateQueries({ queryKey: ['salesForReprint'] })
       onCompleted(result.change)
     },
     onError: (err) => toastApiError(toasts, err)
@@ -131,7 +136,8 @@ export function PaymentModal({
       cartDiscount: cartDiscount > 0 ? cartDiscount : undefined,
       customer: customer ?? undefined,
       tendered: hasCashSingle && tenderedNum != null ? tenderedNum : undefined,
-      discountPin: hasDiscount ? discountPin ?? undefined : undefined
+      discountPin: hasDiscount ? discountPin ?? undefined : undefined,
+      printReceipt
     })
   }
 
@@ -159,6 +165,8 @@ export function PaymentModal({
         <PaymentMethodSidebar
           splitPayment={splitPayment}
           method={singleMethod}
+          printReceipt={printReceipt}
+          onPrintReceiptChange={setPrintReceipt}
           onSelectMethod={(method) => dispatch({ type: 'setSingleMethod', value: method })}
           onToggleSplit={toggleSplit}
         />

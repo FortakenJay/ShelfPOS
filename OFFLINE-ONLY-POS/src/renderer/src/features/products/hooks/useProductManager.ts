@@ -174,6 +174,17 @@ export function useProductManager(options?: {
     onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
   })
 
+  const printLabel = useMutation({
+    mutationFn: (input: { productId: number; copies?: number }) =>
+      api.products.printLabel(input.productId, input.copies ?? 1),
+    onSuccess: ({ printStatus }) => {
+      if (printStatus === 'printed') toasts.success('products.labelPrinted')
+      else toasts.error('pos.printFailed')
+      void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
+    },
+    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+  })
+
   const defaultThreshold = settingsData?.stockThresholdDefault ?? 5
 
   const stockCellClass = (p: Product): string => {
@@ -196,12 +207,14 @@ export function useProductManager(options?: {
     productList,
     productsLoading,
     categoryRows,
+    settingsData,
     defaultThreshold,
     stockCellClass,
     quickAdjust,
     deleteMutation,
     exportTemplate,
     exportProducts,
+    printLabel,
     importPreviewMutation,
     importEfacturaPreviewMutation,
     importConfirmMutation,

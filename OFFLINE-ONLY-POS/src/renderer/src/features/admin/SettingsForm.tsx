@@ -4,13 +4,21 @@ import { useTranslation } from 'react-i18next'
 import i18n from 'i18next'
 import { api, ApiError } from '@/lib/api'
 import { useToasts } from '@/lib/toast'
-import { draftFromSettings, emisorDraftDirty, generalDraftDirty, taxDraftDirty, type SettingsDraft } from './settingsDraft'
+import {
+  draftFromSettings,
+  emisorDraftDirty,
+  generalDraftDirty,
+  shortcutsDraftDirty,
+  taxDraftDirty,
+  type SettingsDraft
+} from './settingsDraft'
 import {
   SettingsEmisorSection,
   SettingsGeneralSection,
   SettingsLanguageSection,
   SettingsPinSection,
   SettingsCajaPinSection,
+  SettingsShortcutsSection,
   SettingsTaxSection
 } from './SettingsSections'
 import type { AppSettings, Language, SettingsUpdateInput } from '@shared/types'
@@ -51,6 +59,19 @@ function commitSavedDraft(
     next.branchCode = draft.branchCode
     next.terminalCode = draft.terminalCode
     next.ivaStandard = draft.ivaStandard
+  }
+  if (
+    input.shortcutOpenFloat !== undefined ||
+    input.shortcutCashIn !== undefined ||
+    input.shortcutCashOut !== undefined ||
+    input.shortcutDrawerAction !== undefined ||
+    input.shortcutPrintLabel !== undefined
+  ) {
+    next.shortcutOpenFloat = draft.shortcutOpenFloat
+    next.shortcutCashIn = draft.shortcutCashIn
+    next.shortcutCashOut = draft.shortcutCashOut
+    next.shortcutDrawerAction = draft.shortcutDrawerAction
+    next.shortcutPrintLabel = draft.shortcutPrintLabel
   }
   return next
 }
@@ -109,6 +130,14 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
   const { pin, pinError, cajaPin, cajaPinError } = pinForms
 
   const patchDraft = (patch: Partial<SettingsDraft>): void => setDraft((prev) => ({ ...prev, ...patch }))
+  const shortcutValues = [
+    draft.shortcutOpenFloat,
+    draft.shortcutCashIn,
+    draft.shortcutCashOut,
+    draft.shortcutDrawerAction,
+    draft.shortcutPrintLabel
+  ]
+  const shortcutConflict = new Set(shortcutValues).size !== shortcutValues.length
 
   const languageMutation = useMutation({
     mutationFn: async (language: Language) => {
@@ -200,6 +229,24 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
           }
         />
       </div>
+
+      <SettingsShortcutsSection
+        draft={draft}
+        onChange={patchDraft}
+        saving={updateMutation.isPending}
+        dirty={shortcutsDraftDirty(draft, savedDraft)}
+        hasConflict={shortcutConflict}
+        onSave={() => {
+          if (shortcutConflict) return
+          updateMutation.mutate({
+            shortcutOpenFloat: draft.shortcutOpenFloat,
+            shortcutCashIn: draft.shortcutCashIn,
+            shortcutCashOut: draft.shortcutCashOut,
+            shortcutDrawerAction: draft.shortcutDrawerAction,
+            shortcutPrintLabel: draft.shortcutPrintLabel
+          })
+        }}
+      />
 
       <SettingsEmisorSection
         draft={draft}

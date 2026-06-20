@@ -1,9 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { api } from '@/lib/api'
+import { api, ApiError } from '@/lib/api'
+import {
+  cartLineGross,
+  cartLineKey,
+  cartLineTotal
+} from '@/lib/cartLine'
 import { stockAllows } from '@/lib/errors'
-import { lineGross, lineTotal } from '@/lib/pricing'
+import { eventToShortcutKey, shouldIgnoreShortcutTarget } from '@/lib/shortcuts'
 import { useToasts } from '@/lib/toast'
+import { parseMiscPriceInput } from '@shared/miscItem'
 import { roundColones } from '@shared/money'
 import { useDebouncedValue, useScannerDetector } from '@/lib/useScanner'
 import { usePosEnterShortcut } from './posKeyboard'
@@ -12,7 +18,11 @@ import type { CustomerInput, Product } from '@shared/types'
 
 const round2 = roundColones
 
-export type DiscountTarget = { kind: 'line'; productId: number } | { kind: 'cart' }
+export type DiscountTarget = { kind: 'line'; lineKey: string } | { kind: 'cart' }
+
+function findCartLine(cart: CartLine[], lineKey: string): CartLine | undefined {
+  return cart.find((line) => cartLineKey(line) === lineKey)
+}
 
 export function usePOSTerminal() {
   const toasts = useToasts()
@@ -28,14 +38,15 @@ export function usePOSTerminal() {
     payOpen: false,
     returnOpen: false,
     discountTarget: null as DiscountTarget | null,
-    priceTarget: null as number | null,
+    priceTarget: null as string | null,
+    removeTarget: null as string | null,
     customerOpen: false
   })
   const [discountAuthPin, setDiscountAuthPin] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const { cart, cartDiscount, customer } = sale
-  const { payOpen, returnOpen, discountTarget, priceTarget, customerOpen } = modals
+  const { payOpen, returnOpen, discountTarget, priceTarget, removeTarget, customerOpen } = modals
   const setCart = (updater: CartLine[] | ((prev: CartLine[]) => CartLine[])): void =>
     setSale((s) => ({
       ...s,
@@ -51,7 +62,7 @@ export function usePOSTerminal() {
   const { data: searchResults } = useQuery({
     queryKey: ['posSearch', debouncedQuery],
     queryFn: () => api.products.search(debouncedQuery),
-    enabled: debouncedQuery.length > 0
+    enabled: debouncedQuery.length > 0 && !debouncedQuery.endsWith('*')
   })
 
   useEffect(() => {
@@ -63,7 +74,7 @@ export function usePOSTerminal() {
   }
 
   const addToCart = (product: Product): boolean => {
-    const existing = cart.find((l) => l.product.id === product.id)
+    const existing = cart.find((l) => l.kind === 'product' && l.product.id === product.id)
     const nextQty = (existing?.quantity ?? 0) + 1
     const check = stockAllows(product, nextQty)
     if (!check.ok) {
@@ -71,26 +82,40 @@ export function usePOSTerminal() {
       return false
     }
     setCart((prev) => {
-      const line = prev.find((l) => l.product.id === product.id)
-      if (line) {
+      const line = prev.find((l) => l.kind === 'product' && l.product.id === product.id)
+      if (line && line.kind === 'product') {
         return prev.map((l) =>
-          l.product.id === product.id ? { ...l, quantity: l.quantity + 1 } : l
+          l.kind === 'product' && l.product.id === product.id
+            ? { ...l, quantity: l.quantity + 1 }
+            : l
         )
       }
-      return [...prev, { product, quantity: 1, discount: 0 }]
+      return [...prev, { kind: 'product', product, quantity: 1, discount: 0 }]
     })
     return true
   }
 
-  const setQuantity = (productId: number, quantity: number): void => {
-    const line = cart.find((l) => l.product.id === productId)
+  const addMiscLine = (unitPrice: number): void => {
+    setCart((prev) => [
+      ...prev,
+      {
+        kind: 'misc',
+        lineId: crypto.randomUUID(),
+        unitPrice,
+        quantity: 1,
+        discount: 0
+      }
+    ])
+  }
+
+  const setQuantity = (lineKey: string, quantity: number): void => {
+    const line = findCartLine(cart, lineKey)
     if (!line) return
     if (quantity < 1) {
-      setCart((prev) => prev.filter((l) => l.product.id !== productId))
-      focusSearch()
+      setModals((m) => ({ ...m, removeTarget: lineKey }))
       return
     }
-    if (quantity > line.quantity) {
+    if (line.kind === 'product' && quantity > line.quantity) {
       const check = stockAllows(line.product, quantity)
       if (!check.ok) {
         toasts.error(check.key, check.vars)
@@ -98,29 +123,31 @@ export function usePOSTerminal() {
       }
     }
     setCart((prev) =>
-      prev.map((l) => (l.product.id === productId ? { ...l, quantity } : l))
+      prev.map((l) => (cartLineKey(l) === lineKey ? { ...l, quantity } : l))
     )
   }
 
-  const setLineDiscount = (productId: number, discount: number): void => {
-    setCart((prev) => prev.map((l) => (l.product.id === productId ? { ...l, discount } : l)))
+  const setLineDiscount = (lineKey: string, discount: number): void => {
+    setCart((prev) =>
+      prev.map((l) => (cartLineKey(l) === lineKey ? { ...l, discount } : l))
+    )
   }
 
-  const setLinePrice = (productId: number, priceOverride: number | undefined): void => {
+  const setLinePrice = (lineKey: string, priceOverride: number | undefined): void => {
     setCart((prev) =>
       prev.map((l) => {
-        if (l.product.id !== productId) return l
+        if (cartLineKey(l) !== lineKey) return l
         if (priceOverride == null) {
           const { priceOverride: _removed, ...rest } = l
-          return rest
+          return rest as CartLine
         }
         return { ...l, priceOverride }
       })
     )
   }
 
-  const removeLine = (productId: number): void => {
-    setCart((prev) => prev.filter((l) => l.product.id !== productId))
+  const removeLine = (lineKey: string): void => {
+    setCart((prev) => prev.filter((l) => cartLineKey(l) !== lineKey))
     focusSearch()
   }
 
@@ -135,6 +162,14 @@ export function usePOSTerminal() {
     const value = query.trim()
     const isScan = scanner.consumeIsScan(value.length)
     if (!value) return false
+
+    const miscPrice = parseMiscPriceInput(value)
+    if (miscPrice != null) {
+      addMiscLine(miscPrice)
+      setQuery('')
+      return true
+    }
+
     if (isScan) {
       const product = await api.products.byBarcode(value)
       if (product) {
@@ -162,6 +197,7 @@ export function usePOSTerminal() {
     !returnOpen &&
     !discountTarget &&
     priceTarget == null &&
+    removeTarget == null &&
     !customerOpen
 
   const openPay = (): void => {
@@ -175,6 +211,7 @@ export function usePOSTerminal() {
     !returnOpen &&
     !discountTarget &&
     priceTarget == null &&
+    removeTarget == null &&
     !customerOpen
 
   usePosEnterShortcut({
@@ -187,15 +224,26 @@ export function usePOSTerminal() {
     onCharge: openPay
   })
 
-  const itemsGross = round2(
-    cart.reduce((acc, l) => acc + lineGross(l.product, l.quantity, l.priceOverride), 0)
-  )
-  const afterLineDiscounts = round2(
-    cart.reduce(
-      (acc, l) => acc + lineTotal(l.product, l.quantity, l.discount, l.priceOverride),
-      0
-    )
-  )
+  useEffect(() => {
+    const shortcut = settings?.shortcutDrawerAction
+    if (!shortcut || payOpen || returnOpen || discountTarget || priceTarget != null || removeTarget != null || customerOpen) return
+
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.defaultPrevented) return
+      if (shouldIgnoreShortcutTarget(event.target)) return
+      if (eventToShortcutKey(event) !== shortcut) return
+      event.preventDefault()
+      void api.printer
+        .openDrawer()
+        .then(() => toasts.success('cash.drawerOpenedToast'))
+        .catch((err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown'))
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [settings?.shortcutDrawerAction, payOpen, returnOpen, discountTarget, priceTarget, removeTarget, customerOpen, toasts])
+
+  const itemsGross = round2(cart.reduce((acc, l) => acc + cartLineGross(l), 0))
+  const afterLineDiscounts = round2(cart.reduce((acc, l) => acc + cartLineTotal(l), 0))
   const cartDiscountClamped = round2(Math.min(Math.max(cartDiscount, 0), afterLineDiscounts))
   const total = round2(afterLineDiscounts - cartDiscountClamped)
   const discountTotal = round2(itemsGross - total)
@@ -215,13 +263,13 @@ export function usePOSTerminal() {
   const discountModalBase = (): number => {
     if (!discountTarget) return 0
     if (discountTarget.kind === 'cart') return afterLineDiscounts
-    const line = cart.find((l) => l.product.id === discountTarget.productId)
-    return line ? lineGross(line.product, line.quantity, line.priceOverride) : 0
+    const line = findCartLine(cart, discountTarget.lineKey)
+    return line ? cartLineGross(line) : 0
   }
   const discountModalCurrent = (): number => {
     if (!discountTarget) return 0
     if (discountTarget.kind === 'cart') return cartDiscountClamped
-    return cart.find((l) => l.product.id === discountTarget.productId)?.discount ?? 0
+    return findCartLine(cart, discountTarget.lineKey)?.discount ?? 0
   }
 
   return {
@@ -239,6 +287,7 @@ export function usePOSTerminal() {
     returnOpen,
     discountTarget,
     priceTarget,
+    removeTarget,
     customerOpen,
     setModals,
     setSale,
