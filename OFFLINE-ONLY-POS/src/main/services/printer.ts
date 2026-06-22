@@ -9,6 +9,7 @@ import iconv from 'iconv-lite'
 import { AppError } from '../errors'
 import { getPrintJob, listPendingPrintJobIds, markPrintJob } from '../db/repos/printJobs'
 import type { Language, PrintLine, PrintPayload, PrintStatus } from '../../shared/types'
+import { isPrintableCode128Barcode } from '../../shared/barcode'
 
 const execFileAsync = promisify(execFile)
 
@@ -135,22 +136,6 @@ function padRow(left: string, right: string): string {
   return `${left}${' '.repeat(space)}${right}`
 }
 
-/** CP850 has no colón sign or narrow NBSP — sanitize for Spanish printing. */
-function sanitizeForCp850(s: string): string {
-  return s.replace(/₡/g, 'C').replace(/[\u00A0\u202F]/g, ' ')
-}
-
-/** Shelf labels: ₡ → ¢ (CP850 0xBD on TM-T81III; not IBM 0x9B). */
-function encodeLabelText(s: string): Buffer {
-  const text = s.replace(/₡/g, '¢').replace(/[\u00A0\u202F]/g, ' ')
-  return iconv.encode(text, 'cp850')
-}
-
-function encodeText(s: string, label = false): Buffer {
-  if (label) return encodeLabelText(s)
-  return iconv.encode(sanitizeForCp850(s), 'cp850')
-}
-
 // --- ESC/POS command bytes ---
 const ESC = 0x1b
 const GS = 0x1d
@@ -166,6 +151,90 @@ const PARTIAL_CUT = [GS, 0x56, 0x42, 0x00] // GS V 66 0 — feed + partial cut
 const OPEN_CASH_DRAWER = [ESC, 0x70, 0x00, 0x19, 0xfa] // ESC p 0 25 250
 const LF = 0x0a
 
+/** 24×12 dot pattern for Costa Rican colón (Font A, ESC & y=3). */
+const COLON_SIGN_MATRIX = [
+  '000111110000',
+  '001000001000',
+  '010000000100',
+  '010000000100',
+  '100000000010',
+  '100000000010',
+  '100000000010',
+  '111111000010',
+  '100000000010',
+  '100000000010',
+  '111111000010',
+  '100000000010',
+  '100000000010',
+  '010000000100',
+  '010000000100',
+  '001000001000',
+  '000111110000',
+  '000000000000',
+  '000000000000',
+  '000000000000',
+  '000000000000',
+  '000000000000',
+  '000000000000',
+  '000000000000'
+] as const
+
+/** Slot for the user-defined colón glyph (CP850 ~). Avoid ~ in product names. */
+const COLON_GLYPH_CHAR = 0x7e
+const COLON_GLYPH = String.fromCharCode(COLON_GLYPH_CHAR)
+
+function matrixToUserDefinedChar(charCode: number, rows: readonly string[]): Buffer {
+  const width = rows[0]?.length ?? 12
+  const height = rows.length
+  const y = 3
+  const columns: number[] = []
+  for (let col = 0; col < width; col++) {
+    const colBytes = [0, 0, 0]
+    for (let row = 0; row < height; row++) {
+      if (rows[row]?.[col] === '1') {
+        const byteIdx = Math.floor(row / 8)
+        const bitIdx = 7 - (row % 8)
+        colBytes[byteIdx] |= 1 << bitIdx
+      }
+    }
+    columns.push(...colBytes)
+  }
+  return Buffer.from([ESC, 0x26, y, charCode, charCode, width, ...columns])
+}
+
+const DEFINE_COLON_GLYPH = matrixToUserDefinedChar(COLON_GLYPH_CHAR, COLON_SIGN_MATRIX)
+const SELECT_USER_CHARS = [ESC, 0x25, 1] as const
+const CANCEL_USER_CHARS = [ESC, 0x25, 0] as const
+
+/** Unicode arrows/dashes that CP850 cannot render → ASCII. */
+function replacePrintArrows(s: string): string {
+  return s
+    .replace(/\u2192/g, '->')
+    .replace(/\u2190/g, '<-')
+    .replace(/\u21d2/g, '=>')
+    .replace(/[\u2013\u2014\u2212]/g, '-')
+}
+
+function normalizePrintSpaces(s: string): string {
+  return s.replace(/[\u00A0\u202F]/g, ' ')
+}
+
+/** CP850 has no colón sign — sanitize for Spanish receipt printing. */
+function sanitizeForCp850(s: string): string {
+  return replacePrintArrows(normalizePrintSpaces(s)).replace(/₡/g, 'C')
+}
+
+/** Shelf labels: ₡ → user-defined colón glyph; arrows → ASCII. */
+function encodeLabelText(s: string): Buffer {
+  const text = replacePrintArrows(normalizePrintSpaces(s)).replace(/₡/g, COLON_GLYPH)
+  return iconv.encode(text, 'cp850')
+}
+
+function encodeText(s: string, label = false): Buffer {
+  if (label) return encodeLabelText(s)
+  return iconv.encode(sanitizeForCp850(s), 'cp850')
+}
+
 function barcodeDataCode128(value: string): Buffer | null {
   const cleaned = value.replace(/[^\x20-\x7e]/g, '').trim()
   if (!cleaned) return null
@@ -175,10 +244,7 @@ function barcodeDataCode128(value: string): Buffer | null {
   return bytes
 }
 
-/** Whether a product barcode can be rendered as ESC/POS CODE128. */
-export function isPrintableCode128Barcode(value: string): boolean {
-  return barcodeDataCode128(value) !== null
-}
+export { isPrintableCode128Barcode }
 
 /** Renders the abstract print lines into a raw ESC/POS byte stream (Spanish / CP850). */
 function toEscPos(lines: PrintLine[], options?: { openDrawer?: boolean; label?: boolean }): Buffer {
@@ -193,6 +259,10 @@ function toEscPos(lines: PrintLine[], options?: { openDrawer?: boolean; label?: 
 
   cmd(...INIT)
   cmd(...CODEPAGE_PC850)
+  if (isLabel) {
+    chunks.push(DEFINE_COLON_GLYPH)
+    cmd(...SELECT_USER_CHARS)
+  }
 
   for (const line of lines) {
     switch (line.t) {
@@ -233,6 +303,9 @@ function toEscPos(lines: PrintLine[], options?: { openDrawer?: boolean; label?: 
 
   if (options?.openDrawer) {
     cmd(...OPEN_CASH_DRAWER)
+  }
+  if (isLabel) {
+    cmd(...CANCEL_USER_CHARS)
   }
   cmd(...align('lt'), ...FEED(isLabel ? 1 : 4), ...PARTIAL_CUT)
   return Buffer.concat(chunks)
@@ -364,59 +437,6 @@ export async function tryOpenCashDrawer(): Promise<void> {
   }
 }
 
-/** 24×12 dot pattern for Costa Rican colón (Font A, ESC & y=3). */
-const COLON_SIGN_MATRIX = [
-  '000111110000',
-  '001000001000',
-  '010000000100',
-  '010000000100',
-  '100000000010',
-  '100000000010',
-  '100000000010',
-  '111111000010',
-  '100000000010',
-  '100000000010',
-  '111111000010',
-  '100000000010',
-  '100000000010',
-  '010000000100',
-  '010000000100',
-  '001000001000',
-  '000111110000',
-  '000000000000',
-  '000000000000',
-  '000000000000',
-  '000000000000',
-  '000000000000',
-  '000000000000',
-  '000000000000'
-] as const
-
-const COLON_GLYPH_CHAR = 0x7e // ~
-
-function matrixToUserDefinedChar(charCode: number, rows: readonly string[]): Buffer {
-  const width = rows[0]?.length ?? 12
-  const height = rows.length
-  const y = 3
-  const columns: number[] = []
-  for (let col = 0; col < width; col++) {
-    const colBytes = [0, 0, 0]
-    for (let row = 0; row < height; row++) {
-      if (rows[row]?.[col] === '1') {
-        const byteIdx = Math.floor(row / 8)
-        const bitIdx = 7 - (row % 8)
-        colBytes[byteIdx] |= 1 << bitIdx
-      }
-    }
-    columns.push(...colBytes)
-  }
-  return Buffer.from([ESC, 0x26, y, charCode, charCode, width, ...columns])
-}
-
-const DEFINE_COLON_GLYPH = matrixToUserDefinedChar(COLON_GLYPH_CHAR, COLON_SIGN_MATRIX)
-const SELECT_USER_CHARS = [ESC, 0x25, 1] as const
-const CANCEL_USER_CHARS = [ESC, 0x25, 0] as const
-
 type TestStripWriter = {
   chunks: Buffer[]
   cmd: (...bytes: number[]) => void
@@ -487,7 +507,7 @@ export async function printColonSymbolTest(): Promise<void> {
 export function schedulePrintJob(jobId: number): PrintStatus {
   const job = getPrintJob(jobId)
   if (!job) return 'failed'
-  if (!printerReady) return 'printed'
+  if (!printerReady) return 'failed'
   setImmediate(() => {
     void attemptPrintJob(jobId)
   })
@@ -500,7 +520,10 @@ export async function attemptPrintJob(jobId: number): Promise<PrintStatus> {
   if (!job) return 'failed'
   if (!printerReady) {
     const found = await probePrinter()
-    if (!found) return 'failed'
+    if (!found) {
+      // Keep status pending so the job stays in the print queue for retry.
+      return 'failed'
+    }
   }
   const payload = JSON.parse(job.payload) as PrintPayload
   try {

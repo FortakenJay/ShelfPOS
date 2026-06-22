@@ -1,21 +1,16 @@
 import { useTranslation } from 'react-i18next'
 import { catalogUnitPrice } from '@/lib/pricing'
-import {
-  cartLineDisplayName,
-  cartLineGross,
-  cartLineKey,
-  miscLineUnitPrice
-} from '@/lib/cartLine'
+import { cartLineDisplayName, cartLineKey } from '@/lib/cartLine'
 import { PaymentModal } from './PaymentModal'
 import { ReturnModal } from './ReturnModal'
 import { DiscountModal } from './DiscountModal'
 import { PriceOverrideModal } from './PriceOverrideModal'
 import { CustomerModal } from './CustomerModal'
 import { RemoveLineModal } from './RemoveLineModal'
+import { cartLineToSaleInput } from './posCartSale'
 import type { CartLine } from './types'
-import type { CreateSaleLineInput, CustomerInput } from '@shared/types'
-
-type DiscountTarget = { kind: 'line'; lineKey: string } | { kind: 'cart' }
+import type { DiscountTarget } from './usePOSTerminal'
+import type { CustomerInput, PaymentMethod } from '@shared/types'
 
 interface POSModalsProps {
   cart: CartLine[]
@@ -24,6 +19,7 @@ interface POSModalsProps {
   discountAuthPin: string | null
   customer: CustomerInput | null
   payOpen: boolean
+  payInitialMethod: PaymentMethod
   returnOpen: boolean
   discountTarget: DiscountTarget | null
   priceTarget: string | null
@@ -45,29 +41,6 @@ interface POSModalsProps {
   onCustomerApply: (customer: CustomerInput | null) => void
 }
 
-function cartLineToSaleInput(line: CartLine): CreateSaleLineInput {
-  if (line.kind === 'misc') {
-    const unitPrice = miscLineUnitPrice(line)
-    const miscCatalogUnitPrice =
-      line.priceOverride != null && line.priceOverride !== line.unitPrice
-        ? line.unitPrice
-        : undefined
-    return {
-      miscItem: true,
-      quantity: line.quantity,
-      unitPrice,
-      catalogUnitPrice: miscCatalogUnitPrice,
-      discount: Math.min(line.discount, cartLineGross(line))
-    }
-  }
-  return {
-    productId: line.product.id,
-    quantity: line.quantity,
-    discount: Math.min(line.discount, cartLineGross(line)),
-    unitPrice: line.priceOverride
-  }
-}
-
 export function POSModals({
   cart,
   total,
@@ -75,6 +48,7 @@ export function POSModals({
   discountAuthPin,
   customer,
   payOpen,
+  payInitialMethod,
   returnOpen,
   discountTarget,
   priceTarget,
@@ -106,6 +80,7 @@ export function POSModals({
           cartDiscount={cartDiscountClamped}
           discountPin={discountAuthPin}
           customer={customer}
+          initialMethod={payInitialMethod}
           onClose={onPayClose}
           onCompleted={onSaleCompleted}
         />
@@ -113,18 +88,10 @@ export function POSModals({
       {returnOpen && <ReturnModal onClose={onReturnClose} />}
       {discountTarget && (
         <DiscountModal
-          title={discountTarget.kind === 'cart' ? t('pos.cartDiscount') : t('pos.lineDiscount')}
-          kind={discountTarget.kind}
+          title={t('pos.cartDiscount')}
+          kind="cart"
           base={discountModalBase}
           current={discountModalCurrent}
-          productName={
-            discountTarget.kind === 'line'
-              ? (() => {
-                  const line = cart.find((l) => cartLineKey(l) === discountTarget.lineKey)
-                  return line ? cartLineDisplayName(line, miscLabel) : undefined
-                })()
-              : undefined
-          }
           onApply={onDiscountApply}
           onClose={onDiscountClose}
         />

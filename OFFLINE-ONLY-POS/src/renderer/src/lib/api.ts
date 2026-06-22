@@ -29,7 +29,7 @@ import type {
   IpcChannel,
   Language,
   OpenFloatInput,
-  PrintJobRow,
+  PrintJobListResult,
   PrintStatus,
   PriceOverrideAuthorizeInput,
   Product,
@@ -46,6 +46,8 @@ import type {
   SaleReprintRow,
   SessionUser,
   SettingsUpdateInput,
+  SyncSetupSaveInput,
+  SyncSetupStatus,
   StockAlert,
   UserCreateInput,
   UserUpdateInput
@@ -68,6 +70,13 @@ async function call<T>(channel: IpcChannel, payload?: unknown): Promise<T> {
     result = (await window.api.invoke(channel, payload)) as ApiResult<T>
   } catch (err) {
     console.error(`[api] ${channel}`, err)
+    const message = err instanceof Error ? err.message : String(err)
+    if (
+      message.includes('No handler registered') ||
+      message.includes('Unknown IPC channel')
+    ) {
+      throw new ApiError('errors.restartRequired')
+    }
     throw new ApiError('errors.unknown')
   }
   if (!result.ok) throw new ApiError(result.error, result.vars, result.message)
@@ -79,6 +88,11 @@ export const api = {
     status: () => call<FirstRunStatus>('firstRun:status'),
     setLanguage: (language: Language) => call<null>('firstRun:setLanguage', { language }),
     complete: (input: FirstRunSetupInput) => call<null>('firstRun:complete', input)
+  },
+  syncSetup: {
+    status: () => call<SyncSetupStatus>('syncSetup:status'),
+    save: (input: SyncSetupSaveInput) => call<SyncSetupStatus>('syncSetup:save', input),
+    restartService: () => call<null>('syncSetup:restartService'),
   },
   auth: {
     login: (username: string, password: string) =>
@@ -93,7 +107,9 @@ export const api = {
     changePin: (currentPin: string, newPin: string) =>
       call<null>('settings:changePin', { currentPin, newPin }),
     changeCajaPin: (currentPin: string, newPin: string) =>
-      call<null>('settings:changeCajaPin', { currentPin, newPin })
+      call<null>('settings:changeCajaPin', { currentPin, newPin }),
+    printPinCard: (managerPin: string, cajaPin: string) =>
+      call<{ printStatus: PrintStatus }>('settings:printPinCard', { managerPin, cajaPin })
   },
   products: {
     list: (filters: ProductFilters) => call<ProductListResult>('products:list', filters),
@@ -115,7 +131,12 @@ export const api = {
     importEfacturaConfirm: (filePath: string, stockMode: ProductImportStockMode = 'add') =>
       call<ProductImportResult>('products:importEfacturaConfirm', { filePath, stockMode }),
     printLabel: (productId: number, copies = 1) =>
-      call<{ printStatus: PrintStatus }>('products:printLabel', { productId, copies })
+      call<{ printStatus: PrintStatus }>('products:printLabel', { productId, copies }),
+    printLabelBatch: (productIds: number[]) =>
+      call<{ printStatus: PrintStatus; printed: number; failed: number; total: number }>(
+        'products:printLabelBatch',
+        { productIds },
+      )
   },
   sales: {
     create: (input: CreateSaleInput) => call<CreateSaleResult>('sales:create', input),
@@ -123,7 +144,9 @@ export const api = {
       call<SaleDetail[]>('sales:findForReturn', params),
     listForReprint: () => call<SaleReprintRow[]>('sales:listForReprint'),
     reprintReceipt: (saleId: number) =>
-      call<ReprintReceiptResult>('sales:reprintReceipt', { saleId })
+      call<ReprintReceiptResult>('sales:reprintReceipt', { saleId }),
+    exportFacturaPdf: (saleId: number) =>
+      call<{ canceled: boolean; path?: string }>('sales:exportFacturaPdf', { saleId })
   },
   returns: {
     create: (input: CreateReturnInput) => call<CreateReturnResult>('returns:create', input)
@@ -140,7 +163,8 @@ export const api = {
       call<null>('priceOverride:authorize', input)
   },
   reports: {
-    run: (type: ReportType, range: DateRange) => call<ReportData>('reports:run', { type, range }),
+    run: (type: ReportType, range: DateRange, opts?: { page?: number; pageSize?: number }) =>
+      call<ReportData>('reports:run', { type, range, ...opts }),
     print: (type: ReportType, range: DateRange) =>
       call<{ printStatus: PrintStatus }>('reports:print', { type, range }),
     exportPdf: (type: ReportType, range: DateRange) =>
@@ -155,7 +179,8 @@ export const api = {
     history: (filter: CierreHistoryFilter) => call<CierreRecord[]>('cierre:history', filter),
     discrepancyAlerts: () => call<CierreDiscrepancyAlert[]>('cierre:discrepancyAlerts'),
     exportPdf: (cierreId: number) =>
-      call<{ canceled: boolean; path?: string }>('cierre:exportPdf', { cierreId })
+      call<{ canceled: boolean; path?: string }>('cierre:exportPdf', { cierreId }),
+    print: (cierreId: number) => call<{ printStatus: PrintStatus }>('cierre:print', { cierreId })
   },
   cash: {
     status: () => call<CashDrawerStatus>('cash:status'),
@@ -175,7 +200,11 @@ export const api = {
     delete: (id: number) => call<null>('users:delete', { id })
   },
   printQueue: {
-    list: () => call<PrintJobRow[]>('printQueue:list'),
+    list: (opts?: { page?: number; pageSize?: number }) =>
+      call<PrintJobListResult>('printQueue:list', {
+        page: opts?.page ?? 1,
+        pageSize: opts?.pageSize ?? 25
+      }),
     retry: (id: number) => call<{ printStatus: PrintStatus }>('printQueue:retry', { id })
   },
   printer: {

@@ -7,7 +7,7 @@ import type {
   TdHTMLAttributes,
   ThHTMLAttributes
 } from 'react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 // ---------- Spinner ----------
@@ -187,6 +187,7 @@ export function Modal({
   size?: keyof typeof MODAL_WIDTHS
 }): React.JSX.Element {
   const { t } = useTranslation()
+  const titleId = useId()
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
@@ -201,6 +202,7 @@ export function Modal({
   return (
     <dialog
       ref={dialogRef}
+      aria-labelledby={titleId}
       onCancel={(e) => {
         e.preventDefault()
         onClose?.()
@@ -208,7 +210,7 @@ export function Modal({
       className={`fixed inset-0 z-50 m-auto flex max-h-[90vh] w-[calc(100%-2rem)] flex-col rounded-lg border-0 bg-white p-0 shadow-2xl backdrop:bg-slate-900/60 open:flex ${MODAL_WIDTHS[size]}`}
     >
       <div className="flex items-center justify-between border-b-2 border-line px-5 py-3">
-        <h2 className="text-xl font-bold">{title}</h2>
+        <h2 id={titleId} className="text-xl font-bold">{title}</h2>
         {onClose && (
           <button
             type="button"

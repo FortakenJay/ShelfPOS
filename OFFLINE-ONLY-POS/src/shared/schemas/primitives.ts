@@ -13,6 +13,12 @@ export const positiveIdSchema = z.number().int().positive().max(10_000_000)
 
 export const quantitySchema = z.number().int().min(1).max(10_000)
 
+/** Max on-hand stock for manual product entry (matches IPC). */
+export const MAX_PRODUCT_STOCK = 10_000_000
+
+/** Import stock above this is treated as corrupt data (zeroed on eFactura, rejected on CSV). */
+export const IMPORT_STOCK_GARBAGE_THRESHOLD = MAX_PRODUCT_STOCK
+
 export const usernameSchema = z
   .string()
   .trim()
@@ -64,10 +70,16 @@ export const reportTypeSchema = z.enum([
   'byPayment',
   'topProducts',
   'inventory',
-  'taxBreakdown'
+  'taxBreakdown',
+  'transactionLog',
+  'itemizedSales'
 ])
+
+export const localTimeSchema = z.string().regex(/^\d{2}:\d{2}$/, 'Expected HH:mm')
 
 export const dateRangeSchema = z.strictObject({
   from: localDateSchema,
-  to: localDateSchema
+  to: localDateSchema,
+  fromTime: localTimeSchema.optional(),
+  toTime: localTimeSchema.optional()
 })

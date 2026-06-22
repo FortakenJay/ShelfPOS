@@ -4,12 +4,14 @@
  */
 const { join, resolve } = require('node:path')
 const { existsSync, mkdirSync } = require('node:fs')
+const { homedir } = require('node:os')
 const { Service } = require('node-windows')
 
 const installDir = process.argv[2] ? resolve(process.argv[2]) : join(__dirname, '..')
 const scriptPath = join(installDir, 'dist', 'index.js')
 const nodeExe = join(installDir, 'node.exe')
-const syncEnv = join(installDir, 'sync.env')
+const appData = process.env.APPDATA || join(homedir(), 'AppData', 'Roaming')
+const syncEnv = join(appData, 'shelfpos', 'sync.env')
 const logDir = join(installDir, 'logs')
 
 if (!existsSync(scriptPath)) {
@@ -22,6 +24,7 @@ if (!existsSync(nodeExe)) {
 }
 if (!existsSync(syncEnv)) {
   console.error('Missing sync.env:', syncEnv)
+  console.error('Run Install-ShelfPOS or configure cloud sync in ShelfPOS Settings first.')
   process.exit(1)
 }
 

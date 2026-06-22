@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
+import { eventToShortcutKey } from '@/lib/shortcuts'
 import { isEditableElement } from './posKeyboard'
+import type { ActionShortcutKey, PaymentMethod } from '@shared/types'
 
 export function usePaymentKeyboard({
   enabled,
@@ -7,21 +9,46 @@ export function usePaymentKeyboard({
   splitPayment,
   hasCashSingle,
   singleMethod,
+  paymentShortcuts,
   onClose,
-  onConfirm
+  onConfirm,
+  onSelectMethod
 }: {
   enabled: boolean
   canConfirm: boolean
   splitPayment: boolean
   hasCashSingle: boolean
-  singleMethod: 'cash' | 'card' | 'sinpe'
+  singleMethod: PaymentMethod
+  paymentShortcuts?: {
+    cash?: ActionShortcutKey
+    card?: ActionShortcutKey
+    sinpe?: ActionShortcutKey
+  }
   onClose: () => void
   onConfirm: () => void
+  onSelectMethod?: (method: PaymentMethod) => void
 }): void {
   useEffect(() => {
     if (!enabled) return
 
     const onKeyDown = (e: KeyboardEvent): void => {
+      const shortcutKey = eventToShortcutKey(e)
+      if (shortcutKey && paymentShortcuts && onSelectMethod && !splitPayment) {
+        const method =
+          shortcutKey === paymentShortcuts.cash
+            ? 'cash'
+            : shortcutKey === paymentShortcuts.card
+              ? 'card'
+              : shortcutKey === paymentShortcuts.sinpe
+                ? 'sinpe'
+                : null
+        if (method && !isEditableElement(e.target)) {
+          e.preventDefault()
+          onSelectMethod(method)
+          return
+        }
+      }
+
       if (e.key === 'Escape') {
         e.preventDefault()
         onClose()
@@ -54,7 +81,17 @@ export function usePaymentKeyboard({
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [enabled, canConfirm, splitPayment, hasCashSingle, singleMethod, onClose, onConfirm])
+  }, [
+    enabled,
+    canConfirm,
+    splitPayment,
+    hasCashSingle,
+    singleMethod,
+    paymentShortcuts,
+    onClose,
+    onConfirm,
+    onSelectMethod
+  ])
 }
 
 function commitSplitAmount(target: HTMLElement, e: KeyboardEvent): void {

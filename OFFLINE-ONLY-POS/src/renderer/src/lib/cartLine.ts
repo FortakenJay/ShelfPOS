@@ -42,5 +42,13 @@ export function cartLineHasCustomPrice(line: CartLine): boolean {
 }
 
 export function cartLineDisplayName(line: CartLine, miscLabel: string): string {
-  return line.kind === 'misc' ? miscLabel : line.product.name
+  if (line.kind === 'misc') {
+    const name = line.customName?.trim()
+    return name || miscLabel
+  }
+  return line.product.name
+}
+
+export function cartLineBarcode(line: CartLine): string | null {
+  return line.kind === 'product' ? line.product.barcode : null
 }

@@ -12,6 +12,10 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
+    "backfill": "node scripts/backfill-mirror.cjs",
+    "queue:diagnose": "node scripts/diagnose-queue.cjs",
+    "queue:compact": "node scripts/compact-sync-queue.cjs",
+    "fix:deltas": "node scripts/fix-bad-deltas.cjs",
     "install:windows": "node scripts/install-windows-service.cjs"
   },
   "dependencies": {

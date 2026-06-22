@@ -41,11 +41,14 @@
     "cierre": "Cierre de caja",
     "audit": "Bitácora",
     "printQueue": "Cola de impresión",
+    "reprints": "Reimprimir recibos",
     "export": "Exportar y Respaldar",
     "settings": "Configuración",
     "users": "Usuarios",
     "dashboard": "Panel",
-    "logout": "Cerrar sesión"
+    "logout": "Cerrar sesión",
+    "collapseSidebar": "Ocultar menú",
+    "expandSidebar": "Mostrar menú"
   },
   "roles": {
     "sales": "Cajero",
@@ -101,9 +104,11 @@
   },
   "pos": {
     "searchPlaceholder": "Escanee un código, escriba el nombre o un precio con * (ej. 3000*)… (Enter vacío = cobrar)",
-    "miscItemName": "Artículo sin código",
+    "miscItemName": "Artículo sin nombre",
+    "miscItemNameInput": "Nombre del artículo sin código",
     "miscItemBadge": "Sin código",
     "noResults": "Sin resultados",
+    "searchResultsResize": "Ajustar altura de resultados de búsqueda",
     "cartEmpty": "El carrito está vacío",
     "qty": "Cant.",
     "price": "Precio",
@@ -133,11 +138,21 @@
     "saleCompleted": "Venta registrada",
     "printFailed": "Impresión fallida — ¿Reintentar?",
     "printReceiptToggle": "Imprimir recibo",
+    "invoiceCustomer": {
+      "title": "Agregar nombre y cédula (factura)",
+      "name": "Nombre ({{hint}})",
+      "cedula": "Cédula ({{hint}})"
+    },
     "printRetried": "Reimpresión enviada",
     "reprintTitle": "Recibos del turno",
+    "reprintSubtitle": "Ventas del turno abierto. Seleccione un recibo para reimprimirlo.",
     "reprintEmpty": "No hay ventas en este turno",
-    "reprintAction": "Reimprimir",
-    "reprintSuccess": "Recibo enviado a imprimir",
+    "reprintReceipt": "Recibo",
+    "reprintCashier": "Cajero",
+    "reprintAction": "Reimprimir tiqueta",
+    "reprintFacturaPdf": "Factura PDF",
+    "reprintSuccess": "Tiqueta enviada a imprimir",
+    "reprintFacturaPdfDone": "Factura PDF guardada: {{path}}",
     "amount": "Monto",
     "paymentMethod": "Método de pago",
     "splitPayment": "Pago dividido",
@@ -155,8 +170,10 @@
       "pinTitle": "PIN para autorizar precio"
     },
     "discountBtn": "Descuento",
+    "lineDiscountPercent": "Descuento del artículo (%)",
     "cartDiscount": "Descuento de la venta",
     "lineDiscount": "Descuento del artículo",
+    "discountCol": "Descuento",
     "discount": {
       "amount": "Monto (₡)",
       "percent": "Porcentaje (%)",
@@ -197,7 +214,8 @@
     "restockWarning": "Active solo si el producto está en buen estado. La mayoría de devoluciones son artículos dañados y no deben volver al inventario.",
     "pinLabel": "PIN de gerente",
     "confirm": "Confirmar devolución",
-    "success": "Devolución registrada"
+    "success": "Devolución registrada",
+    "miscNoRestock": "Los artículos sin código no vuelven al inventario."
   },
   "products": {
     "title": "Productos",
@@ -247,6 +265,23 @@
     "printLabel": "Imprimir etiqueta",
     "labelPrinted": "Etiqueta enviada a impresión",
     "printLabelSingleHint": "Use un filtro para dejar un solo producto visible y luego use el atajo de etiqueta.",
+    "batchLabels": {
+      "button": "Etiquetas en lote",
+      "title": "Imprimir etiquetas en lote",
+      "hint": "Escanee o busque productos para agregarlos a la lista. Al terminar, imprima todas las etiquetas de una vez.",
+      "scanLabel": "Escanear o buscar",
+      "scanPlaceholder": "Código de barras o nombre…",
+      "empty": "Escanee productos para agregarlos a la lista.",
+      "remove": "Quitar",
+      "clear": "Vaciar lista",
+      "printAll": "Imprimir {{count}} etiquetas",
+      "duplicate": "Ese producto ya está en la lista.",
+      "notFound": "Producto no encontrado.",
+      "ambiguous": "Varios productos coinciden — use el código de barras.",
+      "noBarcode": "El producto no tiene código de barras imprimible.",
+      "printed": "{{count}} etiquetas enviadas a impresión",
+      "partial": "Impresas {{printed}} de {{total}} — {{failed}} fallaron"
+    },
     "csv": {
       "barcode": "Código de barras",
       "name": "Nombre",
@@ -291,6 +326,7 @@
       "missingColumns": "Faltan columnas obligatorias: código de barras, nombre y precio",
       "invalidTaxCategory": "Categoría de impuesto no reconocida",
       "invalidBulk": "Precio por mayor inválido (cantidad mínima 2 y precio requeridos)",
+      "stockTooHigh": "Stock inicial demasiado alto (máx. {{max}} unidades). Use ajustes de inventario para cantidades grandes.",
       "helpBtn": "Ayuda CSV",
       "help": {
         "title": "Cómo importar productos desde CSV",
@@ -353,7 +389,9 @@
       "byPayment": "Ingresos por método de pago",
       "topProducts": "Productos más vendidos",
       "inventory": "Inventario actual",
-      "taxBreakdown": "Desglose de IVA"
+      "taxBreakdown": "Desglose de IVA",
+      "transactionLog": "Registro de transacciones",
+      "itemizedSales": "Ventas detalladas"
     },
     "tax": {
       "regime": "Régimen",
@@ -374,6 +412,7 @@
     "from": "Desde",
     "to": "Hasta",
     "printReport": "Imprimir",
+    "printSaleReceipt": "Imprimir recibo",
     "printSent": "Reporte enviado a la impresora",
     "exportPdf": "Descargar PDF",
     "pdfDone": "PDF guardado: {{path}}",
@@ -407,6 +446,19 @@
       "totalValue": "Valor total del inventario",
       "products": "Productos",
       "snapshotNote": "Instantánea actual del inventario (no filtrada por fechas)."
+    },
+    "transactionLog": {
+      "receipt": "Recibo",
+      "cashier": "Cajero",
+      "customer": "Cliente",
+      "payment": "Pago",
+      "discount": "Descuento"
+    },
+    "itemized": {
+      "product": "Producto",
+      "qty": "Cant.",
+      "unitPrice": "Precio",
+      "discount": "Descuento"
     }
   },
   "dashboard": {
@@ -591,6 +643,8 @@
     "closedBy": "Por",
     "cashTitle": "Conteo de efectivo",
     "savePdf": "Guardar PDF",
+    "print": "Imprimir",
+    "printSent": "Cierre enviado a la impresora",
     "pdfDone": "PDF guardado: {{path}}",
     "discountsTitle": "Descuentos",
     "totalDiscounts": "Total descuentos",
@@ -687,6 +741,7 @@
       "cart_line_removed_caja": "Artículo quitado del carrito (PIN caja)",
       "cart_line_removed_manager": "Artículo quitado del carrito (PIN gerente)",
       "product_label_printed": "Etiqueta de producto impresa",
+      "pin_card_printed": "Tarjeta PIN impresa",
       "user_created": "Usuario creado",
       "user_updated": "Usuario actualizado",
       "user_deactivated": "Usuario desactivado"
@@ -718,7 +773,9 @@
   },
   "printQueue": {
     "title": "Cola de impresión",
-    "empty": "No hay recibos pendientes de impresión",
+    "subtitle": "Trabajos pendientes, fallidos y los últimos enviados a la impresora.",
+    "summary": "{{pending}} en cola · {{failed}} fallidos",
+    "empty": "No hay trabajos de impresión recientes",
     "jobType": "Tipo",
     "status": "Estado",
     "statuses": {
@@ -766,6 +823,31 @@
     },
     "note": "Los respaldos automáticos se crean al iniciar el día y en cada cierre de caja. Se conservan los últimos 7."
   },
+  "syncSetup": {
+    "title": "Vincular con el panel",
+    "intro": "Conecte esta caja a su cuenta del panel web. Copie el código de vinculación desde el panel del dueño.",
+    "storeId": "ID de tienda (sync)",
+    "linked": "Vinculada al panel",
+    "serviceStopped": "El servicio ShelfPOS Sync no está en ejecución. Ejecute Install-ShelfPOS o reinicie el servicio.",
+    "stepDashboard": "En el panel web, copie el código de vinculación (Vincular POS).",
+    "stepPaste": "Pegue aquí la URL de Supabase, la clave de servicio y el código.",
+    "stepSave": "Guarde. La clave se cifra en este equipo (DPAPI). Reinicie el servicio sync si hace falta.",
+    "supabaseUrl": "URL de Supabase",
+    "serviceKey": "Clave de servicio (service role)",
+    "serviceKeyHint": "Solo en este equipo — se cifra al guardar",
+    "pairingCode": "Código de vinculación (8 caracteres)",
+    "save": "Guardar y vincular",
+    "saveAgain": "Actualizar configuración",
+    "skip": "Omitir por ahora",
+    "encryptionNote": "La clave de servicio se guarda cifrada con Windows DPAPI. Solo funciona en esta PC; copiar sync.env a otro equipo no sirve.",
+    "errors": {
+      "invalidUrl": "URL de Supabase inválida",
+      "invalidServiceKey": "Clave de servicio inválida",
+      "invalidPairingCode": "El código debe tener 8 letras o números",
+      "invalidStoreName": "Configure el nombre de la tienda primero",
+      "serviceRestartFailed": "No se pudo reiniciar ShelfPOS Sync. Ejecute Install-ShelfPOS como administrador."
+    }
+  },
   "settings": {
     "title": "Configuración",
     "language": "Idioma",
@@ -782,6 +864,9 @@
       "cashOut": "Salida de efectivo",
       "drawerAction": "Atajo especial de caja",
       "printLabel": "Imprimir etiqueta de producto",
+      "payCash": "Cobrar en efectivo",
+      "payCard": "Cobrar con tarjeta",
+      "paySinpe": "Cobrar con SINPE",
       "conflict": "No puede repetir la misma tecla en más de una acción.",
       "options": {
         "F1": "F1",
@@ -837,7 +922,19 @@
     "changeCajaPin": "Cambiar PIN de caja",
     "pinChanged": "PIN de gerente actualizado",
     "cajaPinChanged": "PIN de caja actualizado",
-    "pinMismatch": "Los PIN no coinciden"
+    "pinMismatch": "Los PIN no coinciden",
+    "pinCard": {
+      "printButton": "Imprimir tarjeta PIN",
+      "title": "Imprimir tarjeta PIN",
+      "hint": "Ingrese los PIN para verificar. Se imprime una tarjeta con códigos escaneables — enfoque el campo PIN y escanee.",
+      "adminLabel": "ADMIN",
+      "managerPin": "PIN de gerente",
+      "cajaPin": "PIN de caja",
+      "username": "Usuario",
+      "scanHint": "Escanee en el campo PIN",
+      "printed": "Tarjeta PIN enviada a impresión",
+      "cajaNotConfigured": "Configure el PIN de caja antes de imprimir la tarjeta."
+    }
   },
   "toasts": {
     "stockLow": "Stock bajo: {{name}} — quedan {{stock}}",
@@ -906,6 +1003,7 @@
     "notAuthenticated": "Sesión no iniciada",
     "forbidden": "No tiene permisos para esta acción",
     "unknown": "Error inesperado",
+    "restartRequired": "Reinicie la aplicación e intente de nuevo.",
     "invalidPin": "PIN incorrecto",
     "invalidInput": "Datos inválidos",
     "barcodeExists": "Ya existe un producto con ese código de barras",

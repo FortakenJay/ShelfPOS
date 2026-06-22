@@ -1,87 +1,42 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { useReducer } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { daysAgoLocal, formatDateTime, monthStartLocal, rangeBounds, todayLocal } from '#/lib/dates'
+import { DateRangePicker } from '#/components/DateRangePicker'
+import { SectionHeading } from '#/components/dashboard/DashboardPrimitives'
+import { Button, FullScreenSpinner, Td, Th } from '#/components/ui'
+import { presetToday } from '#/lib/dateRangePresets'
+import { formatDateTime, rangeBounds } from '#/lib/dates'
+import { downloadCierresPdf } from '#/lib/cierres-pdf'
 import { formatMoney } from '#/lib/money'
 import { fetchCierres } from '#/lib/queries/cierres'
-import { downloadCierresPdf } from '#/lib/cierres-pdf'
 import { useStore } from '#/lib/store-context'
 import { DASHBOARD_POLL_MS, DASHBOARD_STALE_MS, QUERY_GC_MS } from '#/lib/stores'
-import { SectionHeading } from '#/components/dashboard/DashboardPrimitives'
-import { Button, FullScreenSpinner, Input, Td, Th } from '#/components/ui'
-import type { CierreRow } from '#/lib/types'
+import type { CierreRow, DateRange } from '#/lib/types'
 
 const DISPLAY_LIMIT = 500
 
 export const Route = createFileRoute('/_app/cierres')({
+  validateSearch: (search: Record<string, unknown>) => ({
+    from: typeof search.from === 'string' ? search.from : undefined,
+    to: typeof search.to === 'string' ? search.to : undefined,
+  }),
   component: CierresPage,
 })
-
-interface CierresState {
-  period: 'today' | 'week' | 'month' | 'range'
-  rangeFrom: string
-  rangeTo: string
-  exporting: boolean
-  exportError: string | null
-}
-
-type CierresAction =
-  | { type: 'setPeriod'; period: CierresState['period'] }
-  | { type: 'setRangeFrom'; value: string }
-  | { type: 'setRangeTo'; value: string }
-  | { type: 'startExport' }
-  | { type: 'finishExport' }
-  | { type: 'setExportError'; value: string }
-  | { type: 'clearExportError' }
-
-function cierresReducer(state: CierresState, action: CierresAction): CierresState {
-  switch (action.type) {
-    case 'setPeriod':
-      if (action.period === 'today') {
-        const today = todayLocal()
-        return { ...state, period: action.period, rangeFrom: today, rangeTo: today }
-      }
-      if (action.period === 'week') {
-        return { ...state, period: action.period, rangeFrom: daysAgoLocal(6), rangeTo: todayLocal() }
-      }
-      if (action.period === 'month') {
-        return { ...state, period: action.period, rangeFrom: monthStartLocal(0), rangeTo: todayLocal() }
-      }
-      return { ...state, period: action.period }
-    case 'setRangeFrom':
-      return { ...state, rangeFrom: action.value, period: 'range' }
-    case 'setRangeTo':
-      return { ...state, rangeTo: action.value, period: 'range' }
-    case 'startExport':
-      return { ...state, exporting: true, exportError: null }
-    case 'finishExport':
-      return { ...state, exporting: false }
-    case 'setExportError':
-      return { ...state, exportError: action.value }
-    case 'clearExportError':
-      return { ...state, exportError: null }
-    default:
-      return state
-  }
-}
 
 function CierresPage() {
   const { t } = useTranslation()
   const { storeId } = useStore()
-  const [{ period, rangeFrom, rangeTo, exporting, exportError }, dispatch] = useReducer(
-    cierresReducer,
-    undefined,
-    () => ({
-      period: 'today' as const,
-      rangeFrom: todayLocal(),
-      rangeTo: todayLocal(),
-      exporting: false,
-      exportError: null,
-    }),
+  const search = Route.useSearch()
+  const [range, setRange] = useState<DateRange>(() =>
+    search.from && search.to
+      ? { from: search.from, to: search.to }
+      : presetToday(),
   )
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState<string | null>(null)
 
-  const bounds = rangeBounds(rangeFrom, rangeTo)
+  const bounds = rangeBounds(range.from, range.to)
 
   const {
     data: cierresPage,
@@ -116,7 +71,8 @@ function CierresPage() {
 
   async function onDownloadPdf(): Promise<void> {
     if (visibleRows.length === 0 || exporting) return
-    dispatch({ type: 'startExport' })
+    setExporting(true)
+    setExportError(null)
     await downloadCierresPdf({
       rows: visibleRows,
       storeId,
@@ -125,16 +81,17 @@ function CierresPage() {
       t,
     })
       .catch(() => {
-        dispatch({ type: 'setExportError', value: t('errors.pdfExportFailed') })
+        setExportError(t('errors.pdfExportFailed'))
       })
       .finally(() => {
-        dispatch({ type: 'finishExport' })
+        setExporting(false)
       })
   }
 
   async function onDownloadSinglePdf(row: CierreRow): Promise<void> {
     if (exporting) return
-    dispatch({ type: 'startExport' })
+    setExporting(true)
+    setExportError(null)
     await downloadCierresPdf({
       rows: [row],
       storeId,
@@ -143,10 +100,10 @@ function CierresPage() {
       t,
     })
       .catch(() => {
-        dispatch({ type: 'setExportError', value: t('errors.pdfExportFailed') })
+        setExportError(t('errors.pdfExportFailed'))
       })
       .finally(() => {
-        dispatch({ type: 'finishExport' })
+        setExporting(false)
       })
   }
 
@@ -171,60 +128,7 @@ function CierresPage() {
 
       <div className="rounded-lg border-2 border-line bg-white p-4">
         <h2 className="mb-3 text-lg font-bold">{t('cierres.previous')}</h2>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant={period === 'today' ? 'primary' : 'outline'}
-            onClick={() => dispatch({ type: 'setPeriod', period: 'today' })}
-          >
-            {t('reports.today')}
-          </Button>
-          <Button
-            variant={period === 'week' ? 'primary' : 'outline'}
-            onClick={() => dispatch({ type: 'setPeriod', period: 'week' })}
-          >
-            {t('reports.week')}
-          </Button>
-          <Button
-            variant={period === 'month' ? 'primary' : 'outline'}
-            onClick={() => dispatch({ type: 'setPeriod', period: 'month' })}
-          >
-            {t('reports.month')}
-          </Button>
-          <Button
-            variant={period === 'range' ? 'primary' : 'outline'}
-            onClick={() => dispatch({ type: 'setPeriod', period: 'range' })}
-          >
-            {t('cierres.range')}
-          </Button>
-        </div>
-
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <label className="text-sm font-semibold text-slate-600">
-            {t('cierres.from')}
-            <Input
-              className="mt-1"
-              type="date"
-              value={rangeFrom}
-              max={rangeTo}
-              onChange={(e) => {
-                dispatch({ type: 'setRangeFrom', value: e.target.value })
-              }}
-            />
-          </label>
-          <label className="text-sm font-semibold text-slate-600">
-            {t('cierres.to')}
-            <Input
-              className="mt-1"
-              type="date"
-              value={rangeTo}
-              min={rangeFrom}
-              max={todayLocal()}
-              onChange={(e) => {
-                dispatch({ type: 'setRangeTo', value: e.target.value })
-              }}
-            />
-          </label>
-        </div>
+        <DateRangePicker value={range} onChange={setRange} />
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-slate-600">

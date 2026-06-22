@@ -1,4 +1,5 @@
 import i18n from '#/lib/i18n'
+import type { DateRange } from '#/lib/types'
 
 const TZ = 'America/Costa_Rica'
 
@@ -7,6 +8,10 @@ const MONTH_PARTS_FMT = new Intl.DateTimeFormat('en-CA', {
   timeZone: TZ,
   year: 'numeric',
   month: '2-digit',
+})
+const WEEKDAY_FMT = new Intl.DateTimeFormat('en-US', {
+  timeZone: TZ,
+  weekday: 'short',
 })
 
 export function todayLocal(): string {
@@ -17,6 +22,12 @@ export function daysAgoLocal(days: number): string {
   const d = new Date()
   d.setDate(d.getDate() - days)
   return TODAY_FMT.format(d)
+}
+
+export function lastDayOfPreviousMonthLocal(): string {
+  const [y, m] = monthStartLocal(0).split('-').map(Number)
+  const lastPrev = new Date(Date.UTC(y, m - 1, 0, 18, 0, 0))
+  return TODAY_FMT.format(lastPrev)
 }
 
 export function monthStartLocal(offsetMonths = 0): string {
@@ -40,6 +51,16 @@ export function rangeBounds(from: string, to: string): { from: string; to: strin
   return { from: `${from} 00:00:00`, to: `${to} 23:59:59` }
 }
 
+/** Bounds with optional HH:mm (matches POS SQLite timestamps). */
+export function rangeBoundsFromDateRange(range: DateRange): { from: string; to: string } {
+  const fromTime = range.fromTime ?? '00:00'
+  const toTime = range.toTime ?? '23:59'
+  return {
+    from: `${range.from} ${fromTime}:00`,
+    to: `${range.to} ${toTime}:59`,
+  }
+}
+
 /** Normalize SQLite / ISO timestamps for lexicographic Supabase TEXT filters. */
 function normalizeDbTimestamp(value: string): string {
   return value.includes('T') ? value.replace('T', ' ') : value
@@ -54,6 +75,35 @@ export function formatDateTime(iso: string | null | undefined): string {
     dateStyle: 'short',
     timeStyle: 'short',
   })
+}
+
+/** POS report/receipt timestamps: dd/MM/yyyy HH:mm */
+export function formatReportTimestamp(
+  value: string | null | undefined,
+  withTime = true,
+): string {
+  if (!value) return '—'
+  const normalized = value.includes('T') ? value.replace('T', ' ') : value
+  const [datePart, timePart] = normalized.split(' ')
+  const [y, m, d] = datePart.split('-')
+  if (!y || !m || !d) return value
+  const date = `${d}/${m}/${y}`
+  if (withTime && timePart) return `${date} ${timePart.slice(0, 5)}`
+  return date
+}
+
+const REPORT_NOW_FMT = new Intl.DateTimeFormat('en-GB', {
+  timeZone: TZ,
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+})
+
+export function formatReportNow(): string {
+  return REPORT_NOW_FMT.format(new Date()).replace(',', '')
 }
 
 /** Parse SQLite `YYYY-MM-DD HH:MM:SS` or ISO timestamps to epoch ms. */
@@ -84,6 +134,24 @@ export function daysInRange(from: string, to: string): string[] {
     cursor.setDate(cursor.getDate() + 1)
   }
   return days
+}
+
+/** Monday of the current calendar week in Costa Rica (matches POS Reports). */
+export function calendarWeekStartLocal(): string {
+  const today = todayLocal()
+  const weekday = WEEKDAY_FMT.format(new Date(`${today}T12:00:00`))
+  const map: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  }
+  const dow = map[weekday] ?? 0
+  const mondayOffset = dow === 0 ? 6 : dow - 1
+  return daysAgoLocal(mondayOffset)
 }
 
 export function formatRelativeTime(

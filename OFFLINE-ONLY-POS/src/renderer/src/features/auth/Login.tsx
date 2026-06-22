@@ -3,7 +3,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
-import { homeFor } from '@/lib/session'
+import { homeAfterLogin } from '@/lib/session'
 import { Button, Field, Input } from '@/components/ui'
 import { AppLogo } from '@/components/AppLogo'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
@@ -24,7 +24,7 @@ export function LoginPage(): React.JSX.Element {
     try {
       const user = await api.auth.login(username.trim(), password)
       queryClient.clear()
-      void navigate({ to: homeFor(user.role), replace: true })
+      void navigate({ to: await homeAfterLogin(user), replace: true })
     } catch (err) {
       setError(t(err instanceof ApiError ? err.key : 'errors.unknown'))
       setBusy(false)

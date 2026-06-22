@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { formatMoney } from '#/lib/money'
 import type { DashboardKpiTrend } from '#/lib/types'
@@ -8,14 +9,17 @@ export function DashboardCard({
   subtitle,
   children,
   className = '',
+  id,
 }: {
   title: string
   subtitle?: string
   children: ReactNode
   className?: string
+  id?: string
 }) {
   return (
     <section
+      id={id}
       className={`min-w-0 rounded-xl border-2 border-line bg-white p-5 shadow-sm hover:border-slate-300 ${className}`}
     >
       <div className="mb-4">
@@ -104,6 +108,28 @@ export function DashboardEmpty({ message }: { message: string }) {
   return (
     <div className="flex min-h-[100px] items-center justify-center rounded-lg bg-slate-50 px-4 py-8 text-center text-[15px] text-slate-500">
       {message}
+    </div>
+  )
+}
+
+export function FooterLink({
+  to,
+  label,
+  search,
+}: {
+  to: string
+  label: string
+  search?: Record<string, string>
+}) {
+  return (
+    <div className="mt-4 border-t border-line pt-3 text-right">
+      <Link
+        to={to}
+        search={search}
+        className="text-[14px] font-semibold text-primary hover:underline"
+      >
+        {label}
+      </Link>
     </div>
   )
 }

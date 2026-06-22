@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { api } from '@/lib/api'
-import { homeFor } from '@/lib/session'
+import { homeAfterLogin, homeFor } from '@/lib/session'
 import { FullScreenSpinner } from '@/components/ui'
 
 /** Entry redirect: first-run wizard → language → login → role home. */
@@ -22,6 +22,12 @@ export function Bootstrap(): React.JSX.Element {
         if (cancelled) return
         if (!user) {
           void navigate({ to: '/login', replace: true })
+          return
+        }
+        if (user.role === 'admin') {
+          const dest = await homeAfterLogin(user)
+          if (cancelled) return
+          void navigate({ to: dest, replace: true })
           return
         }
         void navigate({ to: homeFor(user.role), replace: true })

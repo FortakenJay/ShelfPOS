@@ -6,16 +6,19 @@ import type {
   CierreDiscountReport,
   CierrePriceOverrideReport,
   IdType,
+  ItemizedSalesReport,
   InventoryRow,
   Language,
   PaymentMethod,
   PaymentMethodReport,
   PrintLine,
   SaleCustomer,
+  SalePaymentSnapshot,
   SalesSummaryReport,
   TaxBreakdownRow,
   TaxRegime,
-  TopProductRow
+  TopProductRow,
+  TransactionLogReport
 } from '../../shared/types'
 
 export function emisorFromSettings(s: AppSettings): EmisorInfo {
@@ -569,6 +572,143 @@ export function buildTaxReportLines(
   return lines
 }
 
+function salePaymentSummaryLines(
+  lang: Language,
+  payments: SalePaymentSnapshot[]
+): PrintLine[] {
+  const money = (n: number): string => formatMoney(n, lang)
+  if (payments.length === 0) return [{ t: 'text', v: '—' }]
+  return payments.map((pay) => {
+    const label =
+      pay.method === 'sinpe' && pay.ref
+        ? `${methodLabel(lang, pay.method)} (${pay.ref})`
+        : methodLabel(lang, pay.method)
+    return { t: 'row', l: label, r: money(pay.amount) }
+  })
+}
+
+export function buildTransactionLogReportLines(
+  data: TransactionLogReport,
+  rangeLabel: string,
+  lang: Language,
+  storeName: string
+): PrintLine[] {
+  const money = (n: number): string => formatMoney(n, lang)
+  const lines = reportHeader(t(lang, 'reports.types.transactionLog'), rangeLabel, lang, storeName)
+  lines.push({
+    t: 'row',
+    l: t(lang, 'print.report.transactions'),
+    r: String(data.txCount),
+    bold: true
+  })
+  lines.push({
+    t: 'row',
+    l: t(lang, 'print.report.revenue'),
+    r: money(data.totalRevenue),
+    bold: true
+  })
+  lines.push({ t: 'hr' })
+
+  if (data.rows.length === 0) {
+    lines.push({ t: 'text', v: t(lang, 'common.noData') })
+    return lines
+  }
+
+  for (const row of data.rows) {
+    const label = row.consecutivo ?? `#${row.saleId}`
+    lines.push({
+      t: 'row',
+      l: label,
+      r: formatDate(row.createdAt, lang, true)
+    })
+    lines.push({ t: 'text', v: `${row.cashier}${row.customerName ? ` · ${row.customerName}` : ''}` })
+    lines.push(...salePaymentSummaryLines(lang, row.payments))
+    if (row.discountTotal > 0) {
+      lines.push({
+        t: 'row',
+        l: t(lang, 'print.receipt.discountTotal'),
+        r: `-${money(row.discountTotal)}`
+      })
+    }
+    lines.push({ t: 'row', l: t(lang, 'common.total'), r: money(row.total), bold: true })
+    lines.push({ t: 'feed', n: 1 })
+  }
+  return lines
+}
+
+export function buildItemizedSalesReportLines(
+  data: ItemizedSalesReport,
+  rangeLabel: string,
+  lang: Language,
+  storeName: string
+): PrintLine[] {
+  const money = (n: number): string => formatMoney(n, lang)
+  const lines = reportHeader(t(lang, 'reports.types.itemizedSales'), rangeLabel, lang, storeName)
+  lines.push({
+    t: 'row',
+    l: t(lang, 'print.report.transactions'),
+    r: String(data.sales.length),
+    bold: true
+  })
+  lines.push({
+    t: 'row',
+    l: t(lang, 'print.report.itemsSold'),
+    r: String(data.itemsSold),
+    bold: true
+  })
+  lines.push({
+    t: 'row',
+    l: t(lang, 'print.report.revenue'),
+    r: money(data.totalRevenue),
+    bold: true
+  })
+  lines.push({ t: 'hr' })
+
+  if (data.sales.length === 0) {
+    lines.push({ t: 'text', v: t(lang, 'common.noData') })
+    return lines
+  }
+
+  for (const sale of data.sales) {
+    const label = sale.consecutivo ?? `#${sale.saleId}`
+    lines.push({
+      t: 'row',
+      l: label,
+      r: formatDate(sale.createdAt, lang, true)
+    })
+    lines.push({
+      t: 'text',
+      v: `${sale.cashier}${sale.customerName ? ` · ${sale.customerName}` : ''}`
+    })
+    lines.push(...salePaymentSummaryLines(lang, sale.payments))
+    if (sale.cartDiscount > 0) {
+      lines.push({
+        t: 'row',
+        l: t(lang, 'print.cierre.cartDiscount'),
+        r: `-${money(sale.cartDiscount)}`
+      })
+    }
+    for (const item of sale.items) {
+      const barcode = item.barcode ? ` [${item.barcode}]` : ''
+      lines.push({
+        t: 'row',
+        l: `${item.productName}${barcode} x${item.quantity}`,
+        r: money(item.lineTotal)
+      })
+      if (item.lineDiscount > 0) {
+        lines.push({
+          t: 'row',
+          l: `  ${t(lang, 'print.receipt.discount')}`,
+          r: `-${money(item.lineDiscount)}`
+        })
+      }
+    }
+    lines.push({ t: 'row', l: t(lang, 'common.total'), r: money(sale.total), bold: true })
+    lines.push({ t: 'hr' })
+  }
+  return lines
+}
+
 export function buildShelfLabelLines(args: {
   productName: string
   price: number
@@ -580,5 +720,44 @@ export function buildShelfLabelLines(args: {
     { t: 'barcode', v: barcode, h: 24, w: 2, align: 'ct' },
     { t: 'text', v: name, align: 'ct', big: true },
     { t: 'text', v: formatMoney(args.price, lang), align: 'ct', bold: true, big: true }
+  ]
+}
+
+const PIN_CARD_BARCODE_HEIGHT = 72
+const PIN_CARD_BARCODE_WIDTH = 3
+
+/** Scannable PIN card: manager PIN under admin label, caja PIN under username. */
+export function buildPinCardLines(args: {
+  storeName: string
+  adminLabel: string
+  managerPin: string
+  username: string
+  cajaPin: string
+  scanHint: string
+}): PrintLine[] {
+  return [
+    { t: 'text', v: args.storeName.trim(), align: 'ct', bold: true, big: true },
+    { t: 'feed', n: 1 },
+    { t: 'text', v: args.adminLabel, align: 'ct', bold: true, big: true },
+    {
+      t: 'barcode',
+      v: args.managerPin,
+      h: PIN_CARD_BARCODE_HEIGHT,
+      w: PIN_CARD_BARCODE_WIDTH,
+      align: 'ct'
+    },
+    { t: 'feed', n: 2 },
+    { t: 'hr' },
+    { t: 'feed', n: 1 },
+    { t: 'text', v: args.username.trim().toUpperCase(), align: 'ct', bold: true, big: true },
+    {
+      t: 'barcode',
+      v: args.cajaPin,
+      h: PIN_CARD_BARCODE_HEIGHT,
+      w: PIN_CARD_BARCODE_WIDTH,
+      align: 'ct'
+    },
+    { t: 'feed', n: 1 },
+    { t: 'text', v: args.scanHint, align: 'ct' }
   ]
 }

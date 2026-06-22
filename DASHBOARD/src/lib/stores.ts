@@ -25,3 +25,9 @@ export const QUERY_GC_MS = 600_000
 
 /** Store list changes rarely (sync registers new stores). */
 export const STORES_STALE_MS = 300_000
+
+/** Paginated product catalog (~25k rows) — memory cache only, not persisted. */
+export const DASHBOARD_PRODUCTS_STALE_MS = 600_000
+
+/** sessionStorage key for persisted dashboard summary (small payload). */
+export const DASHBOARD_CACHE_STORAGE_KEY = 'shelfpos-dashboard-cache'

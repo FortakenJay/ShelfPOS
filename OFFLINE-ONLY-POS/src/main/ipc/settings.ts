@@ -1,14 +1,19 @@
 import bcrypt from 'bcryptjs'
 import { handle } from './helpers'
 import { AppError } from '../errors'
-import { getAppSettings, getSetting, setSetting, SETTING_KEYS } from '../db/repos/settings'
+import { getAppSettings, getSetting, receiptLanguage, setSetting, SETTING_KEYS } from '../db/repos/settings'
 import { writeAudit } from '../db/repos/audit'
 import { session } from '../services/session'
+import { t } from '../services/i18n'
+import { buildPinCardLines } from '../services/printTemplates'
+import { insertPrintJob } from '../db/repos/printJobs'
+import { attemptPrintJob, probePrinter, isPrintableCode128Barcode } from '../services/printer'
 import type {
   ActionShortcutKey,
   AppSettings,
   IdType,
   Language,
+  PrintStatus,
   SettingsUpdateInput
 } from '../../shared/types'
 
@@ -16,13 +21,23 @@ const PIN_RE = /^\d{4,6}$/
 const ID_TYPES: IdType[] = ['fisica', 'juridica', 'dimex', 'nite']
 const SHORTCUT_KEYS: (keyof Pick<
   SettingsUpdateInput,
-  'shortcutOpenFloat' | 'shortcutCashIn' | 'shortcutCashOut' | 'shortcutDrawerAction' | 'shortcutPrintLabel'
+  | 'shortcutOpenFloat'
+  | 'shortcutCashIn'
+  | 'shortcutCashOut'
+  | 'shortcutDrawerAction'
+  | 'shortcutPrintLabel'
+  | 'shortcutPayCash'
+  | 'shortcutPayCard'
+  | 'shortcutPaySinpe'
 >)[] = [
   'shortcutOpenFloat',
   'shortcutCashIn',
   'shortcutCashOut',
   'shortcutDrawerAction',
-  'shortcutPrintLabel'
+  'shortcutPrintLabel',
+  'shortcutPayCash',
+  'shortcutPayCard',
+  'shortcutPaySinpe'
 ]
 
 export function registerSettingsHandlers(): void {
@@ -42,7 +57,10 @@ export function registerSettingsHandlers(): void {
       shortcutCashIn: input.shortcutCashIn ?? current.shortcutCashIn,
       shortcutCashOut: input.shortcutCashOut ?? current.shortcutCashOut,
       shortcutDrawerAction: input.shortcutDrawerAction ?? current.shortcutDrawerAction,
-      shortcutPrintLabel: input.shortcutPrintLabel ?? current.shortcutPrintLabel
+      shortcutPrintLabel: input.shortcutPrintLabel ?? current.shortcutPrintLabel,
+      shortcutPayCash: input.shortcutPayCash ?? current.shortcutPayCash,
+      shortcutPayCard: input.shortcutPayCard ?? current.shortcutPayCard,
+      shortcutPaySinpe: input.shortcutPaySinpe ?? current.shortcutPaySinpe
     }
     const uniqueShortcutCount = new Set(Object.values(shortcutValues)).size
     if (uniqueShortcutCount !== SHORTCUT_KEYS.length) throw new AppError('errors.invalidInput')
@@ -108,6 +126,9 @@ export function registerSettingsHandlers(): void {
     if (input.shortcutPrintLabel !== undefined) {
       setSetting(SETTING_KEYS.shortcutPrintLabel, input.shortcutPrintLabel)
     }
+    if (input.shortcutPayCash !== undefined) setSetting(SETTING_KEYS.shortcutPayCash, input.shortcutPayCash)
+    if (input.shortcutPayCard !== undefined) setSetting(SETTING_KEYS.shortcutPayCard, input.shortcutPayCard)
+    if (input.shortcutPaySinpe !== undefined) setSetting(SETTING_KEYS.shortcutPaySinpe, input.shortcutPaySinpe)
 
     writeAudit('settings_updated', { entity: 'settings' })
     return getAppSettings()
@@ -138,6 +159,50 @@ export function registerSettingsHandlers(): void {
       setSetting(SETTING_KEYS.cajaPinHash, await bcrypt.hash(newPin, 10))
       writeAudit('pin_changed', { entity: 'settings', detail: existing ? 'caja' : 'caja_initial' })
       return null
+    }
+  )
+
+  handle<{ managerPin: string; cajaPin: string }, { printStatus: PrintStatus }>(
+    'settings:printPinCard',
+    ['admin'],
+    async ({ managerPin, cajaPin }) => {
+      if (!PIN_RE.test(managerPin) || !PIN_RE.test(cajaPin)) {
+        throw new AppError('firstRun.errors.pinFormat')
+      }
+      if (!getSetting(SETTING_KEYS.cajaPinHash)) {
+        throw new AppError('settings.pinCard.cajaNotConfigured')
+      }
+      if (
+        !isPrintableCode128Barcode(managerPin) ||
+        !isPrintableCode128Barcode(cajaPin)
+      ) {
+        throw new AppError('errors.invalidInput')
+      }
+
+      await session.verifyPin(managerPin)
+      await session.verifyCajaPin(cajaPin)
+
+      await probePrinter()
+      const lang = receiptLanguage()
+      const user = session.require()
+      const storeName = getAppSettings().storeName
+      const printJobId = insertPrintJob('label', null, {
+        lang,
+        lines: buildPinCardLines({
+          storeName,
+          adminLabel: t(lang, 'settings.pinCard.adminLabel'),
+          managerPin,
+          username: user.username,
+          cajaPin,
+          scanHint: t(lang, 'settings.pinCard.scanHint')
+        })
+      })
+      const printStatus = await attemptPrintJob(printJobId)
+      writeAudit('pin_card_printed', {
+        entity: 'settings',
+        detail: user.username
+      })
+      return { printStatus }
     }
   )
 }

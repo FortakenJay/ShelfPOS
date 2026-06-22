@@ -4,10 +4,12 @@ import { useTranslation } from 'react-i18next'
 import type { DashboardAlert } from '@shared/types'
 import { dashboardAlertProductSearch } from '../dashboardAlertSearch'
 import { notificationAlertSeverityClass } from '../dashboardAlertSeverity'
+import { NavIcon } from '@/components/NavIcon'
 
 type NotificationsCenterProps = {
   alerts: DashboardAlert[]
   variant?: 'sidebar' | 'inline'
+  compact?: boolean
 }
 
 function positionDialogNearTrigger(
@@ -25,7 +27,8 @@ function positionDialogNearTrigger(
 
 export function NotificationsCenter({
   alerts,
-  variant = 'inline'
+  variant = 'inline',
+  compact = false
 }: NotificationsCenterProps): React.JSX.Element {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -80,7 +83,9 @@ export function NotificationsCenter({
   }, [open])
 
   const triggerClass = isSidebar
-    ? 'relative flex w-full items-center justify-between rounded-md border border-slate-600 px-4 py-2.5 text-[14px] font-semibold text-slate-200 hover:border-slate-500 hover:bg-chrome-light hover:text-white'
+    ? `relative flex w-full items-center rounded-md border border-slate-600 text-[14px] font-semibold text-slate-200 hover:border-slate-500 hover:bg-chrome-light hover:text-white ${
+        compact ? 'justify-center px-2 py-2.5' : 'justify-between px-4 py-2.5'
+      }`
     : 'relative rounded-lg border-2 border-line bg-white px-3 py-2 text-[14px] font-semibold text-slate-700 hover:border-primary'
 
   return (
@@ -93,11 +98,14 @@ export function NotificationsCenter({
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-controls="dashboard-notifications-dialog"
+        title={compact ? t('dashboard.notifications.title') : undefined}
       >
-        <span>{t('dashboard.notifications.title')}</span>
+        {compact ? <NavIcon name="notifications" /> : <span>{t('dashboard.notifications.title')}</span>}
         {count > 0 && (
           <span
-            className={`inline-flex min-w-5 items-center justify-center rounded-full bg-danger px-1.5 py-0.5 text-[11px] font-bold text-white ${isSidebar ? '' : 'ml-2'}`}
+            className={`inline-flex min-w-5 items-center justify-center rounded-full bg-danger px-1.5 py-0.5 text-[11px] font-bold text-white ${
+              isSidebar && !compact ? '' : compact ? 'absolute -top-1 -right-1' : 'ml-2'
+            }`}
           >
             {count}
           </span>

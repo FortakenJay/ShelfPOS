@@ -1,57 +1,114 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useReducer } from 'react'
 import { useTranslation } from 'react-i18next'
-import { dayBounds, daysAgoLocal, formatDateTime, monthStartLocal, rangeBounds, todayLocal } from '#/lib/dates'
-import { fetchAuditLog } from '#/lib/queries/audit'
+import i18n from '#/lib/i18n'
+import { Button, Input, Select, Td, Th } from '#/components/ui'
+import { rangeForReportPeriod } from '#/lib/dateRangePresets'
+import { formatDateTime } from '#/lib/dates'
+import {
+  fetchAuditActions,
+  fetchAuditLog,
+  fetchAuditUsers,
+} from '#/lib/queries/audit'
+import type { ReportPeriodPreset } from '#/lib/reports.types'
 import { useStore } from '#/lib/store-context'
 import { DASHBOARD_POLL_MS, DASHBOARD_STALE_MS, QUERY_GC_MS } from '#/lib/stores'
-import { SectionHeading } from '#/components/dashboard/DashboardPrimitives'
-import { Button, FullScreenSpinner, Input, Td, Th } from '#/components/ui'
+import type { DateRange } from '#/lib/types'
+
+const PAGE_SIZE_OPTIONS = [25, 50, 100] as const
+const DEFAULT_PAGE_SIZE = 50
+
+interface AuditLogState {
+  period: ReportPeriodPreset | 'all' | 'range'
+  range: DateRange | null
+  userId: number | ''
+  action: string
+  page: number
+  pageSize: number
+}
+
+type AuditLogAction =
+  | { type: 'setPeriod'; period: ReportPeriodPreset | 'all' | 'range' }
+  | { type: 'setRange'; range: DateRange | null }
+  | { type: 'setUserId'; userId: number | '' }
+  | { type: 'setAction'; action: string }
+  | { type: 'setPage'; page: number }
+  | { type: 'setPageSize'; pageSize: number }
+
+function auditLogReducer(state: AuditLogState, action: AuditLogAction): AuditLogState {
+  switch (action.type) {
+    case 'setPeriod':
+      if (action.period === 'all') {
+        return { ...state, period: action.period, range: null, page: 1 }
+      }
+      if (action.period === 'range') {
+        return {
+          ...state,
+          period: action.period,
+          range: state.range ?? rangeForReportPeriod('today'),
+          page: 1,
+        }
+      }
+      return {
+        ...state,
+        period: action.period,
+        range: rangeForReportPeriod(action.period),
+        page: 1,
+      }
+    case 'setRange':
+      return { ...state, range: action.range, period: action.range ? 'range' : 'all', page: 1 }
+    case 'setUserId':
+      return { ...state, userId: action.userId, page: 1 }
+    case 'setAction':
+      return { ...state, action: action.action, page: 1 }
+    case 'setPage':
+      return { ...state, page: action.page }
+    case 'setPageSize':
+      return { ...state, pageSize: action.pageSize, page: 1 }
+    default:
+      return state
+  }
+}
 
 export const Route = createFileRoute('/_app/audit')({
   component: AuditPage,
 })
 
 function AuditPage() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const { storeId } = useStore()
-  const [period, setPeriod] = useState<'today' | 'week' | 'month' | 'range' | 'all'>('all')
-  const [rangeFrom, setRangeFrom] = useState(() => daysAgoLocal(6))
-  const [rangeTo, setRangeTo] = useState(() => todayLocal())
-  const [pageByStore, setPageByStore] = useState<Record<string, number>>({})
-  const pageSize = 100
-  const page = pageByStore[storeId] ?? 1
+  const [{ period, range, userId, action, page, pageSize }, dispatch] = useReducer(
+    auditLogReducer,
+    {
+      period: 'all',
+      range: null,
+      userId: '',
+      action: '',
+      page: 1,
+      pageSize: DEFAULT_PAGE_SIZE,
+    },
+  )
 
-  const setPage = (next: number | ((page: number) => number)): void => {
-    setPageByStore((prev) => {
-      const current = prev[storeId] ?? 1
-      const resolved = typeof next === 'function' ? next(current) : next
-      return { ...prev, [storeId]: resolved }
-    })
-  }
-
-  const bounds =
-    period === 'all'
-      ? undefined
-      : period === 'today'
-        ? dayBounds(todayLocal())
-        : period === 'week'
-          ? rangeBounds(daysAgoLocal(6), todayLocal())
-          : period === 'month'
-            ? rangeBounds(monthStartLocal(0), todayLocal())
-            : rangeBounds(rangeFrom, rangeTo)
-
-  const {
-    data: auditPage,
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: ['audit', storeId, period, bounds?.from, bounds?.to, page],
+  const { data: auditUsers } = useQuery({
+    queryKey: ['auditUsers', storeId],
+    queryFn: () => fetchAuditUsers(storeId),
+    staleTime: DASHBOARD_STALE_MS,
+    gcTime: QUERY_GC_MS,
+  })
+  const { data: auditActions } = useQuery({
+    queryKey: ['auditActions', storeId],
+    queryFn: () => fetchAuditActions(storeId),
+    staleTime: DASHBOARD_STALE_MS,
+    gcTime: QUERY_GC_MS,
+  })
+  const { data: auditPage, isFetching, isError } = useQuery({
+    queryKey: ['audit', storeId, range, userId, action, page, pageSize],
     queryFn: () =>
       fetchAuditLog(storeId, {
-        from: bounds?.from,
-        to: bounds?.to,
+        range,
+        userId: userId === '' ? undefined : Number(userId),
+        action: action || undefined,
         limit: pageSize,
         offset: (page - 1) * pageSize,
       }),
@@ -61,16 +118,15 @@ function AuditPage() {
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: false,
   })
-  const rows = auditPage?.rows ?? []
+
   const total = auditPage?.total ?? 0
-  const hasExactTotal = auditPage?.hasExactTotal ?? false
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const rows = auditPage?.rows ?? []
   const from = rows.length === 0 ? 0 : (page - 1) * pageSize + 1
   const to = rows.length === 0 ? 0 : from + rows.length - 1
   const outOfRangePage =
-    (hasExactTotal && total > 0 && page > totalPages) ||
-    (page > 1 && rows.length === 0 && !isLoading && !isError)
-  const summaryCount = isLoading || isError ? t('common.dash') : String(total)
+    (total > 0 && page > totalPages) || (page > 1 && rows.length === 0 && !isFetching)
+  const summaryCount = isFetching ? t('common.dash') : String(total)
 
   const actionLabel = (actionKey: string): string => {
     const key = `audit.actions.${actionKey}`
@@ -78,194 +134,215 @@ function AuditPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <SectionHeading
-        title={t('audit.title')}
-        description={t('audit.description')}
-      />
-      <div className="rounded-lg border-2 border-line bg-white p-4">
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant={period === 'all' ? 'primary' : 'outline'}
-            onClick={() => {
-              setPeriod('all')
-              const today = todayLocal()
-              setRangeFrom(today)
-              setRangeTo(today)
-              setPage(1)
-            }}
-          >
-            {t('audit.allTime')}
-          </Button>
-          <Button
-            variant={period === 'today' ? 'primary' : 'outline'}
-            onClick={() => {
-              setPeriod('today')
-              const today = todayLocal()
-              setRangeFrom(today)
-              setRangeTo(today)
-              setPage(1)
-            }}
-          >
-            {t('reports.today')}
-          </Button>
-          <Button
-            variant={period === 'week' ? 'primary' : 'outline'}
-            onClick={() => {
-              setPeriod('week')
-              setRangeFrom(daysAgoLocal(6))
-              setRangeTo(todayLocal())
-              setPage(1)
-            }}
-          >
-            {t('reports.week')}
-          </Button>
-          <Button
-            variant={period === 'month' ? 'primary' : 'outline'}
-            onClick={() => {
-              setPeriod('month')
-              setRangeFrom(monthStartLocal(0))
-              setRangeTo(todayLocal())
-              setPage(1)
-            }}
-          >
-            {t('reports.month')}
-          </Button>
-          <Button
-            variant={period === 'range' ? 'primary' : 'outline'}
-            onClick={() => {
-              setPeriod('range')
-              setPage(1)
-            }}
-          >
-            {t('cierres.range')}
-          </Button>
-        </div>
-        {period === 'range' && (
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <label className="text-sm font-semibold text-slate-600">
-              {t('cierres.from')}
-              <Input
-                className="mt-1"
-                type="date"
-                value={rangeFrom}
-                max={rangeTo}
-                onChange={(e) => {
-                  setRangeFrom(e.target.value)
-                  setPeriod('range')
-                  setPage(1)
-                }}
-              />
-            </label>
-            <label className="text-sm font-semibold text-slate-600">
-              {t('cierres.to')}
-              <Input
-                className="mt-1"
-                type="date"
-                value={rangeTo}
-                min={rangeFrom}
-                max={todayLocal()}
-                onChange={(e) => {
-                  setRangeTo(e.target.value)
-                  setPeriod('range')
-                  setPage(1)
-                }}
-              />
-            </label>
-          </div>
-        )}
-        <p className="mt-3 text-sm text-slate-600">
-          {period === 'all'
-            ? t('audit.allTimeSummary', { count: summaryCount })
-            : t('audit.rangeSummary', {
-                from: bounds?.from.slice(0, 10),
-                to: bounds?.to.slice(0, 10),
-                count: summaryCount,
-              })}
-        </p>
+    <div className="p-6">
+      <h1 className="mb-5 text-2xl font-bold">{t('audit.title')}</h1>
+
+      <div className="mb-3 flex flex-wrap gap-2">
+        <Button
+          variant={period === 'all' ? 'primary' : 'outline'}
+          onClick={() => dispatch({ type: 'setPeriod', period: 'all' })}
+        >
+          {t('audit.allTime')}
+        </Button>
+        <Button
+          variant={period === 'today' ? 'primary' : 'outline'}
+          onClick={() => dispatch({ type: 'setPeriod', period: 'today' })}
+        >
+          {t('reports.presets.today')}
+        </Button>
+        <Button
+          variant={period === 'week' ? 'primary' : 'outline'}
+          onClick={() => dispatch({ type: 'setPeriod', period: 'week' })}
+        >
+          {t('reports.presets.week')}
+        </Button>
+        <Button
+          variant={period === 'month' ? 'primary' : 'outline'}
+          onClick={() => dispatch({ type: 'setPeriod', period: 'month' })}
+        >
+          {t('reports.presets.month')}
+        </Button>
+        <Button
+          variant={period === 'range' ? 'primary' : 'outline'}
+          onClick={() => dispatch({ type: 'setPeriod', period: 'range' })}
+        >
+          {t('audit.range')}
+        </Button>
       </div>
 
-      {isLoading && <FullScreenSpinner />}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        {period === 'range' && range && (
+          <>
+            <label className="text-[13px] font-semibold text-slate-600">
+              {t('reports.from')}
+              <Input
+                type="date"
+                className="mt-1 w-44"
+                value={range.from}
+                max={range.to}
+                onChange={(e) =>
+                  e.target.value &&
+                  dispatch({
+                    type: 'setRange',
+                    range: { ...range, from: e.target.value },
+                  })
+                }
+              />
+            </label>
+            <label className="text-[13px] font-semibold text-slate-600">
+              {t('reports.to')}
+              <Input
+                type="date"
+                className="mt-1 w-44"
+                value={range.to}
+                min={range.from}
+                onChange={(e) =>
+                  e.target.value &&
+                  dispatch({
+                    type: 'setRange',
+                    range: { ...range, to: e.target.value },
+                  })
+                }
+              />
+            </label>
+          </>
+        )}
+        {period === 'all' && (
+          <p className="text-[14px] text-slate-600">
+            {t('audit.allTimeSummary', { count: summaryCount, total: summaryCount })}
+          </p>
+        )}
+        <Select
+          value={userId === '' ? '' : String(userId)}
+          onChange={(e) =>
+            dispatch({
+              type: 'setUserId',
+              userId: e.target.value === '' ? '' : Number(e.target.value),
+            })
+          }
+          className="w-52"
+          aria-label={t('audit.user')}
+        >
+          <option value="">{t('audit.allUsers')}</option>
+          {auditUsers?.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.username}
+            </option>
+          ))}
+        </Select>
+        <Select
+          value={action}
+          onChange={(e) => dispatch({ type: 'setAction', action: e.target.value })}
+          className="w-64"
+          aria-label={t('audit.action')}
+        >
+          <option value="">{t('audit.allActions')}</option>
+          {auditActions?.map((a) => (
+            <option key={a} value={a}>
+              {actionLabel(a)}
+            </option>
+          ))}
+        </Select>
+      </div>
+
       {isError && (
-        <p className="font-semibold text-danger">{t('errors.loadAudit')}</p>
+        <p className="mb-3 font-semibold text-danger">{t('errors.loadAudit')}</p>
       )}
 
-      {!isLoading && !isError && (
-        <div className="overflow-x-auto rounded-lg border-2 border-line bg-white">
-          <table className="w-full min-w-[960px]">
-            <thead>
+      <div className="overflow-hidden rounded-lg border-2 border-line bg-white">
+        <table className="w-full min-w-[960px]">
+          <thead>
+            <tr>
+              <Th>{t('common.date')}</Th>
+              <Th>{t('audit.user')}</Th>
+              <Th>{t('audit.action')}</Th>
+              <Th>{t('audit.entity')}</Th>
+              <Th>{t('audit.detail')}</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && !isFetching && (
               <tr>
-                <Th>{t('audit.date')}</Th>
-                <Th>{t('audit.user')}</Th>
-                <Th>{t('audit.action')}</Th>
-                <Th>{t('audit.entity')}</Th>
-                <Th>{t('audit.detail')}</Th>
+                <td
+                  colSpan={5}
+                  className="border-b border-line px-4 py-6 text-center text-[15px] text-slate-500"
+                >
+                  {t('common.noData')}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {rows.length === 0 ? (
-                <tr>
-                  <Td colSpan={5} className="py-8 text-center text-slate-500">
-                    {t('common.noData')}
-                  </Td>
-                </tr>
-              ) : (
-                rows.map((r) => (
-                  <tr key={r.id}>
-                    <Td className="whitespace-nowrap">
-                      {formatDateTime(r.created_at)}
-                    </Td>
-                    <Td>{r.username ?? t('common.dash')}</Td>
-                    <Td className="font-semibold">{actionLabel(r.action)}</Td>
-                    <Td className="text-slate-600">
-                      {r.entity ?? t('common.dash')}
-                      {r.entity_id ? ` #${r.entity_id}` : ''}
-                    </Td>
-                    <Td className="max-w-xl text-slate-600">
-                      {r.detail ?? t('common.dash')}
-                    </Td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-      {!isLoading && !isError && outOfRangePage && (
-        <div className="rounded-lg border-2 border-warning bg-amber-50 p-3 text-sm font-semibold text-warning">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+            )}
+            {rows.map((row) => (
+              <tr key={row.id}>
+                <Td className="whitespace-nowrap">{formatDateTime(row.created_at)}</Td>
+                <Td className="font-semibold">{row.username ?? '—'}</Td>
+                <Td>{actionLabel(row.action)}</Td>
+                <Td className="text-slate-500">
+                  {row.entity ?? '—'}
+                  {row.entity_id ? ` #${row.entity_id}` : ''}
+                </Td>
+                <Td className="text-slate-500">{row.detail ?? '—'}</Td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {outOfRangePage && (
+        <div className="mt-3 rounded-lg border-2 border-warning bg-amber-50 px-3 py-2 text-[14px] font-semibold text-warning">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <span>{t('audit.pageOutOfRange')}</span>
-            <Button variant="outline" onClick={() => setPage(1)}>
+            <Button
+              variant="outline"
+              onClick={() => dispatch({ type: 'setPage', page: 1 })}
+            >
               {t('audit.resetPage')}
             </Button>
           </div>
         </div>
       )}
-      {!isLoading && !isError && total > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-slate-600">
+
+      {total > 0 && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[14px] text-slate-600">
             {t('audit.showing', { from, to, total })}
           </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              {t('audit.prev')}
-            </Button>
-            <span className="text-sm text-slate-600">
-              {hasExactTotal
-                ? t('audit.pageOf', { page, pages: totalPages })
-                : t('audit.pageUnknownTotal', { page })}
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 text-[14px] text-slate-600">
+              <span>{t('products.pagination.perPage')}</span>
+              <Select
+                value={String(pageSize)}
+                onChange={(e) =>
+                  dispatch({ type: 'setPageSize', pageSize: Number(e.target.value) })
+                }
+                className="w-20"
+                aria-label={t('products.pagination.perPage')}
+                disabled={isFetching}
+              >
+                {PAGE_SIZE_OPTIONS.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </Select>
+            </label>
+            <span className="text-[14px] text-slate-600">
+              {t('audit.pageOf', { page, pages: totalPages })}
             </span>
-            <Button
-              variant="outline"
-              disabled={hasExactTotal ? page >= totalPages : rows.length < pageSize}
-              onClick={() => setPage((p) => (hasExactTotal ? Math.min(totalPages, p + 1) : p + 1))}
-            >
-              {t('audit.next')}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                disabled={page <= 1 || isFetching}
+                onClick={() => dispatch({ type: 'setPage', page: page - 1 })}
+              >
+                {t('common.back')}
+              </Button>
+              <Button
+                variant="outline"
+                disabled={page >= totalPages || isFetching}
+                onClick={() => dispatch({ type: 'setPage', page: page + 1 })}
+              >
+                {t('common.next')}
+              </Button>
+            </div>
           </div>
         </div>
       )}

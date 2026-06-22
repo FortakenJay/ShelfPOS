@@ -7,6 +7,7 @@ import {
 import type { ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { getSupabase, supabaseConfigured } from '#/lib/supabase'
+import { clearPersistedDashboardCache } from '#/lib/clear-dashboard-cache'
 
 interface AuthState {
   user: User | null
@@ -14,6 +15,7 @@ interface AuthState {
   loading: boolean
   configured: boolean
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
+  signUp: (email: string, password: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
 }
 
@@ -53,7 +55,16 @@ async function signIn(email: string, password: string) {
   return { error: error?.message ?? null }
 }
 
+async function signUp(email: string, password: string) {
+  const { error } = await getSupabase().auth.signUp({
+    email,
+    password,
+  })
+  return { error: error?.message ?? null }
+}
+
 async function signOut() {
+  clearPersistedDashboardCache()
   await getSupabase().auth.signOut()
 }
 
@@ -71,10 +82,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return
     }
     const sb = getSupabase()
+    const prevUserIdRef = { current: null as string | null }
     void sb.auth.getSession().then(({ data }) => {
+      prevUserIdRef.current = data.session ? data.session.user.id : null
       dispatch({ type: 'ready', session: data.session })
     })
-    const { data: sub } = sb.auth.onAuthStateChange((_event, next) => {
+    const { data: sub } = sb.auth.onAuthStateChange((event, next) => {
+      const nextUserId = next ? next.user.id : null
+      if (!next && event === 'SIGNED_OUT') {
+        clearPersistedDashboardCache()
+        prevUserIdRef.current = null
+      } else if (
+        nextUserId &&
+        prevUserIdRef.current &&
+        nextUserId !== prevUserIdRef.current
+      ) {
+        clearPersistedDashboardCache()
+      }
+      prevUserIdRef.current = nextUserId
       dispatch({ type: 'ready', session: next })
     })
     return () => sub.subscription.unsubscribe()
@@ -86,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading: slice.loading,
     configured,
     signIn,
+    signUp,
     signOut,
   }
 

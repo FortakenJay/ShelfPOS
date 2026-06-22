@@ -43,9 +43,49 @@ import type {
 } from '../../shared/types'
 
 const MANAGE: ('product_manager' | 'admin')[] = ['product_manager', 'admin']
+const MAX_LABEL_COPIES = 20
+const MAX_BATCH_LABEL_PRODUCTS = 200
 
 function isUniqueViolation(err: unknown): boolean {
   return err instanceof Error && err.message.includes('UNIQUE constraint failed')
+}
+
+async function printLabelForProduct(
+  productId: number,
+  copies: number,
+  lang: ReturnType<typeof receiptLanguage>,
+): Promise<{ printStatus: PrintStatus; printedCopies: number }> {
+  const product = getProduct(productId)
+  if (!product) throw new AppError('errors.productNotFound')
+  if (!product.barcode.trim()) throw new AppError('errors.invalidInput')
+  if (!isPrintableCode128Barcode(product.barcode)) throw new AppError('errors.invalidInput')
+
+  const labelCopies = Math.max(1, Math.min(MAX_LABEL_COPIES, Math.trunc(copies)))
+  let printStatus: PrintStatus = 'printed'
+  let printedCopies = 0
+  for (let i = 0; i < labelCopies; i++) {
+    const printJobId = insertPrintJob('label', null, {
+      lang,
+      lines: buildShelfLabelLines(
+        {
+          productName: product.name,
+          price: product.price,
+          barcode: product.barcode,
+        },
+        lang,
+      ),
+    })
+    if ((await attemptPrintJob(printJobId)) === 'printed') printedCopies++
+    else printStatus = 'failed'
+  }
+  if (printedCopies > 0) {
+    writeAudit('product_label_printed', {
+      entity: 'product',
+      entityId: productId,
+      detail: `${product.name} x${printedCopies}`,
+    })
+  }
+  return { printStatus, printedCopies }
 }
 
 export function registerProductHandlers(): void {
@@ -67,41 +107,44 @@ export function registerProductHandlers(): void {
     'products:printLabel',
     MANAGE,
     async ({ productId, copies }) => {
-      const product = getProduct(productId)
-      if (!product) throw new AppError('errors.productNotFound')
-      if (!product.barcode.trim()) throw new AppError('errors.invalidInput')
-      if (!isPrintableCode128Barcode(product.barcode)) throw new AppError('errors.invalidInput')
-
-      const labelCopies = Math.max(1, Math.min(20, Math.trunc(copies ?? 1)))
-      const lang = receiptLanguage()
       await probePrinter()
-      let printStatus: PrintStatus = 'printed'
-      let printedCopies = 0
-      for (let i = 0; i < labelCopies; i++) {
-        const printJobId = insertPrintJob('label', null, {
-          lang,
-          lines: buildShelfLabelLines(
-            {
-              productName: product.name,
-              price: product.price,
-              barcode: product.barcode
-            },
-            lang
-          )
-        })
-        if ((await attemptPrintJob(printJobId)) === 'printed') printedCopies++
-        else printStatus = 'failed'
-      }
-      if (printedCopies > 0) {
-        writeAudit('product_label_printed', {
-          entity: 'product',
-          entityId: productId,
-          detail: `${product.name} x${printedCopies}`
-        })
-      }
+      const lang = receiptLanguage()
+      const { printStatus } = await printLabelForProduct(productId, copies ?? 1, lang)
       return { printStatus }
-    }
+    },
   )
+
+  handle<
+    { productIds: number[] },
+    { printStatus: PrintStatus; printed: number; failed: number; total: number }
+  >('products:printLabelBatch', MANAGE, async ({ productIds }) => {
+    const ids = [...new Set(productIds.map((id) => Math.trunc(id)).filter((id) => id > 0))]
+    if (ids.length === 0 || ids.length > MAX_BATCH_LABEL_PRODUCTS) {
+      throw new AppError('errors.invalidInput')
+    }
+
+    await probePrinter()
+    const lang = receiptLanguage()
+    let printed = 0
+    let failed = 0
+
+    for (const productId of ids) {
+      try {
+        const result = await printLabelForProduct(productId, 1, lang)
+        if (result.printStatus === 'printed') printed++
+        else failed++
+      } catch {
+        failed++
+      }
+    }
+
+    return {
+      printStatus: failed === 0 ? 'printed' : 'failed',
+      printed,
+      failed,
+      total: ids.length,
+    }
+  })
 
   handle<ProductInput, Product>('products:create', MANAGE, (input) => {
     validateProductInput(input)

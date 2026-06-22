@@ -4,7 +4,7 @@ import { api, ApiError } from '@/lib/api'
 import { useToasts } from '@/lib/toast'
 import { Button, Field, Input, Select } from '@/components/ui'
 import type { SettingsDraft } from './settingsDraft'
-import type { ActionShortcutKey, AppSettings, IdType, Language } from '@shared/types'
+import type { ActionShortcutKey, AppSettings, IdType } from '@shared/types'
 
 const ID_TYPES: IdType[] = ['fisica', 'juridica', 'dimex', 'nite']
 const SHORTCUT_OPTIONS: ActionShortcutKey[] = [
@@ -40,40 +40,6 @@ function SettingsSaveRow({
         {t(labelKey)}
       </Button>
     </div>
-  )
-}
-
-export function SettingsLanguageSection({
-  currentLang,
-  pending,
-  onSelect
-}: {
-  currentLang: Language
-  pending: boolean
-  onSelect: (lang: Language) => void
-}): React.JSX.Element {
-  const { t } = useTranslation()
-  return (
-    <section className="rounded-lg border-2 border-line bg-white p-5">
-      <h2 className="mb-3 text-lg font-bold">{t('settings.language')}</h2>
-      <div className="mx-auto grid max-w-md grid-cols-2 gap-3">
-        {(['es', 'zh-CN'] as Language[]).map((lang) => (
-          <button
-            key={lang}
-            type="button"
-            disabled={pending}
-            onClick={() => onSelect(lang)}
-            className={`min-h-[52px] rounded-md border-2 text-lg font-bold ${
-              currentLang === lang
-                ? 'border-primary bg-primary text-white'
-                : 'border-line bg-white hover:border-primary'
-            }`}
-          >
-            {t(`languages.${lang}`)}
-          </button>
-        ))}
-      </div>
-    </section>
   )
 }
 
@@ -321,6 +287,42 @@ export function SettingsShortcutsSection({
           <Select
             value={draft.shortcutPrintLabel}
             onChange={(e) => onChange({ shortcutPrintLabel: e.target.value as ActionShortcutKey })}
+          >
+            {SHORTCUT_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {optionLabel(opt)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label={t('settings.shortcuts.payCash')}>
+          <Select
+            value={draft.shortcutPayCash}
+            onChange={(e) => onChange({ shortcutPayCash: e.target.value as ActionShortcutKey })}
+          >
+            {SHORTCUT_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {optionLabel(opt)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label={t('settings.shortcuts.payCard')}>
+          <Select
+            value={draft.shortcutPayCard}
+            onChange={(e) => onChange({ shortcutPayCard: e.target.value as ActionShortcutKey })}
+          >
+            {SHORTCUT_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {optionLabel(opt)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label={t('settings.shortcuts.paySinpe')}>
+          <Select
+            value={draft.shortcutPaySinpe}
+            onChange={(e) => onChange({ shortcutPaySinpe: e.target.value as ActionShortcutKey })}
           >
             {SHORTCUT_OPTIONS.map((opt) => (
               <option key={opt} value={opt}>

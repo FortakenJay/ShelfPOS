@@ -27,7 +27,15 @@ function Settings(): React.JSX.Element {
   return (
     <div className="p-6">
       <div className="mx-auto w-full max-w-6xl">
-        <h1 className="mb-6 text-2xl font-bold">{t('settings.title')}</h1>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-2xl font-bold">{t('settings.title')}</h1>
+          <a
+            href="#/sync-setup"
+            className="inline-flex min-h-10 items-center rounded-md border-2 border-primary bg-primary/5 px-4 text-[15px] font-semibold text-primary hover:bg-primary/10"
+          >
+            {t('syncSetup.title')}
+          </a>
+        </div>
         <SettingsForm key={JSON.stringify(settingsData)} settings={settingsData} />
       </div>
     </div>

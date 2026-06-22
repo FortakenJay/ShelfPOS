@@ -26,3 +26,15 @@ export function homeFor(role: Role): string {
       return '/admin/dashboard'
   }
 }
+
+/** Admin may need cloud sync setup before dashboard. */
+export async function homeAfterLogin(user: SessionUser): Promise<string> {
+  if (user.role !== 'admin') return homeFor(user.role)
+  try {
+    const syncStatus = await api.syncSetup.status()
+    if (!syncStatus.configured && !syncStatus.linked) return '/sync-setup'
+  } catch {
+    /* sync IPC unavailable — continue to home */
+  }
+  return homeFor(user.role)
+}

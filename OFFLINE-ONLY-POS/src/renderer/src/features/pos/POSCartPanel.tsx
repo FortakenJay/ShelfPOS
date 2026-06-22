@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatMoney } from '@/lib/format'
 import {
+  cartLineBarcode,
   cartLineDisplayName,
   cartLineHasCustomPrice,
   cartLineKey,
@@ -10,6 +11,8 @@ import {
   cartLineUnitPrice
 } from '@/lib/cartLine'
 import type { CartLine } from './types'
+import { CartLineDiscountInput } from './CartLineDiscountInput'
+import { CartMiscNameInput } from './CartMiscNameInput'
 import { commitEditableOnEnter } from './posKeyboard'
 
 function CartQtyInput({
@@ -51,8 +54,9 @@ export function POSCartPanel({
   cart,
   itemsGross,
   discountTotal,
-  onLineDiscount,
+  onLineDiscountPercent,
   onLinePrice,
+  onSetMiscLineName,
   onCartDiscount,
   onSetQuantity,
   onRemoveLine
@@ -60,8 +64,9 @@ export function POSCartPanel({
   cart: CartLine[]
   itemsGross: number
   discountTotal: number
-  onLineDiscount: (lineKey: string) => void
+  onLineDiscountPercent: (lineKey: string, percent: number, productName: string) => void
   onLinePrice: (lineKey: string) => void
+  onSetMiscLineName: (lineKey: string, name: string | undefined) => void
   onCartDiscount: () => void
   onSetQuantity: (lineKey: string, quantity: number) => void
   onRemoveLine: (lineKey: string) => void
@@ -83,6 +88,9 @@ export function POSCartPanel({
                 <th className="bg-slate-100 px-4 py-2 text-left text-[14px] font-bold text-slate-600 uppercase">
                   {t('products.name')}
                 </th>
+                <th className="w-24 bg-slate-100 px-2 py-2 text-center text-[14px] font-bold text-slate-600 uppercase">
+                  {t('pos.discountCol')}
+                </th>
                 <th className="w-36 bg-slate-100 px-2 py-2 text-center text-[14px] font-bold text-slate-600 uppercase">
                   {t('pos.qty')}
                 </th>
@@ -101,47 +109,60 @@ export function POSCartPanel({
                 const unit = cartLineUnitPrice(line)
                 const isBulk = cartLineShowsBulk(line)
                 const hasCustomPrice = cartLineHasCustomPrice(line)
+                const productName = cartLineDisplayName(line, miscLabel)
+                const barcode = cartLineBarcode(line)
                 return (
                   <tr key={lineKey} className="border-b border-line bg-white">
                     <td className="px-4 py-3">
-                      <span className="block text-[17px] font-semibold">
-                        {cartLineDisplayName(line, miscLabel)}
-                      </span>
-                      <div className="mt-1 flex flex-wrap items-center gap-2 text-[16px]">
-                        {line.kind === 'misc' && (
-                          <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[14px] font-bold text-slate-700">
-                            {t('pos.miscItemBadge')}
-                          </span>
+                      <div className="min-w-0">
+                        {line.kind === 'misc' ? (
+                          <CartMiscNameInput
+                            customName={line.customName}
+                            defaultLabel={miscLabel}
+                            onCommit={(name) => onSetMiscLineName(lineKey, name)}
+                          />
+                        ) : (
+                          <>
+                            <span className="block text-[17px] font-semibold">{productName}</span>
+                            {barcode && (
+                              <span className="mt-0.5 block font-mono text-[13px] text-slate-500">
+                                {barcode}
+                              </span>
+                            )}
+                          </>
                         )}
-                        {isBulk && (
-                          <span className="rounded bg-cta/10 px-1.5 py-0.5 text-[14px] font-bold text-cta">
-                            {t('pos.bulkApplied')}
-                          </span>
-                        )}
-                        {hasCustomPrice && (
-                          <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[14px] font-bold text-primary">
-                            {t('pos.priceOverride.customApplied')}
-                          </span>
-                        )}
-                        {line.discount > 0 && (
-                          <span className="text-[17px] font-bold text-danger">
-                            −{formatMoney(line.discount)}
-                          </span>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => onLinePrice(lineKey)}
-                          className="text-[16px] font-bold text-primary hover:underline"
-                        >
-                          {t('pos.priceBtn')}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onLineDiscount(lineKey)}
-                          className="text-[16px] font-bold text-primary hover:underline"
-                        >
-                          {t('pos.discountBtn')}
-                        </button>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-[16px]">
+                          {line.kind === 'misc' && (
+                            <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[14px] font-bold text-slate-700">
+                              {t('pos.miscItemBadge')}
+                            </span>
+                          )}
+                          {isBulk && (
+                            <span className="rounded bg-cta/10 px-1.5 py-0.5 text-[14px] font-bold text-cta">
+                              {t('pos.bulkApplied')}
+                            </span>
+                          )}
+                          {hasCustomPrice && (
+                            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[14px] font-bold text-primary">
+                              {t('pos.priceOverride.customApplied')}
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => onLinePrice(lineKey)}
+                            className="text-[16px] font-bold text-primary hover:underline"
+                          >
+                            {t('pos.priceBtn')}
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-2 py-3">
+                      <div className="flex justify-center">
+                        <CartLineDiscountInput
+                          line={line}
+                          onCommit={(percent) => onLineDiscountPercent(lineKey, percent, productName)}
+                        />
                       </div>
                     </td>
                     <td className="px-2 py-2">

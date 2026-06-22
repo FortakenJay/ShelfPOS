@@ -1,10 +1,12 @@
 import Database from 'better-sqlite3'
 import { loadConfig } from './config.js'
 import type { SyncConfig } from './config.js'
-import { listPendingQueue, openDatabase, readPosLastSeenAt, readStoreDisplayName, readStoreId } from './db.js'
+import { listPendingQueue, openDatabase, enqueueAllPosUsersBackfill, readPosLastSeenAt, readStockThresholdDefault, readStoreDisplayName, readStoreId } from './db.js'
+import { logSyncServiceError } from './errorLog.js'
 import {
   BATCH_SIZE,
   checkConnectivity,
+  claimStoreIfNeeded,
   MAX_RETRIES,
   POLL_INTERVAL_MS,
   processEntry,
@@ -21,11 +23,15 @@ async function runSyncCycle(
   if (!isOnline) return RETRY_INTERVAL_MS
 
   try {
-    const displayName = readStoreDisplayName(db)
-    const posLastSeenAt = readPosLastSeenAt(db)
-    await syncStoreRegistry(config, storeId, displayName, posLastSeenAt)
+    await syncStoreRegistry(
+      config,
+      storeId,
+      readStoreDisplayName(db),
+      readPosLastSeenAt(db),
+      readStockThresholdDefault(db),
+    )
   } catch (err) {
-    console.error('[sync-service] store registry sync failed:', err)
+    logSyncServiceError('store registry sync failed', err)
   }
 
   const pending = listPendingQueue(db, MAX_RETRIES, BATCH_SIZE)
@@ -40,6 +46,16 @@ async function main(): Promise<void> {
   const config = loadConfig()
   const db = openDatabase(config.sqlitePath)
   const storeId = readStoreId(db)
+  const backfilled = enqueueAllPosUsersBackfill(db)
+  if (backfilled > 0) {
+    console.info(`[sync-service] queued ${backfilled} pos_users row(s) for initial sync`)
+  }
+
+  try {
+    await claimStoreIfNeeded(config, db, storeId, readStoreDisplayName(db))
+  } catch (err) {
+    logSyncServiceError('store claim failed', err)
+  }
 
   console.info(`[sync-service] started store_id=${storeId} db=${config.sqlitePath}`)
 
@@ -55,9 +71,10 @@ async function main(): Promise<void> {
         storeId,
         readStoreDisplayName(db),
         readPosLastSeenAt(db),
+        readStockThresholdDefault(db),
       )
     } catch (err) {
-      console.error('[sync-service] shutdown registry sync failed:', err)
+      logSyncServiceError('shutdown registry sync failed', err)
     }
     db.close()
     process.exit(0)
@@ -82,6 +99,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error('[sync-service] fatal:', err)
+  logSyncServiceError('fatal', err)
   process.exit(1)
 })

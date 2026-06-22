@@ -35,6 +35,7 @@ export function ReturnModal({ onClose }: { onClose: () => void }): React.JSX.Ele
 
   const { searchForm, searchState, returnQty, restock, pin } = state
   const { results, searching, sale } = searchState
+  const hasCatalogItems = sale?.items.some((item) => !item.isMisc) ?? false
 
   const searchSales = async (): Promise<void> => {
     setState((s) => ({
@@ -64,7 +65,7 @@ export function ReturnModal({ onClose }: { onClose: () => void }): React.JSX.Ele
   }
 
   const totalToReturn = sale
-    ? sale.items.reduce((acc, item) => acc + (returnQty[item.productId] ?? 0), 0)
+    ? sale.items.reduce((acc, item) => acc + (returnQty[item.saleItemId] ?? 0), 0)
     : 0
 
   const mutation = useMutation({
@@ -73,6 +74,9 @@ export function ReturnModal({ onClose }: { onClose: () => void }): React.JSX.Ele
       toasts.stockAlerts(result.stockAlerts)
       toasts.success('returns.success')
       void queryClient.invalidateQueries({ queryKey: ['products'] })
+      void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      void queryClient.invalidateQueries({ queryKey: ['reports'] })
+      void queryClient.invalidateQueries({ queryKey: ['cashStatus'] })
       patch({ pin: { open: false, error: null } })
       onClose()
     },
@@ -90,12 +94,17 @@ export function ReturnModal({ onClose }: { onClose: () => void }): React.JSX.Ele
   const submitWithPin = (pinCode: string): void => {
     if (!sale || mutation.isPending) return
     patch({ pin: { open: true, error: null } })
-    const items: { productId: number; quantity: number }[] = []
-    for (const [productId, quantity] of Object.entries(returnQty)) {
+    const items: { saleItemId: number; quantity: number }[] = []
+    for (const [saleItemId, quantity] of Object.entries(returnQty)) {
       const qty = Number(quantity)
-      if (qty > 0) items.push({ productId: Number(productId), quantity: qty })
+      if (qty > 0) items.push({ saleItemId: Number(saleItemId), quantity: qty })
     }
-    mutation.mutate({ saleId: sale.id, items, restock, pin: pinCode })
+    mutation.mutate({
+      saleId: sale.id,
+      items,
+      restock: hasCatalogItems ? restock : false,
+      pin: pinCode
+    })
   }
 
   return (
@@ -180,10 +189,17 @@ export function ReturnModal({ onClose }: { onClose: () => void }): React.JSX.Ele
               <tbody>
                 {sale.items.map((item) => {
                   const max = item.quantity - item.returnedQty
-                  const qty = returnQty[item.productId] ?? 0
+                  const qty = returnQty[item.saleItemId] ?? 0
                   return (
-                    <tr key={item.productId} className="border-b border-line">
-                      <td className="px-3 py-2 text-[16px] font-semibold">{item.name}</td>
+                    <tr key={item.saleItemId} className="border-b border-line">
+                      <td className="px-3 py-2 text-[16px] font-semibold">
+                        <span className="block">{item.name}</span>
+                        {item.isMisc && (
+                          <span className="mt-1 inline-block rounded bg-slate-200 px-1.5 py-0.5 text-[13px] font-bold text-slate-700">
+                            {t('pos.miscItemBadge')}
+                          </span>
+                        )}
+                      </td>
                       <td className="px-2 py-2 text-center">{item.quantity}</td>
                       <td className="px-2 py-2 text-center">{item.returnedQty}</td>
                       <td className="px-2 py-2">
@@ -192,7 +208,9 @@ export function ReturnModal({ onClose }: { onClose: () => void }): React.JSX.Ele
                             type="button"
                             disabled={qty <= 0}
                             onClick={() =>
-                              patch({ returnQty: { ...returnQty, [item.productId]: qty - 1 } })
+                              patch({
+                                returnQty: { ...returnQty, [item.saleItemId]: qty - 1 }
+                              })
                             }
                             className="h-10 w-10 rounded-md border-2 border-line text-lg font-bold hover:border-primary disabled:text-slate-300"
                           >
@@ -203,7 +221,9 @@ export function ReturnModal({ onClose }: { onClose: () => void }): React.JSX.Ele
                             type="button"
                             disabled={qty >= max}
                             onClick={() =>
-                              patch({ returnQty: { ...returnQty, [item.productId]: qty + 1 } })
+                              patch({
+                                returnQty: { ...returnQty, [item.saleItemId]: qty + 1 }
+                              })
                             }
                             className="h-10 w-10 rounded-md border-2 border-line text-lg font-bold hover:border-primary disabled:text-slate-300"
                           >
@@ -217,17 +237,21 @@ export function ReturnModal({ onClose }: { onClose: () => void }): React.JSX.Ele
               </tbody>
             </table>
 
-            <div className="mt-5 rounded-md border-2 border-warning bg-amber-50 p-4">
-              <Toggle
-                checked={restock}
-                onChange={(v) => patch({ restock: v })}
-                label={t('returns.restockToggle')}
-                danger
-              />
-              <p className="mt-2 text-[14px] font-medium text-amber-900">
-                {t('returns.restockWarning')}
-              </p>
-            </div>
+            {hasCatalogItems ? (
+              <div className="mt-5 rounded-md border-2 border-warning bg-amber-50 p-4">
+                <Toggle
+                  checked={restock}
+                  onChange={(v) => patch({ restock: v })}
+                  label={t('returns.restockToggle')}
+                  danger
+                />
+                <p className="mt-2 text-[14px] font-medium text-amber-900">
+                  {t('returns.restockWarning')}
+                </p>
+              </div>
+            ) : (
+              <p className="mt-5 text-[14px] text-slate-600">{t('returns.miscNoRestock')}</p>
+            )}
 
             <div className="mt-5 flex justify-end gap-3">
               <Button variant="outline" size="lg" onClick={onClose}>

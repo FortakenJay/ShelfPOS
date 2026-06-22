@@ -8,7 +8,11 @@
     "vsPrevious": "对比上期",
     "noData": "暂无数据",
     "total": "合计",
-    "actions": "操作"
+    "actions": "操作",
+    "back": "上一页",
+    "next": "下一页",
+    "loading": "加载中…",
+    "date": "日期"
   },
   "nav": {
     "admin": "管理",
@@ -17,10 +21,18 @@
     "cashMovements": "现金变动",
     "cierres": "日结",
     "audit": "日志",
+    "linkPos": "绑定 POS",
     "logout": "退出登录",
     "menu": "菜单",
     "stores": "门店",
-    "adminOnline": "在线管理"
+    "adminOnline": "在线管理",
+    "collapseSidebar": "收起菜单",
+    "expandSidebar": "展开菜单"
+  },
+  "roles": {
+    "sales": "收银员",
+    "product_manager": "库存",
+    "admin": "管理员"
   },
   "login": {
     "subtitle": "管理面板",
@@ -28,6 +40,10 @@
     "password": "密码",
     "submit": "登录",
     "submitting": "登录中…",
+    "signUpSubmit": "创建账户",
+    "switchToSignUp": "首次使用？创建店主账户",
+    "switchToSignIn": "已有账户？登录",
+    "signUpConfirm": "若 Supabase 要求邮箱确认，请先确认后再登录并绑定 POS。",
     "missingEnv": "请在 <code>.env.local</code> 中配置 VITE_SUPABASE_URL 和 VITE_SUPABASE_ANON_KEY。",
     "missingEnvProd": "请在 <code>.env.local</code>（本地）或 Vercel（生产）中配置 VITE_SUPABASE_URL 和 VITE_SUPABASE_ANON_KEY。"
   },
@@ -49,15 +65,19 @@
     "loadCierres": "加载日结失败",
     "loadAudit": "加载日志失败",
     "loadMovements": "加载现金变动失败",
+    "loadReports": "加载报表失败",
     "pdfExportFailed": "无法生成 PDF",
-    "noStoresTitle": "没有已注册的门店",
-    "noStores": "请确认 sync 服务正在运行，且 Supabase 中存在 <code>stores</code> 表。",
+    "facturaPdfFailed": "无法生成发票 PDF",
+    "facturaPdfNotFound": "未找到销售记录",
+    "xlsxExportFailed": "无法生成 Excel",
+    "noStoresTitle": "绑定第一家门店",
+    "noStoresIntro": "在收银电脑上安装 ShelfPOS Sync 时使用此代码。安装程序会自动提示输入。",
+    "noStoresRefresh": "已安装 — 刷新",
     "noStoresLoadFailed": "无法加载门店列表。请检查 Supabase 连接后重试。",
-    "noStoresChecklistTitle": "各门店请检查",
-    "noStoresStepSync": "Windows 服务「ShelfPOS Sync」正在运行（Install-ShelfPOS.ps1）。",
-    "noStoresStepInstall": "sync.env 已配置 Supabase URL、service role key 和 sync_store_id。",
-    "noStoresStepSupabase": "已在 Supabase 执行 <code>SUPA.sql</code>，stores 表至少有一条记录。",
-    "noStoresStepPos": "收银机至少打开过一次 ShelfPOS 以注册门店名称。"
+    "noStoresChecklistTitle": "收银电脑上的步骤",
+    "noStoresStepInstall": "运行 Install-ShelfPOS（在 ShelfPOS 安装程序之后）。",
+    "noStoresStepCode": "提示输入绑定代码时，粘贴上方代码。",
+    "noStoresStepFinish": "完成后，在此面板点击「已安装 — 刷新」。",
   },
   "notFound": {
     "title": "页面未找到",
@@ -71,6 +91,10 @@
     "paymentsMonth": "本月收款",
     "outOfStockList": "缺货商品",
     "viewAudit": "查看完整日志",
+    "viewAllAlerts": "查看全部提醒",
+    "viewAllProducts": "查看全部商品",
+    "viewAllLowStock": "查看全部低库存",
+    "viewOutOfStock": "查看缺货商品",
     "tabs": {
       "label": "面板分区",
       "home": "首页",
@@ -99,33 +123,84 @@
       "salesByHour": "按小时销售",
       "categoryPerformance": "分类表现",
       "last30Days": "近 30 天",
-      "today": "今日"
+      "today": "今日",
+      "thisMonth": "本月",
+      "stockMovement": "库存变动",
+      "inventoryHealth": "库存健康"
     },
     "activity": {
-      "title": "近期活动"
+      "title": "近期活动",
+      "sale": "已登记销售"
+    },
+    "alerts": {
+      "title": "提醒中心",
+      "none": "暂无待处理提醒",
+      "lowStock": "{{count}} 个商品库存偏低",
+      "outOfStock": "{{count}} 个商品无库存",
+      "negativeStock": "{{count}} 个商品库存为负",
+      "cierreDiscrepancy": "{{count}} 次日结现金有差异"
     },
     "employees": {
-      "active": "活跃用户（30 天）",
+      "overview": "员工概览",
+      "total": "员工总数",
+      "active": "活跃员工",
+      "roles": "按角色",
       "performance": "收银员表现（本月）",
-      "performanceHint": "基于本月日结数据。",
+      "rolesAccess": "角色与权限",
+      "recentActivity": "团队近期活动",
       "name": "员工",
-      "cierres": "日结次数",
+      "transactions": "交易笔数",
       "volume": "销售额",
       "avgTicket": "平均客单价",
-      "recentActivity": "团队近期活动"
+      "roster": "团队",
+      "rosterEmpty": "没有已同步的用户。请在收银台打开 ShelfPOS 并重启 ShelfPOS Sync 服务。",
+      "roleColumn": "角色",
+      "statusColumn": "状态",
+      "statusActive": "在职",
+      "statusInactive": "停用"
+    },
+    "roles": {
+      "adminDesc": "完整权限：面板、报表、设置、日志与导出。",
+      "salesDesc": "收银、现金、日结与打印队列。",
+      "pmDesc": "商品、库存与导入管理。"
+    },
+    "inventory": {
+      "title": "库存概览",
+      "totalProducts": "商品数",
+      "activeProducts": "有库存",
+      "costValue": "成本价值",
+      "retailValue": "零售价值",
+      "outOfStock": "缺货",
+      "lowStock": "低库存"
+    },
+    "lowStock": {
+      "title": "低库存商品",
+      "sku": "SKU / 条码",
+      "minimum": "最低库存",
+      "status": "状态"
+    },
+    "outOfStock": {
+      "title": "缺货商品"
+    },
+    "recentInventory": {
+      "title": "最近更新库存"
+    },
+    "stockStatus": {
+      "healthy": "正常",
+      "low": "偏低",
+      "critical": "临界",
+      "negative": "负库存"
     },
     "salesToday": "今日销售",
     "salesMonth": "本月销售",
     "txToday": "今日笔数",
     "avgTicket": "平均客单价",
-    "lowStock": "低库存",
-    "outOfStock": "缺货",
     "salesTrend": "销售趋势（30 天）",
     "paymentsToday": "今日收款",
     "topProductsMonth": "本月热销",
-    "inventory": "库存",
     "inventorySummary": "库存概览",
     "activeProducts": "在售商品",
+    "costValue": "成本价值",
     "retailValue": "零售价值",
     "lowStockList": "低库存",
     "noSales30": "近 30 天无销售",
@@ -137,23 +212,166 @@
     "product": "商品",
     "sku": "SKU",
     "units": "数量",
-    "revenue": "收入"
+    "revenue": "收入",
+    "stock": "库存",
+    "viewTaxReport": "查看税务报表",
+    "topProducts": {
+      "title": "本月热销",
+      "units": "销量",
+      "revenue": "收入",
+      "profit": "毛利"
+    },
+    "slowProducts": {
+      "title": "本月滞销"
+    },
+    "worstSellers": {
+      "title": "本月表现最差"
+    },
+    "recentProducts": {
+      "title": "本月新增商品"
+    },
+    "tax": {
+      "title": "本月税务摘要",
+      "taxable": "应税销售",
+      "ivaCollected": "已收 IVA",
+      "monthlyLiability": "本月预估 IVA"
+    }
   },
   "reports": {
     "title": "报表",
+    "subtitle": "与 POS 管理面板一致的只读明细。",
     "description": "所选门店的销售与收款（只读）",
     "today": "今日",
     "week": "本周",
     "month": "本月",
     "last7": "近 7 天",
     "thisMonth": "本月",
-    "summary": "摘要 — {{period}}",
     "txCount": "笔数",
     "sales": "销售",
     "avgTicket": "平均客单价",
     "discounts": "折扣",
     "paymentsMonth": "本月收款",
-    "topProductsMonth": "本月热销"
+    "topProductsMonth": "本月热销",
+    "profitHint": "毛利按商品当前成本计算（非每笔销售的历史成本）。",
+    "exportExcel": "下载 Excel",
+    "exportingExcel": "正在生成 Excel...",
+    "exportPdf": "下载 PDF",
+    "exportingPdf": "正在生成 PDF...",
+    "pdf": {
+      "title": "报表",
+      "store": "门店",
+      "type": "类型",
+      "range": "范围",
+      "generatedAt": "生成时间"
+    },
+    "types": {
+      "summary": "销售摘要",
+      "byPayment": "按收款方式",
+      "topProducts": "热销商品",
+      "inventory": "当前库存",
+      "taxBreakdown": "IVA 明细",
+      "transactionLog": "交易记录",
+      "itemizedSales": "销售明细"
+    },
+    "tax": {
+      "regime": "税制",
+      "category": "类别",
+      "rate": "税率",
+      "gross": "含税总额",
+      "base": "税基",
+      "iva": "IVA",
+      "totalBase": "税基合计",
+      "totalIva": "IVA 合计",
+      "totalGross": "含税合计"
+    },
+    "presets": {
+      "today": "今日",
+      "week": "本周",
+      "month": "本月"
+    },
+    "from": "从",
+    "to": "至",
+    "summary": {
+      "totalRevenue": "总收入",
+      "totalDiscount": "折扣",
+      "txCount": "笔数",
+      "itemsSold": "售出件数",
+      "returnsCount": "退货",
+      "avgTicket": "平均客单价",
+      "grossProfit": "毛利",
+      "openingFloat": "开班备用金",
+      "cashSales": "现金销售",
+      "cashIn": "现金存入",
+      "cashOut": "现金取出"
+    },
+    "byPayment": {
+      "method": "方式",
+      "amount": "金额",
+      "count": "笔数"
+    },
+    "top": {
+      "product": "商品",
+      "qty": "数量",
+      "revenue": "收入",
+      "profit": "毛利",
+      "margin": "毛利率"
+    },
+    "inventory": {
+      "value": "价值",
+      "totalValue": "库存总价值",
+      "products": "商品",
+      "snapshotNote": "当前库存快照（不按日期筛选）。"
+    },
+    "transactionLog": {
+      "receipt": "收据",
+      "cashier": "收银员",
+      "customer": "客户",
+      "payment": "付款",
+      "discount": "折扣"
+    },
+    "itemized": {
+      "product": "商品",
+      "qty": "数量",
+      "unitPrice": "单价",
+      "discount": "折扣"
+    },
+    "facturaPdf": {
+      "download": "发票 PDF",
+      "exporting": "正在生成 PDF…",
+      "actions": "操作"
+    }
+  },
+  "products": {
+    "name": "名称",
+    "barcode": "条码",
+    "price": "价格",
+    "stock": "库存",
+    "category": "分类",
+    "pagination": {
+      "showing": "显示 {{from}}–{{to}}，共 {{total}} 条",
+      "perPage": "每页",
+      "pageOf": "第 {{page}} / {{totalPages}} 页"
+    }
+  },
+  "pos": {
+    "amount": "金额",
+    "methods": {
+      "cash": "现金",
+      "card": "银行卡",
+      "sinpe": "SINPE"
+    }
+  },
+  "tax": {
+    "regime": {
+      "simplificado": "简化税制",
+      "tradicional": "传统税制"
+    },
+    "categories": {
+      "standard": "标准 IVA"
+    }
+  },
+  "cierre": {
+    "closedBy": "操作人"
   },
   "cierres": {
     "title": "日结",
@@ -188,28 +406,80 @@
       "page": "页"
     }
   },
+  "linkPos": {
+    "title": "绑定 POS",
+    "description": "每个店主账户只能看到自己的门店。绑定码将此收银机与您的面板账户关联。",
+    "stepCopy": "复制绑定码（24 小时有效）。",
+    "stepInstaller": "在收银 PC 上运行 Install-ShelfPOS，按提示粘贴代码。",
+    "stepRefresh": "返回面板并刷新——您将只看到自己的门店。",
+    "generate": "生成代码",
+    "generating": "生成中…",
+    "regenerate": "新代码",
+    "codeLabel": "绑定码",
+    "codeExpiry": "24 小时内有效，仅可使用一次。",
+    "codeInstallerHint": "粘贴到 ShelfPOS → 设置 → 云同步、Install-ShelfPOS，或 sync.env 的 STORE_PAIRING_CODE。",
+    "copy": "复制代码",
+    "goDashboard": "进入面板",
+    "noPending": "没有有效代码。请生成一个以绑定另一台收银机。",
+    "addRegister": "绑定另一台收银机",
+    "labeledTitle": "带名称的代码（可选）",
+    "labelOptional": "收银机名称",
+    "labelPlaceholder": "例如：2 号收银机",
+    "addLabeled": "生成代码"
+  },
   "audit": {
-    "title": "日志",
-    "description": "门店同步的活动记录",
-    "empty": "暂无记录",
+    "title": "操作日志",
     "allTime": "全部",
-    "allTimeSummary": "完整历史 · 共 {{count}} 条记录",
-    "rangeSummary": "范围 {{from}} - {{to}} · 共 {{count}} 条记录",
-    "showing": "第 {{from}}–{{to}} 条，共 {{total}} 条",
+    "allTimeSummary": "完整历史 · 共 {{total}} 条记录",
     "pageOf": "第 {{page}} 页，共 {{pages}} 页",
-    "pageUnknownTotal": "第 {{page}} 页",
     "pageOutOfRange": "当前页在该筛选条件下已不存在。",
     "resetPage": "返回第一页",
-    "prev": "上一页",
-    "next": "下一页",
-    "date": "日期",
+    "showing": "第 {{from}}–{{to}} 条，共 {{total}} 条",
     "user": "用户",
+    "allUsers": "所有用户",
+    "allActions": "所有操作",
+    "range": "范围",
     "action": "操作",
     "entity": "对象",
     "detail": "详情",
     "actions": {
+      "login": "登录",
+      "logout": "退出登录",
+      "sale_created": "销售记录",
+      "return_created": "退货",
+      "product_created": "创建商品",
+      "product_updated": "更新商品",
+      "product_deleted": "删除商品",
+      "stock_adjusted": "调整库存",
+      "cierre_confirmed": "日结",
+      "cierre_cash_discrepancy": "日结现金差额",
+      "cash_opening_float": "备用金",
+      "cash_in": "现金存入",
+      "cash_out": "现金支出",
+      "settings_updated": "更新设置",
+      "pin_changed": "修改 PIN",
+      "discount_authorized_caja": "折扣已授权（收银 PIN）",
+      "discount_authorized_manager": "折扣已授权（经理 PIN）",
+      "price_override_authorized_caja": "改价已授权（收银 PIN）",
+      "price_override_authorized_manager": "改价已授权（经理 PIN）",
+      "price_override_sale": "销售含改价",
       "cart_line_removed_caja": "已从购物车移除商品（收银 PIN）",
-      "cart_line_removed_manager": "已从购物车移除商品（经理 PIN）"
+      "cart_line_removed_manager": "已从购物车移除商品（经理 PIN）",
+      "product_label_printed": "打印商品标签",
+      "user_created": "创建用户",
+      "user_updated": "更新用户",
+      "user_deactivated": "停用用户"
+    }
+  },
+  "cash": {
+    "adminTitle": "现金变动",
+    "movements": "现金变动记录",
+    "type": "类型",
+    "reason": "原因",
+    "types": {
+      "opening_float": "开班备用金",
+      "cash_in": "存入",
+      "cash_out": "取出"
     }
   },
   "payment": {
@@ -231,6 +501,32 @@
       "cash_in": "入款",
       "cash_out": "出款",
       "unknown": "其他"
+    },
+    "truncatedWarning": "当前显示 {{shown}} / {{total}} 笔现金变动。请缩小范围以查看全部。",
+    "truncatedWarningUnknownTotal": "当前显示前 {{shown}} 笔现金变动。请缩小范围以查看全部。"
+  },
+  "print": {
+    "receipt": {
+      "discount": "折扣",
+      "discountTotal": "折扣合计"
+    },
+    "report": {
+      "range": "期间",
+      "generated": "生成时间",
+      "transactions": "笔数",
+      "itemsSold": "售出件数",
+      "returns": "退货",
+      "avgTicket": "平均客单价",
+      "revenue": "总收入",
+      "totalDiscount": "折扣合计",
+      "byPayment": "按支付方式",
+      "topProducts": "畅销商品",
+      "inventoryCount": "商品数",
+      "inventoryValue": "总价值"
+    },
+    "cierre": {
+      "cashTitle": "现金盘点",
+      "cartDiscount": "整单折扣"
     }
   }
 }

@@ -6,6 +6,76 @@ import { randomUUID } from 'node:crypto'
 import { AppError } from '../errors'
 import type { PrintLine } from '../../shared/types'
 
+const PDF_LOAD_TIMEOUT_MS = 30_000
+const PDF_RENDER_SETTLE_MS = 200
+
+function loadWindowHtml(win: BrowserWindow, htmlPath: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      cleanup()
+      reject(new Error('PDF render timeout'))
+    }, PDF_LOAD_TIMEOUT_MS)
+
+    const onLoad = (): void => {
+      cleanup()
+      setTimeout(() => resolve(), PDF_RENDER_SETTLE_MS)
+    }
+    const onFail = (_event: unknown, code: number, desc: string): void => {
+      cleanup()
+      reject(new Error(desc || `load failed (${code})`))
+    }
+    const cleanup = (): void => {
+      clearTimeout(timeout)
+      win.webContents.removeListener('did-finish-load', onLoad)
+      win.webContents.removeListener('did-fail-load', onFail)
+    }
+
+    win.webContents.once('did-finish-load', onLoad)
+    win.webContents.once('did-fail-load', onFail)
+    void win.loadFile(htmlPath)
+  })
+}
+
+/** Renders HTML to a PDF file via a hidden off-screen window (no preview). */
+export async function writeHtmlToPdf(
+  html: string,
+  filePath: string,
+  options?: { landscape?: boolean }
+): Promise<void> {
+  const landscape = options?.landscape ?? false
+  const tempHtml = join(tmpdir(), `shelfpos-pdf-${randomUUID()}.html`)
+  const win = new BrowserWindow({
+    show: false,
+    width: landscape ? 1123 : 794,
+    height: landscape ? 794 : 1123,
+    webPreferences: {
+      sandbox: false,
+      contextIsolation: true,
+      nodeIntegration: false,
+      backgroundThrottling: false
+    }
+  })
+  try {
+    await writeFile(tempHtml, html, 'utf8')
+    await loadWindowHtml(win, tempHtml)
+    const pdf = await win.webContents.printToPDF({
+      printBackground: true,
+      landscape,
+      pageSize: 'A4',
+      margins: { marginType: 'default' }
+    })
+    if (!pdf?.byteLength) throw new Error('PDF vacío')
+    await writeFile(filePath, pdf)
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err)
+    console.error('[writeHtmlToPdf]', detail)
+    throw new AppError('errors.pdfExportFailed')
+  } finally {
+    if (!win.isDestroyed()) win.destroy()
+    await unlink(tempHtml).catch(() => {})
+  }
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;')
@@ -87,31 +157,5 @@ function printLinesToHtml(lines: PrintLine[]): string {
 
 /** Renders receipt-style print lines to a PDF file (Electron printToPDF). */
 export async function writePrintLinesPdf(lines: PrintLine[], filePath: string): Promise<void> {
-  const html = printLinesToHtml(lines)
-  const tempHtml = join(tmpdir(), `shelfpos-print-${randomUUID()}.html`)
-  const win = new BrowserWindow({
-    show: false,
-    webPreferences: {
-      sandbox: false,
-      contextIsolation: true,
-      nodeIntegration: false
-    }
-  })
-  try {
-    await writeFile(tempHtml, html, 'utf8')
-    await win.loadFile(tempHtml)
-    const pdf = await win.webContents.printToPDF({
-      printBackground: true,
-      pageSize: 'A4'
-    })
-    if (!pdf?.byteLength) throw new Error('PDF vacío')
-    await writeFile(filePath, pdf)
-  } catch (err) {
-    const detail = err instanceof Error ? err.message : String(err)
-    console.error('[printPdf]', detail)
-    throw new AppError('errors.pdfExportFailed')
-  } finally {
-    if (!win.isDestroyed()) win.destroy()
-    await unlink(tempHtml).catch(() => {})
-  }
+  await writeHtmlToPdf(printLinesToHtml(lines), filePath)
 }

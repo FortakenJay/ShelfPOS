@@ -558,16 +558,31 @@ function CierrePriceOverrides({
 function CierreHistory({ historyRows }: { historyRows: CierreRecord[] | undefined }): React.JSX.Element {
   const { t } = useTranslation()
   const toasts = useToasts()
+  const queryClient = useQueryClient()
 
-  const exportPdf = async (cierreId: number): Promise<void> => {
-    try {
-      const result = await api.cierre.exportPdf(cierreId)
+  const exportPdfMutation = useMutation({
+    mutationFn: (cierreId: number) => api.cierre.exportPdf(cierreId),
+    onSuccess: (result) => {
       if (!result.canceled && result.path) toasts.success('cierre.pdfDone', { path: result.path })
-    } catch (err) {
-      const key = err instanceof ApiError ? err.key : 'errors.unknown'
-      toasts.error(key)
-    }
-  }
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ['cierreHistory'] })
+    },
+    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+  })
+
+  const printMutation = useMutation({
+    mutationFn: (cierreId: number) => api.cierre.print(cierreId),
+    onSuccess: ({ printStatus }) => {
+      if (printStatus === 'printed') toasts.success('cierre.printSent')
+      else toasts.error('pos.printFailed')
+      void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
+    },
+    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+  })
+
+  const exportBusy = exportPdfMutation.isPending
+  const printBusy = printMutation.isPending
 
   return (
     <section className="rounded-lg border-2 border-line bg-white p-5">
@@ -616,9 +631,25 @@ function CierreHistory({ historyRows }: { historyRows: CierreRecord[] | undefine
                   {c.cash_difference == null ? '—' : formatMoney(c.cash_difference)}
                 </Td>
                 <Td className="text-right">
-                  <Button size="md" variant="outline" onClick={() => void exportPdf(c.id)}>
-                    {t('cierre.savePdf')}
-                  </Button>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <Button
+                      size="md"
+                      loading={printBusy && printMutation.variables === c.id}
+                      disabled={printBusy || exportBusy}
+                      onClick={() => printMutation.mutate(c.id)}
+                    >
+                      {t('cierre.print')}
+                    </Button>
+                    <Button
+                      size="md"
+                      variant="outline"
+                      loading={exportBusy && exportPdfMutation.variables === c.id}
+                      disabled={printBusy || exportBusy}
+                      onClick={() => exportPdfMutation.mutate(c.id)}
+                    >
+                      {t('cierre.savePdf')}
+                    </Button>
+                  </div>
                 </Td>
               </tr>
             ))}

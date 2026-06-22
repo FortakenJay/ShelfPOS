@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { basename } from 'node:path'
 import ExcelJS from 'exceljs'
 import { AppError } from '../errors'
+import { IMPORT_STOCK_GARBAGE_THRESHOLD } from '../../shared/schemas/primitives'
 import type { ParsedCsv } from './productCsvImport'
 import type { ProductCsvKey } from './csvColumns'
 
@@ -68,6 +69,13 @@ function parseOptionalMoney(raw: string): number | null {
   return Number.isFinite(n) ? n : null
 }
 
+function parseEfacturaStock(raw: string): number {
+  if (!raw.trim()) return 0
+  const n = Math.trunc(Number(raw.replace(/,/g, '')) || 0)
+  if (!Number.isFinite(n) || n < 0 || n > IMPORT_STOCK_GARBAGE_THRESHOLD) return 0
+  return n
+}
+
 function efacturaRowToProductCsvRow(
   row: unknown[],
   cols: Record<string, number>
@@ -88,7 +96,7 @@ function efacturaRowToProductCsvRow(
   const costPrice = cost != null && cost > 0 ? String(cost) : ''
 
   const stockRaw = cell(row, cols, 'c')
-  const stock = stockRaw === '' ? '0' : String(Math.trunc(Number(stockRaw) || 0))
+  const stock = String(parseEfacturaStock(stockRaw))
 
   const bulkQtyRaw = cell(row, cols, 'p2a')
   const bulkPriceRaw = cell(row, cols, 'p2')
@@ -129,7 +137,7 @@ const NORMALIZED_CSV_COLUMNS: Record<ProductCsvKey, number> = {
  * Reads an eFactura "productos" XLSX and normalizes rows for the existing CSV import pipeline.
  *
  * Mapped: a/k→barcode, b→name, p1→price, h→cost, c→stock, g→factura negativo, p2/p2a→mayorista.
- * Ignored: unit, discounts, category, stock alert, IVA code, internal ts.
+ * Stock above 10,000,000 is treated as 0 (corrupt eFactura values).
  */
 export async function readEfacturaXlsx(filePath: string): Promise<ParsedCsv> {
   const buffer = readFileSync(filePath)

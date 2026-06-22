@@ -18,15 +18,19 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write . && eslint --fix",
     "check": "prettier --check .",
-    "doctor": "react-doctor --verbose"
+    "doctor": "react-doctor --verbose --scope changed"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.2",
     "@tailwindcss/vite": "^4.1.18",
+    "@tanstack/query-sync-storage-persister": "^5.101.0",
     "@tanstack/react-query": "^5.101.0",
+    "@tanstack/react-query-persist-client": "^5.101.0",
     "@tanstack/react-router": "latest",
     "@tanstack/react-start": "latest",
     "@vitejs/plugin-react": "^6.0.1",
+    "exceljs": "^4.4.0",
+    "html2canvas": "^1.4.1",
     "i18next": "^26.3.1",
     "jspdf": "^4.2.1",
     "nitro": "^3.0.260610-beta",
@@ -39,7 +43,6 @@
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.16",
-    "@tanstack/devtools-vite": "latest",
     "@tanstack/eslint-config": "latest",
     "@tanstack/router-cli": "^1.132.0",
     "@testing-library/dom": "^10.4.1",

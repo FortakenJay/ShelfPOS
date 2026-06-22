@@ -11,14 +11,16 @@ import { eventToShortcutKey, shouldIgnoreShortcutTarget } from '@/lib/shortcuts'
 import { useToasts } from '@/lib/toast'
 import { parseMiscPriceInput } from '@shared/miscItem'
 import { roundColones } from '@shared/money'
-import { useDebouncedValue, useScannerDetector } from '@/lib/useScanner'
-import { usePosEnterShortcut } from './posKeyboard'
+import { useDebouncedValue, useGlobalBarcodeScanner, useScannerDetector } from '@/lib/useScanner'
+import { usePosEnterShortcut, usePosSearchFocus } from './posKeyboard'
 import type { CartLine } from './types'
-import type { CustomerInput, Product } from '@shared/types'
+import type { CustomerInput, PaymentMethod, Product } from '@shared/types'
+import type { LineDiscountPinRequest } from './LineDiscountPinModal'
+import { lineDiscountFromPercent } from './lineDiscount'
 
 const round2 = roundColones
 
-export type DiscountTarget = { kind: 'line'; lineKey: string } | { kind: 'cart' }
+export type DiscountTarget = { kind: 'cart' }
 
 function findCartLine(cart: CartLine[], lineKey: string): CartLine | undefined {
   return cart.find((line) => cartLineKey(line) === lineKey)
@@ -36,6 +38,7 @@ export function usePOSTerminal() {
   })
   const [modals, setModals] = useState({
     payOpen: false,
+    payInitialMethod: 'cash' as PaymentMethod,
     returnOpen: false,
     discountTarget: null as DiscountTarget | null,
     priceTarget: null as string | null,
@@ -43,10 +46,11 @@ export function usePOSTerminal() {
     customerOpen: false
   })
   const [discountAuthPin, setDiscountAuthPin] = useState<string | null>(null)
+  const [lineDiscountPin, setLineDiscountPin] = useState<LineDiscountPinRequest | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const { cart, cartDiscount, customer } = sale
-  const { payOpen, returnOpen, discountTarget, priceTarget, removeTarget, customerOpen } = modals
+  const { payOpen, payInitialMethod, returnOpen, discountTarget, priceTarget, removeTarget, customerOpen } = modals
   const setCart = (updater: CartLine[] | ((prev: CartLine[]) => CartLine[])): void =>
     setSale((s) => ({
       ...s,
@@ -127,9 +131,57 @@ export function usePOSTerminal() {
     )
   }
 
-  const setLineDiscount = (lineKey: string, discount: number): void => {
+  const setLineDiscount = (lineKey: string, discount: number, discountPercent?: number): void => {
     setCart((prev) =>
-      prev.map((l) => (cartLineKey(l) === lineKey ? { ...l, discount } : l))
+      prev.map((l) => {
+        if (cartLineKey(l) !== lineKey) return l
+        if (discount <= 0) {
+          const { discountPercent: _removed, ...rest } = l
+          return { ...rest, discount: 0 } as CartLine
+        }
+        return { ...l, discount, discountPercent }
+      })
+    )
+  }
+
+  const requestLineDiscountPercent = (
+    lineKey: string,
+    percent: number,
+    productName: string
+  ): void => {
+    const line = findCartLine(cart, lineKey)
+    if (!line) return
+    const amount = lineDiscountFromPercent(line, percent)
+    if (amount <= 0) {
+      setLineDiscount(lineKey, 0)
+      focusSearch()
+      return
+    }
+    setLineDiscountPin({ lineKey, amount, percent, productName })
+  }
+
+  const applyLineDiscountPin = (pin: string): void => {
+    if (!lineDiscountPin) return
+    setLineDiscount(
+      lineDiscountPin.lineKey,
+      lineDiscountPin.amount,
+      lineDiscountPin.percent
+    )
+    setDiscountAuthPin(pin)
+    setLineDiscountPin(null)
+    focusSearch()
+  }
+
+  const setMiscLineName = (lineKey: string, customName: string | undefined): void => {
+    setCart((prev) =>
+      prev.map((l) => {
+        if (cartLineKey(l) !== lineKey || l.kind !== 'misc') return l
+        if (!customName) {
+          const { customName: _removed, ...rest } = l
+          return rest as CartLine
+        }
+        return { ...l, customName }
+      })
     )
   }
 
@@ -154,6 +206,7 @@ export function usePOSTerminal() {
   const resetSale = (): void => {
     setSale({ cart: [], cartDiscount: 0, customer: null })
     setDiscountAuthPin(null)
+    setLineDiscountPin(null)
     setQuery('')
   }
 
@@ -196,26 +249,43 @@ export function usePOSTerminal() {
     !payOpen &&
     !returnOpen &&
     !discountTarget &&
+    lineDiscountPin == null &&
     priceTarget == null &&
     removeTarget == null &&
     !customerOpen
 
-  const openPay = (): void => {
+  const openPay = (method: PaymentMethod = 'cash'): void => {
     if (!canOpenPay) return
-    setModals((m) => ({ ...m, payOpen: true }))
+    setModals((m) => ({ ...m, payOpen: true, payInitialMethod: method }))
   }
 
-  const posEnterEnabled =
+  const posInputActive =
     !cashBlocked &&
     !payOpen &&
     !returnOpen &&
     !discountTarget &&
+    lineDiscountPin == null &&
     priceTarget == null &&
     removeTarget == null &&
     !customerOpen
 
+  usePosSearchFocus({ enabled: posInputActive, searchInputRef: inputRef })
+
+  useGlobalBarcodeScanner({
+    enabled: posInputActive,
+    thresholdMs: settings?.scannerBurstMs ?? 30,
+    searchInputRef: inputRef,
+    onScan: async (barcode) => {
+      const product = await api.products.byBarcode(barcode)
+      if (product) {
+        addToCart(product)
+        focusSearch()
+      }
+    }
+  })
+
   usePosEnterShortcut({
-    enabled: posEnterEnabled,
+    enabled: posInputActive,
     query,
     searchInputRef: inputRef,
     onSearchEnter: () => {
@@ -226,7 +296,7 @@ export function usePOSTerminal() {
 
   useEffect(() => {
     const shortcut = settings?.shortcutDrawerAction
-    if (!shortcut || payOpen || returnOpen || discountTarget || priceTarget != null || removeTarget != null || customerOpen) return
+    if (!shortcut || payOpen || returnOpen || discountTarget || lineDiscountPin != null || priceTarget != null || removeTarget != null || customerOpen) return
 
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.defaultPrevented) return
@@ -240,7 +310,7 @@ export function usePOSTerminal() {
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [settings?.shortcutDrawerAction, payOpen, returnOpen, discountTarget, priceTarget, removeTarget, customerOpen, toasts])
+  }, [settings?.shortcutDrawerAction, payOpen, returnOpen, discountTarget, lineDiscountPin, priceTarget, removeTarget, customerOpen, toasts])
 
   const itemsGross = round2(cart.reduce((acc, l) => acc + cartLineGross(l), 0))
   const afterLineDiscounts = round2(cart.reduce((acc, l) => acc + cartLineTotal(l), 0))
@@ -257,20 +327,45 @@ export function usePOSTerminal() {
     void queryClient.invalidateQueries({ queryKey: ['posSearch'] })
     void queryClient.invalidateQueries({ queryKey: ['products'] })
     void queryClient.invalidateQueries({ queryKey: ['cashStatus'] })
+    void queryClient.invalidateQueries({ queryKey: ['salesForReprint'] })
+    void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
     focusSearch()
   }
 
-  const discountModalBase = (): number => {
-    if (!discountTarget) return 0
-    if (discountTarget.kind === 'cart') return afterLineDiscounts
-    const line = findCartLine(cart, discountTarget.lineKey)
-    return line ? cartLineGross(line) : 0
-  }
-  const discountModalCurrent = (): number => {
-    if (!discountTarget) return 0
-    if (discountTarget.kind === 'cart') return cartDiscountClamped
-    return findCartLine(cart, discountTarget.lineKey)?.discount ?? 0
-  }
+  useEffect(() => {
+    if (!posInputActive || payOpen) return
+
+    const shortcuts: Partial<Record<string, PaymentMethod>> = {}
+    if (settings?.shortcutPayCash) shortcuts[settings.shortcutPayCash] = 'cash'
+    if (settings?.shortcutPayCard) shortcuts[settings.shortcutPayCard] = 'card'
+    if (settings?.shortcutPaySinpe) shortcuts[settings.shortcutPaySinpe] = 'sinpe'
+    if (Object.keys(shortcuts).length === 0) return
+
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.defaultPrevented) return
+      const isSearchInput = event.target === inputRef.current
+      if (!isSearchInput && shouldIgnoreShortcutTarget(event.target)) return
+      const key = eventToShortcutKey(event)
+      if (!key) return
+      const method = shortcuts[key]
+      if (!method) return
+      event.preventDefault()
+      openPay(method)
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [
+    posInputActive,
+    payOpen,
+    settings?.shortcutPayCash,
+    settings?.shortcutPayCard,
+    settings?.shortcutPaySinpe,
+    canOpenPay
+  ])
+
+  const discountModalBase = (): number => (discountTarget ? afterLineDiscounts : 0)
+  const discountModalCurrent = (): number => (discountTarget ? cartDiscountClamped : 0)
 
   return {
     queryClient,
@@ -284,17 +379,23 @@ export function usePOSTerminal() {
     debouncedQuery,
     searchResults,
     payOpen,
+    payInitialMethod,
     returnOpen,
     discountTarget,
     priceTarget,
     removeTarget,
     customerOpen,
+    lineDiscountPin,
     setModals,
     setSale,
     setDiscountAuthPin,
     addToCart,
     setQuantity,
     setLineDiscount,
+    requestLineDiscountPercent,
+    applyLineDiscountPin,
+    closeLineDiscountPin: () => setLineDiscountPin(null),
+    setMiscLineName,
     setLinePrice,
     removeLine,
     openPay,

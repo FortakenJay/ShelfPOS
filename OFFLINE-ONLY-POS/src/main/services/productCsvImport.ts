@@ -17,12 +17,20 @@ import type {
   ProductInput
 } from '../../shared/types'
 import { roundColones } from '../../shared/money'
+import { MAX_PRODUCT_STOCK } from '../../shared/schemas/primitives'
 
 const STANDARD_TAX: ProductInput['taxCategory'] = 'standard'
 
 export function validateProductInput(input: ProductInput): void {
   if (!input.barcode?.trim() || !input.name?.trim()) throw new AppError('errors.invalidInput')
   if (!Number.isFinite(input.price) || input.price < 0) throw new AppError('errors.invalidInput')
+  if (
+    !Number.isInteger(input.stock) ||
+    input.stock < 0 ||
+    input.stock > MAX_PRODUCT_STOCK
+  ) {
+    throw new AppError('errors.invalidInput')
+  }
   if (input.taxCategory !== STANDARD_TAX) throw new AppError('errors.invalidInput')
   const hasQty = input.bulkQty != null
   const hasPrice = input.bulkPrice != null

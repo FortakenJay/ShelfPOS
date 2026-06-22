@@ -14,6 +14,8 @@ import { BackupService } from './services/backup'
 
 import { purgeExpiredReportData } from './services/dataRetention'
 
+import { enqueueAllPosUsersSync } from './db/repos/syncQueue'
+
 import { initPrinter, flushPendingPrintJobs } from './services/printer'
 
 import { startPosHeartbeat, stopPosHeartbeat } from './services/posHeartbeat'
@@ -186,7 +188,14 @@ async function initData(): Promise<BackupService> {
 
   }
 
-
+  try {
+    const queuedUsers = enqueueAllPosUsersSync(db)
+    if (queuedUsers > 0) {
+      console.log(`[startup] queued ${queuedUsers} pos_users row(s) for Supabase sync`)
+    }
+  } catch (err) {
+    console.error('[startup] pos_users sync queue failed', err)
+  }
 
   return backup
 

@@ -8,6 +8,7 @@ import {
   idTypeSchema,
   languageSchema,
   localDateSchema,
+  MAX_PRODUCT_STOCK,
   moneySchema,
   optionalLongTextSchema,
   optionalTextSchema,
@@ -39,8 +40,8 @@ const productInputSchema = z.strictObject({
   price: moneySchema,
   costPrice: moneySchema.nullable(),
   category: z.string().trim().max(100).nullable(),
-  stock: z.number().int().min(0).max(10_000_000),
-  stockThreshold: z.number().int().min(0).max(10_000_000).nullable(),
+  stock: z.number().int().min(0).max(MAX_PRODUCT_STOCK),
+  stockThreshold: z.number().int().min(0).max(MAX_PRODUCT_STOCK).nullable(),
   taxCategory: taxCategorySchema,
   bulkQty: z.number().int().min(2).max(10_000).nullable(),
   bulkPrice: moneySchema.nullable(),
@@ -80,6 +81,7 @@ const createSaleMiscItemSchema = z.strictObject({
   miscItem: z.literal(true),
   quantity: quantitySchema,
   unitPrice: moneySchema.refine((n) => n > 0, 'unit price must be positive'),
+  name: z.string().trim().max(200).optional(),
   catalogUnitPrice: moneySchema.optional(),
   discount: moneySchema.optional()
 })
@@ -110,7 +112,7 @@ const createReturnInputSchema = z.strictObject({
   items: z
     .array(
       z.strictObject({
-        productId: positiveIdSchema,
+        saleItemId: positiveIdSchema,
         quantity: quantitySchema
       })
     )
@@ -179,7 +181,10 @@ const settingsUpdateInputSchema = z.strictObject({
   shortcutCashIn: actionShortcutKeySchema.optional(),
   shortcutCashOut: actionShortcutKeySchema.optional(),
   shortcutDrawerAction: actionShortcutKeySchema.optional(),
-  shortcutPrintLabel: actionShortcutKeySchema.optional()
+  shortcutPrintLabel: actionShortcutKeySchema.optional(),
+  shortcutPayCash: actionShortcutKeySchema.optional(),
+  shortcutPayCard: actionShortcutKeySchema.optional(),
+  shortcutPaySinpe: actionShortcutKeySchema.optional()
 })
 
 const auditLogFilterSchema = z
@@ -194,7 +199,9 @@ const auditLogFilterSchema = z
 
 const reportPayloadSchema = z.strictObject({
   type: reportTypeSchema,
-  range: dateRangeSchema
+  range: dateRangeSchema,
+  page: z.number().int().min(1).max(10_000).optional(),
+  pageSize: z.number().int().min(1).max(200).optional()
 })
 
 const cierreConfirmInputSchema = z.strictObject({
@@ -219,6 +226,16 @@ const productUpdateInputSchema = z.strictObject({
   ...productInputSchema.shape
 })
 
+/** Electron IPC may pass null for omitted payloads; page/pageSize may arrive as strings. */
+const printQueueListInputSchema = z.union([
+  z.undefined(),
+  z.null(),
+  z.strictObject({
+    page: z.coerce.number().int().min(1).max(10_000).optional(),
+    pageSize: z.coerce.number().int().min(1).max(100).optional()
+  })
+])
+
 /** Per-channel Zod schemas — enforced in main-process IPC before any handler runs. */
 export const IPC_SCHEMAS = {
   'license:activate': licenseActivateInputSchema,
@@ -226,6 +243,13 @@ export const IPC_SCHEMAS = {
   'firstRun:status': voidInput,
   'firstRun:setLanguage': languagePayloadSchema,
   'firstRun:complete': firstRunSetupInputSchema,
+  'syncSetup:status': voidInput,
+  'syncSetup:save': z.strictObject({
+    supabaseUrl: z.string().trim().min(10).max(500),
+    serviceKey: z.string().trim().min(20).max(500),
+    pairingCode: z.string().trim().min(8).max(8),
+  }),
+  'syncSetup:restartService': voidInput,
   'auth:login': z.strictObject({ username: usernameSchema, password: passwordSchema }),
   'auth:logout': voidInput,
   'auth:session': voidInput,
@@ -234,6 +258,10 @@ export const IPC_SCHEMAS = {
   'settings:setLanguage': languagePayloadSchema,
   'settings:changePin': pinChangeSchema,
   'settings:changeCajaPin': cajaPinChangeInputSchema,
+  'settings:printPinCard': z.strictObject({
+    managerPin: pinSchema,
+    cajaPin: pinSchema
+  }),
   'products:list': productFiltersSchema,
   'products:categories': voidInput,
   'products:create': productInputSchema,
@@ -255,6 +283,9 @@ export const IPC_SCHEMAS = {
     productId: positiveIdSchema,
     copies: z.number().int().min(1).max(20).optional()
   }),
+  'products:printLabelBatch': z.strictObject({
+    productIds: z.array(positiveIdSchema).min(1).max(200)
+  }),
   'products:byBarcode': z.strictObject({ barcode: barcodeSchema }),
   'products:search': z.strictObject({ query: z.string().trim().max(100) }),
   'sales:create': createSaleInputSchema,
@@ -264,6 +295,9 @@ export const IPC_SCHEMAS = {
   }),
   'sales:listForReprint': voidInput,
   'sales:reprintReceipt': z.strictObject({ saleId: positiveIdSchema }),
+  'sales:exportFacturaPdf': z.strictObject({
+    saleId: z.coerce.number().int().positive().max(10_000_000)
+  }),
   'returns:create': createReturnInputSchema,
   'discount:authorize': discountAuthorizeInputSchema,
   'cart:removeAuthorize': z.strictObject({
@@ -281,6 +315,7 @@ export const IPC_SCHEMAS = {
   'cierre:history': z.strictObject({ range: dateRangeSchema }),
   'cierre:discrepancyAlerts': voidInput,
   'cierre:exportPdf': z.strictObject({ cierreId: positiveIdSchema }),
+  'cierre:print': z.strictObject({ cierreId: positiveIdSchema }),
   'cash:status': voidInput,
   'cash:openFloat': z.strictObject({ amount: moneySchema }),
   'cash:movement': cashMovementInputSchema,
@@ -292,7 +327,7 @@ export const IPC_SCHEMAS = {
   'users:create': userCreateInputSchema,
   'users:update': userUpdateInputSchema,
   'users:delete': z.strictObject({ id: positiveIdSchema }),
-  'printQueue:list': voidInput,
+  'printQueue:list': printQueueListInputSchema,
   'printQueue:retry': z.strictObject({ id: positiveIdSchema }),
   'printer:openDrawer': voidInput,
   'printer:colonTest': voidInput,

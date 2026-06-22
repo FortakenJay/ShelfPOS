@@ -1,3 +1,5 @@
+import { app } from 'electron'
+import { join } from 'node:path'
 import { handle } from './helpers'
 import { AppError } from '../errors'
 import { getDb } from '../db'
@@ -7,11 +9,13 @@ import { enqueueSync } from '../db/repos/syncQueue'
 import { hasOpeningFloat } from '../db/repos/cash'
 import { assertSaleStock } from '../db/repos/stock'
 import { insertPrintJob } from '../db/repos/printJobs'
-import { listPendingCierreSalesForReprint, reprintSaleReceipt } from '../db/repos/salesReceipt'
+import { listPendingCierreSalesForReprint, assertSaleInOpenShift, buildFacturaPdfData, reprintSaleReceipt } from '../db/repos/salesReceipt'
 import { getAppSettings, receiptLanguage, getSetting, setSetting, SETTING_KEYS } from '../db/repos/settings'
 import { writeAudit } from '../db/repos/audit'
 import { session } from '../services/session'
 import { schedulePrintJob } from '../services/printer'
+import { writeFacturaPdf } from '../services/facturaPdf'
+import { showSaveDialog } from '../window'
 import { buildReceiptLines, emisorFromSettings } from '../services/printTemplates'
 import type { ReceiptPaymentLine } from '../services/printTemplates'
 import { t } from '../services/i18n'
@@ -26,13 +30,13 @@ import type {
   ReprintReceiptResult,
   SaleCustomer,
   SaleDetail,
-  SaleItemDetail,
   SalePaymentDetail,
   SaleReprintRow,
   TaxCategory
 } from '../../shared/types'
 
 const SELL: 'sales'[] = ['sales']
+const SALES_OR_ADMIN: ('sales' | 'admin')[] = ['sales', 'admin']
 const ID_TYPES: IdType[] = ['fisica', 'juridica', 'dimex', 'nite']
 const PAYMENT_METHODS = new Set<PaymentMethod>(['cash', 'card', 'sinpe'])
 
@@ -137,7 +141,7 @@ export function registerSalesHandlers(): void {
           const lineDiscount = round2(Math.min(item.discount ?? 0, gross))
           return {
             product: null,
-            displayName: miscItemName,
+            displayName: cleanText(item.name) ?? miscItemName,
             quantity: item.quantity,
             unitPrice,
             catalogUnitPrice,
@@ -261,8 +265,8 @@ export function registerSalesHandlers(): void {
 
       const insertItem = db.prepare(
         `INSERT INTO sale_items
-           (sale_id, product_id, quantity, unit_price, catalog_unit_price, discount, line_discount, line_total, tax_category, product_name_snapshot)
-         VALUES (?,?,?,?,?,?,?,?,?,?)`
+           (sale_id, product_id, quantity, unit_price, catalog_unit_price, discount, line_discount, line_total, tax_category, product_name_snapshot, barcode_snapshot)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?)`
       )
       const insertPayment = db.prepare(
         'INSERT INTO sale_payments (sale_id, method, amount, ref) VALUES (?,?,?,?)'
@@ -284,7 +288,8 @@ export function registerSalesHandlers(): void {
           line.lineDiscount,
           line.lineTotal,
           line.taxCategory,
-          line.displayName
+          line.displayName,
+          line.isMisc ? null : (line.product!.barcode ?? null)
         )
         enqueueSync('sale_items', Number(itemResult.lastInsertRowid), 'insert', db)
         if (line.isMisc || !line.product) continue
@@ -423,19 +428,47 @@ export function registerSalesHandlers(): void {
       }
 
       const itemsStmt = db.prepare(
-        `SELECT si.product_id AS productId, COALESCE(si.product_name_snapshot, p.name) AS name,
+        `SELECT si.id AS saleItemId,
+                si.product_id AS productId,
+                COALESCE(si.product_name_snapshot, p.name) AS name,
                 COALESCE(p.barcode, '') AS barcode,
                 si.quantity AS quantity, si.unit_price AS unitPrice, si.discount AS discount,
                 si.line_total AS lineTotal, si.tax_category AS taxCategory,
-                COALESCE((SELECT SUM(ri.quantity) FROM return_items ri
-                          WHERE ri.sale_id = si.sale_id AND ri.product_id = si.product_id), 0) AS returnedQty
+                CASE WHEN si.product_id IS NULL THEN 1 ELSE 0 END AS isMisc,
+                COALESCE((
+                  SELECT SUM(ri.quantity)
+                  FROM return_items ri
+                  WHERE ri.sale_id = si.sale_id
+                    AND (
+                      ri.sale_item_id = si.id
+                      OR (
+                        ri.sale_item_id IS NULL
+                        AND si.product_id IS NOT NULL
+                        AND ri.product_id = si.product_id
+                      )
+                    )
+                ), 0) AS returnedQty
          FROM sale_items si
          LEFT JOIN products p ON p.id = si.product_id
-         WHERE si.sale_id = ? AND si.product_id IS NOT NULL`
+         WHERE si.sale_id = ?`
       )
       const paymentsStmt = db.prepare(
         'SELECT method, amount, ref FROM sale_payments WHERE sale_id = ?'
       )
+      interface SaleItemReturnRow {
+        saleItemId: number
+        productId: number | null
+        name: string
+        barcode: string
+        quantity: number
+        unitPrice: number
+        discount: number
+        lineTotal: number
+        taxCategory: TaxCategory
+        returnedQty: number
+        isMisc: number
+      }
+
       return saleRows
         .map((sale) => ({
           id: sale.id,
@@ -457,7 +490,19 @@ export function registerSalesHandlers(): void {
             email: sale.customer_email,
             activityCode: sale.customer_activity_code
           },
-          items: itemsStmt.all(sale.id) as SaleItemDetail[]
+          items: (itemsStmt.all(sale.id) as SaleItemReturnRow[]).map((item) => ({
+            saleItemId: item.saleItemId,
+            productId: item.productId,
+            name: item.name,
+            barcode: item.barcode,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            discount: item.discount,
+            lineTotal: item.lineTotal,
+            taxCategory: item.taxCategory,
+            returnedQty: item.returnedQty,
+            isMisc: item.isMisc === 1
+          }))
         }))
         .filter((sale) => sale.items.length > 0)
     }
@@ -471,7 +516,27 @@ export function registerSalesHandlers(): void {
 
   handle<{ saleId: number }, ReprintReceiptResult>(
     'sales:reprintReceipt',
-    SELL,
-    async ({ saleId }) => reprintSaleReceipt(saleId)
+    SALES_OR_ADMIN,
+    async ({ saleId }) => {
+      if (session.get()?.role === 'sales') assertSaleInOpenShift(saleId)
+      return reprintSaleReceipt(saleId)
+    }
+  )
+
+  handle<{ saleId: number }, { canceled: boolean; path?: string }>(
+    'sales:exportFacturaPdf',
+    SALES_OR_ADMIN,
+    async ({ saleId }) => {
+      if (session.get()?.role === 'sales') assertSaleInOpenShift(saleId)
+      const result = await showSaveDialog({
+        title: 'Guardar factura PDF',
+        defaultPath: join(app.getPath('documents'), `factura-${saleId}.pdf`),
+        filters: [{ name: 'PDF', extensions: ['pdf'] }]
+      })
+      if (result.canceled || !result.filePath) return { canceled: true }
+      const data = buildFacturaPdfData(saleId)
+      await writeFacturaPdf(data, result.filePath)
+      return { canceled: false, path: result.filePath }
+    }
   )
 }

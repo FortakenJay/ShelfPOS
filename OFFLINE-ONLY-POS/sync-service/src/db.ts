@@ -2,8 +2,10 @@ import Database from 'better-sqlite3'
 import type { SyncConfig } from './config.js'
 
 const SYNC_STORE_SETTING = 'sync_store_id'
+const SYNC_OWNER_CLAIMED_SETTING = 'sync_owner_claimed'
 const STORE_NAME_SETTING = 'store_name'
 const POS_LAST_SEEN_SETTING = 'pos_last_seen_at'
+const STOCK_THRESHOLD_SETTING = 'stock_threshold_default'
 
 function readSetting(db: Database.Database, key: string): string | null {
   const row = db.prepare(`SELECT value FROM settings WHERE key = ?`).get(key) as
@@ -31,6 +33,23 @@ export function readPosLastSeenAt(db: Database.Database): string | null {
   return value || null
 }
 
+export function readStockThresholdDefault(db: Database.Database): number {
+  const raw = readSetting(db, STOCK_THRESHOLD_SETTING)
+  const n = Number(raw ?? '5')
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 5
+}
+
+export function readSyncOwnerClaimed(db: Database.Database): boolean {
+  return readSetting(db, SYNC_OWNER_CLAIMED_SETTING) === '1'
+}
+
+export function writeSyncOwnerClaimed(db: Database.Database): void {
+  db.prepare(
+    `INSERT INTO settings (key, value) VALUES (?, '1')
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+  ).run(SYNC_OWNER_CLAIMED_SETTING)
+}
+
 export function openDatabase(sqlitePath: string): Database.Database {
   const db = new Database(sqlitePath, { readonly: false, fileMustExist: true })
   db.pragma('journal_mode = WAL')
@@ -48,6 +67,7 @@ export type SyncTableName =
   | 'audit_log'
   | 'return_items'
   | 'stock_adjustments'
+  | 'pos_users'
 
 export interface SyncQueueRow {
   id: number
@@ -73,7 +93,7 @@ const LIVE_ROW_SQL: Record<SyncTableName, string> = {
            customer_email, customer_activity_code, cierre_id, created_at
     FROM sales WHERE id = ?`,
   sale_items: `
-    SELECT id, sale_id, product_id, product_name_snapshot, quantity, unit_price,
+    SELECT id, sale_id, product_id, product_name_snapshot, barcode_snapshot, quantity, unit_price,
            catalog_unit_price, line_total, line_discount, discount, tax_category
     FROM sale_items WHERE id = ?`,
   sale_payments: `SELECT id, sale_id, method, amount, ref FROM sale_payments WHERE id = ?`,
@@ -89,11 +109,14 @@ const LIVE_ROW_SQL: Record<SyncTableName, string> = {
     SELECT id, user_id, username, action, entity, entity_id, detail, created_at
     FROM audit_log WHERE id = ?`,
   return_items: `
-    SELECT id, sale_id, product_id, quantity, restocked, created_at, processed_by
+    SELECT id, sale_id, product_id, sale_item_id, quantity, line_total, restocked, created_at, processed_by
     FROM return_items WHERE id = ?`,
   stock_adjustments: `
     SELECT id, product_id, user_id, delta, reason, created_at
-    FROM stock_adjustments WHERE id = ?`
+    FROM stock_adjustments WHERE id = ?`,
+  pos_users: `
+    SELECT id, username, role, is_active, created_at, last_login_at
+    FROM users WHERE id = ?`
 }
 
 export function getLiveRow(
@@ -115,7 +138,21 @@ export function listPendingQueue(
       `SELECT id, table_name, row_id, operation, status, created_at, synced_at, error, retry_count
        FROM sync_queue
        WHERE status = 'pending' AND retry_count < ?
-       ORDER BY id ASC
+       ORDER BY
+         CASE table_name
+           WHEN 'sales' THEN 0
+           WHEN 'sale_items' THEN 1
+           WHEN 'sale_payments' THEN 2
+           WHEN 'cierres' THEN 3
+           WHEN 'cash_movements' THEN 4
+           WHEN 'return_items' THEN 5
+           WHEN 'products' THEN 6
+           WHEN 'stock_adjustments' THEN 7
+           WHEN 'audit_log' THEN 8
+           WHEN 'pos_users' THEN 9
+           ELSE 10
+         END,
+         id ASC
        LIMIT ?`
     )
     .all(maxRetries, batchSize) as SyncQueueRow[]
@@ -131,16 +168,47 @@ export function markError(
   db: Database.Database,
   queueId: number,
   error: string,
-  maxRetries: number
-): void {
+  maxRetries: number,
+): { gaveUp: boolean; retryCount: number } {
   db.prepare(
     `UPDATE sync_queue
      SET status = 'error', error = ?, retry_count = retry_count + 1
-     WHERE id = ?`
+     WHERE id = ?`,
   ).run(error, queueId)
+  const row = db
+    .prepare(`SELECT retry_count FROM sync_queue WHERE id = ?`)
+    .get(queueId) as { retry_count: number }
+  const willRetry = row.retry_count < maxRetries
   db.prepare(
-    `UPDATE sync_queue SET status = 'pending' WHERE id = ? AND retry_count < ?`
+    `UPDATE sync_queue SET status = 'pending' WHERE id = ? AND retry_count < ?`,
   ).run(queueId, maxRetries)
+  return { gaveUp: !willRetry, retryCount: row.retry_count }
+}
+
+export function enqueueAllPosUsersBackfill(db: Database.Database): number {
+  const rows = db
+    .prepare(
+      `SELECT u.id FROM users u
+       WHERE NOT EXISTS (
+         SELECT 1 FROM sync_queue sq
+         WHERE sq.table_name = 'pos_users'
+           AND sq.row_id = u.id
+           AND sq.status = 'synced'
+       )`,
+    )
+    .all() as { id: number }[]
+
+  if (rows.length === 0) return 0
+
+  const now = new Date().toISOString().replace('T', ' ').slice(0, 19)
+  const insert = db.prepare(`
+    INSERT INTO sync_queue (table_name, row_id, operation, created_at)
+    VALUES ('pos_users', ?, 'update', ?)
+  `)
+  for (const row of rows) {
+    insert.run(row.id, now)
+  }
+  return rows.length
 }
 
 export type SyncDbContext = {

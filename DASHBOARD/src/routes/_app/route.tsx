@@ -1,23 +1,11 @@
 import { createFileRoute, Outlet, useNavigate } from '@tanstack/react-router'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { Trans } from 'react-i18next'
 import { AuthProvider, useAuth } from '#/lib/auth'
 import { StoreProvider } from '#/lib/store-context'
-import { QUERY_GC_MS } from '#/lib/stores'
+import { AppQueryProvider } from '#/lib/app-query-provider'
 import { Shell } from '#/components/Shell'
 import { FullScreenSpinner } from '#/components/ui'
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 60_000,
-      gcTime: QUERY_GC_MS,
-      refetchOnWindowFocus: false,
-    },
-  },
-})
 
 export const Route = createFileRoute('/_app')({
   component: AppLayout,
@@ -25,13 +13,13 @@ export const Route = createFileRoute('/_app')({
 
 function AppLayout() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <AppQueryProvider>
       <AuthProvider>
         <StoreProvider>
           <AuthedShell />
         </StoreProvider>
       </AuthProvider>
-    </QueryClientProvider>
+    </AppQueryProvider>
   )
 }
 

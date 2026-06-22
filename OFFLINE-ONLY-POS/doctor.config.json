@@ -1,5 +1,11 @@
 {
-  "ignore": {
-    "files": ["private/**", "node_modules/**"]
-  }
+  "$schema": "https://www.react.doctor/schema/doctor.config.v1.json",
+  "include": ["src/**/*.ts", "src/**/*.tsx", "sync-service/src/**/*.ts"],
+  "ignore": [
+    "dist/**",
+    "node_modules/**",
+    "out/**",
+    ".output/**",
+    "**/.output/**"
+  ]
 }

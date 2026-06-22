@@ -3,6 +3,7 @@ import { POSCartPanel } from './POSCartPanel'
 import { POSModals } from './POSModals'
 import { POSSearchPanel } from './POSSearchPanel'
 import { POSSidebar } from './POSSidebar'
+import { LineDiscountPinModal } from './LineDiscountPinModal'
 import type { usePOSTerminal } from './usePOSTerminal'
 import type { CustomerInput } from '@shared/types'
 
@@ -21,17 +22,22 @@ export function POSTerminalView(state: POSTerminalState): React.JSX.Element {
     debouncedQuery,
     searchResults,
     payOpen,
+    payInitialMethod,
     returnOpen,
     discountTarget,
     priceTarget,
     removeTarget,
     customerOpen,
+    lineDiscountPin,
     setModals,
     setSale,
     setDiscountAuthPin,
     addToCart,
     setQuantity,
-    setLineDiscount,
+    requestLineDiscountPercent,
+    applyLineDiscountPin,
+    closeLineDiscountPin,
+    setMiscLineName,
     setLinePrice,
     removeLine,
     openPay,
@@ -55,7 +61,7 @@ export function POSTerminalView(state: POSTerminalState): React.JSX.Element {
         />
       )}
       <div className={`flex h-full ${cashBlocked ? 'pointer-events-none opacity-40' : ''}`}>
-        <div className="flex min-w-0 flex-1 flex-col border-r-2 border-line">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col border-r-2 border-line">
           <POSSearchPanel
             inputRef={inputRef}
             query={query}
@@ -73,18 +79,19 @@ export function POSTerminalView(state: POSTerminalState): React.JSX.Element {
             }}
           />
 
-          <POSCartPanel
-            cart={cart}
-            itemsGross={itemsGross}
-            discountTotal={discountTotal}
-            onLineDiscount={(lineKey) =>
-              setModals((m) => ({ ...m, discountTarget: { kind: 'line', lineKey } }))
-            }
-            onLinePrice={(lineKey) => setModals((m) => ({ ...m, priceTarget: lineKey }))}
-            onCartDiscount={() => setModals((m) => ({ ...m, discountTarget: { kind: 'cart' } }))}
-            onSetQuantity={setQuantity}
-            onRemoveLine={(lineKey) => setModals((m) => ({ ...m, removeTarget: lineKey }))}
-          />
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <POSCartPanel
+              cart={cart}
+              itemsGross={itemsGross}
+              discountTotal={discountTotal}
+              onLineDiscountPercent={requestLineDiscountPercent}
+              onLinePrice={(lineKey) => setModals((m) => ({ ...m, priceTarget: lineKey }))}
+              onSetMiscLineName={setMiscLineName}
+              onCartDiscount={() => setModals((m) => ({ ...m, discountTarget: { kind: 'cart' } }))}
+              onSetQuantity={setQuantity}
+              onRemoveLine={(lineKey) => setModals((m) => ({ ...m, removeTarget: lineKey }))}
+            />
+          </div>
         </div>
 
         <POSSidebar
@@ -92,7 +99,7 @@ export function POSTerminalView(state: POSTerminalState): React.JSX.Element {
           customer={customer}
           cartEmpty={cart.length === 0}
           onCustomerOpen={() => setModals((m) => ({ ...m, customerOpen: true }))}
-          onPayOpen={openPay}
+          onPayOpen={() => openPay()}
           onReturnOpen={() => {
             if (cashBlocked) return
             setModals((m) => ({ ...m, returnOpen: true }))
@@ -106,6 +113,7 @@ export function POSTerminalView(state: POSTerminalState): React.JSX.Element {
           discountAuthPin={activeDiscountPin}
           customer={customer}
           payOpen={payOpen}
+          payInitialMethod={payInitialMethod}
           returnOpen={returnOpen}
           discountTarget={discountTarget}
           priceTarget={priceTarget}
@@ -134,8 +142,7 @@ export function POSTerminalView(state: POSTerminalState): React.JSX.Element {
           onSaleCompleted={onSaleCompleted}
           onDiscountApply={(amount, authPin) => {
             if (authPin) setDiscountAuthPin(authPin)
-            if (discountTarget?.kind === 'cart') setSale((s) => ({ ...s, cartDiscount: amount }))
-            else if (discountTarget?.kind === 'line') setLineDiscount(discountTarget.lineKey, amount)
+            setSale((s) => ({ ...s, cartDiscount: amount }))
             setModals((m) => ({ ...m, discountTarget: null }))
             focusSearch()
           }}
@@ -150,6 +157,13 @@ export function POSTerminalView(state: POSTerminalState): React.JSX.Element {
             focusSearch()
           }}
         />
+        {lineDiscountPin && (
+          <LineDiscountPinModal
+            request={lineDiscountPin}
+            onApplied={applyLineDiscountPin}
+            onClose={closeLineDiscountPin}
+          />
+        )}
       </div>
     </>
   )

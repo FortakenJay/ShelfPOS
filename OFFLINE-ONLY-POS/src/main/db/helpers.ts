@@ -21,7 +21,9 @@ export function daysAgoLocal(days: number): string {
 }
 
 export function rangeBounds(range: DateRange): [string, string] {
-  return [`${range.from} 00:00:00`, `${range.to} 23:59:59`]
+  const fromTime = range.fromTime ?? '00:00'
+  const toTime = range.toTime ?? '23:59'
+  return [`${range.from} ${fromTime}:00`, `${range.to} ${toTime}:59`]
 }
 
 /** Inclusive list of `YYYY-MM-DD` dates from `range.from` through `range.to`. */

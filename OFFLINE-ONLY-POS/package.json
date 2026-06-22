@@ -1,6 +1,6 @@
 {
   "name": "shelfpos",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Offline retail POS system (Electron) for small shops in Costa Rica",
   "main": "./out/main/index.js",
   "author": "ShelfPOS",
@@ -20,7 +20,7 @@
     "dist": "electron-vite build && electron-builder --win",
     "dist:dir": "electron-vite build && electron-builder --win --dir",
     "release:win": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-release.ps1",
-    "doctor": "react-doctor",
+    "doctor": "react-doctor --verbose --scope changed",
     "license:machine-id": "tsx scripts/get-machine-id.ts",
     "license:generate": "tsx scripts/generate-license.ts",
     "license:keypair": "node scripts/generate-keypair.js"

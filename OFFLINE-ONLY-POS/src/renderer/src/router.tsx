@@ -13,6 +13,7 @@ import { LoginPage } from '@/features/auth/Login'
 import { Shell } from '@/features/shell/Shell'
 import { POSPage } from '@/features/pos/POSPage'
 import { CashDrawerPage } from '@/features/pos/CashDrawerPage'
+import { ReprintReceiptsPage } from '@/features/pos/ReprintReceiptsPage'
 import { ProductsPage } from '@/features/products/ProductsPage'
 import { ReportsPage } from '@/features/admin/ReportsPage'
 import { CierrePage } from '@/features/admin/CierrePage'
@@ -20,6 +21,7 @@ import { AuditLogPage } from '@/features/admin/AuditLogPage'
 import { PrintQueuePage } from '@/features/admin/PrintQueuePage'
 import { ExportPage } from '@/features/admin/ExportPage'
 import { SettingsPage } from '@/features/admin/SettingsPage'
+import { SyncSetupPage } from '@/features/sync-setup/SyncSetupPage'
 import { AdminCashPage } from '@/features/admin/AdminCashPage'
 import { UsersPage } from '@/features/admin/UsersPage'
 import { DashboardPage } from '@/features/admin/dashboard/DashboardPage'
@@ -32,7 +34,9 @@ const REPORT_TYPE_SEARCH = new Set<string>([
   'byPayment',
   'topProducts',
   'inventory',
-  'taxBreakdown'
+  'taxBreakdown',
+  'transactionLog',
+  'itemizedSales'
 ])
 const REPORT_PERIOD_SEARCH = new Set<string>(['today', 'week', 'month'])
 
@@ -50,6 +54,12 @@ const firstRunRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/first-run',
   component: FirstRunWizard
+})
+
+const syncSetupRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/sync-setup',
+  component: SyncSetupPage
 })
 
 const chooseLanguageRoute = createRoute({
@@ -82,6 +92,12 @@ const cashRoute = createRoute({
   component: CashDrawerPage
 })
 
+const reprintsRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: '/reprints',
+  component: ReprintReceiptsPage
+})
+
 const productsRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: '/products',
@@ -101,8 +117,22 @@ const productsRoute = createRoute({
 const reportsRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: '/admin/reports',
-  validateSearch: (search: Record<string, unknown>): { type?: ReportType; period?: ReportPeriodPreset } => {
-    const result: { type?: ReportType; period?: ReportPeriodPreset } = {}
+  validateSearch: (search: Record<string, unknown>): {
+    type?: ReportType
+    period?: ReportPeriodPreset
+    from?: string
+    to?: string
+    fromTime?: string
+    toTime?: string
+  } => {
+    const result: {
+      type?: ReportType
+      period?: ReportPeriodPreset
+      from?: string
+      to?: string
+      fromTime?: string
+      toTime?: string
+    } = {}
     const type = search.type
     if (typeof type === 'string' && REPORT_TYPE_SEARCH.has(type)) {
       result.type = type as ReportType
@@ -110,6 +140,22 @@ const reportsRoute = createRoute({
     const period = search.period
     if (typeof period === 'string' && REPORT_PERIOD_SEARCH.has(period)) {
       result.period = period as ReportPeriodPreset
+    }
+    const from = search.from
+    const to = search.to
+    if (typeof from === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(from)) {
+      result.from = from
+    }
+    if (typeof to === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(to)) {
+      result.to = to
+    }
+    const fromTime = search.fromTime
+    const toTime = search.toTime
+    if (typeof fromTime === 'string' && /^\d{2}:\d{2}$/.test(fromTime)) {
+      result.fromTime = fromTime
+    }
+    if (typeof toTime === 'string' && /^\d{2}:\d{2}$/.test(toTime)) {
+      result.toTime = toTime
     }
     return result
   },
@@ -180,11 +226,13 @@ const settingsRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   firstRunRoute,
+  syncSetupRoute,
   chooseLanguageRoute,
   loginRoute,
   shellRoute.addChildren([
     posRoute,
     cashRoute,
+    reprintsRoute,
     productsRoute,
     adminIndexRoute,
     dashboardRoute,

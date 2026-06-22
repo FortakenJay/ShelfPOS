@@ -4,6 +4,7 @@ import { ProductFormModal } from '../ProductForm'
 import { AdjustStockModal } from '../AdjustStockModal'
 import { ProductCsvHelpModal } from '../ProductCsvHelpModal'
 import { ProductImportPreviewModal } from '../ProductImportPreviewModal'
+import { BatchLabelPrintModal } from '../BatchLabelPrintModal'
 import type { ProductImportStockMode } from '@shared/types'
 import type { ProductManagerUiState } from '../hooks/useProductManager'
 
@@ -15,10 +16,12 @@ interface ProductManagerModalsProps {
   exportTemplatePending: boolean
   importConfirmPending: boolean
   deletePending: boolean
+  batchLabelPrinting: boolean
   onDeleteConfirm: (id: number) => void
   onExportTemplate: () => void
   onImportConfirm: (filePath: string, format: 'csv' | 'efactura', stockMode: ProductImportStockMode) => void
   onProductsSaved: () => void
+  onBatchLabelPrint: (productIds: number[]) => void
 }
 
 export function ProductManagerModals({
@@ -29,10 +32,12 @@ export function ProductManagerModals({
   exportTemplatePending,
   importConfirmPending,
   deletePending,
+  batchLabelPrinting,
   onDeleteConfirm,
   onExportTemplate,
   onImportConfirm,
-  onProductsSaved
+  onProductsSaved,
+  onBatchLabelPrint
 }: ProductManagerModalsProps): React.JSX.Element {
   const { t } = useTranslation()
 
@@ -119,6 +124,13 @@ export function ProductManagerModals({
           onConfirm={(stockMode) =>
             onImportConfirm(ui.importPreview!.filePath as string, ui.importFormat, stockMode)
           }
+        />
+      )}
+      {ui.batchLabelOpen && (
+        <BatchLabelPrintModal
+          printing={batchLabelPrinting}
+          onClose={() => setUi((u) => ({ ...u, batchLabelOpen: false }))}
+          onPrint={onBatchLabelPrint}
         />
       )}
     </>

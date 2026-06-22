@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useEffect, useReducer } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { AuthProvider, useAuth } from '#/lib/auth'
 import { Button, Field, FullScreenSpinner, Input } from '#/components/ui'
@@ -18,14 +18,62 @@ function LoginRoute() {
   )
 }
 
+interface LoginFormState {
+  mode: 'signIn' | 'signUp'
+  email: string
+  password: string
+  error: string | null
+  info: string | null
+  submitting: boolean
+}
+
+type LoginFormAction =
+  | { type: 'setEmail'; email: string }
+  | { type: 'setPassword'; password: string }
+  | { type: 'toggleMode' }
+  | { type: 'submitStart' }
+  | { type: 'submitSuccess'; info: string | null }
+  | { type: 'submitError'; error: string }
+
+const initialLoginFormState: LoginFormState = {
+  mode: 'signIn',
+  email: '',
+  password: '',
+  error: null,
+  info: null,
+  submitting: false,
+}
+
+function loginFormReducer(
+  state: LoginFormState,
+  action: LoginFormAction,
+): LoginFormState {
+  switch (action.type) {
+    case 'setEmail':
+      return { ...state, email: action.email }
+    case 'setPassword':
+      return { ...state, password: action.password }
+    case 'toggleMode':
+      return {
+        ...state,
+        mode: state.mode === 'signIn' ? 'signUp' : 'signIn',
+        error: null,
+        info: null,
+      }
+    case 'submitStart':
+      return { ...state, submitting: true, error: null, info: null }
+    case 'submitSuccess':
+      return { ...state, submitting: false, info: action.info }
+    case 'submitError':
+      return { ...state, submitting: false, error: action.error }
+  }
+}
+
 function LoginPage() {
   const { t } = useTranslation()
-  const { signIn, user, loading, configured } = useAuth()
+  const { signIn, signUp, user, loading, configured } = useAuth()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
+  const [form, dispatch] = useReducer(loginFormReducer, initialLoginFormState)
 
   useEffect(() => {
     if (!loading && user) {
@@ -52,14 +100,19 @@ function LoginPage() {
 
   const submit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
-    setSubmitting(true)
-    setError(null)
-    const { error: err } = await signIn(email.trim(), password)
-    setSubmitting(false)
+    dispatch({ type: 'submitStart' })
+    const { error: err } =
+      form.mode === 'signIn'
+        ? await signIn(form.email.trim(), form.password)
+        : await signUp(form.email.trim(), form.password)
     if (err) {
-      setError(err)
+      dispatch({ type: 'submitError', error: err })
       return
     }
+    dispatch({
+      type: 'submitSuccess',
+      info: form.mode === 'signUp' ? t('login.signUpConfirm') : null,
+    })
   }
 
   return (
@@ -76,29 +129,48 @@ function LoginPage() {
             <Input
               type="email"
               autoComplete="username"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={form.email}
+              onChange={(e) => dispatch({ type: 'setEmail', email: e.target.value })}
               required
             />
           </Field>
-          <Field label={t('login.password')} error={error ?? undefined}>
+          <Field label={t('login.password')} error={form.error ?? undefined}>
             <Input
               type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              autoComplete={form.mode === 'signIn' ? 'current-password' : 'new-password'}
+              value={form.password}
+              onChange={(e) =>
+                dispatch({ type: 'setPassword', password: e.target.value })
+              }
               required
+              minLength={6}
             />
           </Field>
+          {form.info && (
+            <p className="mb-3 text-[14px] font-semibold text-cta">{form.info}</p>
+          )}
           <Button
             type="submit"
             variant="primary"
             size="lg"
             className="mt-2 w-full"
-            disabled={submitting}
+            disabled={form.submitting}
           >
-            {submitting ? t('login.submitting') : t('login.submit')}
+            {form.submitting
+              ? t('login.submitting')
+              : form.mode === 'signIn'
+                ? t('login.submit')
+                : t('login.signUpSubmit')}
           </Button>
+          <button
+            type="button"
+            className="mt-4 w-full text-center text-[14px] font-semibold text-primary hover:underline"
+            onClick={() => dispatch({ type: 'toggleMode' })}
+          >
+            {form.mode === 'signIn'
+              ? t('login.switchToSignUp')
+              : t('login.switchToSignIn')}
+          </button>
         </form>
       </div>
     </div>

@@ -23,6 +23,9 @@ export interface SettingsDraft {
   shortcutCashOut: AppSettings['shortcutCashOut']
   shortcutDrawerAction: AppSettings['shortcutDrawerAction']
   shortcutPrintLabel: AppSettings['shortcutPrintLabel']
+  shortcutPayCash: AppSettings['shortcutPayCash']
+  shortcutPayCard: AppSettings['shortcutPayCard']
+  shortcutPaySinpe: AppSettings['shortcutPaySinpe']
 }
 
 export function draftFromSettings(s: AppSettings): SettingsDraft {
@@ -48,7 +51,10 @@ export function draftFromSettings(s: AppSettings): SettingsDraft {
     shortcutCashIn: s.shortcutCashIn,
     shortcutCashOut: s.shortcutCashOut,
     shortcutDrawerAction: s.shortcutDrawerAction,
-    shortcutPrintLabel: s.shortcutPrintLabel
+    shortcutPrintLabel: s.shortcutPrintLabel,
+    shortcutPayCash: s.shortcutPayCash,
+    shortcutPayCard: s.shortcutPayCard,
+    shortcutPaySinpe: s.shortcutPaySinpe
   }
 }
 
@@ -72,7 +78,10 @@ const SHORTCUT_KEYS = [
   'shortcutCashIn',
   'shortcutCashOut',
   'shortcutDrawerAction',
-  'shortcutPrintLabel'
+  'shortcutPrintLabel',
+  'shortcutPayCash',
+  'shortcutPayCard',
+  'shortcutPaySinpe'
 ] as const
 
 function sectionDirty(

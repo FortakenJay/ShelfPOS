@@ -11,6 +11,7 @@ import {
   patchAppUser,
   usernameTaken
 } from '../db/repos/users'
+import { enqueueSync } from '../db/repos/syncQueue'
 import type { AppUserRow, UserCreateInput, UserUpdateInput } from '../../shared/types'
 
 const ADMIN: 'admin'[] = ['admin']
@@ -39,6 +40,7 @@ export function registerUserHandlers(): void {
       entityId: user.id,
       detail: `${user.username} (${user.role})`
     })
+    enqueueSync('pos_users', user.id, 'insert')
     return user
   })
 
@@ -68,6 +70,7 @@ export function registerUserHandlers(): void {
       entityId: user.id,
       detail: user.username
     })
+    enqueueSync('pos_users', user.id, 'update')
     return user
   })
 
@@ -83,6 +86,7 @@ export function registerUserHandlers(): void {
       entityId: existing.id,
       detail: existing.username
     })
+    enqueueSync('pos_users', existing.id, 'update')
     return null
   })
 }

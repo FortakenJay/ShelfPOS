@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
@@ -7,12 +7,14 @@ import { parseColonesInput } from '@/lib/format'
 import { useToasts } from '@/lib/toast'
 import { roundColones, appendMoneyInputDigit, backspaceMoneyInput } from '@shared/money'
 import { Modal } from '@/components/ui'
-import type { CreateSaleLineInput, CustomerInput, PrintStatus } from '@shared/types'
+import type { CreateSaleLineInput, CustomerInput, PaymentMethod, PrintStatus } from '@shared/types'
 import { usePaymentModalState } from './paymentModalState'
 import { PaymentCheckoutPanel } from './PaymentCheckoutPanel'
 import { PaymentCheckoutPad } from './PaymentCheckoutPad'
 import { PaymentMethodSidebar } from './PaymentMethodSidebar'
 import { PaymentSplitSection } from './PaymentSplitSection'
+import { PaymentInvoiceCustomerSection } from './PaymentInvoiceCustomerSection'
+import { buildPaymentCustomer } from './paymentCustomer'
 import { usePaymentKeyboard } from './usePaymentKeyboard'
 
 interface PaymentModalProps {
@@ -21,6 +23,7 @@ interface PaymentModalProps {
   cartDiscount: number
   discountPin: string | null
   customer: CustomerInput | null
+  initialMethod?: PaymentMethod
   onClose: () => void
   onCompleted: (change: number | null) => void
 }
@@ -37,14 +40,18 @@ export function PaymentModal({
   cartDiscount,
   discountPin,
   customer,
+  initialMethod = 'cash',
   onClose,
   onCompleted
 }: PaymentModalProps): React.JSX.Element {
   const { t } = useTranslation()
   const toasts = useToasts()
   const queryClient = useQueryClient()
-  const { state, dispatch } = usePaymentModalState('cash')
+  const { data: settings } = useQuery({ queryKey: ['settings'], queryFn: api.settings.get })
+  const { state, dispatch } = usePaymentModalState(initialMethod)
   const [printReceipt, setPrintReceipt] = useState(true)
+  const [invoiceName, setInvoiceName] = useState(customer?.name ?? '')
+  const [invoiceCedula, setInvoiceCedula] = useState(customer?.id ?? '')
   const { splitPayment, singleMethod, sinpeRef, entries, tendered } = state
 
   const splitPaid = round2(entries.reduce((acc, e) => acc + entryAmount(e.amount), 0))
@@ -109,12 +116,15 @@ export function PaymentModal({
 
   const { mutate, isPending } = mutation
 
-  const confirm = (): void => {
+  const confirm = (methodOverride?: PaymentMethod): void => {
     if (isPending || !canConfirm) return
     if (hasDiscount && !discountPin) {
       toasts.error('errors.discountPinRequired')
       return
     }
+
+    const method = methodOverride ?? singleMethod
+    const cashSingle = !splitPayment && method === 'cash'
 
     const payments = splitPayment
       ? entries.map((e) => ({
@@ -124,9 +134,9 @@ export function PaymentModal({
         }))
       : [
           {
-            method: singleMethod,
+            method,
             amount: total,
-            ref: singleMethod === 'sinpe' && sinpeRef.trim() ? sinpeRef.trim() : undefined
+            ref: method === 'sinpe' && sinpeRef.trim() ? sinpeRef.trim() : undefined
           }
         ]
 
@@ -134,11 +144,16 @@ export function PaymentModal({
       items,
       payments,
       cartDiscount: cartDiscount > 0 ? cartDiscount : undefined,
-      customer: customer ?? undefined,
-      tendered: hasCashSingle && tenderedNum != null ? tenderedNum : undefined,
+      customer: buildPaymentCustomer(customer, invoiceName, invoiceCedula),
+      tendered: cashSingle && tenderedNum != null ? tenderedNum : undefined,
       discountPin: hasDiscount ? discountPin ?? undefined : undefined,
       printReceipt
     })
+  }
+
+  const selectMethod = (method: PaymentMethod): void => {
+    if (splitPayment) return
+    dispatch({ type: 'setSingleMethod', value: method })
   }
 
   usePaymentKeyboard({
@@ -147,8 +162,14 @@ export function PaymentModal({
     splitPayment,
     hasCashSingle,
     singleMethod,
+    paymentShortcuts: {
+      cash: settings?.shortcutPayCash,
+      card: settings?.shortcutPayCard,
+      sinpe: settings?.shortcutPaySinpe
+    },
     onClose,
-    onConfirm: confirm
+    onConfirm: () => confirm(),
+    onSelectMethod: selectMethod
   })
 
   const toggleSplit = (): void => {
@@ -166,14 +187,26 @@ export function PaymentModal({
           splitPayment={splitPayment}
           method={singleMethod}
           printReceipt={printReceipt}
+          methodShortcuts={{
+            cash: settings?.shortcutPayCash,
+            card: settings?.shortcutPayCard,
+            sinpe: settings?.shortcutPaySinpe
+          }}
           onPrintReceiptChange={setPrintReceipt}
-          onSelectMethod={(method) => dispatch({ type: 'setSingleMethod', value: method })}
+          onSelectMethod={selectMethod}
           onToggleSplit={toggleSplit}
         />
 
         <div className="min-w-0">
+          <PaymentInvoiceCustomerSection
+            name={invoiceName}
+            cedula={invoiceCedula}
+            onNameChange={setInvoiceName}
+            onCedulaChange={setInvoiceCedula}
+          />
+
           {splitPayment ? (
-            <div className="flex min-h-[420px] flex-col gap-4">
+            <div className="mt-4 flex min-h-[420px] flex-col gap-4">
               <PaymentSplitSection
                 entries={entries}
                 remaining={remaining}
@@ -187,7 +220,7 @@ export function PaymentModal({
                   onDigit={() => {}}
                   onBackspace={() => {}}
                   onClear={() => {}}
-                  onConfirm={confirm}
+                  onConfirm={() => confirm()}
                   canConfirm={canConfirm}
                   loading={isPending}
                   showKeys={false}
@@ -195,6 +228,7 @@ export function PaymentModal({
               </div>
             </div>
           ) : (
+            <div className="mt-4">
             <PaymentCheckoutPanel
               total={total}
               method={singleMethod}
@@ -216,8 +250,9 @@ export function PaymentModal({
               }
               onClear={() => dispatch({ type: 'setTendered', value: '' })}
               onSinpeRefChange={(value) => dispatch({ type: 'setSinpeRef', value })}
-              onConfirm={confirm}
+              onConfirm={() => confirm()}
             />
+            </div>
           )}
         </div>
       </div>

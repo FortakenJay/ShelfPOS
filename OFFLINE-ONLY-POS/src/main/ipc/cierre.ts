@@ -20,7 +20,7 @@ import { writeAudit } from '../db/repos/audit'
 import { enqueueSync } from '../db/repos/syncQueue'
 import { currentLanguage, getAppSettings, receiptLanguage } from '../db/repos/settings'
 import { session } from '../services/session'
-import { schedulePrintJob } from '../services/printer'
+import { schedulePrintJob, attemptPrintJob, probePrinter } from '../services/printer'
 import { formatDate } from '../services/format'
 import { buildCierreLines } from '../services/printTemplates'
 import { writePrintLinesPdf } from '../services/printPdf'
@@ -33,7 +33,8 @@ import type {
   CierrePreview,
   CierreRecord,
   Language,
-  PrintLine
+  PrintLine,
+  PrintStatus
 } from '../../shared/types'
 
 const CIERRE: 'sales'[] = ['sales']
@@ -276,6 +277,20 @@ export function registerCierreHandlers(backup: BackupService): void {
 
   handle<void, CierreDiscrepancyAlert[]>('cierre:discrepancyAlerts', CIERRE_ADMIN, () =>
     listCierreDiscrepancyAlerts()
+  )
+
+  handle<{ cierreId: number }, { printStatus: PrintStatus }>(
+    'cierre:print',
+    CIERRE_EXPORT,
+    async ({ cierreId }) => {
+      if (!Number.isInteger(cierreId) || cierreId < 1) throw new AppError('errors.invalidInput')
+      const cierre = getCierreById(cierreId)
+      await probePrinter()
+      const lang = receiptLanguage()
+      const lines = cierrePrintLines(cierre, lang)
+      const jobId = insertPrintJob('cierre', null, { lang, lines })
+      return { printStatus: await attemptPrintJob(jobId) }
+    }
   )
 
   handle<{ cierreId: number }, { canceled: boolean; path?: string }>(

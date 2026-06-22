@@ -8,7 +8,11 @@
     "vsPrevious": "vs anterior",
     "noData": "Sin datos",
     "total": "Total",
-    "actions": "Acciones"
+    "actions": "Acciones",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "loading": "Cargando…",
+    "date": "Fecha"
   },
   "nav": {
     "admin": "Administración",
@@ -17,10 +21,18 @@
     "cashMovements": "Movimiento de efectivo",
     "cierres": "Cierres",
     "audit": "Bitácora",
+    "linkPos": "Vincular POS",
     "logout": "Cerrar sesión",
     "menu": "Menú",
     "stores": "Tiendas",
-    "adminOnline": "Admin en línea"
+    "adminOnline": "Admin en línea",
+    "collapseSidebar": "Contraer menú",
+    "expandSidebar": "Expandir menú"
+  },
+  "roles": {
+    "sales": "Cajero",
+    "product_manager": "Inventario",
+    "admin": "Administrador"
   },
   "login": {
     "subtitle": "Panel administrativo",
@@ -28,6 +40,10 @@
     "password": "Contraseña",
     "submit": "Iniciar sesión",
     "submitting": "Entrando…",
+    "signUpSubmit": "Crear cuenta",
+    "switchToSignUp": "¿Primera vez? Cree su cuenta de dueño",
+    "switchToSignIn": "¿Ya tiene cuenta? Inicie sesión",
+    "signUpConfirm": "Revise su correo si Supabase pide confirmación, luego inicie sesión y vincule su POS.",
     "missingEnv": "Faltan VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en <code>.env.local</code>.",
     "missingEnvProd": "Faltan VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en <code>.env.local</code> (local) o en Vercel (producción)."
   },
@@ -49,15 +65,19 @@
     "loadCierres": "Error al cargar cierres",
     "loadAudit": "Error al cargar bitácora",
     "loadMovements": "Error al cargar movimientos de efectivo",
+    "loadReports": "Error al cargar reportes",
     "pdfExportFailed": "No se pudo generar el PDF",
-    "noStoresTitle": "No hay tiendas registradas",
-    "noStores": "Verifique que el servicio de sync esté activo y que la tabla <code>stores</code> exista en Supabase.",
+    "facturaPdfFailed": "No se pudo generar la factura PDF",
+    "facturaPdfNotFound": "Venta no encontrada",
+    "xlsxExportFailed": "No se pudo generar el Excel",
+    "noStoresTitle": "Vincule su primera tienda",
+    "noStoresIntro": "Use este código al instalar ShelfPOS Sync en la caja. El instalador lo pedirá automáticamente.",
+    "noStoresRefresh": "Ya instalé — actualizar",
     "noStoresLoadFailed": "No se pudo consultar la lista de tiendas. Compruebe la conexión a Supabase e intente de nuevo.",
-    "noStoresChecklistTitle": "Qué revisar en cada tienda",
-    "noStoresStepSync": "El servicio Windows «ShelfPOS Sync» está en ejecución (Install-ShelfPOS.ps1).",
-    "noStoresStepInstall": "sync.env tiene la URL y la service role key de Supabase, y sync_store_id está configurado.",
-    "noStoresStepSupabase": "En Supabase ejecutó <code>SUPA.sql</code> y la tabla stores tiene al menos una fila.",
-    "noStoresStepPos": "ShelfPOS se abrió al menos una vez en la caja para registrar el nombre de la tienda."
+    "noStoresChecklistTitle": "Pasos en la PC de la caja",
+    "noStoresStepInstall": "Ejecute Install-ShelfPOS (después del instalador de ShelfPOS).",
+    "noStoresStepCode": "Cuando pida el código de vinculación, pegue el código de arriba.",
+    "noStoresStepFinish": "Al terminar, pulse «Ya instalé — actualizar» en este panel.",
   },
   "notFound": {
     "title": "Página no encontrada",
@@ -71,6 +91,10 @@
     "paymentsMonth": "Pagos del mes",
     "outOfStockList": "Sin existencias",
     "viewAudit": "Ver bitácora completa",
+    "viewAllAlerts": "Ver todas las alertas",
+    "viewAllProducts": "Ver todos los productos",
+    "viewAllLowStock": "Ver todo el stock bajo",
+    "viewOutOfStock": "Ver sin existencias",
     "tabs": {
       "label": "Secciones del panel",
       "home": "Inicio",
@@ -99,34 +123,85 @@
       "salesByHour": "Ventas por hora",
       "categoryPerformance": "Rendimiento por categoría",
       "last30Days": "Últimos 30 días",
-      "today": "Hoy"
+      "today": "Hoy",
+      "thisMonth": "Este mes",
+      "stockMovement": "Movimiento de stock",
+      "inventoryHealth": "Salud del inventario"
     },
     "activity": {
-      "title": "Actividad reciente"
+      "title": "Actividad reciente",
+      "sale": "Venta registrada"
+    },
+    "alerts": {
+      "title": "Centro de alertas",
+      "none": "Sin alertas pendientes",
+      "lowStock": "{{count}} productos con stock bajo",
+      "outOfStock": "{{count}} productos sin existencias",
+      "negativeStock": "{{count}} productos con stock negativo",
+      "cierreDiscrepancy": "{{count}} cierres con diferencia de efectivo"
     },
     "employees": {
-      "active": "Usuarios activos (30 días)",
+      "overview": "Resumen de empleados",
+      "total": "Total empleados",
+      "active": "Empleados activos",
+      "roles": "Por rol",
       "performance": "Desempeño por cajero (mes)",
-      "performanceHint": "Basado en cierres de caja del mes.",
+      "rolesAccess": "Roles y permisos",
+      "recentActivity": "Actividad reciente del equipo",
       "name": "Empleado",
-      "cierres": "Cierres",
+      "transactions": "Transacciones",
       "volume": "Volumen de ventas",
       "avgTicket": "Ticket promedio",
-      "recentActivity": "Actividad reciente del equipo"
+      "roster": "Equipo",
+      "rosterEmpty": "No hay usuarios sincronizados. Abra ShelfPOS en la caja y reinicie el servicio ShelfPOS Sync.",
+      "roleColumn": "Rol",
+      "statusColumn": "Estado",
+      "statusActive": "Activo",
+      "statusInactive": "Inactivo"
+    },
+    "roles": {
+      "adminDesc": "Acceso completo: panel, reportes, configuración, bitácora y exportación.",
+      "salesDesc": "Caja, efectivo, cierre de caja y cola de impresión.",
+      "pmDesc": "Gestión de productos, inventario e importación."
+    },
+    "inventory": {
+      "title": "Resumen de inventario",
+      "totalProducts": "Productos",
+      "activeProducts": "Activos (con stock)",
+      "costValue": "Valor a costo",
+      "retailValue": "Valor al detalle",
+      "outOfStock": "Sin existencias",
+      "lowStock": "Stock bajo"
+    },
+    "lowStock": {
+      "title": "Productos con stock bajo",
+      "sku": "SKU / Código",
+      "minimum": "Mínimo",
+      "status": "Estado"
+    },
+    "outOfStock": {
+      "title": "Productos sin existencias"
+    },
+    "recentInventory": {
+      "title": "Inventario actualizado recientemente"
+    },
+    "stockStatus": {
+      "healthy": "Normal",
+      "low": "Bajo",
+      "critical": "Crítico",
+      "negative": "Negativo"
     },
     "salesToday": "Ventas hoy",
     "salesMonth": "Ventas del mes",
     "txToday": "Transacciones hoy",
     "avgTicket": "Ticket promedio",
-    "lowStock": "Stock bajo",
-    "outOfStock": "Sin stock",
     "salesTrend": "Tendencia de ventas (30 días)",
     "paymentsToday": "Pagos hoy",
     "topProductsMonth": "Top productos del mes",
-    "inventory": "Inventario",
     "inventorySummary": "Resumen inventario",
     "activeProducts": "Productos activos",
-    "retailValue": "Valor retail",
+    "costValue": "Valor a costo",
+    "retailValue": "Valor al detalle",
     "lowStockList": "Stock bajo",
     "noSales30": "Sin ventas en los últimos 30 días",
     "noProductsMonth": "Sin productos vendidos este mes",
@@ -137,23 +212,166 @@
     "product": "Producto",
     "sku": "SKU",
     "units": "Unidades",
-    "revenue": "Ingresos"
+    "revenue": "Ingresos",
+    "stock": "Existencias",
+    "viewTaxReport": "Ver reporte fiscal",
+    "topProducts": {
+      "title": "Más vendidos (mes)",
+      "units": "Unidades",
+      "revenue": "Ingresos",
+      "profit": "Utilidad"
+    },
+    "slowProducts": {
+      "title": "Rotación lenta (mes)"
+    },
+    "worstSellers": {
+      "title": "Menor rendimiento (mes)"
+    },
+    "recentProducts": {
+      "title": "Agregados recientemente (mes)"
+    },
+    "tax": {
+      "title": "Resumen fiscal (mes)",
+      "taxable": "Ventas gravadas",
+      "ivaCollected": "IVA recaudado",
+      "monthlyLiability": "IVA estimado del mes"
+    }
   },
   "reports": {
     "title": "Reportes",
+    "subtitle": "Detalle exportable alineado con el panel de administración.",
     "description": "Ventas y pagos de la tienda seleccionada (solo lectura)",
     "today": "Hoy",
     "week": "Semana",
     "month": "Mes",
     "last7": "Últimos 7 días",
     "thisMonth": "Este mes",
-    "summary": "Resumen — {{period}}",
     "txCount": "Transacciones",
     "sales": "Ventas",
     "avgTicket": "Ticket promedio",
     "discounts": "Descuentos",
     "paymentsMonth": "Pagos del mes",
-    "topProductsMonth": "Top productos (mes)"
+    "topProductsMonth": "Top productos (mes)",
+    "profitHint": "La utilidad bruta usa el costo actual del producto (no el costo histórico de cada venta).",
+    "exportExcel": "Descargar Excel",
+    "exportingExcel": "Generando Excel...",
+    "exportPdf": "Descargar PDF",
+    "exportingPdf": "Generando PDF...",
+    "pdf": {
+      "title": "Reporte",
+      "store": "Tienda",
+      "type": "Tipo",
+      "range": "Rango",
+      "generatedAt": "Generado"
+    },
+    "types": {
+      "summary": "Resumen de ventas",
+      "byPayment": "Ingresos por método de pago",
+      "topProducts": "Productos más vendidos",
+      "inventory": "Inventario actual",
+      "taxBreakdown": "Desglose de IVA",
+      "transactionLog": "Registro de transacciones",
+      "itemizedSales": "Ventas detalladas"
+    },
+    "tax": {
+      "regime": "Régimen",
+      "category": "Categoría",
+      "rate": "Tarifa",
+      "gross": "Total con IVA",
+      "base": "Base imponible",
+      "iva": "IVA",
+      "totalBase": "Base imponible total",
+      "totalIva": "IVA total",
+      "totalGross": "Total con IVA"
+    },
+    "presets": {
+      "today": "Hoy",
+      "week": "Esta semana",
+      "month": "Este mes"
+    },
+    "from": "Desde",
+    "to": "Hasta",
+    "summary": {
+      "totalRevenue": "Ingresos totales",
+      "totalDiscount": "Descuentos aplicados",
+      "txCount": "Transacciones",
+      "itemsSold": "Artículos vendidos",
+      "returnsCount": "Devoluciones",
+      "avgTicket": "Ticket promedio",
+      "grossProfit": "Utilidad bruta",
+      "openingFloat": "Fondo inicial",
+      "cashSales": "Ventas en efectivo",
+      "cashIn": "Entradas de efectivo",
+      "cashOut": "Salidas de efectivo"
+    },
+    "byPayment": {
+      "method": "Método",
+      "amount": "Monto",
+      "count": "Transacciones"
+    },
+    "top": {
+      "product": "Producto",
+      "qty": "Cantidad",
+      "revenue": "Ingresos",
+      "profit": "Utilidad",
+      "margin": "Margen"
+    },
+    "inventory": {
+      "value": "Valor",
+      "totalValue": "Valor total del inventario",
+      "products": "Productos",
+      "snapshotNote": "Instantánea actual del inventario (no filtrada por fechas)."
+    },
+    "transactionLog": {
+      "receipt": "Recibo",
+      "cashier": "Cajero",
+      "customer": "Cliente",
+      "payment": "Pago",
+      "discount": "Descuento"
+    },
+    "itemized": {
+      "product": "Producto",
+      "qty": "Cant.",
+      "unitPrice": "Precio",
+      "discount": "Descuento"
+    },
+    "facturaPdf": {
+      "download": "Factura PDF",
+      "exporting": "Generando PDF…",
+      "actions": "Acciones"
+    }
+  },
+  "products": {
+    "name": "Nombre",
+    "barcode": "Código",
+    "price": "Precio",
+    "stock": "Stock",
+    "category": "Categoría",
+    "pagination": {
+      "showing": "Mostrando {{from}}–{{to}} de {{total}}",
+      "perPage": "Por página",
+      "pageOf": "Página {{page}} de {{totalPages}}"
+    }
+  },
+  "pos": {
+    "amount": "Monto",
+    "methods": {
+      "cash": "Efectivo",
+      "card": "Tarjeta",
+      "sinpe": "SINPE"
+    }
+  },
+  "tax": {
+    "regime": {
+      "simplificado": "Simplificado",
+      "tradicional": "Tradicional"
+    },
+    "categories": {
+      "standard": "IVA general"
+    }
+  },
+  "cierre": {
+    "closedBy": "Por"
   },
   "cierres": {
     "title": "Cierres de caja",
@@ -188,28 +406,80 @@
       "page": "Página"
     }
   },
+  "linkPos": {
+    "title": "Vincular POS",
+    "description": "Cada cuenta de dueño solo ve sus propias tiendas. El código enlaza esta caja con su usuario del panel.",
+    "stepCopy": "Copie el código de vinculación (válido 24 horas).",
+    "stepInstaller": "En la PC de la caja, ejecute Install-ShelfPOS y pegue el código cuando lo pida.",
+    "stepRefresh": "Vuelva al panel y actualice — solo verá sus tiendas.",
+    "generate": "Generar código",
+    "generating": "Generando…",
+    "regenerate": "Nuevo código",
+    "codeLabel": "Código de vinculación",
+    "codeExpiry": "Expira en 24 horas. Un solo uso.",
+    "codeInstallerHint": "Péguelo en ShelfPOS → Configuración → Nube, en Install-ShelfPOS, o en sync.env como STORE_PAIRING_CODE.",
+    "copy": "Copiar código",
+    "goDashboard": "Ir al panel",
+    "noPending": "No hay códigos activos. Genere uno para vincular otra caja.",
+    "addRegister": "Vincular otra caja",
+    "labeledTitle": "Código con nombre (opcional)",
+    "labelOptional": "Nombre de la caja",
+    "labelPlaceholder": "Ej. Caja 2",
+    "addLabeled": "Generar código"
+  },
   "audit": {
-    "title": "Bitácora",
-    "description": "Actividad sincronizada de la tienda",
-    "empty": "Sin registros",
+    "title": "Bitácora de actividad",
     "allTime": "Todo",
-    "allTimeSummary": "Historial completo · {{count}} registros",
-    "rangeSummary": "Rango {{from}} - {{to}} · {{count}} registros",
-    "showing": "{{from}}–{{to}} de {{total}}",
+    "allTimeSummary": "Historial completo · {{total}} registros",
     "pageOf": "Página {{page}} de {{pages}}",
-    "pageUnknownTotal": "Página {{page}}",
     "pageOutOfRange": "La página actual ya no existe para este filtro.",
     "resetPage": "Volver a la primera página",
-    "prev": "Anterior",
-    "next": "Siguiente",
-    "date": "Fecha",
+    "showing": "{{from}}–{{to}} de {{total}}",
     "user": "Usuario",
+    "allUsers": "Todos los usuarios",
+    "allActions": "Todas las acciones",
+    "range": "Rango",
     "action": "Acción",
     "entity": "Entidad",
     "detail": "Detalle",
     "actions": {
+      "login": "Inicio de sesión",
+      "logout": "Cierre de sesión",
+      "sale_created": "Venta registrada",
+      "return_created": "Devolución",
+      "product_created": "Producto creado",
+      "product_updated": "Producto actualizado",
+      "product_deleted": "Producto eliminado",
+      "stock_adjusted": "Stock ajustado",
+      "cierre_confirmed": "Cierre de caja",
+      "cierre_cash_discrepancy": "Diferencia de efectivo en cierre",
+      "cash_opening_float": "Fondo de caja",
+      "cash_in": "Entrada de efectivo",
+      "cash_out": "Salida de efectivo",
+      "settings_updated": "Configuración actualizada",
+      "pin_changed": "PIN cambiado",
+      "discount_authorized_caja": "Descuento autorizado (PIN caja)",
+      "discount_authorized_manager": "Descuento autorizado (PIN gerente)",
+      "price_override_authorized_caja": "Precio modificado autorizado (PIN caja)",
+      "price_override_authorized_manager": "Precio modificado autorizado (PIN gerente)",
+      "price_override_sale": "Venta con precio modificado",
       "cart_line_removed_caja": "Artículo quitado del carrito (PIN caja)",
-      "cart_line_removed_manager": "Artículo quitado del carrito (PIN gerente)"
+      "cart_line_removed_manager": "Artículo quitado del carrito (PIN gerente)",
+      "product_label_printed": "Etiqueta de producto impresa",
+      "user_created": "Usuario creado",
+      "user_updated": "Usuario actualizado",
+      "user_deactivated": "Usuario desactivado"
+    }
+  },
+  "cash": {
+    "adminTitle": "Movimiento de efectivo",
+    "movements": "Movimientos de efectivo",
+    "type": "Tipo",
+    "reason": "Motivo",
+    "types": {
+      "opening_float": "Fondo inicial",
+      "cash_in": "Entrada",
+      "cash_out": "Salida"
     }
   },
   "payment": {
@@ -231,6 +501,32 @@
       "cash_in": "Entrada",
       "cash_out": "Salida",
       "unknown": "Otro"
+    },
+    "truncatedWarning": "Mostrando {{shown}} de {{total}} movimientos. Ajuste el rango para ver todo.",
+    "truncatedWarningUnknownTotal": "Mostrando los primeros {{shown}} movimientos. Ajuste el rango para ver todo."
+  },
+  "print": {
+    "receipt": {
+      "discount": "Descuento",
+      "discountTotal": "Descuento total"
+    },
+    "report": {
+      "range": "Periodo",
+      "generated": "Generado",
+      "transactions": "Transacciones",
+      "itemsSold": "Artículos vendidos",
+      "returns": "Devoluciones",
+      "avgTicket": "Ticket promedio",
+      "revenue": "Ingresos totales",
+      "totalDiscount": "Descuentos aplicados",
+      "byPayment": "Por método de pago",
+      "topProducts": "Productos más vendidos",
+      "inventoryCount": "Productos",
+      "inventoryValue": "Valor total"
+    },
+    "cierre": {
+      "cashTitle": "Conteo de efectivo",
+      "cartDiscount": "Desc. venta (carrito)"
     }
   }
 }

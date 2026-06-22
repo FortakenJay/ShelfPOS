@@ -1,8 +1,11 @@
 import { useNavigate } from '@tanstack/react-router'
-import { Trans, useTranslation } from 'react-i18next'
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '#/lib/auth'
 import { StatusPageLayout } from '#/components/StatusPageLayout'
+import { StoreClaimCodeCard } from '#/components/StoreClaimCodeCard'
 import { Button } from '#/components/ui'
+import { ensureStorePairingCode, createStorePairing } from '#/lib/queries/store-claims'
 
 export function NoStoresPage({
   onRetry,
@@ -16,6 +19,25 @@ export function NoStoresPage({
   const { t } = useTranslation()
   const { signOut } = useAuth()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+
+  const {
+    data: claimCode,
+    isPending: claimLoading,
+    error: claimError,
+  } = useQuery({
+    queryKey: ['store-claim', 'active'],
+    queryFn: ensureStorePairingCode,
+    enabled: !loadFailed,
+    staleTime: 60_000,
+  })
+
+  const regenerate = useMutation({
+    mutationFn: createStorePairing,
+    onSuccess: (code) => {
+      queryClient.setQueryData(['store-claim', 'active'], code)
+    },
+  })
 
   const logout = async (): Promise<void> => {
     await signOut()
@@ -34,7 +56,7 @@ export function NoStoresPage({
             disabled={retrying}
             onClick={onRetry}
           >
-            {retrying ? t('common.refreshing') : t('common.retry')}
+            {retrying ? t('common.refreshing') : t('errors.noStoresRefresh')}
           </Button>
           <Button type="button" variant="outline" size="lg" onClick={() => void logout()}>
             {t('nav.logout')}
@@ -45,32 +67,33 @@ export function NoStoresPage({
       {loadFailed ? (
         <p className="font-semibold text-danger">{t('errors.noStoresLoadFailed')}</p>
       ) : (
-        <p>
-          <Trans
-            i18nKey="errors.noStores"
-            components={{
-              code: <code className="rounded bg-surface px-1.5 py-0.5 font-mono text-[14px] text-slate-800" />,
-            }}
-          />
-        </p>
-      )}
+        <>
+          <p className="text-[15px] text-slate-700">{t('errors.noStoresIntro')}</p>
 
-      <div className="rounded-lg border-2 border-line bg-surface/60 p-4">
-        <p className="mb-3 font-semibold text-slate-800">{t('errors.noStoresChecklistTitle')}</p>
-        <ul className="list-disc space-y-2 pl-5 text-slate-700">
-          <li>{t('errors.noStoresStepSync')}</li>
-          <li>{t('errors.noStoresStepInstall')}</li>
-          <li>
-            <Trans
-              i18nKey="errors.noStoresStepSupabase"
-              components={{
-                code: <code className="rounded bg-white px-1 font-mono text-[14px]" />,
-              }}
-            />
-          </li>
-          <li>{t('errors.noStoresStepPos')}</li>
-        </ul>
-      </div>
+          <StoreClaimCodeCard
+            code={claimCode ?? null}
+            loading={claimLoading}
+            error={
+              claimError instanceof Error
+                ? claimError.message
+                : regenerate.error instanceof Error
+                  ? regenerate.error.message
+                  : null
+            }
+            onRegenerate={() => regenerate.mutate()}
+            regenerating={regenerate.isPending}
+          />
+
+          <div className="rounded-lg border-2 border-line bg-surface/60 p-4">
+            <p className="mb-3 font-semibold text-slate-800">{t('errors.noStoresChecklistTitle')}</p>
+            <ol className="list-decimal space-y-2 pl-5 text-slate-700">
+              <li>{t('errors.noStoresStepInstall')}</li>
+              <li>{t('errors.noStoresStepCode')}</li>
+              <li>{t('errors.noStoresStepFinish')}</li>
+            </ol>
+          </div>
+        </>
+      )}
     </StatusPageLayout>
   )
 }

@@ -1,5 +1,6 @@
 import { getDb } from '../index'
 import { daysAgoLocal, daysInRange, localNow, rangeBounds, round2, todayLocal } from '../helpers'
+import { ACTIVE_PRODUCT_SQL } from './products'
 import { getAppSettings, getSetting, SETTING_KEYS } from './settings'
 import { listAudit } from './audit'
 import { listQueuedPrintJobs } from './printJobs'
@@ -128,12 +129,13 @@ function inventorySummary(): DashboardInventorySummary {
     .prepare(
       `SELECT COUNT(*) AS totalProducts,
               COALESCE(SUM(CASE WHEN stock > 0 THEN 1 ELSE 0 END), 0) AS activeProducts,
-              COALESCE(SUM(stock * COALESCE(cost_price, 0)), 0) AS costValue,
-              COALESCE(SUM(stock * price), 0) AS retailValue,
+              COALESCE(SUM(max(stock, 0) * COALESCE(cost_price, 0)), 0) AS costValue,
+              COALESCE(SUM(max(stock, 0) * price), 0) AS retailValue,
               COALESCE(SUM(CASE WHEN stock = 0 THEN 1 ELSE 0 END), 0) AS outOfStock,
               COALESCE(SUM(CASE WHEN stock < 0 THEN 1 ELSE 0 END), 0) AS negativeStock,
               COALESCE(SUM(CASE WHEN stock > 0 AND stock <= COALESCE(stock_threshold, @def) THEN 1 ELSE 0 END), 0) AS lowStock
-       FROM products`
+       FROM products
+       WHERE ${ACTIVE_PRODUCT_SQL}`
     )
     .get({ def }) as DashboardInventorySummary
   return {
@@ -156,7 +158,8 @@ function inventoryHealth(): DashboardInventoryHealth {
          COALESCE(SUM(CASE WHEN stock = 0 THEN 1 ELSE 0 END), 0) AS critical,
          COALESCE(SUM(CASE WHEN stock > 0 AND stock <= COALESCE(stock_threshold, @def) THEN 1 ELSE 0 END), 0) AS low,
          COALESCE(SUM(CASE WHEN stock > COALESCE(stock_threshold, @def) THEN 1 ELSE 0 END), 0) AS healthy
-       FROM products`
+       FROM products
+       WHERE ${ACTIVE_PRODUCT_SQL}`
     )
     .get({ def }) as DashboardInventoryHealth
   return row

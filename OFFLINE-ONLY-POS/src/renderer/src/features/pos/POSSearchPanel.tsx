@@ -1,6 +1,12 @@
+import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatMoney } from '@/lib/format'
 import type { Product } from '@shared/types'
+import { useVerticalDragResize } from './useVerticalDragResize'
+
+/** Previous default: Tailwind max-h-80 */
+const SEARCH_RESULTS_MIN_HEIGHT = 320
+const SEARCH_RESULTS_DEFAULT_HEIGHT = 320
 
 interface POSSearchPanelProps {
   inputRef: React.RefObject<HTMLInputElement | null>
@@ -22,21 +28,50 @@ export function POSSearchPanel({
   onSelectProduct
 }: POSSearchPanelProps): React.JSX.Element {
   const { t } = useTranslation()
+  const panelRef = useRef<HTMLDivElement>(null)
+  const showResults = debouncedQuery.length > 0
+
+  const getMaxHeight = (): number => {
+    const column = panelRef.current?.parentElement
+    if (!column) return SEARCH_RESULTS_DEFAULT_HEIGHT * 2
+    const inputBlock = panelRef.current?.querySelector('[data-pos-search-input]')
+    const inputHeight = inputBlock?.getBoundingClientRect().height ?? 88
+    const padding = 32
+    return Math.max(
+      SEARCH_RESULTS_MIN_HEIGHT,
+      column.clientHeight - inputHeight - padding - 16
+    )
+  }
+
+  const { height: resultsHeight, onResizePointerDown } = useVerticalDragResize({
+    initial: SEARCH_RESULTS_DEFAULT_HEIGHT,
+    min: SEARCH_RESULTS_MIN_HEIGHT,
+    getMax: getMaxHeight
+  })
 
   return (
-    <div className="border-b-2 border-line bg-white p-4">
-      <input
-        ref={inputRef}
-        value={query}
-        onChange={(e) => onQueryChange(e.target.value)}
-        onKeyDown={onKeyDown}
-        placeholder={t('pos.searchPlaceholder')}
-        className="min-h-[56px] w-full rounded-md border-2 border-line px-4 text-[18px] outline-none focus:border-primary"
-        aria-label={t('common.search')}
-      />
-      {debouncedQuery.length > 0 && (
-        <div className="relative">
-          <div className="absolute top-1 right-0 left-0 z-20 max-h-80 overflow-y-auto rounded-md border-2 border-line bg-white shadow-xl">
+    <div ref={panelRef} className="relative z-20 shrink-0 border-b-2 border-line bg-white p-4">
+      <div data-pos-search-input>
+        <input
+          ref={inputRef}
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder={t('pos.searchPlaceholder')}
+          className="min-h-[56px] w-full rounded-md border-2 border-line px-4 text-[18px] outline-none focus:border-primary"
+          aria-label={t('common.search')}
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck={false}
+        />
+      </div>
+
+      {showResults && (
+        <div className="absolute inset-x-4 top-full z-30 mt-2 flex flex-col">
+          <div
+            className="overflow-y-auto rounded-t-md border-2 border-b-0 border-line bg-white shadow-lg"
+            style={{ height: resultsHeight }}
+          >
             {searchResults?.length === 0 && (
               <div className="px-4 py-3 text-[16px] text-slate-500">{t('pos.noResults')}</div>
             )}
@@ -59,6 +94,13 @@ export function POSSearchPanel({
               </button>
             ))}
           </div>
+
+          <hr
+            aria-orientation="horizontal"
+            aria-label={t('pos.searchResultsResize')}
+            onPointerDown={onResizePointerDown}
+            className="m-0 h-4 cursor-row-resize touch-none rounded-b-md border-2 border-line border-t-slate-400 bg-slate-100 shadow-lg hover:bg-slate-200 active:bg-slate-300"
+          />
         </div>
       )}
     </div>

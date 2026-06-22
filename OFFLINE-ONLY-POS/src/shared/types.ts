@@ -18,7 +18,14 @@ export type ActionShortcutKey =
 export type PrintJobStatus = 'pending' | 'printed' | 'failed'
 export type PrintJobType = 'receipt' | 'report' | 'cierre' | 'label'
 export type PrintStatus = 'printed' | 'failed'
-export type ReportType = 'summary' | 'byPayment' | 'topProducts' | 'inventory' | 'taxBreakdown'
+export type ReportType =
+  | 'summary'
+  | 'byPayment'
+  | 'topProducts'
+  | 'inventory'
+  | 'taxBreakdown'
+  | 'transactionLog'
+  | 'itemizedSales'
 
 /** URL preset for report date ranges (matches dashboard KPI periods). */
 export type ReportPeriodPreset = 'today' | 'week' | 'month'
@@ -46,6 +53,9 @@ export interface AppSettings {
   shortcutCashOut: ActionShortcutKey
   shortcutDrawerAction: ActionShortcutKey
   shortcutPrintLabel: ActionShortcutKey
+  shortcutPayCash: ActionShortcutKey
+  shortcutPayCard: ActionShortcutKey
+  shortcutPaySinpe: ActionShortcutKey
   firstRunComplete: boolean
   cajaPinConfigured: boolean
   // Tax regime + IVA rate mapping (IVA dormant while regime is 'simplificado').
@@ -195,6 +205,8 @@ export interface CreateSaleMiscItemInput {
   miscItem: true
   quantity: number
   unitPrice: number
+  /** Optional label; server falls back to the default misc item name. */
+  name?: string
   /** Original typed price when the cashier changed it before checkout. */
   catalogUnitPrice?: number
   discount?: number
@@ -246,7 +258,8 @@ export interface SalePaymentDetail {
 }
 
 export interface SaleItemDetail {
-  productId: number
+  saleItemId: number
+  productId: number | null
   name: string
   barcode: string
   quantity: number
@@ -255,6 +268,7 @@ export interface SaleItemDetail {
   lineTotal: number
   taxCategory: TaxCategory
   returnedQty: number
+  isMisc: boolean
 }
 
 export interface SaleCustomer {
@@ -284,7 +298,7 @@ export interface SaleDetail {
 
 export interface CreateReturnInput {
   saleId: number
-  items: { productId: number; quantity: number }[]
+  items: { saleItemId: number; quantity: number }[]
   restock: boolean
   pin: string
 }
@@ -296,6 +310,8 @@ export interface CreateReturnResult {
 export interface DateRange {
   from: string // YYYY-MM-DD
   to: string // YYYY-MM-DD
+  fromTime?: string // HH:mm (optional; defaults to start of day)
+  toTime?: string // HH:mm (optional; defaults to end of day)
 }
 
 export interface PeriodCashTotals {
@@ -347,6 +363,14 @@ export interface InventoryRow {
   value: number
 }
 
+export interface InventoryReport {
+  rows: InventoryRow[]
+  total: number
+  totalValue: number
+  page: number
+  pageSize: number
+}
+
 export interface TaxBreakdownRow {
   taxCategory: TaxCategory
   rate: number
@@ -363,12 +387,66 @@ export interface TaxBreakdownReport {
   totalIva: number
 }
 
+export interface SalePaymentSnapshot {
+  method: PaymentMethod
+  amount: number
+  ref: string | null
+}
+
+export interface TransactionLogRow {
+  saleId: number
+  consecutivo: string | null
+  createdAt: string
+  cashier: string
+  total: number
+  discountTotal: number
+  customerName: string | null
+  payments: SalePaymentSnapshot[]
+}
+
+export interface TransactionLogReport {
+  rows: TransactionLogRow[]
+  totalRevenue: number
+  txCount: number
+}
+
+export interface ItemizedSalesLineRow {
+  saleItemId: number
+  productName: string
+  barcode: string | null
+  quantity: number
+  unitPrice: number
+  lineDiscount: number
+  lineTotal: number
+}
+
+export interface ItemizedSalesSaleRow {
+  saleId: number
+  consecutivo: string | null
+  createdAt: string
+  cashier: string
+  total: number
+  discountTotal: number
+  cartDiscount: number
+  customerName: string | null
+  payments: SalePaymentSnapshot[]
+  items: ItemizedSalesLineRow[]
+}
+
+export interface ItemizedSalesReport {
+  sales: ItemizedSalesSaleRow[]
+  totalRevenue: number
+  itemsSold: number
+}
+
 export type ReportData =
   | { type: 'summary'; data: SalesSummaryReport }
   | { type: 'byPayment'; data: PaymentMethodReport }
   | { type: 'topProducts'; data: TopProductRow[] }
-  | { type: 'inventory'; data: InventoryRow[] }
+  | { type: 'inventory'; data: InventoryReport }
   | { type: 'taxBreakdown'; data: TaxBreakdownReport }
+  | { type: 'transactionLog'; data: TransactionLogReport }
+  | { type: 'itemizedSales'; data: ItemizedSalesReport }
 
 // --- admin dashboard ---
 
@@ -669,11 +747,36 @@ export interface PrintJobRow {
   printed_at: string | null
 }
 
+export interface PrintJobListResult {
+  items: PrintJobRow[]
+  total: number
+  page: number
+  pageSize: number
+  pendingCount: number
+  failedCount: number
+}
+
 export interface FirstRunStatus {
   needed: boolean
   language: Language | null
   dbPath: string
   backupDir: string
+}
+
+export interface SyncSetupStatus {
+  configured: boolean
+  linked: boolean
+  configPath: string
+  supabaseUrl: string | null
+  hasPairingCode: boolean
+  serviceRunning: boolean | null
+  storeId: string
+}
+
+export interface SyncSetupSaveInput {
+  supabaseUrl: string
+  serviceKey: string
+  pairingCode: string
 }
 
 export interface DiscountAuthorizeInput {
@@ -757,6 +860,9 @@ export interface SettingsUpdateInput {
   shortcutCashOut?: ActionShortcutKey
   shortcutDrawerAction?: ActionShortcutKey
   shortcutPrintLabel?: ActionShortcutKey
+  shortcutPayCash?: ActionShortcutKey
+  shortcutPayCard?: ActionShortcutKey
+  shortcutPaySinpe?: ActionShortcutKey
 }
 
 // --- cash drawer ---
@@ -853,6 +959,9 @@ export const IPC_CHANNELS = [
   'firstRun:status',
   'firstRun:setLanguage',
   'firstRun:complete',
+  'syncSetup:status',
+  'syncSetup:save',
+  'syncSetup:restartService',
   'auth:login',
   'auth:logout',
   'auth:session',
@@ -861,6 +970,7 @@ export const IPC_CHANNELS = [
   'settings:setLanguage',
   'settings:changePin',
   'settings:changeCajaPin',
+  'settings:printPinCard',
   'products:list',
   'products:categories',
   'products:create',
@@ -873,12 +983,14 @@ export const IPC_CHANNELS = [
   'products:importEfacturaPreview',
   'products:importEfacturaConfirm',
   'products:printLabel',
+  'products:printLabelBatch',
   'products:byBarcode',
   'products:search',
   'sales:create',
   'sales:findForReturn',
   'sales:listForReprint',
   'sales:reprintReceipt',
+  'sales:exportFacturaPdf',
   'returns:create',
   'discount:authorize',
   'cart:removeAuthorize',
@@ -892,6 +1004,7 @@ export const IPC_CHANNELS = [
   'cierre:history',
   'cierre:discrepancyAlerts',
   'cierre:exportPdf',
+  'cierre:print',
   'cash:status',
   'cash:openFloat',
   'cash:movement',

@@ -1,12 +1,13 @@
 import { useTranslation } from 'react-i18next'
 import { Toggle } from '@/components/ui'
-import type { PaymentMethod } from '@shared/types'
+import type { ActionShortcutKey, PaymentMethod } from '@shared/types'
 import { PaymentMethodButtons } from './PaymentMethodButtons'
 
 export function PaymentMethodSidebar({
   splitPayment,
   method,
   printReceipt,
+  methodShortcuts,
   onPrintReceiptChange,
   onSelectMethod,
   onToggleSplit
@@ -14,6 +15,7 @@ export function PaymentMethodSidebar({
   splitPayment: boolean
   method: PaymentMethod
   printReceipt: boolean
+  methodShortcuts?: Partial<Record<PaymentMethod, ActionShortcutKey>>
   onPrintReceiptChange: (value: boolean) => void
   onSelectMethod: (method: PaymentMethod) => void
   onToggleSplit: () => void
@@ -30,6 +32,7 @@ export function PaymentMethodSidebar({
         <PaymentMethodButtons
           layout="vertical"
           value={method}
+          shortcuts={methodShortcuts}
           onChange={onSelectMethod}
           className="flex-1"
         />

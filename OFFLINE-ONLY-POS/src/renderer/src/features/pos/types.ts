@@ -6,6 +6,7 @@ export type CartLine =
       product: Product
       quantity: number
       discount: number
+      discountPercent?: number
       priceOverride?: number
     }
   | {
@@ -14,5 +15,8 @@ export type CartLine =
       unitPrice: number
       quantity: number
       discount: number
+      discountPercent?: number
+      /** Cashier label; empty uses the default misc item name. */
+      customName?: string
       priceOverride?: number
     }

@@ -1,9 +1,11 @@
 import { useReducer, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import i18n from 'i18next'
 import { api, ApiError } from '@/lib/api'
 import { useToasts } from '@/lib/toast'
+import { useSession } from '@/lib/session'
+import { Button } from '@/components/ui'
+import { PinCardPrintModal } from './PinCardPrintModal'
 import {
   draftFromSettings,
   emisorDraftDirty,
@@ -15,13 +17,12 @@ import {
 import {
   SettingsEmisorSection,
   SettingsGeneralSection,
-  SettingsLanguageSection,
   SettingsPinSection,
   SettingsCajaPinSection,
   SettingsShortcutsSection,
   SettingsTaxSection
 } from './SettingsSections'
-import type { AppSettings, Language, SettingsUpdateInput } from '@shared/types'
+import type { AppSettings, SettingsUpdateInput } from '@shared/types'
 
 function commitSavedDraft(
   saved: SettingsDraft,
@@ -65,13 +66,19 @@ function commitSavedDraft(
     input.shortcutCashIn !== undefined ||
     input.shortcutCashOut !== undefined ||
     input.shortcutDrawerAction !== undefined ||
-    input.shortcutPrintLabel !== undefined
+    input.shortcutPrintLabel !== undefined ||
+    input.shortcutPayCash !== undefined ||
+    input.shortcutPayCard !== undefined ||
+    input.shortcutPaySinpe !== undefined
   ) {
     next.shortcutOpenFloat = draft.shortcutOpenFloat
     next.shortcutCashIn = draft.shortcutCashIn
     next.shortcutCashOut = draft.shortcutCashOut
     next.shortcutDrawerAction = draft.shortcutDrawerAction
     next.shortcutPrintLabel = draft.shortcutPrintLabel
+    next.shortcutPayCash = draft.shortcutPayCash
+    next.shortcutPayCard = draft.shortcutPayCard
+    next.shortcutPaySinpe = draft.shortcutPaySinpe
   }
   return next
 }
@@ -118,6 +125,8 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
   const { t } = useTranslation()
   const toasts = useToasts()
   const queryClient = useQueryClient()
+  const { user } = useSession()
+  const [pinCardOpen, setPinCardOpen] = useState(false)
 
   const [draft, setDraft] = useState<SettingsDraft>(() => draftFromSettings(settings))
   const [savedDraft, setSavedDraft] = useState<SettingsDraft>(() => draftFromSettings(settings))
@@ -135,20 +144,12 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
     draft.shortcutCashIn,
     draft.shortcutCashOut,
     draft.shortcutDrawerAction,
-    draft.shortcutPrintLabel
+    draft.shortcutPrintLabel,
+    draft.shortcutPayCash,
+    draft.shortcutPayCard,
+    draft.shortcutPaySinpe
   ]
   const shortcutConflict = new Set(shortcutValues).size !== shortcutValues.length
-
-  const languageMutation = useMutation({
-    mutationFn: async (language: Language) => {
-      await api.settings.setLanguage(language)
-      await i18n.changeLanguage(language)
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['settings'] })
-    },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
-  })
 
   const updateMutation = useMutation({
     mutationFn: api.settings.update,
@@ -191,14 +192,23 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
       })
   })
 
+  const printPinCardMutation = useMutation({
+    mutationFn: ({ managerPin, cajaPin }: { managerPin: string; cajaPin: string }) =>
+      api.settings.printPinCard(managerPin, cajaPin),
+    onSuccess: ({ printStatus }) => {
+      if (printStatus === 'printed') {
+        toasts.success('settings.pinCard.printed')
+        setPinCardOpen(false)
+      } else {
+        toasts.error('pos.printFailed')
+      }
+      void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
+    },
+    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+  })
+
   return (
     <div className="space-y-6">
-      <SettingsLanguageSection
-        currentLang={settings.language ?? 'es'}
-        pending={languageMutation.isPending}
-        onSelect={(lang) => languageMutation.mutate(lang)}
-      />
-
       <div className="grid gap-6 lg:grid-cols-2">
         <SettingsGeneralSection
           draft={draft}
@@ -243,7 +253,10 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
             shortcutCashIn: draft.shortcutCashIn,
             shortcutCashOut: draft.shortcutCashOut,
             shortcutDrawerAction: draft.shortcutDrawerAction,
-            shortcutPrintLabel: draft.shortcutPrintLabel
+            shortcutPrintLabel: draft.shortcutPrintLabel,
+            shortcutPayCash: draft.shortcutPayCash,
+            shortcutPayCard: draft.shortcutPayCard,
+            shortcutPaySinpe: draft.shortcutPaySinpe
           })
         }}
       />
@@ -302,6 +315,29 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
           }}
         />
       </div>
+
+      <section className="rounded-lg border-2 border-line bg-white p-5">
+        <h2 className="mb-2 text-lg font-bold">{t('settings.pinCard.title')}</h2>
+        <p className="mb-4 text-[14px] text-slate-600">{t('settings.pinCard.hint')}</p>
+        <Button
+          variant="outline"
+          disabled={!settings.cajaPinConfigured}
+          onClick={() => setPinCardOpen(true)}
+        >
+          {t('settings.pinCard.printButton')}
+        </Button>
+      </section>
+
+      {pinCardOpen && user && (
+        <PinCardPrintModal
+          username={user.username}
+          loading={printPinCardMutation.isPending}
+          onClose={() => setPinCardOpen(false)}
+          onPrint={(managerPin, cajaPin) =>
+            printPinCardMutation.mutate({ managerPin, cajaPin })
+          }
+        />
+      )}
     </div>
   )
 }

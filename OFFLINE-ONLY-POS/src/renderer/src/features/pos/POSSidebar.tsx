@@ -38,7 +38,13 @@ export function POSSidebar({
       </div>
 
       <div className="mt-4 shrink-0 space-y-3 border-t-2 border-line pt-4">
-        <Button variant="cta" size="xl" className="w-full" disabled={cartEmpty} onClick={onPayOpen}>
+        <Button
+          variant="cta"
+          size="xl"
+          className="w-full"
+          disabled={cartEmpty}
+          onClick={() => onPayOpen()}
+        >
           {t('pos.chargeShortcut')}
         </Button>
         <Button variant="outline" size="lg" className="w-full" onClick={onReturnOpen}>

@@ -37,7 +37,7 @@ function ProductManager({
   useEffect(() => {
     const shortcut = pm.settingsData?.shortcutPrintLabel
     if (!shortcut) return
-    if (pm.ui.formProduct || pm.ui.adjustProduct || pm.ui.deleteProduct || pm.ui.importPreview) return
+    if (pm.ui.formProduct || pm.ui.adjustProduct || pm.ui.deleteProduct || pm.ui.importPreview || pm.ui.batchLabelOpen) return
 
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.defaultPrevented) return
@@ -62,6 +62,7 @@ function ProductManager({
     pm.ui.deleteProduct,
     pm.ui.formProduct,
     pm.ui.importPreview,
+    pm.ui.batchLabelOpen,
     toasts
   ])
 
@@ -80,6 +81,7 @@ function ProductManager({
         onImportCsv={() => pm.importPreviewMutation.mutate()}
         onImportEfactura={() => pm.importEfacturaPreviewMutation.mutate()}
         onNewProduct={() => pm.setUi((u) => ({ ...u, formProduct: 'new' }))}
+        onBatchLabels={() => pm.setUi((u) => ({ ...u, batchLabelOpen: true }))}
       />
 
       <ProductsPageFilters
@@ -126,6 +128,16 @@ function ProductManager({
           pm.importConfirmMutation.mutate({ filePath, format, stockMode })
         }
         onProductsSaved={pm.invalidateProducts}
+        batchLabelPrinting={pm.printLabelBatch.isPending}
+        onBatchLabelPrint={(productIds) =>
+          pm.printLabelBatch.mutate(productIds, {
+            onSuccess: (result) => {
+              if (result.printStatus === 'printed') {
+                pm.setUi((u) => ({ ...u, batchLabelOpen: false }))
+              }
+            }
+          })
+        }
       />
     </div>
   )

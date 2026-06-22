@@ -13,6 +13,7 @@ export type ProductManagerUiState = {
   csvHelpOpen: boolean
   importPreview: ProductImportPreview | null
   importFormat: 'csv' | 'efactura'
+  batchLabelOpen: boolean
 }
 
 export type ProductFiltersState = {
@@ -40,7 +41,8 @@ export function useProductManager(options?: {
     importErrors: null,
     csvHelpOpen: false,
     importPreview: null,
-    importFormat: 'csv'
+    importFormat: 'csv',
+    batchLabelOpen: false
   })
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(50)
@@ -185,6 +187,21 @@ export function useProductManager(options?: {
     onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
   })
 
+  const printLabelBatch = useMutation({
+    mutationFn: (productIds: number[]) => api.products.printLabelBatch(productIds),
+    onSuccess: ({ printStatus, printed, failed, total }) => {
+      if (printStatus === 'printed') {
+        toasts.success('products.batchLabels.printed', { count: printed })
+      } else if (printed > 0) {
+        toasts.info('products.batchLabels.partial', { printed, failed, total })
+      } else {
+        toasts.error('pos.printFailed')
+      }
+      void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
+    },
+    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+  })
+
   const defaultThreshold = settingsData?.stockThresholdDefault ?? 5
 
   const stockCellClass = (p: Product): string => {
@@ -215,6 +232,7 @@ export function useProductManager(options?: {
     exportTemplate,
     exportProducts,
     printLabel,
+    printLabelBatch,
     importPreviewMutation,
     importEfacturaPreviewMutation,
     importConfirmMutation,

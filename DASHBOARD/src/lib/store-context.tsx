@@ -4,6 +4,7 @@ import {
   useState,
 } from 'react'
 import type { ReactNode } from 'react'
+import { useRouterState } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '#/lib/auth'
 import { fetchStores } from '#/lib/queries/stores'
@@ -32,6 +33,9 @@ function resolveStoreId(stores: StoreInfo[]): StoreId {
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading } = useAuth()
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
+  const allowWithoutStore = pathname === '/link-pos'
+
   const { data: stores = [], isPending, isError, isFetching, refetch } = useQuery({
     queryKey: ['stores', user?.id],
     queryFn: fetchStores,
@@ -52,13 +56,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const storeLabel =
     stores.find((s) => s.storeId === storeId)?.label ?? storeId
 
-  const value = { stores, storeId, storeLabel, setStoreId }
+  const value =
+    allowWithoutStore && stores.length === 0
+      ? {
+          stores,
+          storeId: '' as StoreId,
+          storeLabel: '',
+          setStoreId,
+        }
+      : { stores, storeId, storeLabel, setStoreId }
 
   if (authLoading || (user && isPending)) {
     return <FullScreenSpinner />
   }
 
-  if (isError || stores.length === 0) {
+  if (!allowWithoutStore && (isError || stores.length === 0)) {
     return (
       <NoStoresPage
         loadFailed={isError}
@@ -70,7 +82,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     )
   }
 
-  if (!storeId) {
+  if (!allowWithoutStore && !storeId) {
     return <FullScreenSpinner />
   }
 

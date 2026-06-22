@@ -1,15 +1,21 @@
 import { getDb } from '../index'
+import { ACTIVE_PRODUCT_SQL } from './products'
 import { getAppSettings, ivaRateFor } from './settings'
 import { localNow, round2 } from '../helpers'
 import type {
+  InventoryReport,
   InventoryRow,
+  ItemizedSalesReport,
   PeriodCashTotals,
+  PaymentMethod,
   PaymentMethodReport,
+  SalePaymentSnapshot,
   SalesSummaryReport,
   TaxBreakdownReport,
   TaxBreakdownRow,
   TaxCategory,
-  TopProductRow
+  TopProductRow,
+  TransactionLogReport
 } from '../../../shared/types'
 
 const TAX_CATEGORY_ORDER = new Map<TaxCategory, number>([['standard', 0]])
@@ -156,6 +162,43 @@ export function taxBreakdown(filter: SaleFilter): TaxBreakdownReport {
   }
 }
 
+function returnFilterClause(filter: SaleFilter): {
+  where: string
+  params: Record<string, unknown>
+} {
+  const conditions: string[] = []
+  const params: Record<string, unknown> = {}
+  if (filter.fromTs) {
+    conditions.push('created_at >= @fromTs')
+    params.fromTs = filter.fromTs
+  }
+  if (filter.toTs) {
+    conditions.push('created_at <= @toTs')
+    params.toTs = filter.toTs
+  }
+  return {
+    where: conditions.length ? `WHERE ${conditions.join(' AND ')}` : '',
+    params
+  }
+}
+
+function returnTotals(filter: SaleFilter): { count: number; amount: number; quantity: number } {
+  const { where, params } = returnFilterClause(filter)
+  const row = getDb()
+    .prepare(
+      `SELECT COUNT(*) AS count,
+              COALESCE(SUM(line_total), 0) AS amount,
+              COALESCE(SUM(quantity), 0) AS quantity
+       FROM return_items ${where}`
+    )
+    .get(params) as { count: number; amount: number; quantity: number }
+  return {
+    count: row.count,
+    amount: round2(row.amount),
+    quantity: row.quantity
+  }
+}
+
 export function salesSummary(filter: SaleFilter): SalesSummaryReport {
   const db = getDb()
   const { where, params } = saleWhere(filter)
@@ -170,21 +213,7 @@ export function salesSummary(filter: SaleFilter): SalesSummaryReport {
        FROM sale_items si JOIN sales s ON s.id = si.sale_id ${where}`
     )
     .get(params) as { itemsSold: number }
-  const returnConditions: string[] = []
-  const returnParams: Record<string, unknown> = {}
-  if (filter.fromTs) {
-    returnConditions.push('created_at >= @fromTs')
-    returnParams.fromTs = filter.fromTs
-  }
-  if (filter.toTs) {
-    returnConditions.push('created_at <= @toTs')
-    returnParams.toTs = filter.toTs
-  }
-  const returns = db
-    .prepare(
-      `SELECT COUNT(*) AS count FROM return_items ${returnConditions.length ? 'WHERE ' + returnConditions.join(' AND ') : ''}`
-    )
-    .get(returnParams) as { count: number }
+  const returns = returnTotals(filter)
   const discounts = cierreDiscounts(filter)
   const cashMovements = cashMovementTotalsForFilter(filter)
   const cashSales = paymentTotals(filter).cash
@@ -209,9 +238,9 @@ export function salesSummary(filter: SaleFilter): SalesSummaryReport {
     cashSales
   }
   return {
-    totalRevenue: round2(sales.revenue),
+    totalRevenue: round2(Math.max(0, sales.revenue - returns.amount)),
     txCount: sales.txCount,
-    itemsSold: items.itemsSold,
+    itemsSold: Math.max(0, items.itemsSold - returns.quantity),
     returnsCount: returns.count,
     avgTicket: sales.txCount > 0 ? round2(sales.revenue / sales.txCount) : 0,
     totalDiscount: discounts.totalDiscount,
@@ -261,16 +290,48 @@ export function topProducts(filter: SaleFilter, limit = 10): TopProductRow[] {
   })
 }
 
+const INVENTORY_PAGE_SIZE_MAX = 200
+
+const INVENTORY_SELECT = `
+  SELECT id, barcode, name, category, stock,
+         COALESCE(stock_threshold, @def) AS threshold,
+         price, ROUND(max(stock, 0) * price, 2) AS value
+  FROM products
+  WHERE ${ACTIVE_PRODUCT_SQL}
+`
+
+function inventoryTotals(): { total: number; totalValue: number } {
+  const row = getDb()
+    .prepare(
+      `SELECT COUNT(*) AS total, ROUND(SUM(max(stock, 0) * price), 2) AS totalValue
+       FROM products WHERE ${ACTIVE_PRODUCT_SQL}`
+    )
+    .get() as { total: number; totalValue: number | null }
+  return { total: row.total, totalValue: round2(row.totalValue ?? 0) }
+}
+
 export function inventorySnapshot(): InventoryRow[] {
   const def = getAppSettings().stockThresholdDefault
   return getDb()
-    .prepare(
-      `SELECT id, barcode, name, category, stock,
-              COALESCE(stock_threshold, @def) AS threshold,
-              price, ROUND(stock * price, 2) AS value
-       FROM products ORDER BY name COLLATE NOCASE`
-    )
+    .prepare(`${INVENTORY_SELECT} ORDER BY name COLLATE NOCASE`)
     .all({ def }) as InventoryRow[]
+}
+
+export function inventorySnapshotPage(page: number, pageSize = 50): InventoryReport {
+  const def = getAppSettings().stockThresholdDefault
+  const safePageSize = Math.min(
+    Math.max(Math.trunc(pageSize), 1),
+    INVENTORY_PAGE_SIZE_MAX
+  )
+  const safePage = Math.max(Math.trunc(page), 1)
+  const offset = (safePage - 1) * safePageSize
+  const { total, totalValue } = inventoryTotals()
+  const rows = getDb()
+    .prepare(
+      `${INVENTORY_SELECT} ORDER BY name COLLATE NOCASE LIMIT @limit OFFSET @offset`
+    )
+    .all({ def, limit: safePageSize, offset }) as InventoryRow[]
+  return { rows, total, totalValue, page: safePage, pageSize: safePageSize }
 }
 
 /** Start of the current (un-cierred) period: last cierre close, else first pending activity, else now. */
@@ -519,4 +580,147 @@ export function cierrePriceOverrides(filter: SaleFilter): {
   })
 
   return { totalVariance, sales }
+}
+
+interface SaleHeaderRow {
+  saleId: number
+  consecutivo: string | null
+  createdAt: string
+  cashier: string
+  total: number
+  discountTotal: number
+  cartDiscount: number
+  customerName: string | null
+}
+
+interface SalePaymentRow {
+  saleId: number
+  method: PaymentMethod
+  amount: number
+  ref: string | null
+}
+
+interface SaleItemReportRow {
+  saleId: number
+  saleItemId: number
+  productName: string
+  barcode: string | null
+  quantity: number
+  unitPrice: number
+  lineDiscount: number
+  lineTotal: number
+}
+
+function listSaleHeaders(filter: SaleFilter): SaleHeaderRow[] {
+  const { where, params } = saleWhere(filter)
+  return getDb()
+    .prepare(
+      `SELECT s.id AS saleId, s.consecutivo, s.created_at AS createdAt,
+              u.username AS cashier, s.total, s.discount_total AS discountTotal,
+              s.cart_discount AS cartDiscount, s.customer_name AS customerName
+       FROM sales s JOIN users u ON u.id = s.user_id
+       ${where}
+       ORDER BY s.created_at, s.id`
+    )
+    .all(params) as SaleHeaderRow[]
+}
+
+function listSalePayments(filter: SaleFilter): SalePaymentRow[] {
+  const { where, params } = saleWhere(filter)
+  return getDb()
+    .prepare(
+      `SELECT sp.sale_id AS saleId, sp.method, sp.amount, sp.ref
+       FROM sale_payments sp JOIN sales s ON s.id = sp.sale_id
+       ${where}
+       ORDER BY sp.sale_id, sp.id`
+    )
+    .all(params) as SalePaymentRow[]
+}
+
+function paymentsBySale(paymentRows: SalePaymentRow[]): Map<number, SalePaymentSnapshot[]> {
+  const map = new Map<number, SalePaymentSnapshot[]>()
+  for (const row of paymentRows) {
+    const list = map.get(row.saleId) ?? []
+    list.push({
+      method: row.method,
+      amount: round2(row.amount),
+      ref: row.ref
+    })
+    map.set(row.saleId, list)
+  }
+  return map
+}
+
+/** Chronological register of every sale in the period (invoice / receipt log). */
+export function transactionLog(filter: SaleFilter): TransactionLogReport {
+  const salesRows = listSaleHeaders(filter)
+  const paymentMap = paymentsBySale(listSalePayments(filter))
+
+  const rows = salesRows.map((sale) => ({
+    saleId: sale.saleId,
+    consecutivo: sale.consecutivo,
+    createdAt: sale.createdAt,
+    cashier: sale.cashier,
+    total: round2(sale.total),
+    discountTotal: round2(sale.discountTotal),
+    customerName: sale.customerName,
+    payments: paymentMap.get(sale.saleId) ?? []
+  }))
+
+  const totalRevenue = round2(rows.reduce((acc, row) => acc + row.total, 0))
+  return { rows, totalRevenue, txCount: rows.length }
+}
+
+/** Every sale with line-item detail for the period. */
+export function itemizedSales(filter: SaleFilter): ItemizedSalesReport {
+  const salesRows = listSaleHeaders(filter)
+  const paymentMap = paymentsBySale(listSalePayments(filter))
+  const { where, params } = saleWhere(filter)
+
+  const itemRows = getDb()
+    .prepare(
+      `SELECT si.sale_id AS saleId, si.id AS saleItemId,
+              COALESCE(si.product_name_snapshot, p.name) AS productName,
+              p.barcode, si.quantity, si.unit_price AS unitPrice,
+              si.line_discount AS lineDiscount, si.line_total AS lineTotal
+       FROM sale_items si
+       LEFT JOIN products p ON p.id = si.product_id
+       JOIN sales s ON s.id = si.sale_id
+       ${where}
+       ORDER BY si.sale_id, si.id`
+    )
+    .all(params) as SaleItemReportRow[]
+
+  const itemsBySale = new Map<number, ItemizedSalesReport['sales'][number]['items']>()
+  let itemsSold = 0
+  for (const row of itemRows) {
+    const list = itemsBySale.get(row.saleId) ?? []
+    list.push({
+      saleItemId: row.saleItemId,
+      productName: row.productName,
+      barcode: row.barcode,
+      quantity: row.quantity,
+      unitPrice: round2(row.unitPrice),
+      lineDiscount: round2(row.lineDiscount),
+      lineTotal: round2(row.lineTotal)
+    })
+    itemsBySale.set(row.saleId, list)
+    itemsSold += row.quantity
+  }
+
+  const sales = salesRows.map((sale) => ({
+    saleId: sale.saleId,
+    consecutivo: sale.consecutivo,
+    createdAt: sale.createdAt,
+    cashier: sale.cashier,
+    total: round2(sale.total),
+    discountTotal: round2(sale.discountTotal),
+    cartDiscount: round2(sale.cartDiscount),
+    customerName: sale.customerName,
+    payments: paymentMap.get(sale.saleId) ?? [],
+    items: itemsBySale.get(sale.saleId) ?? []
+  }))
+
+  const totalRevenue = round2(sales.reduce((acc, sale) => acc + sale.total, 0))
+  return { sales, totalRevenue, itemsSold }
 }

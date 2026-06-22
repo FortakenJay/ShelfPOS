@@ -1,10 +1,17 @@
 import { handle } from './helpers'
-import { listQueuedPrintJobs } from '../db/repos/printJobs'
+import { listPrintJobsForPage } from '../db/repos/printJobs'
 import { attemptPrintJob, probePrinter } from '../services/printer'
-import type { PrintJobRow, PrintStatus } from '../../shared/types'
+import type { PrintJobListResult, PrintStatus } from '../../shared/types'
 
 export function registerPrintQueueHandlers(): void {
-  handle<void, PrintJobRow[]>('printQueue:list', ['sales', 'admin'], () => listQueuedPrintJobs())
+  handle<{ page?: number; pageSize?: number } | null | void, PrintJobListResult>(
+    'printQueue:list',
+    ['sales', 'admin'],
+    (input) => {
+      const opts = input && typeof input === 'object' ? input : undefined
+      return listPrintJobsForPage(opts?.page, opts?.pageSize)
+    }
+  )
 
   handle<{ id: number }, { printStatus: PrintStatus }>(
     'printQueue:retry',

@@ -14,6 +14,7 @@ import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppReportsRouteImport } from './routes/_app/reports'
 import { Route as AppMovementsRouteImport } from './routes/_app/movements'
+import { Route as AppLinkPosRouteImport } from './routes/_app/link-pos'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppCierresRouteImport } from './routes/_app/cierres'
 import { Route as AppAuditRouteImport } from './routes/_app/audit'
@@ -42,6 +43,11 @@ const AppMovementsRoute = AppMovementsRouteImport.update({
   path: '/movements',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppLinkPosRoute = AppLinkPosRouteImport.update({
+  id: '/link-pos',
+  path: '/link-pos',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/audit': typeof AppAuditRoute
   '/cierres': typeof AppCierresRoute
   '/dashboard': typeof AppDashboardRoute
+  '/link-pos': typeof AppLinkPosRoute
   '/movements': typeof AppMovementsRoute
   '/reports': typeof AppReportsRoute
 }
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/audit': typeof AppAuditRoute
   '/cierres': typeof AppCierresRoute
   '/dashboard': typeof AppDashboardRoute
+  '/link-pos': typeof AppLinkPosRoute
   '/movements': typeof AppMovementsRoute
   '/reports': typeof AppReportsRoute
 }
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/_app/audit': typeof AppAuditRoute
   '/_app/cierres': typeof AppCierresRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/link-pos': typeof AppLinkPosRoute
   '/_app/movements': typeof AppMovementsRoute
   '/_app/reports': typeof AppReportsRoute
 }
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
     | '/audit'
     | '/cierres'
     | '/dashboard'
+    | '/link-pos'
     | '/movements'
     | '/reports'
   fileRoutesByTo: FileRoutesByTo
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
     | '/audit'
     | '/cierres'
     | '/dashboard'
+    | '/link-pos'
     | '/movements'
     | '/reports'
   id:
@@ -114,6 +125,7 @@ export interface FileRouteTypes {
     | '/_app/audit'
     | '/_app/cierres'
     | '/_app/dashboard'
+    | '/_app/link-pos'
     | '/_app/movements'
     | '/_app/reports'
   fileRoutesById: FileRoutesById
@@ -161,6 +173,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMovementsRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/link-pos': {
+      id: '/_app/link-pos'
+      path: '/link-pos'
+      fullPath: '/link-pos'
+      preLoaderRoute: typeof AppLinkPosRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -189,6 +208,7 @@ interface AppRouteRouteChildren {
   AppAuditRoute: typeof AppAuditRoute
   AppCierresRoute: typeof AppCierresRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppLinkPosRoute: typeof AppLinkPosRoute
   AppMovementsRoute: typeof AppMovementsRoute
   AppReportsRoute: typeof AppReportsRoute
 }
@@ -197,6 +217,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppAuditRoute: AppAuditRoute,
   AppCierresRoute: AppCierresRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppLinkPosRoute: AppLinkPosRoute,
   AppMovementsRoute: AppMovementsRoute,
   AppReportsRoute: AppReportsRoute,
 }

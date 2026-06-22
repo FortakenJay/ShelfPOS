@@ -2,6 +2,9 @@ import type {
   ButtonHTMLAttributes,
   InputHTMLAttributes,
   ReactNode,
+  SelectHTMLAttributes,
+  TdHTMLAttributes,
+  ThHTMLAttributes,
 } from 'react'
 
 type ButtonVariant = 'primary' | 'cta' | 'danger' | 'outline' | 'ghost'
@@ -53,6 +56,21 @@ export function Input({
   )
 }
 
+export function Select({
+  className = '',
+  children,
+  ...rest
+}: SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <select
+      className={`min-h-[44px] w-full rounded-md border-2 border-line bg-white px-3 text-[16px] outline-none focus:border-primary ${className}`}
+      {...rest}
+    >
+      {children}
+    </select>
+  )
+}
+
 export function Field({
   label,
   error,
@@ -97,13 +115,12 @@ export function FullScreenSpinner() {
 export function Th({
   children,
   className = '',
-}: {
-  children: ReactNode
-  className?: string
-}) {
+  ...props
+}: ThHTMLAttributes<HTMLTableCellElement>) {
   return (
     <th
       className={`border-b border-line bg-slate-100 px-4 py-3 text-left text-[13px] font-semibold uppercase tracking-wide text-slate-600 ${className}`}
+      {...props}
     >
       {children}
     </th>
@@ -113,12 +130,13 @@ export function Th({
 export function Td({
   children,
   className = '',
-}: {
-  children: ReactNode
-  className?: string
-}) {
+  ...props
+}: TdHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <td className={`border-b border-line px-4 py-3 text-[15px] ${className}`}>
+    <td
+      className={`border-b border-line px-4 py-3 text-[15px] ${className}`}
+      {...props}
+    >
       {children}
     </td>
   )

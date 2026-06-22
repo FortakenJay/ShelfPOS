@@ -1,39 +1,87 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
-import { formatMoney } from '@/lib/format'
 import { useToasts } from '@/lib/toast'
 import { RequireRole } from '@/features/shell/Shell'
-import { Button, Td, Th } from '@/components/ui'
+import { Button } from '@/components/ui'
 import { DateRangePicker } from '@/components/DateRangePicker'
 import { rangeForReportPeriod } from '@/components/dateRangePresets'
-import type { DateRange, ReportData, ReportPeriodPreset, ReportType } from '@shared/types'
+import { ProductsPagination } from '@/features/products/ProductsPagination'
+import { ReportTable } from './reports/ReportTable'
+import type { DateRange, ReportPeriodPreset, ReportType } from '@shared/types'
 
 const REPORT_TYPES: ReportType[] = [
   'summary',
   'byPayment',
   'topProducts',
   'inventory',
-  'taxBreakdown'
+  'taxBreakdown',
+  'transactionLog',
+  'itemizedSales'
 ]
 
 const PERIOD_PRESETS: ReportPeriodPreset[] = ['today', 'week', 'month']
 
-type ReportSearch = { type?: ReportType; period?: ReportPeriodPreset }
+type ReportSearch = {
+  type?: ReportType
+  period?: ReportPeriodPreset
+  from?: string
+  to?: string
+  fromTime?: string
+  toTime?: string
+}
+
+const LOCAL_DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+const LOCAL_TIME_RE = /^\d{2}:\d{2}$/
 
 function parseReportSearch(search: ReportSearch): { type: ReportType; range: DateRange } {
   const type =
     search.type && REPORT_TYPES.includes(search.type) ? search.type : 'summary'
+
+  if (
+    search.from &&
+    search.to &&
+    LOCAL_DATE_RE.test(search.from) &&
+    LOCAL_DATE_RE.test(search.to)
+  ) {
+    const range: DateRange = { from: search.from, to: search.to }
+    if (search.fromTime && LOCAL_TIME_RE.test(search.fromTime)) range.fromTime = search.fromTime
+    if (search.toTime && LOCAL_TIME_RE.test(search.toTime)) range.toTime = search.toTime
+    return { type, range }
+  }
+
   const period =
     search.period && PERIOD_PRESETS.includes(search.period) ? search.period : 'today'
   return { type, range: rangeForReportPeriod(period) }
 }
 
+function reportSearchFromRange(
+  type: ReportType,
+  range: DateRange
+): ReportSearch {
+  const period = periodFromRange(range)
+  if (period) {
+    return { type, period }
+  }
+  const search: ReportSearch = { type, from: range.from, to: range.to }
+  if (range.fromTime) search.fromTime = range.fromTime
+  if (range.toTime) search.toTime = range.toTime
+  return search
+}
+
 function periodFromRange(range: DateRange): ReportPeriodPreset | undefined {
   for (const p of PERIOD_PRESETS) {
     const preset = rangeForReportPeriod(p)
-    if (preset.from === range.from && preset.to === range.to) return p
+    if (
+      preset.from === range.from &&
+      preset.to === range.to &&
+      !range.fromTime &&
+      !range.toTime
+    ) {
+      return p
+    }
   }
   return undefined
 }
@@ -53,21 +101,22 @@ function Reports(): React.JSX.Element {
   const navigate = useNavigate()
   const urlSearch = useSearch({ strict: false }) as ReportSearch
   const { type, range } = parseReportSearch(urlSearch)
+  const [inventoryPage, setInventoryPage] = useState(1)
+  const [inventoryPageSize, setInventoryPageSize] = useState(50)
 
   const syncUrl = (nextType: ReportType, nextRange: DateRange): void => {
-    const period = periodFromRange(nextRange)
     void navigate({
       to: '/admin/reports',
-      search: {
-        type: nextType,
-        ...(period ? { period } : {})
-      },
+      search: reportSearchFromRange(nextType, nextRange),
       replace: true
     })
   }
 
   const selectType = (nextType: ReportType): void => {
-    syncUrl(nextType, range)
+    const usesTime = nextType === 'transactionLog' || nextType === 'itemizedSales'
+    const nextRange = usesTime ? range : { from: range.from, to: range.to }
+    if (nextType === 'inventory') setInventoryPage(1)
+    syncUrl(nextType, nextRange)
   }
 
   const selectRange = (nextRange: DateRange): void => {
@@ -75,8 +124,14 @@ function Reports(): React.JSX.Element {
   }
 
   const { data: reportData, isFetching } = useQuery({
-    queryKey: ['report', type, range],
-    queryFn: () => api.reports.run(type, range)
+    queryKey:
+      type === 'inventory'
+        ? ['report', type, range, inventoryPage, inventoryPageSize]
+        : ['report', type, range],
+    queryFn: () =>
+      type === 'inventory'
+        ? api.reports.run(type, range, { page: inventoryPage, pageSize: inventoryPageSize })
+        : api.reports.run(type, range)
   })
 
   const printMutation = useMutation({
@@ -93,7 +148,7 @@ function Reports(): React.JSX.Element {
     mutationFn: () => api.reports.exportPdf(type, range),
     onSuccess: (result) => {
       if (!result.canceled && result.path) toasts.success('reports.pdfDone', { path: result.path })
-      queryClient.setQueryData<ReportData | undefined>(['report', type, range], (current) => current)
+      queryClient.setQueryData(['report', type, range], (current: unknown) => current)
     },
     onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
   })
@@ -144,7 +199,13 @@ function Reports(): React.JSX.Element {
       </div>
 
       <div className="mb-5">
-        <DateRangePicker value={range} onChange={selectRange} />
+        {type !== 'inventory' && (
+          <DateRangePicker
+            value={range}
+            onChange={selectRange}
+            showTime={type === 'transactionLog' || type === 'itemizedSales'}
+          />
+        )}
       </div>
 
       <div className="overflow-hidden rounded-lg border-2 border-line bg-white">
@@ -155,6 +216,20 @@ function Reports(): React.JSX.Element {
         )}
       </div>
 
+      {reportData?.type === 'inventory' && (
+        <ProductsPagination
+          page={reportData.data.page}
+          pageSize={reportData.data.pageSize}
+          total={reportData.data.total}
+          loading={isFetching}
+          onPageChange={setInventoryPage}
+          onPageSizeChange={(size) => {
+            setInventoryPageSize(size)
+            setInventoryPage(1)
+          }}
+        />
+      )}
+
       {type !== 'inventory' && (
         <p className="mt-3 text-[13px] text-slate-500">{t('reports.profitHint')}</p>
       )}
@@ -162,197 +237,5 @@ function Reports(): React.JSX.Element {
         <p className="mt-3 text-[13px] text-slate-500">{t('reports.inventory.snapshotNote')}</p>
       )}
     </div>
-  )
-}
-
-function ReportTable({ report }: { report: ReportData }): React.JSX.Element {
-  const { t } = useTranslation()
-
-  if (report.type === 'summary') {
-    const d = report.data
-    const rows: [string, string][] = [
-      [t('reports.summary.totalRevenue'), formatMoney(d.totalRevenue)],
-      [t('reports.summary.totalDiscount'), formatMoney(d.totalDiscount)],
-      [t('reports.summary.grossProfit'), formatMoney(d.grossProfit)],
-      [t('reports.summary.txCount'), String(d.txCount)],
-      [t('reports.summary.itemsSold'), String(d.itemsSold)],
-      [t('reports.summary.returnsCount'), String(d.returnsCount)],
-      [t('reports.summary.avgTicket'), formatMoney(d.avgTicket)],
-      [t('reports.summary.openingFloat'), formatMoney(d.cash.openingFloat)],
-      [t('reports.summary.cashSales'), formatMoney(d.cash.cashSales)],
-      [t('reports.summary.cashIn'), formatMoney(d.cash.cashIn)],
-      [t('reports.summary.cashOut'), formatMoney(d.cash.cashOut)]
-    ]
-    return (
-      <table className="w-full">
-        <tbody>
-          {rows.map(([label, value]) => (
-            <tr key={label}>
-              <Td className="font-semibold">{label}</Td>
-              <Td className="text-right text-[17px] font-bold">{value}</Td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    )
-  }
-
-  if (report.type === 'byPayment') {
-    const d = report.data
-    const rows: [string, number, number][] = [
-      [t('pos.methods.cash'), d.cash, d.countCash],
-      [t('pos.methods.card'), d.card, d.countCard],
-      [t('pos.methods.sinpe'), d.sinpe, d.countSinpe]
-    ]
-    return (
-      <table className="w-full">
-        <thead>
-          <tr>
-            <Th>{t('reports.byPayment.method')}</Th>
-            <Th className="text-right">{t('reports.byPayment.amount')}</Th>
-            <Th className="text-right">{t('reports.byPayment.count')}</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(([label, amount, count]) => (
-            <tr key={label}>
-              <Td className="font-semibold">{label}</Td>
-              <Td className="text-right">{formatMoney(amount)}</Td>
-              <Td className="text-right">{count}</Td>
-            </tr>
-          ))}
-          <tr className="bg-slate-50">
-            <Td className="font-extrabold">{t('common.total')}</Td>
-            <Td className="text-right text-[17px] font-extrabold">{formatMoney(d.total)}</Td>
-            <Td className="text-right font-extrabold">{d.countCash + d.countCard + d.countSinpe}</Td>
-          </tr>
-        </tbody>
-      </table>
-    )
-  }
-
-  if (report.type === 'topProducts') {
-    return (
-      <table className="w-full">
-        <thead>
-          <tr>
-            <Th>{t('reports.top.product')}</Th>
-            <Th>{t('products.barcode')}</Th>
-            <Th className="text-right">{t('reports.top.qty')}</Th>
-            <Th className="text-right">{t('reports.top.revenue')}</Th>
-            <Th className="text-right">{t('reports.top.profit')}</Th>
-            <Th className="text-right">{t('reports.top.margin')}</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {report.data.length === 0 && (
-            <tr>
-              <Td colSpan={6} className="py-6 text-center text-slate-500">
-                {t('common.noData')}
-              </Td>
-            </tr>
-          )}
-          {report.data.map((row) => (
-            <tr key={row.productId}>
-              <Td className="font-semibold">{row.name}</Td>
-              <Td className="font-mono text-[14px]">{row.barcode}</Td>
-              <Td className="text-right font-bold">{row.quantity}</Td>
-              <Td className="text-right">{formatMoney(row.revenue)}</Td>
-              <Td className="text-right">{formatMoney(row.profit)}</Td>
-              <Td className="text-right">
-                {row.marginPct != null ? `${row.marginPct}%` : '—'}
-              </Td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    )
-  }
-
-  if (report.type === 'taxBreakdown') {
-    const d = report.data
-    return (
-      <div>
-        <div className="flex items-center justify-between bg-slate-50 px-4 py-2 text-[14px] font-semibold">
-          <span>{t('reports.tax.regime')}</span>
-          <span>{t(`tax.regime.${d.regime}`)}</span>
-        </div>
-        <table className="w-full">
-          <thead>
-            <tr>
-              <Th>{t('reports.tax.category')}</Th>
-              <Th className="text-right">{t('reports.tax.rate')}</Th>
-              <Th className="text-right">{t('reports.tax.gross')}</Th>
-              <Th className="text-right">{t('reports.tax.base')}</Th>
-              <Th className="text-right">{t('reports.tax.iva')}</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {d.rows.length === 0 && (
-              <tr>
-                <Td colSpan={5} className="py-6 text-center text-slate-500">
-                  {t('common.noData')}
-                </Td>
-              </tr>
-            )}
-            {d.rows.map((row) => (
-              <tr key={row.taxCategory}>
-                <Td className="font-semibold">{t(`tax.categories.${row.taxCategory}`)}</Td>
-                <Td className="text-right">{Math.round(row.rate * 100)}%</Td>
-                <Td className="text-right">{formatMoney(row.gross)}</Td>
-                <Td className="text-right">{formatMoney(row.base)}</Td>
-                <Td className="text-right font-bold">{formatMoney(row.iva)}</Td>
-              </tr>
-            ))}
-            <tr className="bg-slate-50">
-              <Td className="font-extrabold" colSpan={2}>
-                {t('common.total')}
-              </Td>
-              <Td className="text-right font-extrabold">{formatMoney(d.totalGross)}</Td>
-              <Td className="text-right font-extrabold">{formatMoney(d.totalBase)}</Td>
-              <Td className="text-right font-extrabold">{formatMoney(d.totalIva)}</Td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    )
-  }
-
-  const totalValue = report.data.reduce((acc, r) => acc + r.value, 0)
-  return (
-    <table className="w-full">
-      <thead>
-        <tr>
-          <Th>{t('products.name')}</Th>
-          <Th>{t('products.category')}</Th>
-          <Th className="text-right">{t('products.price')}</Th>
-          <Th className="text-right">{t('products.stock')}</Th>
-          <Th className="text-right">{t('reports.inventory.value')}</Th>
-        </tr>
-      </thead>
-      <tbody>
-        {report.data.map((row) => (
-          <tr key={row.id}>
-            <Td className="font-semibold">{row.name}</Td>
-            <Td>{row.category ?? '—'}</Td>
-            <Td className="text-right">{formatMoney(row.price)}</Td>
-            <Td
-              className={`text-right font-bold ${
-                row.stock <= 0 ? 'text-danger' : row.stock <= row.threshold ? 'text-warning' : ''
-              }`}
-            >
-              {row.stock}
-            </Td>
-            <Td className="text-right">{formatMoney(row.value)}</Td>
-          </tr>
-        ))}
-        <tr className="bg-slate-50">
-          <Td colSpan={4} className="font-extrabold">
-            {t('reports.inventory.totalValue')}
-          </Td>
-          <Td className="text-right text-[17px] font-extrabold">{formatMoney(totalValue)}</Td>
-        </tr>
-      </tbody>
-    </table>
   )
 }

@@ -41,11 +41,14 @@
     "cierre": "日结",
     "audit": "操作日志",
     "printQueue": "打印队列",
+    "reprints": "重打收据",
     "export": "导出与备份",
     "settings": "设置",
     "users": "用户",
     "dashboard": "面板",
-    "logout": "退出登录"
+    "logout": "退出登录",
+    "collapseSidebar": "收起菜单",
+    "expandSidebar": "展开菜单"
   },
   "roles": {
     "sales": "收银员",
@@ -101,9 +104,11 @@
   },
   "pos": {
     "searchPlaceholder": "扫描条码、输入商品名称或带 * 的价格（如 3000*）…（空行 Enter = 收款）",
-    "miscItemName": "无码商品",
+    "miscItemName": "无名称商品",
+    "miscItemNameInput": "无码商品名称",
     "miscItemBadge": "无码",
     "noResults": "没有结果",
+    "searchResultsResize": "调整商品搜索结果高度",
     "cartEmpty": "购物车是空的",
     "qty": "数量",
     "price": "单价",
@@ -133,11 +138,21 @@
     "saleCompleted": "销售已记录",
     "printFailed": "打印失败 — 是否重试？",
     "printReceiptToggle": "打印收据",
+    "invoiceCustomer": {
+      "title": "添加姓名和身份证号（发票）",
+      "name": "姓名（{{hint}}）",
+      "cedula": "身份证号（{{hint}}）"
+    },
     "printRetried": "已重新发送打印",
     "reprintTitle": "本班次收据",
+    "reprintSubtitle": "当前未关班次的销售。选择收据即可重打。",
     "reprintEmpty": "本班次暂无销售",
-    "reprintAction": "重打",
-    "reprintSuccess": "收据已发送打印",
+    "reprintReceipt": "收据",
+    "reprintCashier": "收银员",
+    "reprintAction": "重打小票",
+    "reprintFacturaPdf": "发票 PDF",
+    "reprintSuccess": "小票已发送打印",
+    "reprintFacturaPdfDone": "发票 PDF 已保存：{{path}}",
     "amount": "金额",
     "paymentMethod": "支付方式",
     "splitPayment": "组合支付",
@@ -155,8 +170,10 @@
       "pinTitle": "授权改价的 PIN"
     },
     "discountBtn": "折扣",
+    "lineDiscountPercent": "单品折扣 (%)",
     "cartDiscount": "整单折扣",
     "lineDiscount": "单品折扣",
+    "discountCol": "折扣",
     "discount": {
       "amount": "金额 (₡)",
       "percent": "百分比 (%)",
@@ -197,7 +214,8 @@
     "restockWarning": "仅当商品完好时才开启。大多数退货是损坏商品，不应退回库存。",
     "pinLabel": "经理 PIN",
     "confirm": "确认退货",
-    "success": "退货已记录"
+    "success": "退货已记录",
+    "miscNoRestock": "无码商品不会退回库存。"
   },
   "products": {
     "title": "商品管理",
@@ -247,6 +265,23 @@
     "printLabel": "打印标签",
     "labelPrinted": "标签已发送到打印队列",
     "printLabelSingleHint": "请先筛选到仅显示一个商品，再使用标签快捷键。",
+    "batchLabels": {
+      "button": "批量打印标签",
+      "title": "批量打印标签",
+      "hint": "扫描或搜索商品加入列表，完成后一次性打印全部标签。",
+      "scanLabel": "扫描或搜索",
+      "scanPlaceholder": "条形码或名称…",
+      "empty": "扫描商品以加入列表。",
+      "remove": "移除",
+      "clear": "清空列表",
+      "printAll": "打印 {{count}} 个标签",
+      "duplicate": "该商品已在列表中。",
+      "notFound": "未找到商品。",
+      "ambiguous": "匹配到多个商品，请使用条形码。",
+      "noBarcode": "该商品没有可打印的条形码。",
+      "printed": "已发送 {{count}} 个标签到打印队列",
+      "partial": "已打印 {{printed}}/{{total}}，{{failed}} 个失败"
+    },
     "csv": {
       "barcode": "条形码",
       "name": "名称",
@@ -291,6 +326,7 @@
       "missingColumns": "缺少必填列：条形码、名称、售价",
       "invalidTaxCategory": "无法识别的税务类别",
       "invalidBulk": "批发价无效（数量至少为 2 且必须填写价格）",
+      "stockTooHigh": "初始库存过高（最多 {{max}} 件）。大批量请用库存调整录入。",
       "helpBtn": "CSV 帮助",
       "help": {
         "title": "如何通过 CSV 批量导入商品",
@@ -353,7 +389,9 @@
       "byPayment": "按支付方式统计",
       "topProducts": "热销商品",
       "inventory": "当前库存",
-      "taxBreakdown": "IVA 税额明细"
+      "taxBreakdown": "IVA 税额明细",
+      "transactionLog": "交易记录",
+      "itemizedSales": "销售明细"
     },
     "tax": {
       "regime": "税制",
@@ -374,6 +412,7 @@
     "from": "起始",
     "to": "截止",
     "printReport": "打印",
+    "printSaleReceipt": "打印收据",
     "printSent": "报表已发送到打印机",
     "exportPdf": "下载 PDF",
     "pdfDone": "PDF 已保存：{{path}}",
@@ -407,6 +446,19 @@
       "totalValue": "库存总价值",
       "products": "商品数",
       "snapshotNote": "当前库存快照（不按日期筛选）。"
+    },
+    "transactionLog": {
+      "receipt": "收据",
+      "cashier": "收银员",
+      "customer": "客户",
+      "payment": "支付",
+      "discount": "折扣"
+    },
+    "itemized": {
+      "product": "商品",
+      "qty": "数量",
+      "unitPrice": "单价",
+      "discount": "折扣"
     }
   },
   "dashboard": {
@@ -591,6 +643,8 @@
     "closedBy": "操作人",
     "cashTitle": "现金清点",
     "savePdf": "保存 PDF",
+    "print": "打印",
+    "printSent": "日结已发送到打印机",
     "pdfDone": "PDF 已保存：{{path}}",
     "discountsTitle": "折扣",
     "totalDiscounts": "折扣合计",
@@ -687,6 +741,7 @@
       "cart_line_removed_caja": "已从购物车移除商品（收银 PIN）",
       "cart_line_removed_manager": "已从购物车移除商品（经理 PIN）",
       "product_label_printed": "打印商品标签",
+      "pin_card_printed": "PIN 卡已打印",
       "user_created": "创建用户",
       "user_updated": "更新用户",
       "user_deactivated": "停用用户"
@@ -718,7 +773,9 @@
   },
   "printQueue": {
     "title": "打印队列",
-    "empty": "没有待打印的小票",
+    "subtitle": "待打印、失败及最近已发送的打印任务。",
+    "summary": "{{pending}} 排队中 · {{failed}} 失败",
+    "empty": "暂无近期打印任务",
     "jobType": "类型",
     "status": "状态",
     "statuses": {
@@ -766,6 +823,31 @@
     },
     "note": "系统在每天首次启动和每次日结时自动备份，保留最近 7 份。"
   },
+  "syncSetup": {
+    "title": "绑定管理面板",
+    "intro": "将此收银机连接到您的网页管理面板。请从店主面板复制绑定码。",
+    "storeId": "门店 ID（同步）",
+    "linked": "已绑定面板",
+    "serviceStopped": "ShelfPOS Sync 服务未运行。请运行 Install-ShelfPOS 或重启服务。",
+    "stepDashboard": "在网页面板复制绑定码（绑定 POS）。",
+    "stepPaste": "在此粘贴 Supabase URL、服务密钥和绑定码。",
+    "stepSave": "保存。密钥在本机加密（DPAPI）。必要时重启 sync 服务。",
+    "supabaseUrl": "Supabase URL",
+    "serviceKey": "服务密钥（service role）",
+    "serviceKeyHint": "仅保存在本机 — 保存时加密",
+    "pairingCode": "绑定码（8 位）",
+    "save": "保存并绑定",
+    "saveAgain": "更新配置",
+    "skip": "暂时跳过",
+    "encryptionNote": "服务密钥使用 Windows DPAPI 加密保存。仅在本 PC 有效；复制 sync.env 到其他电脑无效。",
+    "errors": {
+      "invalidUrl": "Supabase URL 无效",
+      "invalidServiceKey": "服务密钥无效",
+      "invalidPairingCode": "绑定码须为 8 位字母或数字",
+      "invalidStoreName": "请先配置店铺名称",
+      "serviceRestartFailed": "无法重启 ShelfPOS Sync。请以管理员身份运行 Install-ShelfPOS。"
+    }
+  },
   "settings": {
     "title": "设置",
     "language": "语言",
@@ -782,6 +864,9 @@
       "cashOut": "现金取出",
       "drawerAction": "收银箱专用快捷键",
       "printLabel": "打印商品标签",
+      "payCash": "现金收款",
+      "payCard": "银行卡收款",
+      "paySinpe": "SINPE 收款",
       "conflict": "同一个按键不能分配给多个动作。",
       "options": {
         "F1": "F1",
@@ -837,7 +922,19 @@
     "changeCajaPin": "修改收银 PIN",
     "pinChanged": "经理 PIN 已更新",
     "cajaPinChanged": "收银 PIN 已更新",
-    "pinMismatch": "两次输入的 PIN 不一致"
+    "pinMismatch": "两次输入的 PIN 不一致",
+    "pinCard": {
+      "printButton": "打印 PIN 卡",
+      "title": "打印 PIN 卡",
+      "hint": "输入 PIN 以验证。将打印可扫描条码卡 — 聚焦 PIN 输入框后扫描即可填入。",
+      "adminLabel": "管理员",
+      "managerPin": "经理 PIN",
+      "cajaPin": "收银 PIN",
+      "username": "用户",
+      "scanHint": "在 PIN 输入框扫描",
+      "printed": "PIN 卡已发送到打印队列",
+      "cajaNotConfigured": "请先设置收银 PIN 后再打印 PIN 卡。"
+    }
   },
   "toasts": {
     "stockLow": "库存偏低：{{name}} — 剩余 {{stock}}",
@@ -906,6 +1003,7 @@
     "notAuthenticated": "未登录",
     "forbidden": "您没有权限执行此操作",
     "unknown": "发生意外错误",
+    "restartRequired": "请重启应用后重试。",
     "invalidPin": "PIN 错误",
     "invalidInput": "输入无效",
     "barcodeExists": "已存在相同条码的商品",

@@ -1,7 +1,9 @@
 import { AppError } from '../../errors'
 import { buildReceiptLines, emisorFromSettings } from '../../services/printTemplates'
 import type { ReceiptPaymentLine } from '../../services/printTemplates'
+import type { FacturaPdfData } from '../../services/facturaPdf'
 import { attemptPrintJob, probePrinter } from '../../services/printer'
+import { localNow } from '../helpers'
 import { getDb } from '../index'
 import { insertPrintJob } from './printJobs'
 import { getAppSettings, receiptLanguage } from './settings'
@@ -32,6 +34,16 @@ interface ItemReceiptRow {
   lineTotal: number
 }
 
+interface FacturaItemRow {
+  productId: number | null
+  barcode: string | null
+  name: string
+  quantity: number
+  unitPrice: number
+  lineDiscount: number
+  lineTotal: number
+}
+
 interface PaymentReceiptRow {
   method: PaymentMethod
   amount: number
@@ -52,7 +64,7 @@ export function listPendingCierreSalesForReprint(): SaleReprintRow[] {
     .all() as SaleReprintRow[]
 }
 
-function loadPendingCierreSaleForReceipt(saleId: number): {
+function loadSaleForReceipt(saleId: number): {
   sale: SaleReceiptRow
   items: ItemReceiptRow[]
   payments: PaymentReceiptRow[]
@@ -65,7 +77,7 @@ function loadPendingCierreSaleForReceipt(saleId: number): {
               s.customer_email, s.customer_activity_code
        FROM sales s
        JOIN users u ON u.id = s.user_id
-       WHERE s.id = ? AND s.cierre_id IS NULL`
+       WHERE s.id = ?`
     )
     .get(saleId) as SaleReceiptRow | undefined
   if (!sale) throw new AppError('errors.saleNotFound')
@@ -92,10 +104,65 @@ function loadPendingCierreSaleForReceipt(saleId: number): {
   return { sale, items, payments }
 }
 
+/** Cajero reprints are limited to sales in the current open shift. */
+export function assertSaleInOpenShift(saleId: number): void {
+  const row = getDb()
+    .prepare('SELECT cierre_id FROM sales WHERE id = ?')
+    .get(saleId) as { cierre_id: number | null } | undefined
+  if (!row) throw new AppError('errors.saleNotFound')
+  if (row.cierre_id != null) throw new AppError('errors.saleNotFound')
+}
+
+export function buildFacturaPdfData(saleId: number): FacturaPdfData {
+  const { sale } = loadSaleForReceipt(saleId)
+  const facturaItems = getDb()
+    .prepare(
+      `SELECT si.product_id AS productId,
+              COALESCE(si.barcode_snapshot, p.barcode) AS barcode,
+              COALESCE(si.product_name_snapshot, p.name) AS name,
+              si.quantity,
+              si.unit_price AS unitPrice,
+              si.line_discount AS lineDiscount,
+              si.line_total AS lineTotal
+       FROM sale_items si
+       LEFT JOIN products p ON p.id = si.product_id
+       WHERE si.sale_id = ?
+       ORDER BY si.id ASC`
+    )
+    .all(saleId) as FacturaItemRow[]
+
+  const settings = getAppSettings()
+  return {
+    emisor: emisorFromSettings(settings),
+    consecutivo: sale.consecutivo ?? `P #${sale.id}`,
+    saleId: sale.id,
+    createdAt: sale.created_at,
+    printedAt: localNow(),
+    cashier: sale.cashier,
+    customer: {
+      name: sale.customer_name,
+      idType: sale.customer_id_type,
+      id: sale.customer_id
+    },
+    subtotal: sale.subtotal,
+    discountTotal: sale.discount_total,
+    total: sale.total,
+    items: facturaItems.map((item) => ({
+      productId: item.productId,
+      barcode: item.barcode,
+      name: item.name,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      lineDiscount: item.lineDiscount,
+      lineTotal: item.lineTotal
+    }))
+  }
+}
+
 export async function reprintSaleReceipt(
   saleId: number
 ): Promise<{ printJobId: number; printStatus: PrintStatus }> {
-  const { sale, items, payments } = loadPendingCierreSaleForReceipt(saleId)
+  const { sale, items, payments } = loadSaleForReceipt(saleId)
   const settings = getAppSettings()
   const lang = receiptLanguage()
 

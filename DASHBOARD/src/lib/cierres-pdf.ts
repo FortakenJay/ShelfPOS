@@ -1,5 +1,5 @@
 import { formatDateTime } from '#/lib/dates'
-import { formatMoney } from '#/lib/money'
+import { formatMoneyPdf } from '#/lib/money'
 import type { CierreRow } from '#/lib/types'
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
@@ -36,7 +36,11 @@ export async function downloadCierresPdf(args: {
     y += lineHeight
     doc.text(`${t('cierres.pdf.range')}: ${from} - ${to}`, marginX, y)
     y += lineHeight
-    doc.text(`${t('cierres.pdf.generatedAt')}: ${new Date().toLocaleString()}`, marginX, y)
+    doc.text(
+      `${t('cierres.pdf.generatedAt')}: ${new Date().toLocaleString('es-CR', { timeZone: 'America/Costa_Rica' })}`,
+      marginX,
+      y,
+    )
 
     y += lineHeight * 1.5
     doc.setFont('helvetica', 'bold')
@@ -48,11 +52,11 @@ export async function downloadCierresPdf(args: {
       [t('cierres.closed'), formatDateTime(cierre.closed_at)],
       [t('cierres.shift'), valueOrDash(cierre.shift_label, t)],
       [t('cierres.cashier'), valueOrDash(cierre.closed_by_username, t)],
-      [t('cierres.sales'), formatMoney(cierre.total_sales ?? 0)],
-      [t('cierres.cash'), formatMoney(cierre.total_cash ?? 0)],
-      [t('cierres.card'), formatMoney(cierre.total_card ?? 0)],
-      [t('cierres.sinpe'), formatMoney(cierre.total_sinpe ?? 0)],
-      [t('cierres.difference'), formatMoney(diff)],
+      [t('cierres.sales'), formatMoneyPdf(cierre.total_sales ?? 0)],
+      [t('cierres.cash'), formatMoneyPdf(cierre.total_cash ?? 0)],
+      [t('cierres.card'), formatMoneyPdf(cierre.total_card ?? 0)],
+      [t('cierres.sinpe'), formatMoneyPdf(cierre.total_sinpe ?? 0)],
+      [t('cierres.difference'), formatMoneyPdf(diff)],
       [t('cierres.notes'), valueOrDash(cierre.notes, t)],
     ]
 

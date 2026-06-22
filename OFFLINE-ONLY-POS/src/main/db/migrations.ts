@@ -1,6 +1,6 @@
 import type Database from 'better-sqlite3'
 
-export const SCHEMA_VERSION = 10
+export const SCHEMA_VERSION = 14
 
 type Migration = (db: Database.Database) => void
 
@@ -320,6 +320,84 @@ const migrations: Record<number, Migration> = {
       DROP TABLE sale_items;
       ALTER TABLE sale_items_new RENAME TO sale_items;
       CREATE INDEX IF NOT EXISTS idx_sale_items_sale ON sale_items(sale_id);
+    `)
+  },
+
+  // v11 — eFactura/CSV sometimes imported garbage stock (barcodes, pack codes).
+  11: (db) => {
+    db.exec(`
+      UPDATE products
+      SET stock = 0
+      WHERE deleted_at IS NULL AND stock > 100000;
+    `)
+  },
+
+  // v12 — only zero stock above app max (v11 was too aggressive at 100k).
+  12: (db) => {
+    db.exec(`
+      UPDATE products
+      SET stock = 0
+      WHERE deleted_at IS NULL AND stock > 10000000;
+    `)
+  },
+
+  // v13 — misc sale lines can be returned by sale_item_id (no restock).
+  13: (db) => {
+    db.exec(`
+      CREATE TABLE return_items_new (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        sale_id      INTEGER NOT NULL REFERENCES sales(id),
+        product_id   INTEGER REFERENCES products(id),
+        sale_item_id INTEGER REFERENCES sale_items(id),
+        quantity     INTEGER NOT NULL,
+        line_total   REAL NOT NULL DEFAULT 0,
+        restocked    INTEGER NOT NULL DEFAULT 0,
+        created_at   TEXT NOT NULL,
+        processed_by INTEGER REFERENCES users(id),
+        CHECK (
+          (product_id IS NOT NULL AND sale_item_id IS NULL)
+          OR (product_id IS NULL AND sale_item_id IS NOT NULL)
+        )
+      );
+
+      INSERT INTO return_items_new (
+        id, sale_id, product_id, sale_item_id, quantity, line_total, restocked, created_at, processed_by
+      )
+      SELECT
+        ri.id,
+        ri.sale_id,
+        ri.product_id,
+        NULL,
+        ri.quantity,
+        COALESCE(
+          (SELECT si.line_total * ri.quantity * 1.0 / si.quantity
+           FROM sale_items si
+           WHERE si.sale_id = ri.sale_id AND si.product_id = ri.product_id
+           LIMIT 1),
+          0
+        ),
+        ri.restocked,
+        ri.created_at,
+        ri.processed_by
+      FROM return_items ri;
+
+      DROP TABLE return_items;
+      ALTER TABLE return_items_new RENAME TO return_items;
+      CREATE INDEX IF NOT EXISTS idx_return_items_sale ON return_items(sale_id);
+      CREATE INDEX IF NOT EXISTS idx_return_items_created ON return_items(created_at);
+      CREATE INDEX IF NOT EXISTS idx_return_items_sale_item ON return_items(sale_item_id);
+    `)
+  },
+
+  // v14 — barcode at time of sale for factura grid / dashboard mirror.
+  14: (db) => {
+    db.exec(`
+      ALTER TABLE sale_items ADD COLUMN barcode_snapshot TEXT;
+      UPDATE sale_items
+      SET barcode_snapshot = (
+        SELECT p.barcode FROM products p WHERE p.id = sale_items.product_id
+      )
+      WHERE product_id IS NOT NULL AND barcode_snapshot IS NULL;
     `)
   }
 }

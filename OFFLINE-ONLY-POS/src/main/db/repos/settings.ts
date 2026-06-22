@@ -37,11 +37,76 @@ export const SETTING_KEYS = {
   shortcutCashOut: 'shortcut_cash_out',
   shortcutDrawerAction: 'shortcut_drawer_action',
   shortcutPrintLabel: 'shortcut_print_label',
+  shortcutPayCash: 'shortcut_pay_cash',
+  shortcutPayCard: 'shortcut_pay_card',
+  shortcutPaySinpe: 'shortcut_pay_sinpe',
   /** Multi-store sync identity stamped on every Supabase row (store_a / store_b). */
   syncStoreId: 'sync_store_id',
   /** Updated by the POS app while running; sync service mirrors to Supabase. */
   posLastSeenAt: 'pos_last_seen_at'
 } as const
+
+const ACTION_SHORTCUT_KEYS: ActionShortcutKey[] = [
+  'F1',
+  'F2',
+  'F3',
+  'F4',
+  'F5',
+  'F6',
+  'F7',
+  'F8',
+  'F9',
+  'F10',
+  'F11',
+  'F12'
+]
+
+function resolvePayShortcuts(
+  existing: Pick<
+    AppSettings,
+    | 'shortcutOpenFloat'
+    | 'shortcutCashIn'
+    | 'shortcutCashOut'
+    | 'shortcutDrawerAction'
+    | 'shortcutPrintLabel'
+  >,
+  storedPay: { cash: string | null; card: string | null; sinpe: string | null }
+): Pick<AppSettings, 'shortcutPayCash' | 'shortcutPayCard' | 'shortcutPaySinpe'> {
+  const used = new Set<ActionShortcutKey>([
+    existing.shortcutOpenFloat,
+    existing.shortcutCashIn,
+    existing.shortcutCashOut,
+    existing.shortcutDrawerAction,
+    existing.shortcutPrintLabel
+  ])
+
+  const pick = (stored: string | null, preferred: ActionShortcutKey[]): ActionShortcutKey => {
+    if (
+      stored &&
+      ACTION_SHORTCUT_KEYS.includes(stored as ActionShortcutKey) &&
+      !used.has(stored as ActionShortcutKey)
+    ) {
+      used.add(stored as ActionShortcutKey)
+      return stored as ActionShortcutKey
+    }
+    for (const key of preferred) {
+      if (!used.has(key)) {
+        used.add(key)
+        return key
+      }
+    }
+    const free = ACTION_SHORTCUT_KEYS.find((k) => !used.has(k))
+    const resolved = free ?? 'F1'
+    used.add(resolved)
+    return resolved
+  }
+
+  return {
+    shortcutPayCash: pick(storedPay.cash, ['F3', 'F1', 'F2', 'F4', 'F5']),
+    shortcutPayCard: pick(storedPay.card, ['F5', 'F1', 'F2', 'F3', 'F4']),
+    shortcutPaySinpe: pick(storedPay.sinpe, ['F4', 'F1', 'F2', 'F3', 'F5'])
+  }
+}
 
 export function getSetting(key: string): string | null {
   const row = getDb().prepare('SELECT value FROM settings WHERE key = ?').get(key) as
@@ -62,16 +127,44 @@ export function getAppSettings(): AppSettings {
   const shortcutOrDefault = (key: string, fallback: ActionShortcutKey): ActionShortcutKey =>
     (getSetting(key) as ActionShortcutKey | null) ?? fallback
 
+  const shortcutOpenFloat = shortcutOrDefault(SETTING_KEYS.shortcutOpenFloat, 'F7')
+  const shortcutCashIn = shortcutOrDefault(SETTING_KEYS.shortcutCashIn, 'F8')
+  const shortcutCashOut = shortcutOrDefault(SETTING_KEYS.shortcutCashOut, 'F9')
+  const shortcutDrawerAction = shortcutOrDefault(SETTING_KEYS.shortcutDrawerAction, 'F10')
+  const shortcutPrintLabel = shortcutOrDefault(SETTING_KEYS.shortcutPrintLabel, 'F6')
+
+  const storedPayCash = getSetting(SETTING_KEYS.shortcutPayCash)
+  const storedPayCard = getSetting(SETTING_KEYS.shortcutPayCard)
+  const storedPaySinpe = getSetting(SETTING_KEYS.shortcutPaySinpe)
+
+  const payShortcuts = resolvePayShortcuts(
+    {
+      shortcutOpenFloat,
+      shortcutCashIn,
+      shortcutCashOut,
+      shortcutDrawerAction,
+      shortcutPrintLabel
+    },
+    { cash: storedPayCash, card: storedPayCard, sinpe: storedPaySinpe }
+  )
+
+  if (!storedPayCash) setSetting(SETTING_KEYS.shortcutPayCash, payShortcuts.shortcutPayCash)
+  if (!storedPayCard) setSetting(SETTING_KEYS.shortcutPayCard, payShortcuts.shortcutPayCard)
+  if (!storedPaySinpe) setSetting(SETTING_KEYS.shortcutPaySinpe, payShortcuts.shortcutPaySinpe)
+
   return {
     language: (getSetting(SETTING_KEYS.language) as Language | null) ?? null,
     storeName: getSetting(SETTING_KEYS.storeName) ?? 'ShelfPOS',
     stockThresholdDefault: Number(getSetting(SETTING_KEYS.stockThresholdDefault) ?? '5'),
     scannerBurstMs: Number(getSetting(SETTING_KEYS.scannerBurstMs) ?? '30'),
-    shortcutOpenFloat: shortcutOrDefault(SETTING_KEYS.shortcutOpenFloat, 'F7'),
-    shortcutCashIn: shortcutOrDefault(SETTING_KEYS.shortcutCashIn, 'F8'),
-    shortcutCashOut: shortcutOrDefault(SETTING_KEYS.shortcutCashOut, 'F9'),
-    shortcutDrawerAction: shortcutOrDefault(SETTING_KEYS.shortcutDrawerAction, 'F10'),
-    shortcutPrintLabel: shortcutOrDefault(SETTING_KEYS.shortcutPrintLabel, 'F6'),
+    shortcutOpenFloat,
+    shortcutCashIn,
+    shortcutCashOut,
+    shortcutDrawerAction,
+    shortcutPrintLabel,
+    shortcutPayCash: payShortcuts.shortcutPayCash,
+    shortcutPayCard: payShortcuts.shortcutPayCard,
+    shortcutPaySinpe: payShortcuts.shortcutPaySinpe,
     firstRunComplete: getSetting(SETTING_KEYS.firstRunComplete) === '1',
     cajaPinConfigured: !!getSetting(SETTING_KEYS.cajaPinHash),
     taxRegime: (getSetting(SETTING_KEYS.taxRegime) as TaxRegime | null) ?? 'simplificado',

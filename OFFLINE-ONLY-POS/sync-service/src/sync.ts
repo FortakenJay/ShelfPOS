@@ -1,14 +1,18 @@
+import type Database from 'better-sqlite3'
 import type { SyncConfig } from './config.js'
+import { logSyncQueueFailure } from './errorLog.js'
 import {
   getLiveRow,
   markError,
   markSynced,
+  readSyncOwnerClaimed,
+  writeSyncOwnerClaimed,
   type SyncDbContext,
   type SyncQueueRow,
   type SyncTableName
 } from './db.js'
 
-export const BATCH_SIZE = 50
+export const BATCH_SIZE = 100
 export const POLL_INTERVAL_MS = 5000
 export const RETRY_INTERVAL_MS = 30000
 export const MAX_RETRIES = 10
@@ -71,6 +75,21 @@ async function supabaseDelete(
   }
 }
 
+const MAX_MIRROR_DELTA = 10_000_000
+
+function sanitizeMirrorRow(
+  tableName: SyncTableName,
+  row: Record<string, unknown>,
+): Record<string, unknown> {
+  if (tableName === 'stock_adjustments') {
+    const delta = Number(row.delta)
+    if (!Number.isFinite(delta) || delta > MAX_MIRROR_DELTA || delta < -MAX_MIRROR_DELTA) {
+      return { ...row, delta: 0 }
+    }
+  }
+  return row
+}
+
 export async function processEntry(ctx: SyncDbContext, entry: SyncQueueRow): Promise<void> {
   const { db, storeId, config } = ctx
 
@@ -80,18 +99,41 @@ export async function processEntry(ctx: SyncDbContext, entry: SyncQueueRow): Pro
     if (entry.operation === 'delete' && !row) {
       await supabaseDelete(config, entry.table_name, storeId, entry.row_id)
     } else if (!row) {
-      markError(db, entry.id, 'Row not found in source table', MAX_RETRIES)
+      const { gaveUp, retryCount } = markError(
+        db,
+        entry.id,
+        'Row not found in source table',
+        MAX_RETRIES,
+      )
+      logSyncQueueFailure({
+        table: entry.table_name,
+        rowId: entry.row_id,
+        message: 'Row not found in source table',
+        retryCount,
+        gaveUp,
+      })
       return
     } else if (entry.operation === 'delete') {
       await supabaseDelete(config, entry.table_name, storeId, entry.row_id)
     } else {
-      const payload = { ...row, store_id: storeId }
+      const payload = sanitizeMirrorRow(entry.table_name, {
+        ...row,
+        store_id: storeId,
+      })
       await supabaseUpsert(config, entry.table_name, payload)
     }
 
     markSynced(db, entry.id)
   } catch (err) {
-    markError(db, entry.id, String(err), MAX_RETRIES)
+    const message = err instanceof Error ? err.message : String(err)
+    const { gaveUp, retryCount } = markError(db, entry.id, message, MAX_RETRIES)
+    logSyncQueueFailure({
+      table: entry.table_name,
+      rowId: entry.row_id,
+      message,
+      retryCount,
+      gaveUp,
+    })
   }
 }
 /** Upsert store_id + display_name; mirror POS heartbeat when the app is running. */
@@ -99,12 +141,14 @@ export async function syncStoreRegistry(
   config: SyncConfig,
   storeId: string,
   displayName: string,
-  posLastSeenAt: string | null
+  posLastSeenAt: string | null,
+  stockThresholdDefault: number,
 ): Promise<void> {
   const payload: Record<string, unknown> = {
     store_id: storeId,
     display_name: displayName,
     pos_last_seen_at: posLastSeenAt,
+    stock_threshold_default: stockThresholdDefault,
   }
 
   const res = await fetch(`${config.supabaseUrl}/rest/v1/stores?on_conflict=store_id`, {
@@ -120,4 +164,41 @@ export async function syncStoreRegistry(
   if (!res.ok) {
     throw new Error(`Supabase upsert stores: ${res.status} ${await res.text()}`)
   }
+}
+
+/** Link this POS store_id to the dashboard account that generated the pairing code. */
+export async function claimStoreIfNeeded(
+  config: SyncConfig,
+  db: Database.Database,
+  storeId: string,
+  displayName: string,
+): Promise<void> {
+  if (readSyncOwnerClaimed(db)) return
+
+  const code = config.storeClaimCode
+  if (!code) {
+    console.warn(
+      '[sync-service] STORE_PAIRING_CODE not set — dashboard owners cannot see this store until linked',
+    )
+    return
+  }
+
+  const res = await fetch(`${config.supabaseUrl}/rest/v1/rpc/claim_store_sync`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: config.supabaseServiceKey,
+      Authorization: `Bearer ${config.supabaseServiceKey}`,
+    },
+    body: JSON.stringify({
+      p_claim_code: code,
+      p_store_id: storeId,
+      p_display_name: displayName,
+    }),
+  })
+  if (!res.ok) {
+    throw new Error(`claim_store_sync: ${res.status} ${await res.text()}`)
+  }
+  writeSyncOwnerClaimed(db)
+  console.info(`[sync-service] linked store_id=${storeId} to dashboard owner`)
 }
