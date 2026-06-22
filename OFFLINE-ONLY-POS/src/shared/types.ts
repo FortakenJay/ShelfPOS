@@ -18,6 +18,14 @@ export type ActionShortcutKey =
 export type PrintJobStatus = 'pending' | 'printed' | 'failed'
 export type PrintJobType = 'receipt' | 'report' | 'cierre' | 'label'
 export type PrintStatus = 'printed' | 'failed'
+
+export interface PrinterStatusInfo {
+  ready: boolean
+  name: string | null
+  driver: string | null
+  datatype: string | null
+  port: string | null
+}
 export type ReportType =
   | 'summary'
   | 'byPayment'
@@ -937,6 +945,8 @@ export type PrintLine =
 export interface PrintPayload {
   lang: Language
   lines: PrintLine[]
+  /** Pulse cash drawer after receipt body (cash sales only). */
+  openDrawer?: boolean
 }
 
 // --- IPC ---
@@ -1020,6 +1030,8 @@ export const IPC_CHANNELS = [
   'printQueue:retry',
   'printer:openDrawer',
   'printer:colonTest',
+  'printer:status',
+  'printer:test',
   'backup:info',
   'backup:runManual',
   'backup:exportCsv'

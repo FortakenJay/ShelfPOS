@@ -331,6 +331,8 @@ export const IPC_SCHEMAS = {
   'printQueue:retry': z.strictObject({ id: positiveIdSchema }),
   'printer:openDrawer': voidInput,
   'printer:colonTest': voidInput,
+  'printer:status': voidInput,
+  'printer:test': voidInput,
   'backup:info': voidInput,
   'backup:runManual': voidInput,
   'backup:exportCsv': z.strictObject({ range: dateRangeSchema })

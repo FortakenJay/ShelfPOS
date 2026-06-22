@@ -37,6 +37,7 @@ The installer never touches `%APPDATA%\shelfpos` — user data survives updates 
 
 - Epson **TM-T81III** and **TM-T20** series via USB on Windows, using the Epson Advanced Printer Driver (APD) and RAW ESC/POS.
 - Install the APD package (e.g. `APD_612_T81III_WM` for TM-T81III). ShelfPOS auto-detects the Windows print queue on startup.
+- Prefer the **Receipt** queue (e.g. `EPSON TM-T81III Receipt`). If only a generic `EPSON TM-T81III` queue exists, ShelfPOS writes ESC/POS directly to the USB port.
 - Override detection with env var `SHELFPOS_PRINTER_NAME` if the queue has a custom name.
 - Spanish receipts print with code page PC850.
 

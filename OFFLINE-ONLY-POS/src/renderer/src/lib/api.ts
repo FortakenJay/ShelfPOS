@@ -31,6 +31,7 @@ import type {
   OpenFloatInput,
   PrintJobListResult,
   PrintStatus,
+  PrinterStatusInfo,
   PriceOverrideAuthorizeInput,
   Product,
   ProductFilters,
@@ -209,7 +210,9 @@ export const api = {
   },
   printer: {
     openDrawer: () => call<null>('printer:openDrawer'),
-    colonTest: () => call<null>('printer:colonTest')
+    colonTest: () => call<null>('printer:colonTest'),
+    status: () => call<PrinterStatusInfo>('printer:status'),
+    test: () => call<null>('printer:test')
   },
   backup: {
     info: () => call<BackupInfo>('backup:info'),

@@ -345,10 +345,11 @@ export function registerSalesHandlers(): void {
         },
         lang
       )
+      const openDrawer = input.payments.some((p) => p.method === 'cash')
       const printJobId =
         input.printReceipt === false
           ? 0
-          : insertPrintJob('receipt', saleId, { lang, lines: receiptLines })
+          : insertPrintJob('receipt', saleId, { lang, lines: receiptLines, openDrawer })
 
       const priceOverrideLines = finalized.filter((l) => l.catalogUnitPrice != null)
       for (const line of priceOverrideLines) {

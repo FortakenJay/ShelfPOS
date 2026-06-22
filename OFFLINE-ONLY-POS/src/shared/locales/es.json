@@ -883,6 +883,13 @@
         "F12": "F12"
       }
     },
+    "printerSection": "Impresora",
+    "printerStatusReady": "Conectada: {{name}}",
+    "printerStatusMissing": "Impresora no detectada (TM-T81III / TM-T20)",
+    "printerStatusDetails": "Controlador: {{driver}} · Tipo: {{datatype}} · Puerto: {{port}}",
+    "printerRefresh": "Buscar impresora",
+    "printerTest": "Imprimir prueba",
+    "printerTestSent": "Prueba enviada a la impresora",
     "colonTest": "Imprimir prueba símbolo ₡",
     "colonTestHint": "Imprime 7 tiras etiquetadas PRUEBA 1–7. Indique cuál muestra el símbolo correcto antes del precio.",
     "colonTestSent": "Prueba enviada a la impresora",

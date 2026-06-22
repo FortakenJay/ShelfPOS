@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
 import { useToasts } from '@/lib/toast'
 import { Button, Field, Input, Select } from '@/components/ui'
 import type { SettingsDraft } from './settingsDraft'
-import type { ActionShortcutKey, AppSettings, IdType } from '@shared/types'
+import type { ActionShortcutKey, AppSettings, IdType, PrinterStatusInfo } from '@shared/types'
 
 const ID_TYPES: IdType[] = ['fisica', 'juridica', 'dimex', 'nite']
 const SHORTCUT_OPTIONS: ActionShortcutKey[] = [
@@ -219,6 +219,36 @@ export function SettingsShortcutsSection({
   const { t } = useTranslation()
   const toasts = useToasts()
   const [colonTestPending, setColonTestPending] = useState(false)
+  const [printerTestPending, setPrinterTestPending] = useState(false)
+  const [printerStatus, setPrinterStatus] = useState<PrinterStatusInfo | null>(null)
+  const [printerStatusPending, setPrinterStatusPending] = useState(false)
+
+  const refreshPrinterStatus = (): void => {
+    setPrinterStatusPending(true)
+    void api.printer
+      .status()
+      .then(setPrinterStatus)
+      .catch((err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown'))
+      .finally(() => setPrinterStatusPending(false))
+  }
+
+  useEffect(() => {
+    refreshPrinterStatus()
+  }, [])
+
+  const runPrinterTest = (): void => {
+    if (printerTestPending) return
+    setPrinterTestPending(true)
+    void api.printer
+      .test()
+      .then(() => toasts.success('settings.printerTestSent'))
+      .catch((err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown'))
+      .finally(() => {
+        setPrinterTestPending(false)
+        refreshPrinterStatus()
+      })
+  }
+
   const runColonTest = (): void => {
     if (colonTestPending) return
     setColonTestPending(true)
@@ -334,6 +364,31 @@ export function SettingsShortcutsSection({
       </div>
       {hasConflict && <p className="mt-3 text-[14px] font-semibold text-danger">{t('settings.shortcuts.conflict')}</p>}
       <div className="mt-5 border-t border-line pt-4">
+        <p className="mb-2 text-[14px] font-semibold text-slate-700">{t('settings.printerSection')}</p>
+        <p className="mb-3 text-[13px] text-slate-500">
+          {printerStatusPending
+            ? t('common.loading')
+            : printerStatus?.ready
+              ? t('settings.printerStatusReady', { name: printerStatus.name ?? '?' })
+              : t('settings.printerStatusMissing')}
+        </p>
+        {printerStatus?.ready && printerStatus.driver ? (
+          <p className="mb-3 text-[12px] text-slate-500">
+            {t('settings.printerStatusDetails', {
+              driver: printerStatus.driver,
+              datatype: printerStatus.datatype ?? '?',
+              port: printerStatus.port ?? '?'
+            })}
+          </p>
+        ) : null}
+        <div className="mb-5 flex flex-wrap gap-2">
+          <Button type="button" variant="outline" disabled={printerStatusPending} onClick={refreshPrinterStatus}>
+            {t('settings.printerRefresh')}
+          </Button>
+          <Button type="button" variant="outline" disabled={printerTestPending} onClick={runPrinterTest}>
+            {t('settings.printerTest')}
+          </Button>
+        </div>
         <p className="mb-2 text-[14px] font-semibold text-slate-700">{t('settings.colonTest')}</p>
         <p className="mb-3 text-[13px] text-slate-500">{t('settings.colonTestHint')}</p>
         <Button

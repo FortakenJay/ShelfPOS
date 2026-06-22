@@ -883,6 +883,13 @@
         "F12": "F12"
       }
     },
+    "printerSection": "打印机",
+    "printerStatusReady": "已连接：{{name}}",
+    "printerStatusMissing": "未检测到打印机（TM-T81III / TM-T20）",
+    "printerStatusDetails": "驱动：{{driver}} · 类型：{{datatype}} · 端口：{{port}}",
+    "printerRefresh": "重新检测",
+    "printerTest": "打印测试",
+    "printerTestSent": "测试已发送到打印机",
     "colonTest": "打印科朗符号测试",
     "colonTestHint": "将打印 7 条测试带（PRUEBA 1–7）。请说明哪一条在价格前显示了正确符号。",
     "colonTestSent": "测试已发送到打印机",

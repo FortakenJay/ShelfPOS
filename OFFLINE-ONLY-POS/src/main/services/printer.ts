@@ -8,7 +8,7 @@ import { app } from 'electron'
 import iconv from 'iconv-lite'
 import { AppError } from '../errors'
 import { getPrintJob, listPendingPrintJobIds, markPrintJob } from '../db/repos/printJobs'
-import type { Language, PrintLine, PrintPayload, PrintStatus } from '../../shared/types'
+import type { Language, PrintLine, PrintPayload, PrintStatus, PrinterStatusInfo } from '../../shared/types'
 import { isPrintableCode128Barcode } from '../../shared/barcode'
 
 const execFileAsync = promisify(execFile)
@@ -16,6 +16,10 @@ const execFileAsync = promisify(execFile)
 /** Windows queue names tried in order when SHELFPOS_PRINTER_NAME is not set. */
 const KNOWN_RECEIPT_PRINTER_NAMES = [
   'EPSON TM-T81III Receipt',
+  'EPSON TM-T81III ReceiptE',
+  'EPSON TM-T81III Recibo',
+  'TM-T81III Receipt',
+  'TM-T81III Recibo',
   'EPSON TM-T81III',
   'TM-T81III',
   'EPSON TM-T20III Receipt',
@@ -26,11 +30,16 @@ const KNOWN_RECEIPT_PRINTER_NAMES = [
 // 80mm Epson TM models render 48 columns in Font A. Override with SHELFPOS_LINE_WIDTH.
 const LINE_WIDTH = Number(process.env.SHELFPOS_LINE_WIDTH) || 48
 
-let cachedRawPrintScriptPath: string | null = null
 let resolvedPrinterName: string | null = null
 let printerReady = false
 
-const PROBE_TIMEOUT_MS = 2_500
+const PROBE_TIMEOUT_MS = 5_000
+
+let lastPrinterDetails: Pick<PrinterStatusInfo, 'driver' | 'datatype' | 'port'> = {
+  driver: null,
+  datatype: null,
+  port: null
+}
 
 function configuredPrinterName(): string | null {
   const name = process.env.SHELFPOS_PRINTER_NAME?.trim()
@@ -48,6 +57,17 @@ function getActivePrinterName(): string {
 
 const PROBE_PRINTERS_PS = `
 $ErrorActionPreference = 'SilentlyContinue'
+function Get-ReceiptPrinterScore($p) {
+  $score = 0
+  $name = [string]$p.Name
+  if ($name -match 'Receipt') { $score += 100 }
+  if ([string]$p.Datatype -eq 'RAW') { $score += 80 }
+  if ($name -match 'T81III') { $score += 60 }
+  elseif ($name -match 'TM-T81') { $score += 40 }
+  elseif ($name -match 'T20III') { $score += 50 }
+  elseif ($name -match 'T20II|T20') { $score += 30 }
+  return $score
+}
 $configured = $env:SHELFPOS_PRINTER_NAME
 if ($configured) {
   if (Get-Printer -Name $configured) { Write-Output $configured; exit 0 }
@@ -55,6 +75,10 @@ if ($configured) {
 }
 $known = @(
   'EPSON TM-T81III Receipt',
+  'EPSON TM-T81III ReceiptE',
+  'EPSON TM-T81III Recibo',
+  'TM-T81III Receipt',
+  'TM-T81III Recibo',
   'EPSON TM-T81III',
   'TM-T81III',
   'EPSON TM-T20III Receipt',
@@ -64,10 +88,13 @@ $known = @(
 foreach ($n in $known) {
   if (Get-Printer -Name $n) { Write-Output $n; exit 0 }
 }
-$p = @(Get-Printer | Where-Object { $_.Name -match 'T81III|TM-T81' }) | Select-Object -First 1
-if ($p) { Write-Output $p.Name; exit 0 }
-$p = @(Get-Printer | Where-Object { $_.Name -match 'TM-T20|T20III|T20II' }) | Select-Object -First 1
-if ($p) { Write-Output $p.Name; exit 0 }
+$candidates = @(Get-Printer | Where-Object {
+  $_.Name -match '81III|T81III|TM-T81|TM-T20|T20III|T20II'
+})
+if ($candidates.Count -gt 0) {
+  $best = $candidates | Sort-Object @{ Expression = { Get-ReceiptPrinterScore $_ } } -Descending | Select-Object -First 1
+  if ($best) { Write-Output $best.Name; exit 0 }
+}
 exit 2
 `.trim()
 
@@ -76,11 +103,30 @@ export function isPrinterReady(): boolean {
   return printerReady
 }
 
+export function getPrinterStatus(): PrinterStatusInfo {
+  return {
+    ready: printerReady,
+    name: resolvedPrinterName,
+    ...lastPrinterDetails
+  }
+}
+
+function probeEnv(): NodeJS.ProcessEnv {
+  const configured = configuredPrinterName()
+  return configured
+    ? { ...process.env, SHELFPOS_PRINTER_NAME: configured }
+    : process.env
+}
+
 /** Fast Windows printer probe — run once at startup (and on manual retry). */
 export async function probePrinter(): Promise<boolean> {
   try {
     const { stdout } = await Promise.race([
-      execFileAsync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', PROBE_PRINTERS_PS]),
+      execFileAsync(
+        'powershell.exe',
+        ['-NoProfile', '-NonInteractive', '-Command', PROBE_PRINTERS_PS],
+        { env: probeEnv() }
+      ),
       new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error('printer probe timeout')), PROBE_TIMEOUT_MS)
       })
@@ -89,13 +135,35 @@ export async function probePrinter(): Promise<boolean> {
     if (!printerName) throw new Error('printer probe returned empty name')
     resolvedPrinterName = printerName
     printerReady = true
+    await logPrinterDetails(printerName)
     console.log(`[printer] ready: ${printerName}`)
     return true
-  } catch {
+  } catch (err) {
     resolvedPrinterName = null
     printerReady = false
-    console.log(`[printer] not available (looked for TM-T81III / TM-T20, override: ${configuredPrinterName() ?? 'none'})`)
+    console.log(
+      `[printer] not available (looked for TM-T81III / TM-T20, override: ${configuredPrinterName() ?? 'none'})`,
+      err instanceof Error ? err.message : err
+    )
     return false
+  }
+}
+
+async function logPrinterDetails(printerName: string): Promise<void> {
+  try {
+    const { stdout } = await execFileAsync('powershell.exe', [
+      '-NoProfile',
+      '-NonInteractive',
+      '-Command',
+      `$p = Get-Printer -Name '${printerName.replace(/'/g, "''")}'; if ($p) { Write-Output ($p.DriverName + '|' + $p.Datatype + '|' + $p.PortName) }`
+    ])
+    const parts = stdout.toString().trim().split('|')
+    if (parts.length === 3) {
+      lastPrinterDetails = { driver: parts[0]!, datatype: parts[1]!, port: parts[2]! }
+      console.log(`[printer] driver=${parts[0]} datatype=${parts[1]} port=${parts[2]}`)
+    }
+  } catch {
+    // best-effort logging only
   }
 }
 
@@ -313,6 +381,7 @@ function toEscPos(lines: PrintLine[], options?: { openDrawer?: boolean; label?: 
 
 // PowerShell that sends a byte file to a Windows printer using the RAW datatype,
 // so the Epson driver passes our ESC/POS bytes straight through (no GDI rendering).
+// When the queue is not a Receipt/RAW driver, bytes are written directly to the USB port.
 const RAW_PRINT_PS1 = `param(
   [Parameter(Mandatory=$true)][string]$Printer,
   [Parameter(Mandatory=$true)][string]$Path
@@ -364,11 +433,35 @@ namespace ShelfPos {
         } finally { EndDocPrinter(h); }
       } finally { ClosePrinter(h); }
     }
+    public static void SendToPort(string portName, string file) {
+      if (string.IsNullOrWhiteSpace(portName)) throw new Exception("Missing printer port");
+      string path = @"\\\\.\\" + portName.Trim();
+      byte[] bytes = File.ReadAllBytes(file);
+      using (var fs = new FileStream(path, FileMode.Open, FileAccess.Write, FileShare.ReadWrite)) {
+        fs.Write(bytes, 0, bytes.Length);
+      }
+    }
   }
 }
 '@
 Add-Type -TypeDefinition $src -Language CSharp
-[ShelfPos.RawPrinter]::Send($Printer, $Path)
+$info = Get-Printer -Name $Printer
+$errors = [System.Collections.Generic.List[string]]::new()
+try {
+  [ShelfPos.RawPrinter]::Send($Printer, $Path)
+  exit 0
+} catch {
+  $errors.Add('spooler: ' + $_.Exception.Message)
+}
+if ($info -and [string]$info.PortName) {
+  try {
+    [ShelfPos.RawPrinter]::SendToPort([string]$info.PortName, $Path)
+    exit 0
+  } catch {
+    $errors.Add('port ' + $info.PortName + ': ' + $_.Exception.Message)
+  }
+}
+throw [System.Exception]::new(($errors -join ' | '))
 `
 
 async function ensurePrinterExists(printerName: string): Promise<void> {
@@ -379,10 +472,8 @@ async function ensurePrinterExists(printerName: string): Promise<void> {
 }
 
 async function getRawPrintScriptPath(): Promise<string> {
-  if (cachedRawPrintScriptPath) return cachedRawPrintScriptPath
   const path = join(app.getPath('userData'), 'raw-print.ps1')
   await writeFile(path, RAW_PRINT_PS1, 'utf8')
-  cachedRawPrintScriptPath = path
   return path
 }
 
@@ -405,6 +496,17 @@ async function sendRawToPrinter(data: Buffer, printerName: string): Promise<void
       '-Path',
       binPath
     ])
+  } catch (err) {
+    const execErr = err as NodeJS.ErrnoException & { stderr?: string; stdout?: string }
+    const detail = [
+      execErr.message,
+      execErr.stderr?.toString().trim(),
+      execErr.stdout?.toString().trim()
+    ]
+      .filter(Boolean)
+      .join(' | ')
+    console.error(`[printer] raw send failed (${printerName}):`, detail)
+    throw new AppError('errors.printerNotFound', { name: 'RawPrint' })
   } finally {
     await rm(dir, { recursive: true, force: true })
   }
@@ -500,6 +602,11 @@ export async function printColonSymbolTest(): Promise<void> {
   await sendRawToPrinter(buildColonSymbolTestBuffer(), printerName)
 }
 
+/** Diagnostic: one-line receipt test (admin troubleshooting). */
+export async function printTestReceipt(): Promise<void> {
+  await printLines([{ t: 'text', v: 'ShelfPOS TEST', align: 'ct', bold: true, big: true }])
+}
+
 /**
  * Queues a print job without blocking checkout. Jobs stay `pending` in the DB
  * when no printer is connected; otherwise printing runs on the next event-loop tick.
@@ -507,11 +614,10 @@ export async function printColonSymbolTest(): Promise<void> {
 export function schedulePrintJob(jobId: number): PrintStatus {
   const job = getPrintJob(jobId)
   if (!job) return 'failed'
-  if (!printerReady) return 'failed'
   setImmediate(() => {
     void attemptPrintJob(jobId)
   })
-  return 'printed'
+  return printerReady ? 'printed' : 'failed'
 }
 
 /** Attempts to print a stored job, updating its status. */
@@ -526,12 +632,16 @@ export async function attemptPrintJob(jobId: number): Promise<PrintStatus> {
     }
   }
   const payload = JSON.parse(job.payload) as PrintPayload
+  const printOpts = { label: job.job_type === 'label', openDrawer: payload.openDrawer === true }
   try {
-    await printLines(payload.lines, payload.lang, { label: job.job_type === 'label' })
+    await printLines(payload.lines, payload.lang, printOpts)
     markPrintJob(jobId, 'printed')
     return 'printed'
   } catch (err) {
     console.error(`[printer] job ${jobId} failed`, err)
+    if (payload.openDrawer) {
+      await tryOpenCashDrawer()
+    }
     if (err instanceof AppError && err.key === 'errors.printerNotFound') {
       printerReady = false
       resolvedPrinterName = null
