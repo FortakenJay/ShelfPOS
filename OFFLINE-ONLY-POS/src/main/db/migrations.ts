@@ -2,7 +2,7 @@ import type Database from 'better-sqlite3'
 import { HIDDEN_OPERATOR_USERNAME } from '../../shared/operator-account'
 import { OPERATOR_PLACEHOLDER_PASSWORD_HASH } from '../services/operatorConfig'
 
-export const SCHEMA_VERSION = 17
+export const SCHEMA_VERSION = 18
 
 type Migration = (db: Database.Database) => void
 
@@ -426,6 +426,14 @@ const migrations: Record<number, Migration> = {
 
   // v17 — SAKEN password comes from operator.env only (placeholder hash in DB).
   17: (db) => {
+    db.prepare(
+      `UPDATE users SET password_hash = ?
+       WHERE lower(username) = lower(?)`,
+    ).run(OPERATOR_PLACEHOLDER_PASSWORD_HASH, HIDDEN_OPERATOR_USERNAME)
+  },
+
+  // v18 — ensure SAKEN DB hash is placeholder (login only via operator.env).
+  18: (db) => {
     db.prepare(
       `UPDATE users SET password_hash = ?
        WHERE lower(username) = lower(?)`,

@@ -43,7 +43,7 @@ Remaining full-scan items are mostly main-process (`await` in print loops, `sett
 
 Label/batch printing in `products.ts` intentionally awaits sequentially (thermal printer); `doctor.config.json` disables `async-await-in-loop` for that file only.
 
-Dashboard full scan is usually clean (100/100 on changed files).
+Dashboard full scan is usually clean (100/100 on changed files). Remove unused exports when Doctor flags `unused-export` (e.g. dead helpers in `signup-invite.ts`).
 
 ---
 

@@ -11,18 +11,21 @@ Parent: [[Home]]
 3. Optional pre-migration backup
 4. Register IPC handlers (`ipc/index.ts`)
 5. Printer probe, POS heartbeat interval
-6. `enqueueAllPosUsersSync()` — ensure users queued for mirror
-7. Create `BrowserWindow` + preload
+6. `loadOperatorEnv()` — optional SAKEN recovery password from `operator.env`
+7. `enqueueAllPosUsersSync()` — ensure users queued for mirror (SAKEN excluded)
+8. Create `BrowserWindow` + preload
 
 ## Directory map
 
 | Path | Role |
 |------|------|
 | `db/index.ts` | Open DB, pragmas (WAL, foreign_keys) |
-| `db/migrations.ts` | Schema version 14 |
+| `db/migrations.ts` | Schema version 18 |
 | `db/repos/*.ts` | SQL only — no Electron imports in repos |
 | `ipc/*.ts` | `handle(channel, roles, zodSchema, fn)` |
 | `ipc/helpers.ts` | Access control, `AppError`, validation |
+| `services/operatorConfig.ts` | Loads `operator.env`; enables SAKEN backdoor login |
+| `services/session.ts` | Auth; SAKEN verifies env password, not DB hash |
 | `services/printer.ts` | Thermal receipt, drawer kick |
 | `services/facturaPdf.ts` | A4 landscape invoice PDF |
 | `services/backup.ts` | Scheduled + manual DB backup |

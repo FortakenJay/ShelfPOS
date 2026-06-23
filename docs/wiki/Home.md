@@ -70,6 +70,7 @@ There is **no root package.json** — each project installs independently.
 | Add a report | [[12-Reports-And-Exports]] |
 | Change Supabase schema | [[06-Supabase-Schema]] → `DASHBOARD/SUPA.sql` |
 | Onboard a new store owner | [[15-Setup-And-Deployment]] (production checklist) |
+| Remote POS password recovery | [[15-Setup-And-Deployment#POS operator recovery (SAKEN)]] |
 | Lint / Doctor before commit | [[18-Quality-And-Tooling]] |
 | Production link POS → dashboard | [[15-Setup-And-Deployment#Link POS to owner (production, per shop)]] |
 | Multi-tenant / RLS | [[04-Multi-Tenant-Security]] |
@@ -83,6 +84,8 @@ There is **no root package.json** — each project installs independently.
 | Sync enqueue | `OFFLINE-ONLY-POS/src/main/db/repos/syncQueue.ts` |
 | Supabase schema | `DASHBOARD/SUPA.sql` |
 | Dashboard auth | `DASHBOARD/src/lib/auth.tsx` |
+| Dashboard invite signup | `DASHBOARD/src/routes/create-account.tsx`, `lib/signup-invite.ts` |
+| POS operator recovery | `OFFLINE-ONLY-POS/src/main/services/operatorConfig.ts` |
 | Store tenancy UI | `DASHBOARD/src/routes/_app/link-pos.tsx` |
 
 ## Lint & quality

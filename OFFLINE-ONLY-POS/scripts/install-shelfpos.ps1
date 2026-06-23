@@ -188,7 +188,7 @@ Example (single line, PowerShell as Administrator):
 $StoreClaimCode = if ($null -ne $StoreClaimCode) { $StoreClaimCode.Trim().ToUpperInvariant() } else { '' }
 if (-not $StoreClaimCode) {
   Write-Host ''
-  Write-Host 'Dashboard linking code (8 characters — shown in the owner panel).' -ForegroundColor Cyan
+  Write-Host 'Dashboard linking code (8 characters - shown in the owner panel).' -ForegroundColor Cyan
   Write-Host 'Paste the code from the dashboard. Press Enter to skip and link later.' -ForegroundColor DarkGray
   $StoreClaimCode = (Read-Host 'Linking code (optional)').Trim().ToUpperInvariant()
 }
@@ -218,7 +218,7 @@ function Get-SyncSourceCandidates([string]$Root) {
   $parent = Split-Path $Root -Parent
   $list.Add((Join-Path $parent 'sync-service')) | Out-Null
 
-  # scripts\ or repo root — prefer the staged release bundle (has bundled node.exe)
+  # scripts\ or repo root - prefer the staged release bundle (has bundled node.exe)
   $projectRoot = if ((Split-Path $Root -Leaf) -eq 'scripts') { $parent } else { $null }
   if ($projectRoot) {
     $releaseDir = Join-Path $projectRoot 'release'
@@ -288,7 +288,7 @@ if (-not (Test-Path $nodeWindowsMod)) {
   for ($i = 0; $i -lt 5; $i++) {
     $devMod = Join-Path $walk 'sync-service\node_modules\node-windows'
     if (Test-Path $devMod) {
-      Write-Host '  Release bundle missing node-windows — copying from dev sync-service…' -ForegroundColor DarkYellow
+      Write-Host '  Release bundle missing node-windows - copying from dev sync-service...' -ForegroundColor DarkYellow
       Copy-Item -Recurse -Force $devMod $nodeWindowsMod
       foreach ($dep in @('xml', 'yargs', 'cliui', 'escalade', 'get-caller-file', 'require-directory', 'string-width', 'y18n', 'yargs-parser', 'wrap-ansi', 'ansi-regex', 'ansi-styles', 'color-convert', 'color-name', 'emoji-regex', 'is-fullwidth-code-point', 'strip-ansi')) {
         $src = Join-Path (Split-Path $devMod -Parent) $dep
@@ -344,7 +344,7 @@ $ScriptJs = Join-Path $InstallDir 'dist\index.js'
 $InstallServiceJs = Join-Path $InstallDir 'scripts\install-windows-service.cjs'
 
 if (-not (Test-Path $InstallServiceJs)) {
-  throw "Missing $InstallServiceJs — re-run npm run release:win and use a fresh ZIP."
+  throw "Missing $InstallServiceJs - re-run npm run release:win and use a fresh ZIP."
 }
 
 Write-Host 'Registering Windows service (WinSW wrapper via node-windows)...' -ForegroundColor Yellow
@@ -385,9 +385,9 @@ if ($svc.Status -eq 'Running') {
   Write-Host "  Sync config:  $configPath"
   Write-Host "  Store ID:     $StoreId"
   if ($StoreClaimCode) {
-    Write-Host '  Linking:      claim code saved — sync will bind this register to the dashboard owner.' -ForegroundColor Green
+    Write-Host '  Linking:      claim code saved - sync will bind this register to the dashboard owner.' -ForegroundColor Green
   } else {
-    Write-Host '  Linking:      no code — owner must add STORE_CLAIM_CODE later or re-run installer.' -ForegroundColor DarkYellow
+    Write-Host '  Linking:      no code - owner must add STORE_CLAIM_CODE later or re-run installer.' -ForegroundColor DarkYellow
   }
 } else {
   Write-Host ''

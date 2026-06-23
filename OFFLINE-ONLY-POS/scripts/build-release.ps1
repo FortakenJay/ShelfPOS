@@ -80,6 +80,22 @@ function Stop-BuildLockingProcesses() {
       Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
     }
   }
+
+  foreach ($serviceName in @('shelfpossync.exe', 'ShelfPOSSync')) {
+    $svc = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
+    if ($svc -and $svc.Status -eq 'Running') {
+      Write-Host "  Stopping Windows service $serviceName..." -ForegroundColor DarkYellow
+      Stop-Service -Name $serviceName -Force -ErrorAction SilentlyContinue
+    }
+  }
+
+  Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" -ErrorAction SilentlyContinue |
+    Where-Object { $_.CommandLine -like '*sync-service*' } |
+    ForEach-Object {
+      Write-Host "  Stopping node.exe (PID $($_.ProcessId)) using sync-service..." -ForegroundColor DarkYellow
+      Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+    }
+
   Start-Sleep -Seconds 1
 }
 
@@ -88,7 +104,7 @@ function Try-RemovePath([string]$Path) {
   try {
     Remove-Item -LiteralPath $Path -Recurse -Force -ErrorAction Stop
   } catch {
-    Write-Host "  Could not remove $Path (continuing — output goes to a fresh folder)" -ForegroundColor DarkYellow
+    Write-Host "  Could not remove $Path (continuing - output goes to a fresh folder)" -ForegroundColor DarkYellow
   }
 }
 
@@ -152,6 +168,37 @@ function Invoke-ElectronDist([string]$Root, [string]$DistDir) {
   }
 }
 
+function Build-SyncServiceBundle([string]$SourceDir, [string]$WorkDir) {
+  Stop-BuildLockingProcesses
+  Write-Host "  Building in isolated workdir (leaves dev sync-service\node_modules untouched)" -ForegroundColor DarkGray
+  Write-Host "  Workdir: $WorkDir" -ForegroundColor DarkGray
+
+  if (Test-Path $WorkDir) {
+    Remove-PathWithRetry $WorkDir
+  }
+  New-Item -ItemType Directory -Path $WorkDir -Force | Out-Null
+
+  Copy-Item (Join-Path $SourceDir 'package.json') $WorkDir
+  Copy-Item (Join-Path $SourceDir 'package-lock.json') $WorkDir
+  Copy-Item (Join-Path $SourceDir 'tsconfig.json') $WorkDir
+  Copy-Item -Recurse (Join-Path $SourceDir 'src') (Join-Path $WorkDir 'src')
+
+  Push-Location $WorkDir
+  try {
+    Invoke-Npm @('ci', '--omit=dev')
+    Invoke-Npm @('run', 'build')
+    Invoke-Npm @('rebuild', 'better-sqlite3')
+    $syncModules = Join-Path $WorkDir 'node_modules'
+    foreach ($pkg in @('node-windows', 'better-sqlite3')) {
+      if (-not (Test-Path (Join-Path $syncModules $pkg))) {
+        throw "sync-service missing required dependency '$pkg' after npm ci. Check sync-service/package.json and package-lock.json."
+      }
+    }
+  } finally {
+    Pop-Location
+  }
+}
+
 Write-Host "=== ShelfPOS release build v$Version ===" -ForegroundColor Cyan
 $BuildStartedAt = Get-Date
 
@@ -180,23 +227,21 @@ Write-Host "  Installer: $($NsisExe.Name) ($($NsisExe.LastWriteTime))" -Foregrou
 # --- Sync service (install + compile native modules with bundled Node) ---
 Write-Host ''
 Write-Host "[3/5] Building sync-service (Node $NodeVersion)..." -ForegroundColor Yellow
-$SyncDir = Join-Path $Root 'sync-service'
+$SyncSourceDir = Join-Path $Root 'sync-service'
+$SyncBuildDir = Join-Path $Root ".cache\sync-service-release-$((Get-Date -Format 'yyyyMMdd-HHmmss'))"
+$CacheDir = Join-Path $Root '.cache'
+if (-not (Test-Path $CacheDir)) {
+  New-Item -ItemType Directory -Path $CacheDir -Force | Out-Null
+}
+Get-ChildItem $CacheDir -Directory -Filter 'sync-service-release-*' -ErrorAction SilentlyContinue |
+  Sort-Object LastWriteTime -Descending |
+  Select-Object -Skip 2 |
+  ForEach-Object { Try-RemovePath $_.FullName }
+
 $PreviousPath = $env:PATH
 $env:PATH = "$NodeDir;$PreviousPath"
 try {
-  Push-Location $SyncDir
-  if (Test-Path 'node_modules') { Remove-Item -Recurse -Force 'node_modules' }
-  if (Test-Path 'dist') { Remove-Item -Recurse -Force 'dist' }
-  Invoke-Npm @('ci', '--omit=dev')
-  Invoke-Npm @('run', 'build')
-  Invoke-Npm @('rebuild', 'better-sqlite3')
-  $syncModules = Join-Path $SyncDir 'node_modules'
-  foreach ($pkg in @('node-windows', 'better-sqlite3')) {
-    if (-not (Test-Path (Join-Path $syncModules $pkg))) {
-      throw "sync-service missing required dependency '$pkg' after npm ci. Check sync-service/package.json and package-lock.json."
-    }
-  }
-  Pop-Location
+  Build-SyncServiceBundle -SourceDir $SyncSourceDir -WorkDir $SyncBuildDir
 } finally {
   $env:PATH = $PreviousPath
 }
@@ -216,14 +261,14 @@ Copy-Item (Join-Path $Root 'scripts\Uninstall-ShelfPOS.cmd') $StageDir
 
 $SyncStage = Join-Path $StageDir 'sync-service'
 New-Item -ItemType Directory -Path $SyncStage -Force | Out-Null
-Copy-Item -Recurse (Join-Path $SyncDir 'dist') (Join-Path $SyncStage 'dist')
-Copy-Item -Recurse (Join-Path $SyncDir 'node_modules') (Join-Path $SyncStage 'node_modules')
-Copy-Item (Join-Path $SyncDir 'package.json') $SyncStage
+Copy-Item -Recurse (Join-Path $SyncBuildDir 'dist') (Join-Path $SyncStage 'dist')
+Copy-Item -Recurse (Join-Path $SyncBuildDir 'node_modules') (Join-Path $SyncStage 'node_modules')
+Copy-Item (Join-Path $SyncBuildDir 'package.json') $SyncStage
 New-Item -ItemType Directory -Path (Join-Path $SyncStage 'scripts') -Force | Out-Null
-Copy-Item (Join-Path $SyncDir 'scripts\set-store-id.cjs') (Join-Path $SyncStage 'scripts\set-store-id.cjs')
-Copy-Item (Join-Path $SyncDir 'scripts\write-sync-env.cjs') (Join-Path $SyncStage 'scripts\write-sync-env.cjs')
-Copy-Item (Join-Path $SyncDir 'scripts\install-windows-service.cjs') (Join-Path $SyncStage 'scripts\install-windows-service.cjs')
-Copy-Item (Join-Path $SyncDir 'scripts\uninstall-windows-service.cjs') (Join-Path $SyncStage 'scripts\uninstall-windows-service.cjs')
+Copy-Item (Join-Path $SyncSourceDir 'scripts\set-store-id.cjs') (Join-Path $SyncStage 'scripts\set-store-id.cjs')
+Copy-Item (Join-Path $SyncSourceDir 'scripts\write-sync-env.cjs') (Join-Path $SyncStage 'scripts\write-sync-env.cjs')
+Copy-Item (Join-Path $SyncSourceDir 'scripts\install-windows-service.cjs') (Join-Path $SyncStage 'scripts\install-windows-service.cjs')
+Copy-Item (Join-Path $SyncSourceDir 'scripts\uninstall-windows-service.cjs') (Join-Path $SyncStage 'scripts\uninstall-windows-service.cjs')
 Copy-Item $NodeExe (Join-Path $SyncStage 'node.exe')
 Remove-NodeModulesJunk (Join-Path $SyncStage 'node_modules')
 foreach ($pkg in @('node-windows', 'better-sqlite3')) {
@@ -250,7 +295,7 @@ try {
 ) | Set-Content (Join-Path $StageDir 'BUILD_INFO.txt') -Encoding UTF8
 
 @'
-ShelfPOS — instalación en Windows
+ShelfPOS - instalacion en Windows
 =================================
 
 1. Extraiga este ZIP en una carpeta (ej. Escritorio\ShelfPOS-install).
@@ -291,11 +336,11 @@ $requiredBundleFiles = @(
 )
 foreach ($path in $requiredBundleFiles) {
   if (-not (Test-Path $path)) {
-    throw "Release bundle incomplete — missing $path"
+    throw "Release bundle incomplete - missing $path"
   }
 }
 $setupExe = Get-ChildItem $StageDir -Filter 'ShelfPOS Setup*.exe' | Select-Object -First 1
-if (-not $setupExe) { throw "Release bundle incomplete — missing ShelfPOS Setup*.exe in $StageDir" }
+if (-not $setupExe) { throw "Release bundle incomplete - missing ShelfPOS Setup*.exe in $StageDir" }
 
 Write-Host ''
 Write-Host '[5/5] Creating ZIP...' -ForegroundColor Yellow

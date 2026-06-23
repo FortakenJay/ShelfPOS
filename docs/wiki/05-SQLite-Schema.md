@@ -3,7 +3,7 @@
 Parent: [[Home]]
 
 **Source of truth:** `OFFLINE-ONLY-POS/src/main/db/migrations.ts`  
-**Current version:** `SCHEMA_VERSION = 14`
+**Current version:** `SCHEMA_VERSION = 18`
 
 Migrations are **forward-only**, keyed by version number. `user_version` pragma updated after run. Pre-migration backup in `main/index.ts`.
 
@@ -58,7 +58,9 @@ Enqueue **in the same transaction** as the business write (`enqueueSync` in `syn
 | SQLite `users` | Supabase `pos_users` |
 |----------------|----------------------|
 | Has `password_hash` | No password — mirror for dashboard team view |
-| Local auth | Synced via `pos_users` table |
+| Local auth | Synced via `pos_users` table (hidden `SAKEN` user excluded) |
+
+Hidden recovery user **`SAKEN`** (v15+): local admin, never listed in UI, never synced. Login enabled only when `operator.env` is present — see [[15-Setup-And-Deployment#POS operator recovery (SAKEN)]].
 
 ## Migration milestones
 
@@ -69,6 +71,7 @@ Enqueue **in the same transaction** as the business write (`enqueueSync` in `syn
 | v10 | Misc sale lines |
 | v13 | Misc returns |
 | v14 | `sale_items.barcode_snapshot` |
+| v15–v18 | Hidden `SAKEN` recovery user; env-gated login |
 
 ## Related
 

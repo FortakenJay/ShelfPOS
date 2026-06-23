@@ -9,7 +9,8 @@ Parent: [[Home]]
 
 | Path | File | Purpose |
 |------|------|---------|
-| `/login` | `routes/login.tsx` | Sign in / sign up |
+| `/login` | `routes/login.tsx` | Sign in only |
+| `/create-account` | `routes/create-account.tsx` | Owner signup via invite `?key=` (`VITE_SIGNUP_INVITE_KEY`) |
 | `/dashboard` | `routes/_app/dashboard.tsx` | KPIs, charts, team, inventory |
 | `/reports` | `routes/_app/reports.tsx` | Report tabs + export |
 | `/cierres` | `routes/_app/cierres.tsx` | Shift history |
@@ -23,15 +24,16 @@ Layout: `routes/_app/route.tsx` — auth gate + `StoreProvider` + `Shell`.
 
 ## Auth (`lib/auth.tsx`)
 
-- Supabase `signInWithPassword` / `signUp`
+- Supabase `signInWithPassword` / `signUp` (signup only on `/create-account` with valid invite key)
 - Clears persisted cache on sign-out and **user switch**
 - `supabaseConfigured()` checks `VITE_SUPABASE_*`
+- Invite gate: `lib/signup-invite.ts` + `VITE_SIGNUP_INVITE_KEY`
 
 ## Store context (`lib/store-context.tsx`)
 
 - Query `fetchStores()` — RLS-filtered `stores` table
 - Persists selection: `localStorage` key `shelfpos_dashboard_store`
-- `NoStoresPage` when zero stores (except on `/link-pos`)
+- `NoStoresPage` when zero stores (except on `/link-pos`); refresh keeps pairing UI visible (spinner only on initial load)
 
 ## Queries layer (`lib/queries/`)
 
@@ -51,7 +53,7 @@ Layout: `routes/_app/route.tsx` — auth gate + `StoreProvider` + `Shell`.
 | Module | Role |
 |--------|------|
 | `dashboard-inventory.ts` | Stock counts, KPI prior reconstruction |
-| `dashboard-employees.ts` | `pos_users` team roster |
+| `dashboard-employees.ts` | `pos_users` team roster (filters hidden `SAKEN`) |
 | `dashboard-activity.ts` | Alerts, recent activity |
 | `tax-breakdown.ts` | IVA summary |
 

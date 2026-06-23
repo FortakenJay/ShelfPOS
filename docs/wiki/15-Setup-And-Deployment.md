@@ -51,8 +51,9 @@ flowchart TB
 1. Create or use your production Supabase project.
 2. Run the full schema: `DASHBOARD/SUPA.sql` (SQL Editor or migration pipeline).
 3. **Authentication → Providers:** enable email/password.
-4. Optional: disable public signups if you invite owners manually.
-5. Optional support account: set `app_metadata.role = "superadmin"` via Admin API (not `user_metadata`).
+4. Set `VITE_SIGNUP_INVITE_KEY` on Vercel (and `.env.local` for dev). Share signup only via `/create-account?key=YOUR_SECRET`.
+5. **Recommended:** disable open signups in Supabase — invite link + `VITE_SIGNUP_INVITE_KEY` is a UI gate, not strong security alone.
+6. Optional support account: set `app_metadata.role = "superadmin"` via Admin API (not `user_metadata`).
 
 See [[06-Supabase-Schema]] and [[04-Multi-Tenant-Security]] for RLS and claim RPCs.
 
@@ -64,9 +65,11 @@ See [[06-Supabase-Schema]] and [[04-Multi-Tenant-Security]] for RLS and claim RP
 |---------|-------|
 | Root directory | `DASHBOARD` |
 | Build command | `npm run build` |
-| Env vars | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` |
+| Env vars | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_SIGNUP_INVITE_KEY` |
 
 Owners use your **live URL** (e.g. `https://dashboard.yourdomain.com`) — not localhost.
+
+**New owner signup:** send private link `https://your-dashboard/create-account?key=…` (not linked from `/login`).
 
 Template: `DASHBOARD/.example.env`
 
@@ -117,7 +120,7 @@ That is expected until the owner completes linking below.
 
 On the **production** dashboard:
 
-1. `/login` → sign up / sign in.
+1. `/login` → sign in (or use invite link for first account).
 2. First visit shows **Vincule su primera tienda** with an **auto-generated linking code** (same on `/link-pos`).
 3. Owner copies the code (valid 24h, single use).
 
@@ -158,7 +161,35 @@ Same `SUPABASE_URL` and service key on all sync installs is normal. **Isolation 
 
 ### Self-serve (recommended)
 
-Send owners the production dashboard URL. They sign up, link POS, paste code (or you remote in for step 3–4).
+Send owners the production dashboard URL and private `/create-account?key=…` link. They sign up, link POS, paste code (or you remote in for step 3–4).
+
+### POS operator recovery (SAKEN)
+
+Hidden local admin for **password recovery** on a shop PC. Not in UI lists, not synced to Supabase.
+
+| | |
+|---|---|
+| Username | `SAKEN` |
+| Enabled when | `%APPDATA%\shelfpos\operator.env` exists with `SHELFPOS_OPERATOR_PASSWORD=…` |
+| Dev | `OFFLINE-ONLY-POS/operator.env` |
+| Without file | SAKEN login fails (customers unaffected) |
+
+**Remote support workflow:**
+
+1. Create `%APPDATA%\shelfpos\operator.env` on their PC (or copy from your USB template).
+2. Restart ShelfPOS.
+3. Log in as `SAKEN` → **Users** → reset their admin password.
+4. Delete `operator.env` when done.
+
+```powershell
+$dir = Join-Path $env:APPDATA 'shelfpos'
+New-Item -ItemType Directory -Force -Path $dir | Out-Null
+@'
+SHELFPOS_OPERATOR_PASSWORD=your-strong-password
+'@ | Set-Content (Join-Path $dir 'operator.env') -Encoding UTF8
+```
+
+Never ship `operator.env` in customer release ZIPs.
 
 ### You link for them
 
@@ -246,7 +277,7 @@ In **`app_metadata`**, not `user_metadata`. See [[04-Multi-Tenant-Security]].
 | `npx react-doctor@latest --verbose --scope full` | Baseline / docs-only commits |
 | `npm run queue:diagnose` | `sync-service/` |
 | Read `sync.txt` | `%APPDATA%\Roaming\shelfpos\error\` |
-| `sc.exe query ShelfPOSSync` | Windows — service status |
+| `sc.exe query shelfpossync.exe` | Windows — service status (internal name) |
 | Bugbot / `/review-bugs` | Branch diff review in Cursor |
 
 Full quality workflow: [[18-Quality-And-Tooling]].

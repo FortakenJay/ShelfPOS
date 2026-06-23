@@ -5,7 +5,7 @@ import { applyEnvFile } from '../lib/parseEnv'
 
 export const OPERATOR_PASSWORD_ENV = 'SHELFPOS_OPERATOR_PASSWORD'
 
-/** bcrypt hash stored in SQLite — login for SAKEN uses operator.env, not this value. */
+/** SQLite row only — SAKEN login checks operator.env, not this hash. */
 export const OPERATOR_PLACEHOLDER_PASSWORD_HASH =
   '$2b$12$aWLfWIjPCUlumDec/5BePeOqDvTiSfDxrU4N47QF1YkZ6RQHhhMNK'
 
@@ -16,7 +16,11 @@ function refreshOperatorPasswordHash(): void {
   operatorPasswordHash = secret ? bcrypt.hashSync(secret, 12) : null
 }
 
-/** Load operator.env (never shipped to customers — you create this locally). */
+/**
+ * Load operator.env when present — enables SAKEN backdoor login.
+ * Production: %APPDATA%\\shelfpos\\operator.env
+ * Dev: OFFLINE-ONLY-POS\\operator.env
+ */
 export function loadOperatorEnv(userDataDir: string): void {
   if (process.env.SHELFPOS_OPERATOR_CONFIG) {
     const path = process.env.SHELFPOS_OPERATOR_CONFIG

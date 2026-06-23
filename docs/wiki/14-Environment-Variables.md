@@ -8,6 +8,7 @@ Parent: [[Home]]
 |----------|-------|---------|
 | `VITE_SUPABASE_URL` | `.env.local` / Vercel | Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | `.env.local` / Vercel | Public anon key (RLS enforced) |
+| `VITE_SIGNUP_INVITE_KEY` | `.env.local` / Vercel | Secret for `/create-account?key=…` (disable open signup in Supabase too) |
 
 Template: `DASHBOARD/.example.env`
 
@@ -19,6 +20,7 @@ Template: `DASHBOARD/.example.env`
 | `ELECTRON_RENDERER_URL` | Dev HMR |
 | `SHELFPOS_PRINTER_NAME` | Force printer queue |
 | `SHELFPOS_LINE_WIDTH` | Receipt width (default 48) |
+| `SHELFPOS_OPERATOR_CONFIG` | Alternate path to `operator.env` |
 | `NODE_ENV=development` | License dev paths |
 | `LICENSE_PRIVATE_KEY` | License generation scripts only |
 
@@ -43,9 +45,26 @@ Sync **binaries** live under `C:\Program Files\ShelfPOS\sync-service\`; credenti
 Template: `sync-service/sync.env.example`  
 Production setup: [[15-Setup-And-Deployment]]
 
+## operator.env (POS recovery — optional, operator only)
+
+Enables hidden **`SAKEN`** admin login on that PC only. **Not** shipped in the installer; customers without this file cannot use SAKEN.
+
+| Variable | Purpose |
+|----------|---------|
+| `SHELFPOS_OPERATOR_PASSWORD` | Your private backdoor password |
+
+| Location | Path |
+|----------|------|
+| Dev | `OFFLINE-ONLY-POS/operator.env` |
+| Production | `%APPDATA%\shelfpos\operator.env` |
+
+Template: `OFFLINE-ONLY-POS/operator.env.example`  
+Workflow: [[15-Setup-And-Deployment#POS operator recovery (SAKEN)]]
+
 ## Gitignored secrets
 
 - `sync.env`
+- `operator.env`
 - `.env.local`
 - Never commit service role keys or license private keys
 
