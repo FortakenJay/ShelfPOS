@@ -40,7 +40,7 @@ Layout: `routes/_app/route.tsx` — auth gate + `StoreProvider` + `Shell`.
 | `dashboard.ts` | KPIs, trends, team, inventory |
 | `reports.ts` | All report types |
 | `stores.ts` | Tenant store list |
-| `store-claims.ts` | `create_store_claim` RPC |
+| `store-claims.ts` | `create_store_pairing`, `ensure_store_pairing`, `list_pending_pairings` |
 | `cierres.ts`, `cash-movements.ts`, `audit.ts` | Domain pages |
 | `factura-pdf.ts` | Sale fetch for PDF |
 

@@ -179,10 +179,12 @@ export function registerSettingsHandlers(): void {
         throw new AppError('errors.invalidInput')
       }
 
-      await session.verifyPin(managerPin)
-      await session.verifyCajaPin(cajaPin)
+      await Promise.all([
+        session.verifyPin(managerPin),
+        session.verifyCajaPin(cajaPin),
+        probePrinter(),
+      ])
 
-      await probePrinter()
       const lang = receiptLanguage()
       const user = session.require()
       const storeName = getAppSettings().storeName

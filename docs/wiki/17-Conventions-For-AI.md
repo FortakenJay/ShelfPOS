@@ -63,15 +63,14 @@ Invalidate on mutations consistently.
 
 ## Quality gates
 
+See [[18-Quality-And-Tooling]] for Bugbot, full vs changed Doctor scope, and pre-commit checklist.
+
 ```bash
 # POS
-cd OFFLINE-ONLY-POS && npm run lint
+cd OFFLINE-ONLY-POS && npm run lint && npm run doctor
 
 # Dashboard
-cd DASHBOARD && npm run lint
-
-# React Doctor (after React changes)
-npx react-doctor@latest --verbose --scope changed
+cd DASHBOARD && npm run lint && npm run doctor
 ```
 
 ## Files to grep first

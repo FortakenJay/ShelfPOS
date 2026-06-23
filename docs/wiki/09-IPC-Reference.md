@@ -38,7 +38,8 @@ Preload whitelists channels — only listed channels can be invoked.
 | `dashboard.ts` | Local admin KPIs |
 | `users.ts` | POS user CRUD |
 | `printQueue.ts` | Failed print retry |
-| `printer.ts` | Drawer test |
+| `printer.ts` | Drawer kick, status, test print, colon test |
+| `syncSetup.ts` | Cloud sync config, restart `ShelfPOSSync` |
 | `backup.ts` | Backup / CSV export |
 
 ## Sales channels (examples)

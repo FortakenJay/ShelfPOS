@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as CreateAccountRouteImport } from './routes/create-account'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppReportsRouteImport } from './routes/_app/reports'
@@ -22,6 +23,11 @@ import { Route as AppAuditRouteImport } from './routes/_app/audit'
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreateAccountRoute = CreateAccountRouteImport.update({
+  id: '/create-account',
+  path: '/create-account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRouteRoute = AppRouteRouteImport.update({
@@ -66,6 +72,7 @@ const AppAuditRoute = AppAuditRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/create-account': typeof CreateAccountRoute
   '/login': typeof LoginRoute
   '/audit': typeof AppAuditRoute
   '/cierres': typeof AppCierresRoute
@@ -76,6 +83,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/create-account': typeof CreateAccountRoute
   '/login': typeof LoginRoute
   '/audit': typeof AppAuditRoute
   '/cierres': typeof AppCierresRoute
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_app': typeof AppRouteRouteWithChildren
+  '/create-account': typeof CreateAccountRoute
   '/login': typeof LoginRoute
   '/_app/audit': typeof AppAuditRoute
   '/_app/cierres': typeof AppCierresRoute
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/create-account'
     | '/login'
     | '/audit'
     | '/cierres'
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/create-account'
     | '/login'
     | '/audit'
     | '/cierres'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_app'
+    | '/create-account'
     | '/login'
     | '/_app/audit'
     | '/_app/cierres'
@@ -133,6 +145,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRouteRoute: typeof AppRouteRouteWithChildren
+  CreateAccountRoute: typeof CreateAccountRoute
   LoginRoute: typeof LoginRoute
 }
 
@@ -143,6 +156,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/create-account': {
+      id: '/create-account'
+      path: '/create-account'
+      fullPath: '/create-account'
+      preLoaderRoute: typeof CreateAccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app': {
@@ -229,6 +249,7 @@ const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRouteRoute: AppRouteRouteWithChildren,
+  CreateAccountRoute: CreateAccountRoute,
   LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport

@@ -27,13 +27,21 @@ Migrations are **forward-only**, keyed by version number. `user_version` pragma 
 
 ## sync_queue
 
+Outbound mirror queue (v9). The sync service polls this table — it does **not** watch WAL or scan `updated_at` on business tables.
+
 ```sql
 id, table_name, row_id, operation,  -- insert | update | delete
 status,          -- pending | synced | error
 created_at, synced_at, error, retry_count
 ```
 
-Enqueue **in the same transaction** as the business write (`enqueueSync` in `syncQueue.ts`).
+| Status | Meaning |
+|--------|---------|
+| `pending` | Waiting for sync service (or retrying after error) |
+| `synced` | Successfully pushed to Supabase |
+| `error` | Gave up after 10 failed attempts (`retry_count >= 10`) |
+
+Enqueue **in the same transaction** as the business write (`enqueueSync` in `syncQueue.ts`). The service always reads the **current** live row via `getLiveRow` before pushing.
 
 ## Important settings keys
 

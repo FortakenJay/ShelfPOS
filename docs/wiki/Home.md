@@ -58,6 +58,7 @@ There is **no root package.json** — each project installs independently.
 
 ### AI / contributors
 - [[17-Conventions-For-AI]]
+- [[18-Quality-And-Tooling]]
 
 ## Quick paths by role
 
@@ -69,6 +70,7 @@ There is **no root package.json** — each project installs independently.
 | Add a report | [[12-Reports-And-Exports]] |
 | Change Supabase schema | [[06-Supabase-Schema]] → `DASHBOARD/SUPA.sql` |
 | Onboard a new store owner | [[15-Setup-And-Deployment]] (production checklist) |
+| Lint / Doctor before commit | [[18-Quality-And-Tooling]] |
 | Production link POS → dashboard | [[15-Setup-And-Deployment#Link POS to owner (production, per shop)]] |
 | Multi-tenant / RLS | [[04-Multi-Tenant-Security]] |
 | Invoice PDF layout | [[13-Factura-PDF]] |
@@ -85,7 +87,10 @@ There is **no root package.json** — each project installs independently.
 
 ## Lint & quality
 
+See [[18-Quality-And-Tooling]] for full checklist.
+
 - **POS:** `npm run lint` (typecheck + eslint)
 - **Dashboard:** `npm run lint`
-- **React Doctor:** `npx react-doctor@latest --verbose --scope changed` in each app folder
+- **React Doctor:** `npm run doctor` in each app (changed scope); use `--scope full` for baseline or docs-only commits
 - **Sync:** `npm run build` in `sync-service/`
+- **Branch review:** Bugbot on branch diff before PR

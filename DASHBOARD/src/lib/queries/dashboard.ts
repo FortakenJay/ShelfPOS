@@ -25,6 +25,7 @@ import {
   roleSummariesFromPosUsers,
   teamMembersFromPosUsers,
 } from '#/lib/dashboard-employees'
+import { isHiddenOperatorUsername } from '#/lib/hidden-operator'
 import {
   inventoryBundleFromProducts,
   inventoryKpiPriorCounts,
@@ -524,7 +525,7 @@ async function countCierreDiscrepancies(storeId: StoreId, since: string): Promis
 }
 
 async function fetchPosUsers(storeId: StoreId): Promise<PosUserRow[]> {
-  return fetchAllPages(async (offset, limit) => {
+  const rows = await fetchAllPages(async (offset, limit) => {
     const { data, error } = await getSupabase()
       .from('pos_users')
       .select('id, username, role, is_active')
@@ -534,6 +535,7 @@ async function fetchPosUsers(storeId: StoreId): Promise<PosUserRow[]> {
     if (error) throw error
     return data
   })
+  return rows.filter((row) => !isHiddenOperatorUsername(row.username))
 }
 
 export async function fetchDashboardTeam(storeId: StoreId): Promise<DashboardTeamData> {

@@ -118,7 +118,15 @@ export function registerProductHandlers(): void {
     { productIds: number[] },
     { printStatus: PrintStatus; printed: number; failed: number; total: number }
   >('products:printLabelBatch', MANAGE, async ({ productIds }) => {
-    const ids = [...new Set(productIds.map((id) => Math.trunc(id)).filter((id) => id > 0))]
+    const seen = new Set<number>()
+    const ids: number[] = []
+    for (const raw of productIds) {
+      const id = Math.trunc(raw)
+      if (id > 0 && !seen.has(id)) {
+        seen.add(id)
+        ids.push(id)
+      }
+    }
     if (ids.length === 0 || ids.length > MAX_BATCH_LABEL_PRODUCTS) {
       throw new AppError('errors.invalidInput')
     }

@@ -369,14 +369,17 @@ export function registerSalesHandlers(): void {
             : `${consecutivo} · ${total}`
       })
 
+      const stockProductIds: number[] = []
+      for (const line of finalized) {
+        if (!line.isMisc && line.product) stockProductIds.push(line.product.id)
+      }
+
       return {
         saleId,
         consecutivo,
         total,
         change,
-        stockAlerts: alertsForProducts(
-          finalized.filter((l) => !l.isMisc && l.product).map((l) => l.product!.id)
-        ),
+        stockAlerts: alertsForProducts(stockProductIds),
         printJobId
       }
     })()
@@ -470,8 +473,23 @@ export function registerSalesHandlers(): void {
         isMisc: number
       }
 
-      return saleRows
-        .map((sale) => ({
+      const details: SaleDetail[] = []
+      for (const sale of saleRows) {
+        const items = (itemsStmt.all(sale.id) as SaleItemReturnRow[]).map((item) => ({
+          saleItemId: item.saleItemId,
+          productId: item.productId,
+          name: item.name,
+          barcode: item.barcode,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          discount: item.discount,
+          lineTotal: item.lineTotal,
+          taxCategory: item.taxCategory,
+          returnedQty: item.returnedQty,
+          isMisc: item.isMisc === 1
+        }))
+        if (items.length === 0) continue
+        details.push({
           id: sale.id,
           consecutivo: sale.consecutivo,
           createdAt: sale.created_at,
@@ -491,21 +509,10 @@ export function registerSalesHandlers(): void {
             email: sale.customer_email,
             activityCode: sale.customer_activity_code
           },
-          items: (itemsStmt.all(sale.id) as SaleItemReturnRow[]).map((item) => ({
-            saleItemId: item.saleItemId,
-            productId: item.productId,
-            name: item.name,
-            barcode: item.barcode,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            discount: item.discount,
-            lineTotal: item.lineTotal,
-            taxCategory: item.taxCategory,
-            returnedQty: item.returnedQty,
-            isMisc: item.isMisc === 1
-          }))
-        }))
-        .filter((sale) => sale.items.length > 0)
+          items
+        })
+      }
+      return details
     }
   )
 

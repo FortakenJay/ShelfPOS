@@ -87,7 +87,7 @@ Template: `DASHBOARD/.example.env`
 
 **Sync directory:** `C:\Program Files\ShelfPOS\sync-service\`
 
-**`sync.env`** (auto-generated — no claim code yet):
+**`sync.env`** (auto-generated to `%APPDATA%\shelfpos\sync.env` — no claim code yet):
 
 ```env
 SUPABASE_URL=https://YOUR-PROJECT.supabase.co
@@ -97,7 +97,7 @@ SQLITE_PATH=C:\Users\<User>\AppData\Roaming\shelfpos\shelf.db
 
 **SQLite:** `settings.sync_store_id` set via `scripts/set-store-id.cjs`.
 
-**Windows service:** `ShelfPOSSync` — config path via `SHELFPOS_SYNC_CONFIG` → `sync.env`.
+**Windows service:** `ShelfPOSSync` — reads config via `SHELFPOS_SYNC_CONFIG` → `%APPDATA%\shelfpos\sync.env`.
 
 ### After install (before claim)
 
@@ -187,13 +187,28 @@ In **`app_metadata`**, not `user_metadata`. See [[04-Multi-Tenant-Security]].
 
 ---
 
+## Updating releases (Windows)
+
+| Step | Updates | Rewrites `sync.env`? |
+|------|---------|----------------------|
+| **ShelfPOS Setup.exe** | Electron POS only | No |
+| **Install-ShelfPOS.cmd** | `Program Files\ShelfPOS\sync-service\` + re-registers service | **Yes** (full overwrite) |
+
+**Typical version bump:** customer runs `Setup.exe`; you run `Install-ShelfPOS` from the new release ZIP only if `sync-service` changed.
+
+**Config only** (URL, key, pairing code): POS **Vincular con el panel** (`/sync-setup`) or edit `%APPDATA%\shelfpos\sync.env` → `Restart-Service ShelfPOSSync`.
+
+**Sync code only** (no credential change): stop service → copy new `dist\` into install dir → start service.
+
+---
+
 ## Local development vs production
 
 | | Development | Production |
 |---|-------------|------------|
 | Dashboard | `npm run dev` (localhost) | Vercel / custom domain |
 | Supabase | Dev project or same project | Production project |
-| `sync.env` | `sync-service/sync.env` in repo folder | `Program Files\ShelfPOS\sync-service\sync.env` |
+| `sync.env` | `sync-service/sync.env` in repo folder | `%APPDATA%\shelfpos\sync.env` |
 | Claim | Same flow — code from whichever dashboard URL you use | Code from **live** dashboard only |
 | Service key | Dev project key | Production key — **never commit** |
 
@@ -212,6 +227,7 @@ In **`app_metadata`**, not `user_metadata`. See [[04-Multi-Tenant-Security]].
 
 | Symptom | Check |
 |---------|-------|
+| `relation "store_claim_codes" does not exist` on fresh `SUPA.sql` | Use latest `SUPA.sql` — legacy DROP POLICY lines removed |
 | `STORE_CLAIM_CODE not set` | Add code to production `sync.env`, restart service |
 | Claim failed | Code expired (24h), already used, or wrong Supabase URL |
 | Store already owned | Another user has `store_access` for that `store_id` |
@@ -225,10 +241,15 @@ In **`app_metadata`**, not `user_metadata`. See [[04-Multi-Tenant-Security]].
 
 | Command | Where |
 |---------|-------|
+| `npm run lint` | `OFFLINE-ONLY-POS/`, `DASHBOARD/` |
+| `npm run doctor` | Same — React Doctor `--scope changed` |
+| `npx react-doctor@latest --verbose --scope full` | Baseline / docs-only commits |
 | `npm run queue:diagnose` | `sync-service/` |
 | Read `sync.txt` | `%APPDATA%\Roaming\shelfpos\error\` |
 | `sc.exe query ShelfPOSSync` | Windows — service status |
-| React Doctor | `npx react-doctor@latest --verbose --scope changed` |
+| Bugbot / `/review-bugs` | Branch diff review in Cursor |
+
+Full quality workflow: [[18-Quality-And-Tooling]].
 
 ---
 

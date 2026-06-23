@@ -835,6 +835,7 @@
     "supabaseUrl": "URL de Supabase",
     "serviceKey": "Clave de servicio (service role)",
     "serviceKeyHint": "Solo en este equipo — se cifra al guardar",
+    "serviceKeyKeepHint": "Dejar vacío para conservar la clave guardada",
     "pairingCode": "Código de vinculación (8 caracteres)",
     "save": "Guardar y vincular",
     "saveAgain": "Actualizar configuración",
@@ -845,7 +846,9 @@
       "invalidServiceKey": "Clave de servicio inválida",
       "invalidPairingCode": "El código debe tener 8 letras o números",
       "invalidStoreName": "Configure el nombre de la tienda primero",
-      "serviceRestartFailed": "No se pudo reiniciar ShelfPOS Sync. Ejecute Install-ShelfPOS como administrador."
+      "serviceRestartFailed": "No se pudo reiniciar ShelfPOS Sync. Ejecute Install-ShelfPOS como administrador.",
+      "serviceNotInstalled": "El servicio Windows no está instalado. En desarrollo, reinicie sync con: cd sync-service && npm run dev",
+      "encryptionFailed": "No se pudo cifrar la clave de servicio en este equipo (DPAPI)."
     }
   },
   "settings": {

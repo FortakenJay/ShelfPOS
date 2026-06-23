@@ -46,7 +46,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   })
 
   const [storeIdOverride, setStoreIdOverride] = useState<StoreId | null>(null)
-  const storeId = storeIdOverride ?? resolveStoreId(stores)
+  const resolvedStoreId = storeIdOverride ?? resolveStoreId(stores)
 
   const setStoreId = (id: StoreId): void => {
     setStoreIdOverride(id)
@@ -54,24 +54,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }
 
   const storeLabel =
-    stores.find((s) => s.storeId === storeId)?.label ?? storeId
+    stores.find((s) => s.storeId === resolvedStoreId)?.label ?? resolvedStoreId
 
-  const value =
+  const value: StoreContextValue =
     allowWithoutStore && stores.length === 0
-      ? {
-          stores,
-          storeId: '' as StoreId,
-          storeLabel: '',
-          setStoreId,
-        }
-      : { stores, storeId, storeLabel, setStoreId }
+      ? { stores, storeId: '', storeLabel: '', setStoreId }
+      : { stores, storeId: resolvedStoreId, storeLabel, setStoreId }
 
-  if (authLoading || (user && isPending)) {
-    return <FullScreenSpinner />
-  }
+  const waitingForStores =
+    Boolean(user) && isPending && stores.length === 0
 
-  if (!allowWithoutStore && (isError || stores.length === 0)) {
-    return (
+  let body: ReactNode
+  if (authLoading || waitingForStores) {
+    body = <FullScreenSpinner />
+  } else if (!allowWithoutStore && (isError || stores.length === 0)) {
+    body = (
       <NoStoresPage
         loadFailed={isError}
         retrying={isFetching}
@@ -80,13 +77,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }}
       />
     )
+  } else if (!allowWithoutStore && !resolvedStoreId) {
+    body = <FullScreenSpinner />
+  } else {
+    body = children
   }
 
-  if (!allowWithoutStore && !storeId) {
-    return <FullScreenSpinner />
-  }
-
-  return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
+  return <StoreContext.Provider value={value}>{body}</StoreContext.Provider>
 }
 
 export function useStore(): StoreContextValue {

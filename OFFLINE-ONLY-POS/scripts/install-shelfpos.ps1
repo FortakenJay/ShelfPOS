@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
   Installs the ShelfPOS Supabase sync service on Windows.
 
@@ -37,7 +37,8 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $BundleRoot = $PSScriptRoot
-$ServiceName = 'ShelfPOSSync'
+$ServiceName = 'shelfpossync.exe'
+$ServiceDisplayName = 'ShelfPOSSync'
 $InstallDir = Join-Path ${env:ProgramFiles} 'ShelfPOS\sync-service'
 $SqlitePath = Join-Path $env:APPDATA 'shelfpos\shelf.db'
 
@@ -390,9 +391,13 @@ if ($svc.Status -eq 'Running') {
   }
 } else {
   Write-Host ''
-  Write-Host 'Install finished but sync service is not running. Check Event Viewer or run:' -ForegroundColor Red
+  Write-Host "Install finished but $ServiceDisplayName is not running (status: $($svc.Status))." -ForegroundColor Red
+  Write-Host 'Common fix: update sync-service dist, then start the service:' -ForegroundColor Yellow
   Write-Host "  sc.exe query $ServiceName"
-  Write-Host "  & `"$NodeExe`" `"$ScriptJs`"   # run in foreground to see errors"
+  Write-Host "  Start-Service $ServiceName"
+  Write-Host 'If it stops immediately, run in foreground (shows the real error):' -ForegroundColor Yellow
+  Write-Host "  `$env:SHELFPOS_SYNC_CONFIG = `"$configPath`""
+  Write-Host "  & `"$NodeExe`" `"$ScriptJs`""
   Pause-OnFailure 1
 }
 

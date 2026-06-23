@@ -40,12 +40,18 @@
     "password": "密码",
     "submit": "登录",
     "submitting": "登录中…",
-    "signUpSubmit": "创建账户",
-    "switchToSignUp": "首次使用？创建店主账户",
-    "switchToSignIn": "已有账户？登录",
-    "signUpConfirm": "若 Supabase 要求邮箱确认，请先确认后再登录并绑定 POS。",
     "missingEnv": "请在 <code>.env.local</code> 中配置 VITE_SUPABASE_URL 和 VITE_SUPABASE_ANON_KEY。",
     "missingEnvProd": "请在 <code>.env.local</code>（本地）或 Vercel（生产）中配置 VITE_SUPABASE_URL 和 VITE_SUPABASE_ANON_KEY。"
+  },
+  "createAccount": {
+    "subtitle": "创建店主账户（专属链接）",
+    "submit": "创建账户",
+    "success": "账户已创建。若 Supabase 要求邮箱确认，请先确认后再登录并绑定 POS。",
+    "goLogin": "前往登录",
+    "alreadyHaveAccount": "已有账户？去登录",
+    "backToLogin": "返回登录",
+    "invalidInvite": "注册链接无效或已过期，请索取新链接。",
+    "disabled": "此服务器未配置专属注册链接。"
   },
   "status": {
     "online": "在线",
@@ -77,7 +83,7 @@
     "noStoresChecklistTitle": "收银电脑上的步骤",
     "noStoresStepInstall": "运行 Install-ShelfPOS（在 ShelfPOS 安装程序之后）。",
     "noStoresStepCode": "提示输入绑定代码时，粘贴上方代码。",
-    "noStoresStepFinish": "完成后，在此面板点击「已安装 — 刷新」。",
+    "noStoresStepFinish": "完成后，在此面板点击「已安装 — 刷新」。"
   },
   "notFound": {
     "title": "页面未找到",
@@ -419,6 +425,7 @@
     "codeExpiry": "24 小时内有效，仅可使用一次。",
     "codeInstallerHint": "粘贴到 ShelfPOS → 设置 → 云同步、Install-ShelfPOS，或 sync.env 的 STORE_PAIRING_CODE。",
     "copy": "复制代码",
+    "copied": "代码已成功复制",
     "goDashboard": "进入面板",
     "noPending": "没有有效代码。请生成一个以绑定另一台收银机。",
     "addRegister": "绑定另一台收银机",

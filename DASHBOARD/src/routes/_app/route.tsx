@@ -4,6 +4,7 @@ import { Trans } from 'react-i18next'
 import { AuthProvider, useAuth } from '#/lib/auth'
 import { StoreProvider } from '#/lib/store-context'
 import { AppQueryProvider } from '#/lib/app-query-provider'
+import { ToastProvider } from '#/lib/toast'
 import { Shell } from '#/components/Shell'
 import { FullScreenSpinner } from '#/components/ui'
 
@@ -14,11 +15,13 @@ export const Route = createFileRoute('/_app')({
 function AppLayout() {
   return (
     <AppQueryProvider>
-      <AuthProvider>
-        <StoreProvider>
-          <AuthedShell />
-        </StoreProvider>
-      </AuthProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <StoreProvider>
+            <AuthedShell />
+          </StoreProvider>
+        </AuthProvider>
+      </ToastProvider>
     </AppQueryProvider>
   )
 }

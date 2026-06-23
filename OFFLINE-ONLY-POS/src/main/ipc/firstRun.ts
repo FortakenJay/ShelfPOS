@@ -4,6 +4,7 @@ import { AppError } from '../errors'
 import { getDb, getDbPath } from '../db'
 import { localNow } from '../db/helpers'
 import { getAppSettings, setSetting, SETTING_KEYS } from '../db/repos/settings'
+import { isHiddenOperatorUsername } from '../../shared/operator-account'
 import type { FirstRunSetupInput, FirstRunStatus, Language } from '../../shared/types'
 
 const PIN_RE = /^\d{4,6}$/
@@ -36,6 +37,7 @@ export function registerFirstRunHandlers(backupDir: string): void {
     if (!input?.storeName?.trim() || !input?.username?.trim() || !input.password) {
       throw new AppError('errors.invalidInput')
     }
+    if (isHiddenOperatorUsername(input.username)) throw new AppError('errors.duplicateUsername')
     if (!PIN_RE.test(input.pin)) throw new AppError('firstRun.errors.pinFormat')
 
     const [passwordHash, pinHash] = await Promise.all([

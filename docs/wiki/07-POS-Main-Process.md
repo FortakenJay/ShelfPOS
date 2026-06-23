@@ -45,8 +45,11 @@ All multi-step writes use `db.transaction()`. Sync enqueue inside same transacti
 ## Printing
 
 - Receipts via `print_jobs` queue + `printer.ts`
+- **Cash drawer:** ESC/POS pulse at end of receipt when sale includes cash (`PrintPayload.openDrawer`); manual kick via `printer:openDrawer` or cash-movement shortcuts
+- Epson TM-T20/T81III: Windows RAW spooler; env `SHELFPOS_PRINTER_NAME` override
 - Encoding: `iconv-lite` for thermal code pages
 - Env overrides: `SHELFPOS_PRINTER_NAME`, `SHELFPOS_LINE_WIDTH`
+- IPC: `printer:status`, `printer:test`, `printer:colonTest`
 
 ## License
 

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { useReducer } from 'react'
+import { useEffect, useReducer } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
 import { useToasts } from '@/lib/toast'
@@ -10,6 +10,17 @@ type Draft = {
   supabaseUrl: string
   serviceKey: string
   pairingCode: string
+}
+
+function buildSavePayload(
+  draft: Draft,
+  status: { supabaseUrl: string | null; configured: boolean } | undefined,
+): { supabaseUrl: string; serviceKey: string; pairingCode: string } {
+  return {
+    supabaseUrl: (draft.supabaseUrl || status?.supabaseUrl || '').trim(),
+    serviceKey: draft.serviceKey.trim(),
+    pairingCode: draft.pairingCode.trim().toUpperCase(),
+  }
 }
 
 export function SyncSetupPage(): React.JSX.Element {
@@ -28,13 +39,13 @@ export function SyncSetupPage(): React.JSX.Element {
     { supabaseUrl: '', serviceKey: '', pairingCode: '' },
   )
 
+  useEffect(() => {
+    if (!status?.supabaseUrl) return
+    setDraft({ supabaseUrl: status.supabaseUrl })
+  }, [status?.supabaseUrl])
+
   const save = useMutation({
-    mutationFn: () =>
-      api.syncSetup.save({
-        supabaseUrl: draft.supabaseUrl,
-        serviceKey: draft.serviceKey,
-        pairingCode: draft.pairingCode.toUpperCase(),
-      }),
+    mutationFn: () => api.syncSetup.save(buildSavePayload(draft, status)),
     onSuccess: (next) => {
       queryClient.setQueryData(['syncSetupStatus'], next)
       if (next.linked) {
@@ -89,7 +100,7 @@ export function SyncSetupPage(): React.JSX.Element {
         >
           <Field label={t('syncSetup.supabaseUrl')}>
             <Input
-              value={draft.supabaseUrl || status?.supabaseUrl || ''}
+              value={draft.supabaseUrl}
               onChange={(e) => setDraft({ supabaseUrl: e.target.value })}
               placeholder="https://xxxx.supabase.co"
               autoComplete="off"
@@ -100,7 +111,11 @@ export function SyncSetupPage(): React.JSX.Element {
               type="password"
               value={draft.serviceKey}
               onChange={(e) => setDraft({ serviceKey: e.target.value })}
-              placeholder={t('syncSetup.serviceKeyHint')}
+              placeholder={
+                status?.configured
+                  ? t('syncSetup.serviceKeyKeepHint')
+                  : t('syncSetup.serviceKeyHint')
+              }
               autoComplete="off"
             />
           </Field>
@@ -118,7 +133,7 @@ export function SyncSetupPage(): React.JSX.Element {
           </Field>
 
           <div className="flex flex-wrap gap-3 pt-2">
-            <Button type="submit" loading={save.isPending} disabled={linked && !draft.serviceKey}>
+            <Button type="submit" loading={save.isPending}>
               {linked ? t('syncSetup.saveAgain') : t('syncSetup.save')}
             </Button>
             <Button

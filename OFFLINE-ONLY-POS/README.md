@@ -49,3 +49,13 @@ The installer never touches `%APPDATA%\shelfpos` — user data survives updates 
 4. Login
 
 Returns and cierre de caja are gated by the manager PIN. There is no user-management UI by design.
+
+## Cloud sync (optional)
+
+Sales and inventory mirror to **Supabase** for the owner dashboard via a separate **Windows Service** (`ShelfPOSSync`):
+
+- POS writes `sync_queue` rows in the same transaction as business data
+- Service polls every 5s, upserts rows to Supabase (one-way mirror)
+- Install: `Install-ShelfPOS.ps1` after the POS setup; config in `%APPDATA%\shelfpos\sync.env`
+
+Full architecture: `docs/wiki/10-Sync-Service.md`

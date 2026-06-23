@@ -1,4 +1,7 @@
 import { getDb } from '../index'
+import { HIDDEN_OPERATOR_USERNAME } from '../../../shared/operator-account'
+
+const HIDDEN_USER_SQL = `lower(username) <> lower('${HIDDEN_OPERATOR_USERNAME}')`
 import { daysAgoLocal, daysInRange, localNow, rangeBounds, round2, todayLocal } from '../helpers'
 import { ACTIVE_PRODUCT_SQL } from './products'
 import { getAppSettings, getSetting, SETTING_KEYS } from './settings'
@@ -315,7 +318,7 @@ function employeeOverview(): DashboardEmployeeOverview {
     .prepare(
       `SELECT role, COUNT(*) AS count
        FROM users
-       WHERE is_active = 1
+       WHERE is_active = 1 AND ${HIDDEN_USER_SQL}
        GROUP BY role`
     )
     .all() as { role: Role; count: number }[]
@@ -338,7 +341,7 @@ function employeePerformance(filter: { fromTs: string; toTs: string }): Dashboar
        FROM users u
        LEFT JOIN sales s ON s.user_id = u.id
          AND s.created_at >= @fromTs AND s.created_at <= @toTs
-       WHERE u.is_active = 1 AND u.role = 'sales'
+       WHERE u.is_active = 1 AND u.role = 'sales' AND lower(u.username) <> lower('${HIDDEN_OPERATOR_USERNAME}')
        GROUP BY u.id
        ORDER BY salesVolume DESC`
     )
@@ -348,7 +351,7 @@ function employeePerformance(filter: { fromTs: string; toTs: string }): Dashboar
 function roleSummaries(): DashboardRoleSummary[] {
   const counts = getDb()
     .prepare(
-      `SELECT role, COUNT(*) AS count FROM users WHERE is_active = 1 GROUP BY role`
+      `SELECT role, COUNT(*) AS count FROM users WHERE is_active = 1 AND ${HIDDEN_USER_SQL} GROUP BY role`
     )
     .all() as { role: Role; count: number }[]
 

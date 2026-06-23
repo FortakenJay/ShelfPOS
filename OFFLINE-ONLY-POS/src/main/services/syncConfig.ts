@@ -6,8 +6,12 @@ import { AppError } from '../errors'
 import { getDbPath } from '../db'
 import { getSetting, setSetting, SETTING_KEYS } from '../db/repos/settings'
 import { encryptDpapi } from './dpapi-win'
+import { parseEnvFileContent } from '../lib/parseEnv'
 
 const PAIRING_RE = /^[A-Z0-9]{8}$/
+
+/** WinSW / node-windows registers this name (not the display name "ShelfPOSSync"). */
+const SYNC_WIN_SERVICE_NAME = 'shelfpossync.exe'
 
 export interface SyncSetupStatus {
   configured: boolean
@@ -32,15 +36,7 @@ export function getSyncConfigPath(): string {
 
 function parseEnvFile(path: string): Record<string, string> {
   if (!existsSync(path)) return {}
-  const out: Record<string, string> = {}
-  for (const line of readFileSync(path, 'utf8').split('\n')) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith('#')) continue
-    const eq = trimmed.indexOf('=')
-    if (eq < 1) continue
-    out[trimmed.slice(0, eq).trim()] = trimmed.slice(eq + 1).trim()
-  }
-  return out
+  return parseEnvFileContent(readFileSync(path, 'utf8'))
 }
 
 export function toSyncStoreId(storeName: string): string {
@@ -55,9 +51,24 @@ export function toSyncStoreId(storeName: string): string {
 
 function querySyncServiceRunning(): boolean | null {
   if (process.platform !== 'win32') return null
+  if (!isSyncServiceInstalled()) return null
   try {
-    const out = execSync('sc.exe query ShelfPOSSync', { encoding: 'utf8', windowsHide: true })
+    const out = execSync(`sc.exe query ${SYNC_WIN_SERVICE_NAME}`, { encoding: 'utf8', windowsHide: true })
     return out.includes('RUNNING')
+  } catch {
+    return false
+  }
+}
+
+function isSyncServiceInstalled(): boolean {
+  if (process.platform !== 'win32') return false
+  try {
+    execSync(`sc.exe query ${SYNC_WIN_SERVICE_NAME}`, {
+      encoding: 'utf8',
+      windowsHide: true,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    })
+    return true
   } catch {
     return false
   }
@@ -85,18 +96,35 @@ export function readSyncSetupStatus(): SyncSetupStatus {
 }
 
 export function writeSyncConfig(input: SyncSetupSaveInput): void {
-  const url = input.supabaseUrl.trim().replace(/\/$/, '')
-  const serviceKey = input.serviceKey.trim()
+  const configPath = getSyncConfigPath()
+  const existing = parseEnvFile(configPath)
+
+  const url = (input.supabaseUrl.trim() || existing.SUPABASE_URL?.trim() || '').replace(/\/$/, '')
   const pairingCode = input.pairingCode.trim().toUpperCase()
+  const newServiceKey = input.serviceKey.trim()
+  const existingEncKey = existing.SUPABASE_SERVICE_KEY?.trim() || ''
 
   if (!url.startsWith('https://') || !url.includes('supabase.co')) {
     throw new AppError('syncSetup.errors.invalidUrl')
   }
-  if (serviceKey.length < 20) {
-    throw new AppError('syncSetup.errors.invalidServiceKey')
-  }
   if (!PAIRING_RE.test(pairingCode)) {
     throw new AppError('syncSetup.errors.invalidPairingCode')
+  }
+
+  let encKey = existingEncKey
+  if (newServiceKey) {
+    if (newServiceKey.length < 20) {
+      throw new AppError('syncSetup.errors.invalidServiceKey')
+    }
+    encKey = (() => {
+      try {
+        return encryptDpapi(newServiceKey)
+      } catch {
+        throw new AppError('syncSetup.errors.encryptionFailed')
+      }
+    })()
+  } else if (!encKey) {
+    throw new AppError('syncSetup.errors.invalidServiceKey')
   }
 
   const storeName = getSetting(SETTING_KEYS.storeName) || 'Store'
@@ -105,10 +133,8 @@ export function writeSyncConfig(input: SyncSetupSaveInput): void {
     setSetting(SETTING_KEYS.syncStoreId, toSyncStoreId(storeName))
   }
 
-  const configPath = getSyncConfigPath()
   mkdirSync(dirname(configPath), { recursive: true })
 
-  const encKey = encryptDpapi(serviceKey)
   const sqlitePath = getDbPath().replace(/\\/g, '/')
 
   const body = `# ShelfPOS sync — configured from POS. Service key encrypted (DPAPI, this PC only).
@@ -121,13 +147,24 @@ STORE_PAIRING_CODE=${pairingCode}
   writeFileSync(configPath, body, 'utf8')
 }
 
-export function restartSyncService(): void {
-  if (process.platform !== 'win32') return
+export function restartSyncServiceIfInstalled(): boolean {
+  if (process.platform !== 'win32' || !isSyncServiceInstalled()) return false
   try {
-    execSync('powershell.exe -NoProfile -Command "Restart-Service ShelfPOSSync -ErrorAction Stop"', {
-      windowsHide: true,
-    })
+    execSync(
+      `powershell.exe -NoProfile -Command "Restart-Service -Name '${SYNC_WIN_SERVICE_NAME}' -ErrorAction Stop"`,
+      {
+        windowsHide: true,
+        stdio: ['pipe', 'pipe', 'pipe'],
+      },
+    )
+    return true
   } catch {
     throw new AppError('syncSetup.errors.serviceRestartFailed')
+  }
+}
+
+export function restartSyncService(): void {
+  if (!restartSyncServiceIfInstalled()) {
+    throw new AppError('syncSetup.errors.serviceNotInstalled')
   }
 }

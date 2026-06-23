@@ -692,9 +692,7 @@ CREATE POLICY "block pairing writes"
   ON public.store_pairings FOR ALL TO authenticated
   USING (false) WITH CHECK (false);
 
--- Legacy claim codes table cleanup (policies dropped with table in migration block above)
-DROP POLICY IF EXISTS "read own claim codes" ON public.store_claim_codes;
-DROP POLICY IF EXISTS "block claim code writes" ON public.store_claim_codes;
+-- Legacy store_claim_codes policies are dropped with the table (migration block above, CASCADE).
 
 
 -- READ policies — tenant-scoped (superadmin sees all)

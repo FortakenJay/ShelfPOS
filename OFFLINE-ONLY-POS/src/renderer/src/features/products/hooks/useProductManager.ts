@@ -81,7 +81,7 @@ export function useProductManager(options?: {
       api.products.adjustStock({ ...input, reason: 'manual_correction' }),
     onSuccess: (result) => {
       toasts.stockAlerts(result.stockAlerts)
-      invalidateProducts()
+      void queryClient.invalidateQueries({ queryKey: ['products'] })
     },
     onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
   })
@@ -91,7 +91,7 @@ export function useProductManager(options?: {
     onSuccess: () => {
       toasts.success('products.deleted')
       setUi((u) => ({ ...u, deleteProduct: null }))
-      invalidateProducts()
+      void queryClient.invalidateQueries({ queryKey: ['products'] })
     },
     onError: (err) => {
       setUi((u) => ({ ...u, deleteProduct: null }))
@@ -103,7 +103,7 @@ export function useProductManager(options?: {
     mutationFn: () => api.products.exportCsv(true),
     onSuccess: (result) => {
       if (!result.canceled && result.path) toasts.success('export.csvDone', { path: result.path })
-      invalidateProducts()
+      void queryClient.invalidateQueries({ queryKey: ['products'] })
     },
     onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
   })
@@ -112,7 +112,7 @@ export function useProductManager(options?: {
     mutationFn: () => api.products.exportCsv(false),
     onSuccess: (result) => {
       if (!result.canceled && result.path) toasts.success('export.csvDone', { path: result.path })
-      invalidateProducts()
+      void queryClient.invalidateQueries({ queryKey: ['products'] })
     },
     onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
   })
@@ -122,7 +122,7 @@ export function useProductManager(options?: {
     onSuccess: (result) => {
       if (result.canceled) return
       setUi((u) => ({ ...u, importPreview: result, importFormat: 'csv' }))
-      invalidateProducts()
+      void queryClient.invalidateQueries({ queryKey: ['products'] })
     },
     onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
   })
@@ -132,7 +132,7 @@ export function useProductManager(options?: {
     onSuccess: (result) => {
       if (result.canceled) return
       setUi((u) => ({ ...u, importPreview: result, importFormat: 'efactura' }))
-      invalidateProducts()
+      void queryClient.invalidateQueries({ queryKey: ['products'] })
     },
     onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
   })
@@ -156,7 +156,7 @@ export function useProductManager(options?: {
       const updated = result.updated ?? 0
       const failed = result.errors?.length ?? 0
       setUi((u) => ({ ...u, importPreview: null }))
-      if (created > 0 || updated > 0) invalidateProducts()
+      if (created > 0 || updated > 0) void queryClient.invalidateQueries({ queryKey: ['products'] })
       if (failed > 0) {
         setUi((u) => ({ ...u, importErrors: result.errors ?? [] }))
         if (created > 0 || updated > 0) {

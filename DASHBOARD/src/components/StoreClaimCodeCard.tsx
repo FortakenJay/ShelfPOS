@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Button } from '#/components/ui'
+import { useToast } from '#/lib/toast'
 
 export function StoreClaimCodeCard({
   code,
@@ -17,11 +18,13 @@ export function StoreClaimCodeCard({
   showRegenerate?: boolean
 }) {
   const { t } = useTranslation()
+  const { show } = useToast()
 
   const copyCode = async (): Promise<void> => {
     if (!code) return
     try {
       await navigator.clipboard.writeText(code)
+      show(t('linkPos.copied'))
     } catch {
       /* clipboard optional */
     }

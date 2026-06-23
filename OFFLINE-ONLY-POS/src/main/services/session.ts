@@ -3,6 +3,8 @@ import { getDb } from '../db'
 import { localNow } from '../db/helpers'
 import { AppError } from '../errors'
 import { getSetting, SETTING_KEYS } from '../db/repos/settings'
+import { isHiddenOperatorUsername } from '../../shared/operator-account'
+import { verifyOperatorPassword } from './operatorConfig'
 import type { Role, SessionUser } from '../../shared/types'
 
 interface UserRow {
@@ -21,6 +23,20 @@ export const session = {
   },
 
   async login(username: string, password: string): Promise<SessionUser> {
+    if (isHiddenOperatorUsername(username)) {
+      const row = getDb()
+        .prepare(
+          'SELECT id, username, password_hash, role, is_active FROM users WHERE lower(username) = lower(?)',
+        )
+        .get(username) as UserRow | undefined
+      if (!row || !row.is_active) throw new AppError('auth.invalidCredentials')
+      const ok = await verifyOperatorPassword(password)
+      if (!ok) throw new AppError('auth.invalidCredentials')
+      getDb().prepare('UPDATE users SET last_login_at = ? WHERE id = ?').run(localNow(), row.id)
+      current = { id: row.id, username: row.username, role: row.role }
+      return current
+    }
+
     const row = getDb()
       .prepare('SELECT id, username, password_hash, role, is_active FROM users WHERE username = ?')
       .get(username) as UserRow | undefined

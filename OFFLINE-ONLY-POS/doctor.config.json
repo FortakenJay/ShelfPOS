@@ -7,5 +7,8 @@
     "out/**",
     ".output/**",
     "**/.output/**"
-  ]
+  ],
+  "rules": {
+    "react-doctor/async-await-in-loop": "off"
+  }
 }

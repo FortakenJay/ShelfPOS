@@ -835,6 +835,7 @@
     "supabaseUrl": "Supabase URL",
     "serviceKey": "服务密钥（service role）",
     "serviceKeyHint": "仅保存在本机 — 保存时加密",
+    "serviceKeyKeepHint": "留空则保留已保存的密钥",
     "pairingCode": "绑定码（8 位）",
     "save": "保存并绑定",
     "saveAgain": "更新配置",
@@ -845,7 +846,9 @@
       "invalidServiceKey": "服务密钥无效",
       "invalidPairingCode": "绑定码须为 8 位字母或数字",
       "invalidStoreName": "请先配置店铺名称",
-      "serviceRestartFailed": "无法重启 ShelfPOS Sync。请以管理员身份运行 Install-ShelfPOS。"
+      "serviceRestartFailed": "无法重启 ShelfPOS Sync。请以管理员身份运行 Install-ShelfPOS。",
+      "serviceNotInstalled": "未安装 Windows 服务。开发环境请手动重启：cd sync-service && npm run dev",
+      "encryptionFailed": "无法在本机加密服务密钥（DPAPI）。"
     }
   },
   "settings": {

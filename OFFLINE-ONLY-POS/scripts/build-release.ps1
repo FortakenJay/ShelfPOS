@@ -1,4 +1,4 @@
-﻿# Builds a customer-ready Windows bundle: POS NSIS installer + sync service + one-click install script.
+# Builds a customer-ready Windows bundle: POS NSIS installer + sync service + one-click install script.
 # Usage (from OFFLINE-ONLY-POS): npm run release:win
 
 $ErrorActionPreference = 'Stop'
@@ -221,6 +221,7 @@ Copy-Item -Recurse (Join-Path $SyncDir 'node_modules') (Join-Path $SyncStage 'no
 Copy-Item (Join-Path $SyncDir 'package.json') $SyncStage
 New-Item -ItemType Directory -Path (Join-Path $SyncStage 'scripts') -Force | Out-Null
 Copy-Item (Join-Path $SyncDir 'scripts\set-store-id.cjs') (Join-Path $SyncStage 'scripts\set-store-id.cjs')
+Copy-Item (Join-Path $SyncDir 'scripts\write-sync-env.cjs') (Join-Path $SyncStage 'scripts\write-sync-env.cjs')
 Copy-Item (Join-Path $SyncDir 'scripts\install-windows-service.cjs') (Join-Path $SyncStage 'scripts\install-windows-service.cjs')
 Copy-Item (Join-Path $SyncDir 'scripts\uninstall-windows-service.cjs') (Join-Path $SyncStage 'scripts\uninstall-windows-service.cjs')
 Copy-Item $NodeExe (Join-Path $SyncStage 'node.exe')
@@ -284,6 +285,7 @@ $requiredBundleFiles = @(
   (Join-Path $StageDir 'Uninstall-ShelfPOS.ps1'),
   (Join-Path $SyncStage 'node.exe'),
   (Join-Path $SyncStage 'node_modules\node-windows'),
+  (Join-Path $SyncStage 'scripts\write-sync-env.cjs'),
   (Join-Path $SyncStage 'scripts\install-windows-service.cjs'),
   (Join-Path $SyncStage 'scripts\uninstall-windows-service.cjs')
 )

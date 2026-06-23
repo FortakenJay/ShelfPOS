@@ -259,6 +259,11 @@ export function usePOSTerminal() {
     setModals((m) => ({ ...m, payOpen: true, payInitialMethod: method }))
   }
 
+  const openPayRef = useRef(openPay)
+  useEffect(() => {
+    openPayRef.current = openPay
+  })
+
   const posInputActive =
     !cashBlocked &&
     !payOpen &&
@@ -350,7 +355,7 @@ export function usePOSTerminal() {
       const method = shortcuts[key]
       if (!method) return
       event.preventDefault()
-      openPay(method)
+      openPayRef.current(method)
     }
 
     window.addEventListener('keydown', onKeyDown)
@@ -361,7 +366,7 @@ export function usePOSTerminal() {
     settings?.shortcutPayCash,
     settings?.shortcutPayCard,
     settings?.shortcutPaySinpe,
-    canOpenPay
+    inputRef
   ])
 
   const discountModalBase = (): number => (discountTarget ? afterLineDiscounts : 0)

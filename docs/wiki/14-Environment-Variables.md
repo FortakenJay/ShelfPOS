@@ -29,13 +29,16 @@ Template: `DASHBOARD/.example.env`
 | `SUPABASE_URL` | Required |
 | `SUPABASE_SERVICE_KEY` | Required — **secret**, service role |
 | `SQLITE_PATH` | Required — path to `shelf.db` |
-| `STORE_CLAIM_CODE` | One-time owner link (dashboard → Vincular POS) |
+| `STORE_PAIRING_CODE` | One-time owner link (dashboard → Vincular POS) |
+| `STORE_CLAIM_CODE` | Legacy alias for `STORE_PAIRING_CODE` |
 | `SHELFPOS_SYNC_CONFIG` | Alternate env file |
 
 | Location | Path |
 |----------|------|
 | Dev / manual run | `OFFLINE-ONLY-POS/sync-service/sync.env` |
-| Production (Windows service) | `C:\Program Files\ShelfPOS\sync-service\sync.env` |
+| Production (Windows) | `%APPDATA%\shelfpos\sync.env` (service reads via `SHELFPOS_SYNC_CONFIG`) |
+
+Sync **binaries** live under `C:\Program Files\ShelfPOS\sync-service\`; credentials stay in user AppData so the POS GUI and installer can update them without admin rights.
 
 Template: `sync-service/sync.env.example`  
 Production setup: [[15-Setup-And-Deployment]]

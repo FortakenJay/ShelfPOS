@@ -214,6 +214,8 @@ const BARCODE_CODE128 = 0x49 // GS k 73
 const align = (a: 'lt' | 'ct' | 'rt'): number[] => [ESC, 0x61, a === 'ct' ? 1 : a === 'rt' ? 2 : 0]
 const bold = (on: boolean): number[] => [ESC, 0x45, on ? 1 : 0]
 const size = (big: boolean): number[] => [GS, 0x21, big ? 0x11 : 0x00] // double width+height
+/** 3× width and height (shelf label price). */
+const sizeHuge = (): number[] => [GS, 0x21, 0x22]
 const FEED = (n: number): number[] => [ESC, 0x64, n] // ESC d n
 const PARTIAL_CUT = [GS, 0x56, 0x42, 0x00] // GS V 66 0 — feed + partial cut
 const OPEN_CASH_DRAWER = [ESC, 0x70, 0x00, 0x19, 0xfa] // ESC p 0 25 250
@@ -347,11 +349,13 @@ function toEscPos(lines: PrintLine[], options?: { openDrawer?: boolean; label?: 
         write(padRow(line.l, line.r))
         cmd(LF, ...bold(false))
         break
-      case 'text':
-        cmd(...align(line.align ?? 'lt'), ...bold(!!line.bold), ...size(!!line.big))
+      case 'text': {
+        const scale = line.huge ? sizeHuge() : size(!!line.big)
+        cmd(...align(line.align ?? 'lt'), ...bold(!!line.bold), ...scale)
         write(line.v)
         cmd(LF, ...size(false), ...bold(false))
         break
+      }
       case 'barcode': {
         const data = barcodeDataCode128(line.v)
         if (!data) break

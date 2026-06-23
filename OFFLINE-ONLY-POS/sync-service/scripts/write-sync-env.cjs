@@ -16,16 +16,16 @@ if (!supabaseUrl || !serviceKey || !sqlitePath) {
 
 function encryptDpapi(plain) {
   const script = `
-param([string]$Plain)
+$plain = [Console]::In.ReadToEnd()
 Add-Type -AssemblyName System.Security
-$bytes = [System.Text.Encoding]::UTF8.GetBytes($Plain)
+$bytes = [System.Text.Encoding]::UTF8.GetBytes($plain)
 $enc = [System.Security.Cryptography.ProtectedData]::Protect($bytes, $null, 'LocalMachine')
-[Convert]::ToBase64String($enc)
+Write-Output ([Convert]::ToBase64String($enc))
 `.trim()
   const blob = execFileSync(
     'powershell.exe',
-    ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script, '-Plain', plain],
-    { encoding: 'utf8', windowsHide: true },
+    ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script],
+    { encoding: 'utf8', windowsHide: true, input: plain },
   ).trim()
   return `dpapi:${blob}`
 }

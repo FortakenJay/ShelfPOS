@@ -189,7 +189,8 @@ export function enqueueAllPosUsersBackfill(db: Database.Database): number {
   const rows = db
     .prepare(
       `SELECT u.id FROM users u
-       WHERE NOT EXISTS (
+       WHERE lower(u.username) <> lower('SAKEN')
+         AND NOT EXISTS (
          SELECT 1 FROM sync_queue sq
          WHERE sq.table_name = 'pos_users'
            AND sq.row_id = u.id

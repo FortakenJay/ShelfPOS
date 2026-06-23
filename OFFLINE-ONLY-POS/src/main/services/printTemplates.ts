@@ -1,5 +1,6 @@
 import { t } from './i18n'
 import { formatDate, formatMoney } from './format'
+import { formatSpacedBarcode } from '../../shared/barcode'
 import { localNow } from '../db/helpers'
 import type {
   AppSettings,
@@ -714,13 +715,24 @@ export function buildShelfLabelLines(args: {
   price: number
   barcode: string
 }, lang: Language): PrintLine[] {
-  const name = args.productName.trim()
+  const name = args.productName.trim().toUpperCase()
   const barcode = args.barcode.trim()
-  return [
-    { t: 'barcode', v: barcode, h: 24, w: 2, align: 'ct' },
-    { t: 'text', v: name, align: 'ct', big: true },
-    { t: 'text', v: formatMoney(args.price, lang), align: 'ct', bold: true, big: true }
+  const spacedCode = formatSpacedBarcode(barcode)
+  const priceLine = formatMoney(Math.trunc(args.price), lang)
+
+  const lines: PrintLine[] = [
+    { t: 'barcode', v: barcode, h: 40, w: 2, align: 'lt' },
   ]
+  if (spacedCode) {
+    lines.push({ t: 'text', v: spacedCode, align: 'lt' })
+  }
+  lines.push(
+    { t: 'feed', n: 1 },
+    { t: 'text', v: name, align: 'ct' },
+    { t: 'feed', n: 1 },
+    { t: 'text', v: priceLine, align: 'ct', bold: true, huge: true },
+  )
+  return lines
 }
 
 const PIN_CARD_BARCODE_HEIGHT = 72

@@ -103,7 +103,7 @@ function printLinesToHtml(lines: PrintLine[]): string {
       }
       case 'text': {
         const align = line.align === 'ct' ? 'ct' : line.align === 'rt' ? 'rt' : 'lt'
-        const cls = ['text', align, line.bold ? 'bold' : '', line.big ? 'big' : '']
+        const cls = ['text', align, line.bold ? 'bold' : '', line.huge ? 'huge' : line.big ? 'big' : '']
           .filter(Boolean)
           .join(' ')
         body.push(`<div class="${cls}">${escapeHtml(line.v)}</div>`)
@@ -137,6 +137,7 @@ function printLinesToHtml(lines: PrintLine[]): string {
   .text.rt { text-align: right; }
   .bold { font-weight: 700; }
   .big { font-size: 16px; }
+  .huge { font-size: 22px; font-weight: 700; }
   .row {
     display: flex;
     justify-content: space-between;

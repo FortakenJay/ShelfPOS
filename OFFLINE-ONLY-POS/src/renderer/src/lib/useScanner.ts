@@ -48,7 +48,10 @@ export function useGlobalBarcodeScanner({
   const lastKeyAt = useRef(0)
   const burstCount = useRef(0)
   const onScanRef = useRef(onScan)
-  onScanRef.current = onScan
+
+  useEffect(() => {
+    onScanRef.current = onScan
+  })
 
   useEffect(() => {
     if (!enabled) {

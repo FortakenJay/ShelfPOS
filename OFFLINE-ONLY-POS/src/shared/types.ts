@@ -936,7 +936,7 @@ export interface AuditUser {
 // --- printing ---
 
 export type PrintLine =
-  | { t: 'text'; v: string; align?: 'lt' | 'ct' | 'rt'; bold?: boolean; big?: boolean }
+  | { t: 'text'; v: string; align?: 'lt' | 'ct' | 'rt'; bold?: boolean; big?: boolean; huge?: boolean }
   | { t: 'row'; l: string; r: string; bold?: boolean }
   | { t: 'barcode'; v: string; h?: number; w?: number; align?: 'lt' | 'ct' | 'rt' }
   | { t: 'hr' }

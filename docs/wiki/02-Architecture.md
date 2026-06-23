@@ -26,10 +26,13 @@ Parent: [[Home]]
 └───────────────────────────┬─────────────────────────────┘
                             │ shared shelf.db
 ┌───────────────────────────▼─────────────────────────────┐
-│ sync-service (separate Node process)                     │
-│  sync_queue → Supabase REST (service role)               │
+│ ShelfPOSSync — separate Node process (Windows Service)   │
+│  Poll sync_queue every 5s → getLiveRow → Supabase REST   │
+│  NOT spawned by Electron; installed via Install-ShelfPOS │
 └─────────────────────────────────────────────────────────┘
 ```
+
+**Sync discovery:** POS writes `sync_queue` rows; service polls SQLite. No WAL watcher, no full-table resync. Details: [[10-Sync-Service]].
 
 ## Dashboard architecture
 

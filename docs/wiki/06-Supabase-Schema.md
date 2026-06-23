@@ -4,6 +4,15 @@ Parent: [[Home]]
 
 **Canonical file:** `DASHBOARD/SUPA.sql` (idempotent — safe to re-run in SQL Editor)
 
+### Applying on Supabase
+
+1. Paste/run the full script in the Supabase SQL Editor (or apply in sections if debugging a failure).
+2. **Fresh project:** uses `store_pairings` only; no legacy `store_claim_codes` table.
+3. **Upgrading:** migration block copies any legacy `store_claim_codes` into `store_pairings`, then drops the old table.
+4. If you see `relation "store_claim_codes" does not exist` on a fresh apply, ensure you have the latest `SUPA.sql` (legacy `DROP POLICY` on that table was removed).
+
+See [[18-Quality-And-Tooling#Supabase SQL (`SUPA.sql`)]].
+
 ## Mirror tables
 
 All business tables include `store_id TEXT NOT NULL` and PK `(id, store_id)`.
@@ -27,7 +36,9 @@ All business tables include `store_id TEXT NOT NULL` and PK `(id, store_id)`.
 |-------|-----|---------|
 | `stores` | `store_id` | Registry + heartbeat + display name |
 | `store_access` | `(user_id, store_id)` | Owner/viewer membership |
-| `store_claim_codes` | `id` UUID | One-time link codes |
+| `store_pairings` | `id` UUID | One-time 24h POS link codes (multiple pending per owner) |
+
+Legacy `store_claim_codes` is migrated to `store_pairings` on apply (see migration block in `SUPA.sql`).
 
 ## Functions & RPCs
 
@@ -36,16 +47,19 @@ All business tables include `store_id TEXT NOT NULL` and PK `(id, store_id)`.
 | `get_my_role()` | RLS | Reads `app_metadata.role` |
 | `is_superadmin()` | RLS | `role = 'superadmin'` |
 | `can_access_store(store_id)` | RLS | Membership check |
-| `create_store_claim()` | Dashboard JWT | Returns new 8-char code |
-| `ensure_store_claim()` | Dashboard JWT | Returns active unused code or creates one |
-| `claim_store_sync(code, store_id)` | Service role only | Creates `store_access` |
+| `create_store_pairing(label?)` | Dashboard JWT | Returns new 8-char code |
+| `ensure_store_pairing()` | Dashboard JWT | Active unused code or creates one |
+| `list_pending_pairings()` | Dashboard JWT | Pending codes for owner |
+| `claim_store_sync(code, store_id, display_name)` | Service role only | Creates `store_access` |
+| `create_store_claim()` | Dashboard JWT | **Legacy alias** → `create_store_pairing` |
+| `ensure_store_claim()` | Dashboard JWT | **Legacy alias** → `ensure_store_pairing` |
 
 ## RLS summary
 
 - `ENABLE ROW LEVEL SECURITY` on all public tables above
 - Mirror `SELECT`: `can_access_store(store_id)`
 - Mirror writes for `authenticated`: **denied**
-- `store_access` / `store_claim_codes`: users read own rows; writes via RPC only
+- `store_access` / `store_pairings`: users read own rows; writes via RPC only
 
 ## Column patches
 

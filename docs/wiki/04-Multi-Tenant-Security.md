@@ -11,7 +11,7 @@ One Supabase project serves **many store owners** (e.g. your mom + a customer). 
 | Piece | Purpose |
 |-------|---------|
 | `store_access` | Maps `auth.users.id` → `store_id` with role `owner` / `viewer` |
-| `store_claim_codes` | One-time 24h codes to link a POS install to an owner |
+| `store_pairings` | One-time 24h codes to link a POS install to an owner |
 | `can_access_store(store_id)` | RLS helper — membership or superadmin |
 | `claim_store_sync(code, store_id)` | Service-role RPC; binds store to code owner |
 
@@ -25,7 +25,7 @@ One Supabase project serves **many store owners** (e.g. your mom + a customer). 
 
 ## Pairing model (`store_pairings`)
 
-Replaces one-off `store_claim_codes`. Each row is a **single-use, 24h** code that links **one** POS `store_id` to the owner.
+Each row is a **single-use, 24h** code that links **one** POS `store_id` to the owner. Replaces legacy `store_claim_codes` (migrated in `SUPA.sql`).
 
 | Column | Purpose |
 |--------|---------|
@@ -45,9 +45,9 @@ sequenceDiagram
   participant SB as Supabase
   participant Sync as sync-service
 
-  Owner->>SB: RPC create_store_claim()
+  Owner->>SB: RPC create_store_pairing()
   SB-->>Owner: AB12CD34 (24h)
-  Note over Sync: sync.env STORE_CLAIM_CODE=AB12CD34
+  Note over Sync: sync.env STORE_PAIRING_CODE or STORE_CLAIM_CODE
   Sync->>SB: RPC claim_store_sync(code, sync_store_id)
   SB->>SB: INSERT store_access
   Note over Owner: fetchStores() shows only owned stores
@@ -97,7 +97,7 @@ ON CONFLICT DO NOTHING;
 1. **You:** `SUPA.sql` + deploy dashboard (Vercel) — once.
 2. **Per shop:** install POS + sync with unique `sync_store_id`.
 3. **Owner:** sign up on live dashboard → **Vincular POS** → claim code.
-4. **That PC only:** `STORE_CLAIM_CODE` in `Program Files\ShelfPOS\sync-service\sync.env` → restart `ShelfPOSSync`.
+4. **That PC only:** `STORE_CLAIM_CODE` in `%APPDATA%\shelfpos\sync.env` → restart `ShelfPOSSync`.
 
 Full steps: [[15-Setup-And-Deployment]].
 

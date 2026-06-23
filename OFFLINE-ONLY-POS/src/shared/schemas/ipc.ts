@@ -245,9 +245,9 @@ export const IPC_SCHEMAS = {
   'firstRun:complete': firstRunSetupInputSchema,
   'syncSetup:status': voidInput,
   'syncSetup:save': z.strictObject({
-    supabaseUrl: z.string().trim().min(10).max(500),
-    serviceKey: z.string().trim().min(20).max(500),
-    pairingCode: z.string().trim().min(8).max(8),
+    supabaseUrl: z.string().trim().max(500),
+    serviceKey: z.string().trim().max(500),
+    pairingCode: z.string().trim().length(8).regex(/^[A-Z0-9]{8}$/i),
   }),
   'syncSetup:restartService': voidInput,
   'auth:login': z.strictObject({ username: usernameSchema, password: passwordSchema }),

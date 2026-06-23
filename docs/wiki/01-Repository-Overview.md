@@ -41,16 +41,18 @@ Deployed to **Vercel**; env: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
 
 ## sync-service
 
+Separate Node process — **not** part of the Electron bundle at runtime. Windows Service `ShelfPOSSync` polls `sync_queue` in `shelf.db` and pushes to Supabase.
+
 | Path | Role |
 |------|------|
-| `src/index.ts` | Poll loop, claim on startup |
-| `src/sync.ts` | Upsert/delete to Supabase REST |
+| `src/index.ts` | Poll loop (5s idle / 30s offline), claim on startup |
+| `src/sync.ts` | Upsert/delete to Supabase REST, retries |
 | `src/db.ts` | SQLite reads, queue helpers, `LIVE_ROW_SQL` |
-| `src/config.ts` | Loads `sync.env` |
+| `src/config.ts` | Loads `%APPDATA%\shelfpos\sync.env` |
 | `src/errorLog.ts` | Failures → `%APPDATA%\shelfpos\error\sync.txt` |
 | `scripts/` | backfill, diagnose-queue, Windows service install |
 
-Installed as Windows service **ShelfPOS Sync** via `Install-ShelfPOS.ps1`.
+Installed via `Install-ShelfPOS.ps1` → `node-windows` service. See [[10-Sync-Service]].
 
 ## What is NOT in the repo
 

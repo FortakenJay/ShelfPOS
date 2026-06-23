@@ -3,6 +3,7 @@ import { AppError } from '../errors'
 import {
   readSyncSetupStatus,
   restartSyncService,
+  restartSyncServiceIfInstalled,
   writeSyncConfig,
   type SyncSetupSaveInput,
   type SyncSetupStatus,
@@ -12,15 +13,11 @@ export function registerSyncSetupHandlers(): void {
   handle<void, SyncSetupStatus>('syncSetup:status', ['admin'], () => readSyncSetupStatus())
 
   handle<SyncSetupSaveInput, SyncSetupStatus>('syncSetup:save', ['admin'], (input) => {
-    if (!input?.supabaseUrl || !input?.serviceKey || !input?.pairingCode) {
+    if (!input?.pairingCode) {
       throw new AppError('errors.invalidInput')
     }
     writeSyncConfig(input)
-    try {
-      restartSyncService()
-    } catch {
-      /* service may not be installed yet — config is saved */
-    }
+    restartSyncServiceIfInstalled()
     return readSyncSetupStatus()
   })
 

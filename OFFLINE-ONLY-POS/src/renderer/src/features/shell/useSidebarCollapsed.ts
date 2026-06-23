@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 
 const STORAGE_KEY = 'shelfpos.sidebarCollapsed'
 
@@ -24,13 +24,13 @@ export function useSidebarCollapsed(): {
 } {
   const [collapsed, setCollapsed] = useState(readCollapsed)
 
-  const toggle = useCallback((): void => {
+  const toggle = (): void => {
     setCollapsed((prev) => {
       const next = !prev
       writeCollapsed(next)
       return next
     })
-  }, [])
+  }
 
   return { collapsed, toggle }
 }

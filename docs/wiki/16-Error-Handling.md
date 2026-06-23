@@ -44,3 +44,4 @@ Race-safe: `UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?`
 - [[09-IPC-Reference]]
 - [[10-Sync-Service]]
 - [[17-Conventions-For-AI]]
+- [[18-Quality-And-Tooling]]

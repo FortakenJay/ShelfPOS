@@ -19,28 +19,22 @@ function LoginRoute() {
 }
 
 interface LoginFormState {
-  mode: 'signIn' | 'signUp'
   email: string
   password: string
   error: string | null
-  info: string | null
   submitting: boolean
 }
 
 type LoginFormAction =
   | { type: 'setEmail'; email: string }
   | { type: 'setPassword'; password: string }
-  | { type: 'toggleMode' }
   | { type: 'submitStart' }
-  | { type: 'submitSuccess'; info: string | null }
   | { type: 'submitError'; error: string }
 
 const initialLoginFormState: LoginFormState = {
-  mode: 'signIn',
   email: '',
   password: '',
   error: null,
-  info: null,
   submitting: false,
 }
 
@@ -53,17 +47,8 @@ function loginFormReducer(
       return { ...state, email: action.email }
     case 'setPassword':
       return { ...state, password: action.password }
-    case 'toggleMode':
-      return {
-        ...state,
-        mode: state.mode === 'signIn' ? 'signUp' : 'signIn',
-        error: null,
-        info: null,
-      }
     case 'submitStart':
-      return { ...state, submitting: true, error: null, info: null }
-    case 'submitSuccess':
-      return { ...state, submitting: false, info: action.info }
+      return { ...state, submitting: true, error: null }
     case 'submitError':
       return { ...state, submitting: false, error: action.error }
   }
@@ -71,7 +56,7 @@ function loginFormReducer(
 
 function LoginPage() {
   const { t } = useTranslation()
-  const { signIn, signUp, user, loading, configured } = useAuth()
+  const { signIn, user, loading, configured } = useAuth()
   const navigate = useNavigate()
   const [form, dispatch] = useReducer(loginFormReducer, initialLoginFormState)
 
@@ -101,18 +86,10 @@ function LoginPage() {
   const submit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
     dispatch({ type: 'submitStart' })
-    const { error: err } =
-      form.mode === 'signIn'
-        ? await signIn(form.email.trim(), form.password)
-        : await signUp(form.email.trim(), form.password)
+    const { error: err } = await signIn(form.email.trim(), form.password)
     if (err) {
       dispatch({ type: 'submitError', error: err })
-      return
     }
-    dispatch({
-      type: 'submitSuccess',
-      info: form.mode === 'signUp' ? t('login.signUpConfirm') : null,
-    })
   }
 
   return (
@@ -137,7 +114,7 @@ function LoginPage() {
           <Field label={t('login.password')} error={form.error ?? undefined}>
             <Input
               type="password"
-              autoComplete={form.mode === 'signIn' ? 'current-password' : 'new-password'}
+              autoComplete="current-password"
               value={form.password}
               onChange={(e) =>
                 dispatch({ type: 'setPassword', password: e.target.value })
@@ -146,9 +123,6 @@ function LoginPage() {
               minLength={6}
             />
           </Field>
-          {form.info && (
-            <p className="mb-3 text-[14px] font-semibold text-cta">{form.info}</p>
-          )}
           <Button
             type="submit"
             variant="primary"
@@ -156,21 +130,8 @@ function LoginPage() {
             className="mt-2 w-full"
             disabled={form.submitting}
           >
-            {form.submitting
-              ? t('login.submitting')
-              : form.mode === 'signIn'
-                ? t('login.submit')
-                : t('login.signUpSubmit')}
+            {form.submitting ? t('login.submitting') : t('login.submit')}
           </Button>
-          <button
-            type="button"
-            className="mt-4 w-full text-center text-[14px] font-semibold text-primary hover:underline"
-            onClick={() => dispatch({ type: 'toggleMode' })}
-          >
-            {form.mode === 'signIn'
-              ? t('login.switchToSignUp')
-              : t('login.switchToSignIn')}
-          </button>
         </form>
       </div>
     </div>

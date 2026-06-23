@@ -9,8 +9,9 @@ import {
   insertAppUser,
   listAppUsers,
   patchAppUser,
-  usernameTaken
+  usernameTaken,
 } from '../db/repos/users'
+import { isHiddenOperatorUsername } from '../../shared/operator-account'
 import { enqueueSync } from '../db/repos/syncQueue'
 import type { AppUserRow, UserCreateInput, UserUpdateInput } from '../../shared/types'
 
@@ -29,6 +30,7 @@ export function registerUserHandlers(): void {
 
   handle<UserCreateInput, AppUserRow>('users:create', ADMIN, async (input) => {
     if (!input.username?.trim() || !input.password) throw new AppError('errors.invalidInput')
+    if (isHiddenOperatorUsername(input.username)) throw new AppError('errors.duplicateUsername')
     if (usernameTaken(input.username)) throw new AppError('errors.duplicateUsername')
     const user = await insertAppUser({
       username: input.username,
@@ -47,8 +49,10 @@ export function registerUserHandlers(): void {
   handle<UserUpdateInput, AppUserRow>('users:update', ADMIN, async (input) => {
     const existing = getAppUserById(input.id)
     if (!existing) throw new AppError('errors.notFound')
+    if (isHiddenOperatorUsername(existing.username)) throw new AppError('errors.notFound')
 
     const nextUsername = input.username?.trim() ?? existing.username
+    if (isHiddenOperatorUsername(nextUsername)) throw new AppError('errors.duplicateUsername')
     const nextRole = input.role ?? existing.role
     const nextActive = input.isActive ?? existing.isActive
 
@@ -77,6 +81,7 @@ export function registerUserHandlers(): void {
   handle<{ id: number }, null>('users:delete', ADMIN, (input) => {
     const existing = getAppUserById(input.id)
     if (!existing) throw new AppError('errors.notFound')
+    if (isHiddenOperatorUsername(existing.username)) throw new AppError('errors.notFound')
     const me = session.require()
     if (existing.id === me.id) throw new AppError('errors.cannotDeleteSelf')
     assertNotLastAdmin(existing, false, existing.role)

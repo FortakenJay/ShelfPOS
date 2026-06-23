@@ -82,6 +82,10 @@ async function initData(): Promise<BackupService> {
 
   mkdirSync(userData, { recursive: true })
 
+  const { loadOperatorEnv } = await import('./services/operatorConfig')
+
+  loadOperatorEnv(userData)
+
   const backupDir = join(userData, 'backups')
 
   mkdirSync(backupDir, { recursive: true })

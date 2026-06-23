@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
 import { useToasts } from '@/lib/toast'
 import { Button, Field, Input, Select } from '@/components/ui'
 import type { SettingsDraft } from './settingsDraft'
-import type { ActionShortcutKey, AppSettings, IdType, PrinterStatusInfo } from '@shared/types'
+import type { ActionShortcutKey, AppSettings, IdType } from '@shared/types'
 
 const ID_TYPES: IdType[] = ['fisica', 'juridica', 'dimex', 'nite']
 const SHORTCUT_OPTIONS: ActionShortcutKey[] = [
@@ -220,21 +221,15 @@ export function SettingsShortcutsSection({
   const toasts = useToasts()
   const [colonTestPending, setColonTestPending] = useState(false)
   const [printerTestPending, setPrinterTestPending] = useState(false)
-  const [printerStatus, setPrinterStatus] = useState<PrinterStatusInfo | null>(null)
-  const [printerStatusPending, setPrinterStatusPending] = useState(false)
 
-  const refreshPrinterStatus = (): void => {
-    setPrinterStatusPending(true)
-    void api.printer
-      .status()
-      .then(setPrinterStatus)
-      .catch((err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown'))
-      .finally(() => setPrinterStatusPending(false))
-  }
-
-  useEffect(() => {
-    refreshPrinterStatus()
-  }, [])
+  const {
+    data: printerStatus,
+    isFetching: printerStatusPending,
+    refetch: refreshPrinterStatus
+  } = useQuery({
+    queryKey: ['printerStatus'],
+    queryFn: () => api.printer.status()
+  })
 
   const runPrinterTest = (): void => {
     if (printerTestPending) return
@@ -245,7 +240,7 @@ export function SettingsShortcutsSection({
       .catch((err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown'))
       .finally(() => {
         setPrinterTestPending(false)
-        refreshPrinterStatus()
+        void refreshPrinterStatus()
       })
   }
 
@@ -382,7 +377,12 @@ export function SettingsShortcutsSection({
           </p>
         ) : null}
         <div className="mb-5 flex flex-wrap gap-2">
-          <Button type="button" variant="outline" disabled={printerStatusPending} onClick={refreshPrinterStatus}>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={printerStatusPending}
+            onClick={() => void refreshPrinterStatus()}
+          >
             {t('settings.printerRefresh')}
           </Button>
           <Button type="button" variant="outline" disabled={printerTestPending} onClick={runPrinterTest}>

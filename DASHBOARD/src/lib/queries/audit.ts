@@ -1,4 +1,5 @@
 import { rangeBounds } from '#/lib/dates'
+import { HIDDEN_OPERATOR_USERNAME, isHiddenOperatorUsername } from '#/lib/hidden-operator'
 import { getSupabase } from '#/lib/supabase'
 import { fetchAllPages } from '#/lib/supabase-page'
 import type { StoreId } from '#/lib/stores'
@@ -26,6 +27,7 @@ export async function fetchAuditUsers(storeId: StoreId): Promise<AuditUser[]> {
       .select('user_id, username')
       .eq('store_id', storeId)
       .not('user_id', 'is', null)
+      .neq('username', HIDDEN_OPERATOR_USERNAME)
       .range(offset, offset + limit - 1)
     if (error) throw error
     return rows
@@ -34,7 +36,8 @@ export async function fetchAuditUsers(storeId: StoreId): Promise<AuditUser[]> {
   for (const row of data) {
     const id = row.user_id as number
     const username = (row.username as string | null)?.trim()
-    if (id && username) byId.set(id, username)
+    if (!id || !username || isHiddenOperatorUsername(username)) continue
+    byId.set(id, username)
   }
   return [...byId.entries()]
     .map(([id, username]) => ({ id, username }))
@@ -73,6 +76,7 @@ export async function fetchAuditLog(
       count: 'exact',
     })
     .eq('store_id', storeId)
+    .or(`username.is.null,username.neq.${HIDDEN_OPERATOR_USERNAME}`)
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
     .range(offset, offset + limit - 1)

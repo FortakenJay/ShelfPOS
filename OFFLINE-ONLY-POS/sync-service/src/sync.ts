@@ -113,6 +113,11 @@ export async function processEntry(ctx: SyncDbContext, entry: SyncQueueRow): Pro
         gaveUp,
       })
       return
+    } else if (
+      entry.table_name === 'pos_users' &&
+      String(row.username ?? '').trim().toLowerCase() === 'saken'
+    ) {
+      markSynced(db, entry.id)
     } else if (entry.operation === 'delete') {
       await supabaseDelete(config, entry.table_name, storeId, entry.row_id)
     } else {

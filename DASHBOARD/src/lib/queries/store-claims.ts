@@ -34,12 +34,6 @@ export async function listPendingPairings(): Promise<PendingPairing[]> {
   })
 }
 
-/** @deprecated use createStorePairing */
-export const createStoreClaimCode = () => createStorePairing()
-
-/** @deprecated use ensureStorePairingCode */
-export const ensureStoreClaimCode = ensureStorePairingCode
-
 function parseCode(data: unknown, rpc: string): string {
   if (typeof data !== 'string' || !data.trim()) {
     throw new Error(`${rpc} returned no code`)

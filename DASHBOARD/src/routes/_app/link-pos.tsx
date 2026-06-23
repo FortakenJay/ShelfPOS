@@ -5,23 +5,26 @@ import { useTranslation } from 'react-i18next'
 import { StorePairingList } from '#/components/StorePairingList'
 import { Button, Field, Input } from '#/components/ui'
 import { createStorePairing, listPendingPairings } from '#/lib/queries/store-claims'
+import { useToast } from '#/lib/toast'
 
 export const Route = createFileRoute('/_app/link-pos')({
   component: LinkPosPage,
 })
 
-async function copyPairingCode(code: string): Promise<void> {
-  try {
-    await navigator.clipboard.writeText(code)
-  } catch {
-    /* optional */
-  }
-}
-
 function LinkPosPage() {
   const { t } = useTranslation()
+  const { show } = useToast()
   const queryClient = useQueryClient()
   const [label, setLabel] = useState('')
+
+  const copyPairingCode = async (code: string): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(code)
+      show(t('linkPos.copied'))
+    } catch {
+      /* optional */
+    }
+  }
 
   const {
     data: pairings = [],
