@@ -24,6 +24,7 @@ export default tseslint.config(
       'private/**',
       'sync-service/dist/**',
       'sync-service/scripts/**',
+      '.cache/**',
       'electron.vite.config.*.mjs',
       '**/*.d.ts'
     ]

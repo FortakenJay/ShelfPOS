@@ -29,7 +29,7 @@ export function PaymentMethodButtons({
           type="button"
           onClick={() => onChange(m)}
           className={`rounded-md border-2 font-bold ${
-            vertical ? 'min-h-[72px] flex-1 text-xl' : 'min-h-[52px] flex-1 text-[16px]'
+            vertical ? 'min-h-[64px] text-lg' : 'min-h-[52px] flex-1 text-[16px]'
           } ${
             value === m
               ? 'border-primary bg-primary text-white'

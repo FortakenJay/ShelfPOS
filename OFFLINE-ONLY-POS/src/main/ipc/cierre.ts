@@ -6,6 +6,7 @@ import { getDb } from '../db'
 import { localNow, rangeBounds, round2 } from '../db/helpers'
 import {
   cierreDiscounts,
+  cierreDiscardedTabs,
   cierrePriceOverrides,
   paymentTotals,
   periodOpenedAt,
@@ -92,6 +93,7 @@ function cierrePrintLines(cierre: CierreRecord, lang: Language): PrintLine[] {
       topProducts: topProducts({ cierreId: cierre.id }),
       discounts: cierreDiscounts({ cierreId: cierre.id }),
       priceOverrides: cierrePriceOverrides({ cierreId: cierre.id }),
+      discardedTabs: cierreDiscardedTabs({ fromTs: cierre.opened_at, toTs: cierre.closed_at }),
       storeName,
       cash: {
         openingFloat: cierre.opening_float,
@@ -114,7 +116,14 @@ export function registerCierreHandlers(backup: BackupService): void {
     const cash = openCashSummary()
     const totals = paymentTotals({ cierrePending: true })
     if (user.role !== 'admin') {
-      return { pendingSales, cash, totals: { sinpe: totals.sinpe } }
+      const openedAt = periodOpenedAt()
+      return {
+        pendingSales,
+        openedAt,
+        cash,
+        totals: { sinpe: totals.sinpe },
+        discardedTabs: cierreDiscardedTabs({ fromTs: openedAt })
+      }
     }
     const openedAt = periodOpenedAt()
     return {
@@ -124,7 +133,8 @@ export function registerCierreHandlers(backup: BackupService): void {
       returnsCount: returnsCountSince(openedAt),
       cash,
       discounts: cierreDiscounts({ cierrePending: true }),
-      priceOverrides: cierrePriceOverrides({ cierrePending: true })
+      priceOverrides: cierrePriceOverrides({ cierrePending: true }),
+      discardedTabs: cierreDiscardedTabs({ fromTs: openedAt })
     }
   })
 
@@ -155,6 +165,7 @@ export function registerCierreHandlers(backup: BackupService): void {
       const cash = openCashSummary()
       const discounts = cierreDiscounts({ cierrePending: true })
       const priceOverrides = cierrePriceOverrides({ cierrePending: true })
+      const discardedTabs = cierreDiscardedTabs({ fromTs: openedAt, toTs: now })
 
       const difference = round2(countedCash - cash.expectedCash)
       const shiftLabel = input.shiftLabel?.trim() || formatDate(now, lang, true)
@@ -216,6 +227,7 @@ export function registerCierreHandlers(backup: BackupService): void {
           topProducts: top,
           discounts,
           priceOverrides,
+          discardedTabs,
           storeName,
           cash: {
             openingFloat: cash.openingFloat,

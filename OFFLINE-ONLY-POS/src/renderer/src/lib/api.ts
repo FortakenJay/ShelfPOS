@@ -11,6 +11,13 @@ import type {
   CashMovementInput,
   CashMovementRow,
   CartRemoveAuthorizeInput,
+  CartTabCreateInput,
+  CartTabDiscardAuditedInput,
+  CartTabDiscardResult,
+  CartTabListItem,
+  CartTabRenameInput,
+  CartTabReorderInput,
+  CartTabSaveInput,
   CierreConfirmInput,
   CierreConfirmResult,
   CierreDiscrepancyAlert,
@@ -158,6 +165,17 @@ export const api = {
   cart: {
     removeAuthorize: (input: CartRemoveAuthorizeInput) =>
       call<null>('cart:removeAuthorize', input)
+  },
+  cartTabs: {
+    list: () => call<CartTabListItem[]>('cartTabs:list'),
+    create: (input: CartTabCreateInput) => call<CartTabListItem>('cartTabs:create', input),
+    save: (input: CartTabSaveInput) => call<null>('cartTabs:save', input),
+    rename: (input: CartTabRenameInput) => call<null>('cartTabs:rename', input),
+    remove: (id: number) => call<null>('cartTabs:remove', { id }),
+    complete: (id: number) => call<null>('cartTabs:complete', { id }),
+    discardAudited: (input: CartTabDiscardAuditedInput) =>
+      call<CartTabDiscardResult>('cartTabs:discardAudited', input),
+    reorder: (input: CartTabReorderInput) => call<null>('cartTabs:reorder', input)
   },
   priceOverride: {
     authorize: (input: PriceOverrideAuthorizeInput) =>

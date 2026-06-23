@@ -21,7 +21,7 @@ All main-process calls go through:
 |---------|------------------|
 | `auth/` | Login, first-run wizard, language |
 | `shell/` | Sidebar, collapse, language switcher |
-| `pos/` | Terminal, payment, cart, cash drawer, reprints |
+| `pos/` | Terminal, payment, cart tabs, cash drawer, reprints |
 | `products/` | Catalog CRUD, CSV/eFactura import, labels |
 | `admin/` | Reports, cierre, audit, users, settings, export |
 | `admin/dashboard/` | **Local** SQLite dashboard (offline KPIs) |
@@ -29,6 +29,8 @@ All main-process calls go through:
 ## Hooks pattern
 
 Each feature exposes hooks (e.g. `usePOSTerminal`, `useProductManager`) containing TanStack Query/mutation logic. Components are render-only.
+
+**Cart tabs:** `usePOSTerminal` restores tabs from SQLite on mount; `CartTabsBar` switches carts. Snapshot = `{ cart, cartDiscount, customer }`. Closing a non-empty tab requires caja/manager PIN (`cartTabs:discardAudited`); rows appear in cierre **screen**, **thermal print**, and **PDF** via `audit_log` + `buildCierreLines`.
 
 ## Locales
 

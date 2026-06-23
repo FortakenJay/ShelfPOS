@@ -3,7 +3,7 @@
 Parent: [[Home]]
 
 **Source of truth:** `OFFLINE-ONLY-POS/src/main/db/migrations.ts`  
-**Current version:** `SCHEMA_VERSION = 18`
+**Current version:** `SCHEMA_VERSION = 19`
 
 Migrations are **forward-only**, keyed by version number. `user_version` pragma updated after run. Pre-migration backup in `main/index.ts`.
 
@@ -24,6 +24,7 @@ Migrations are **forward-only**, keyed by version number. `user_version` pragma 
 | `audit_log` | Local audit trail (synced) |
 | `print_jobs` | Receipt print queue (**local only**) |
 | `sync_queue` | Outbound mirror queue (v9) |
+| `cart_tabs` | Browser-style POS cart tabs — full `cart_json` snapshots (**local only**, v19) |
 
 ## sync_queue
 
@@ -72,6 +73,7 @@ Hidden recovery user **`SAKEN`** (v15+): local admin, never listed in UI, never 
 | v13 | Misc returns |
 | v14 | `sale_items.barcode_snapshot` |
 | v15–v18 | Hidden `SAKEN` recovery user; env-gated login |
+| v19 | `cart_tabs` — multi-cart tabs per register (not synced; discard audited to `audit_log`) |
 
 ## Related
 

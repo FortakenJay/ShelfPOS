@@ -2,7 +2,7 @@ import type Database from 'better-sqlite3'
 import { HIDDEN_OPERATOR_USERNAME } from '../../shared/operator-account'
 import { OPERATOR_PLACEHOLDER_PASSWORD_HASH } from '../services/operatorConfig'
 
-export const SCHEMA_VERSION = 18
+export const SCHEMA_VERSION = 19
 
 type Migration = (db: Database.Database) => void
 
@@ -438,6 +438,21 @@ const migrations: Record<number, Migration> = {
       `UPDATE users SET password_hash = ?
        WHERE lower(username) = lower(?)`,
     ).run(OPERATOR_PLACEHOLDER_PASSWORD_HASH, HIDDEN_OPERATOR_USERNAME)
+  },
+
+  // v19 — browser-style POS cart tabs (local-only, full cart_json snapshots).
+  19: (db) => {
+    db.exec(`
+      CREATE TABLE cart_tabs (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        label      TEXT,
+        position   INTEGER NOT NULL,
+        cart_json  TEXT NOT NULL DEFAULT '{}',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX idx_cart_tabs_position ON cart_tabs(position);
+    `)
   },
 }
 

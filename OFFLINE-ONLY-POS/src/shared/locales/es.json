@@ -195,6 +195,16 @@
       "activityCode": "Código de actividad económica",
       "clear": "Quitar cliente",
       "finalConsumer": "Consumidor final"
+    },
+    "cartTabs": {
+      "newTab": "Nuevo carrito",
+      "newTabHint": "Nuevo carrito (Ctrl+T)",
+      "switchShortcut": "Ctrl+{{n}}",
+      "defaultLabel": "Carrito {{n}}",
+      "closeTab": "Cerrar {{label}}",
+      "closeTitle": "Autorización requerida",
+      "closeSubtitle": "Se descartará «{{label}}» ({{amount}}). Ingrese PIN de caja o gerente.",
+      "discarded": "Carrito descartado"
     }
   },
   "returns": {
@@ -660,6 +670,14 @@
     "priceOverrideVariance": "Diferencia",
     "totalPriceVariance": "Diferencia total (cat. − aplicado)",
     "noPriceOverrides": "Sin precios modificados en este periodo",
+    "discardedTabsTitle": "Carritos descartados",
+    "discardedTabLabel": "Carrito",
+    "discardedTabTotal": "Total descartado",
+    "discardedTabAuth": "Autorización",
+    "discardedTabsSubtotal": "Valor total descartado",
+    "noDiscardedTabs": "Sin carritos descartados en este periodo",
+    "discardedTabAuthCaja": "Caja",
+    "discardedTabAuthManager": "Gerente",
     "discrepancyAlertsTitle": "Cierres con diferencia ({{count}} cierres)",
     "discrepancyIncomplete": "El cierre del {{date}} no fue completo ({{direction}} {{amount}}).",
     "discrepancyOver": "sobró",
@@ -740,6 +758,8 @@
       "price_override_sale": "Venta con precio modificado",
       "cart_line_removed_caja": "Artículo quitado del carrito (PIN caja)",
       "cart_line_removed_manager": "Artículo quitado del carrito (PIN gerente)",
+      "cart_tab_discarded_caja": "Carrito descartado (PIN caja)",
+      "cart_tab_discarded_manager": "Carrito descartado (PIN gerente)",
       "product_label_printed": "Etiqueta de producto impresa",
       "pin_card_printed": "Tarjeta PIN impresa",
       "user_created": "Usuario creado",
@@ -1006,7 +1026,12 @@
       "saleDiscountTotal": "Total venta",
       "priceOverridesTitle": "PRECIOS MODIFICADOS",
       "priceOverrideTotal": "Diferencia total",
-      "priceOverrideVariance": "Diferencia línea"
+      "priceOverrideVariance": "Diferencia línea",
+      "discardedTabsTitle": "CARRITOS DESCARTADOS",
+      "discardedTabsTotal": "Valor total descartado",
+      "discardedTabUnnamed": "Carrito",
+      "discardedTabAuthCaja": "PIN caja",
+      "discardedTabAuthManager": "PIN gerente"
     }
   },
   "errors": {

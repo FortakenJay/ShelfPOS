@@ -20,7 +20,8 @@ Parent: [[Home]]
 | Path | Role |
 |------|------|
 | `db/index.ts` | Open DB, pragmas (WAL, foreign_keys) |
-| `db/migrations.ts` | Schema version 18 |
+| `db/migrations.ts` | Schema version 19 |
+| `db/repos/cartTabs.ts` | Open cart tab rows (`cart_json` snapshots) |
 | `db/repos/*.ts` | SQL only — no Electron imports in repos |
 | `ipc/*.ts` | `handle(channel, roles, zodSchema, fn)` |
 | `ipc/helpers.ts` | Access control, `AppError`, validation |
@@ -48,6 +49,7 @@ All multi-step writes use `db.transaction()`. Sync enqueue inside same transacti
 ## Printing
 
 - Receipts via `print_jobs` queue + `printer.ts`
+- **Cierre ticket / PDF:** `buildCierreLines` in `printTemplates.ts` — includes payment totals, discounts, price overrides, **discarded cart tabs** (from `audit_log`), cash count, top products. Used on `cierre:confirm` print, `cierre:print`, and `cierre:exportPdf`.
 - **Cash drawer:** ESC/POS pulse at end of receipt when sale includes cash (`PrintPayload.openDrawer`); manual kick via `printer:openDrawer` or cash-movement shortcuts
 - Epson TM-T20/T81III: Windows RAW spooler; env `SHELFPOS_PRINTER_NAME` override
 - Encoding: `iconv-lite` for thermal code pages

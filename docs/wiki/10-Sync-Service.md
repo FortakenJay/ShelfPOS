@@ -91,7 +91,7 @@ The service does **not** scan `updated_at` on every table or tail the WAL.
 
 `products`, `sales`, `sale_items`, `sale_payments`, `cierres`, `cash_movements`, `audit_log`, `return_items`, `stock_adjustments`, `pos_users`
 
-**Local only:** `settings`, `users` (passwords), `print_jobs`
+**Local only:** `settings`, `users` (passwords), `print_jobs`, `cart_tabs` (open carts; discard audits sync via `audit_log`)
 
 ### Store registry (not queued)
 

@@ -25,10 +25,12 @@ All business tables include `store_id TEXT NOT NULL` and PK `(id, store_id)`.
 | `sale_payments` | `method`: cash \| card \| sinpe |
 | `cierres` | Shift close snapshot fields |
 | `cash_movements` | Linked to `cierre_id` optional |
-| `audit_log` | Username snapshot column |
+| `audit_log` | Username snapshot; `action` is free text (e.g. `cart_tab_discarded_caja`) |
 | `return_items` | `sale_item_id` for misc returns |
 | `stock_adjustments` | `delta` capped in sync sanitizer |
 | `pos_users` | Roles: sales, product_manager, admin — no passwords |
+
+**Local-only (SQLite, not in `SUPA.sql`):** `cart_tabs` — open carts per register. PIN discards still sync as `audit_log` rows.
 
 ## Tenancy tables
 

@@ -582,6 +582,73 @@ export function cierrePriceOverrides(filter: SaleFilter): {
   return { totalVariance, sales }
 }
 
+interface DiscardedTabAuditRow {
+  username: string | null
+  action: string
+  detail: string | null
+  createdAt: string
+}
+
+/** Cart tabs discarded with caja/manager PIN during the cierre period. */
+export function cierreDiscardedTabs(filter: { fromTs?: string; toTs?: string }): {
+  totalDiscarded: number
+  rows: {
+    createdAt: string
+    cashier: string
+    label: string
+    total: number
+    authType: 'caja' | 'manager'
+  }[]
+} {
+  const conditions = [
+    `action IN ('cart_tab_discarded_caja', 'cart_tab_discarded_manager')`
+  ]
+  const params: Record<string, unknown> = {}
+  if (filter.fromTs) {
+    conditions.push('created_at >= @fromTs')
+    params.fromTs = filter.fromTs
+  }
+  if (filter.toTs) {
+    conditions.push('created_at <= @toTs')
+    params.toTs = filter.toTs
+  }
+  const auditRows = getDb()
+    .prepare(
+      `SELECT username, action, detail, created_at AS createdAt
+       FROM audit_log
+       WHERE ${conditions.join(' AND ')}
+       ORDER BY created_at`
+    )
+    .all(params) as DiscardedTabAuditRow[]
+
+  let totalDiscarded = 0
+  const rows = auditRows.map((row) => {
+    let label = ''
+    let total = 0
+    if (row.detail) {
+      try {
+        const parsed = JSON.parse(row.detail) as { label?: string; total?: number }
+        label = parsed.label?.trim() ?? ''
+        total = typeof parsed.total === 'number' ? round2(parsed.total) : 0
+      } catch {
+        label = row.detail
+      }
+    }
+    totalDiscarded = round2(totalDiscarded + total)
+    return {
+      createdAt: row.createdAt,
+      cashier: row.username ?? '—',
+      label,
+      total,
+      authType: (row.action === 'cart_tab_discarded_caja' ? 'caja' : 'manager') as
+        | 'caja'
+        | 'manager'
+    }
+  })
+
+  return { totalDiscarded, rows }
+}
+
 interface SaleHeaderRow {
   saleId: number
   consecutivo: string | null

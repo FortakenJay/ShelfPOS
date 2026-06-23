@@ -291,8 +291,14 @@ try {
   "Built: $(Get-Date -Format o)",
   "Git: $GitSha",
   "Installer: $($NsisExe.Name)",
-  "Node (sync): $BundledNodeVersion"
+  "Node (sync): $BundledNodeVersion",
+  "Release notes: RELEASE_NOTES.md (in repo root; see v$Version section)"
 ) | Set-Content (Join-Path $StageDir 'BUILD_INFO.txt') -Encoding UTF8
+
+$ReleaseNotes = Join-Path $Root 'RELEASE_NOTES.md'
+if (Test-Path $ReleaseNotes) {
+  Copy-Item $ReleaseNotes (Join-Path $StageDir 'RELEASE_NOTES.md') -Force
+}
 
 @'
 ShelfPOS - instalacion en Windows

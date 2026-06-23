@@ -195,6 +195,16 @@
       "activityCode": "经济活动代码",
       "clear": "清除客户",
       "finalConsumer": "最终消费者"
+    },
+    "cartTabs": {
+      "newTab": "新购物车",
+      "newTabHint": "新购物车 (Ctrl+T)",
+      "switchShortcut": "Ctrl+{{n}}",
+      "defaultLabel": "购物车 {{n}}",
+      "closeTab": "关闭 {{label}}",
+      "closeTitle": "需要授权",
+      "closeSubtitle": "将丢弃「{{label}}」（{{amount}}）。请输入收银或经理 PIN。",
+      "discarded": "购物车已丢弃"
     }
   },
   "returns": {
@@ -660,6 +670,14 @@
     "priceOverrideVariance": "差额",
     "totalPriceVariance": "差额合计（登记 − 实际）",
     "noPriceOverrides": "本期无改价",
+    "discardedTabsTitle": "已丢弃的购物车",
+    "discardedTabLabel": "购物车",
+    "discardedTabTotal": "丢弃金额",
+    "discardedTabAuth": "授权",
+    "discardedTabsSubtotal": "丢弃总额",
+    "noDiscardedTabs": "本期无丢弃的购物车",
+    "discardedTabAuthCaja": "收银",
+    "discardedTabAuthManager": "经理",
     "discrepancyAlertsTitle": "现金差额日结 ({{count}} 笔)",
     "discrepancyIncomplete": "{{date}} 的日结未平账（{{direction}} {{amount}}）。",
     "discrepancyOver": "多出",
@@ -740,6 +758,8 @@
       "price_override_sale": "销售含改价",
       "cart_line_removed_caja": "已从购物车移除商品（收银 PIN）",
       "cart_line_removed_manager": "已从购物车移除商品（经理 PIN）",
+      "cart_tab_discarded_caja": "已丢弃购物车（收银 PIN）",
+      "cart_tab_discarded_manager": "已丢弃购物车（经理 PIN）",
       "product_label_printed": "打印商品标签",
       "pin_card_printed": "PIN 卡已打印",
       "user_created": "创建用户",
@@ -1006,7 +1026,12 @@
       "saleDiscountTotal": "该单合计",
       "priceOverridesTitle": "改价记录",
       "priceOverrideTotal": "差额合计",
-      "priceOverrideVariance": "行差额"
+      "priceOverrideVariance": "行差额",
+      "discardedTabsTitle": "已丢弃购物车",
+      "discardedTabsTotal": "丢弃总额",
+      "discardedTabUnnamed": "购物车",
+      "discardedTabAuthCaja": "收银 PIN",
+      "discardedTabAuthManager": "经理 PIN"
     }
   },
   "errors": {

@@ -179,12 +179,14 @@ export function Modal({
   title,
   onClose,
   children,
-  size = 'md'
+  size = 'md',
+  bodyClassName
 }: {
   title: ReactNode
   onClose?: () => void
   children: ReactNode
   size?: keyof typeof MODAL_WIDTHS
+  bodyClassName?: string
 }): React.JSX.Element {
   const { t } = useTranslation()
   const titleId = useId()
@@ -207,10 +209,10 @@ export function Modal({
         e.preventDefault()
         onClose?.()
       }}
-      className={`fixed inset-0 z-50 m-auto flex max-h-[90vh] w-[calc(100%-2rem)] flex-col rounded-lg border-0 bg-white p-0 shadow-2xl backdrop:bg-slate-900/60 open:flex ${MODAL_WIDTHS[size]}`}
+      className={`fixed inset-0 z-50 m-auto flex max-h-[min(96vh,100dvh)] w-[calc(100%-1rem)] flex-col rounded-lg border-0 bg-white p-0 shadow-2xl backdrop:bg-slate-900/60 open:flex ${MODAL_WIDTHS[size]}`}
     >
-      <div className="flex items-center justify-between border-b-2 border-line px-5 py-3">
-        <h2 id={titleId} className="text-xl font-bold">{title}</h2>
+      <div className="flex shrink-0 items-center justify-between border-b-2 border-line px-4 py-2">
+        <h2 id={titleId} className="text-lg font-bold">{title}</h2>
         {onClose && (
           <button
             type="button"
@@ -222,7 +224,7 @@ export function Modal({
           </button>
         )}
       </div>
-      <div className="overflow-y-auto p-5">{children}</div>
+      <div className={`min-h-0 flex-1 p-5 ${bodyClassName ?? 'overflow-y-auto'}`}>{children}</div>
     </dialog>
   )
 }

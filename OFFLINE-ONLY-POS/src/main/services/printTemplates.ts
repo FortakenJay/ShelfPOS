@@ -5,6 +5,7 @@ import { localNow } from '../db/helpers'
 import type {
   AppSettings,
   CierreDiscountReport,
+  CierreDiscardedTabsReport,
   CierrePriceOverrideReport,
   IdType,
   ItemizedSalesReport,
@@ -408,6 +409,7 @@ export interface CierrePrintArgs {
   topProducts: TopProductRow[]
   discounts: CierreDiscountReport
   priceOverrides: CierrePriceOverrideReport
+  discardedTabs: CierreDiscardedTabsReport
   storeName: string
   cash: CierreCashArgs
 }
@@ -523,6 +525,41 @@ function cierrePriceOverrideLines(
   return lines
 }
 
+function cierreDiscardedTabLines(
+  lang: Language,
+  discardedTabs: CierreDiscardedTabsReport
+): PrintLine[] {
+  if (discardedTabs.rows.length === 0) return []
+  const money = (n: number): string => formatMoney(n, lang)
+  const lines: PrintLine[] = [
+    { t: 'hr' },
+    { t: 'text', v: t(lang, 'print.cierre.discardedTabsTitle'), bold: true },
+    {
+      t: 'row',
+      l: t(lang, 'print.cierre.discardedTabsTotal'),
+      r: money(discardedTabs.totalDiscarded),
+      bold: true
+    }
+  ]
+  for (const row of discardedTabs.rows) {
+    const label = row.label.trim() || t(lang, 'print.cierre.discardedTabUnnamed')
+    const auth =
+      row.authType === 'caja'
+        ? t(lang, 'print.cierre.discardedTabAuthCaja')
+        : t(lang, 'print.cierre.discardedTabAuthManager')
+    lines.push({
+      t: 'row',
+      l: label,
+      r: money(row.total)
+    })
+    lines.push({
+      t: 'text',
+      v: `  ${row.cashier} · ${auth} · ${formatDate(row.createdAt, lang, true)}`
+    })
+  }
+  return lines
+}
+
 export function buildCierreLines(args: CierrePrintArgs, lang: Language): PrintLine[] {
   const money = (n: number): string => formatMoney(n, lang)
   return [
@@ -535,6 +572,7 @@ export function buildCierreLines(args: CierrePrintArgs, lang: Language): PrintLi
     ...paymentLines(lang, args.totals),
     ...cierreDiscountLines(lang, args.discounts),
     ...cierrePriceOverrideLines(lang, args.priceOverrides),
+    ...cierreDiscardedTabLines(lang, args.discardedTabs),
     { t: 'hr' },
     ...cierreCashLines(lang, args.cash),
     { t: 'hr' },

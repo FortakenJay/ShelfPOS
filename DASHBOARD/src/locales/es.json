@@ -472,6 +472,8 @@
       "price_override_sale": "Venta con precio modificado",
       "cart_line_removed_caja": "Artículo quitado del carrito (PIN caja)",
       "cart_line_removed_manager": "Artículo quitado del carrito (PIN gerente)",
+      "cart_tab_discarded_caja": "Carrito descartado (PIN caja)",
+      "cart_tab_discarded_manager": "Carrito descartado (PIN gerente)",
       "product_label_printed": "Etiqueta de producto impresa",
       "user_created": "Usuario creado",
       "user_updated": "Usuario actualizado",

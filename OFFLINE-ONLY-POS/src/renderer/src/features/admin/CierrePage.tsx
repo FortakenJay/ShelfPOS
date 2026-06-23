@@ -14,6 +14,7 @@ import { DateRangePicker } from '@/components/DateRangePicker'
 import { rangeForReportPeriod } from '@/components/dateRangePresets'
 import type {
   CierreDiscountReport,
+  CierreDiscardedTabsReport,
   CierrePreview,
   CierrePriceOverrideReport,
   CierreRecord,
@@ -143,15 +144,10 @@ function Cierre(): React.JSX.Element {
       <div className="mx-auto w-full max-w-6xl space-y-6">
         <h1 className="text-2xl font-bold">{t('cierre.title')}</h1>
 
-        {isAdmin && <CierreDiscrepancyAlerts />}
-
-        {isAdmin && (
-          <>
-            <CierreSummary preview={preview} pending={pending} />
-            <CierreDiscounts discounts={preview?.discounts} />
-            <CierrePriceOverrides overrides={preview?.priceOverrides} />
-          </>
-        )}
+        <CierreSummary preview={preview} pending={pending} />
+        <CierreDiscardedTabs discarded={preview?.discardedTabs} />
+        <CierreDiscounts discounts={preview?.discounts} />
+        <CierrePriceOverrides overrides={preview?.priceOverrides} />
 
         <div
           className={`grid gap-6 lg:items-start ${
@@ -547,6 +543,64 @@ function CierrePriceOverrides({
                   </tr>
                 ))}
               </Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+function CierreDiscardedTabs({
+  discarded
+}: {
+  discarded: CierreDiscardedTabsReport | undefined
+}): React.JSX.Element | null {
+  const { t } = useTranslation()
+  if (!discarded) return null
+
+  if (discarded.rows.length === 0) {
+    return (
+      <div className="rounded-lg border-2 border-line bg-white p-5">
+        <h2 className="mb-2 text-lg font-bold">{t('cierre.discardedTabsTitle')}</h2>
+        <p className="text-[15px] text-slate-500">{t('cierre.noDiscardedTabs')}</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-lg border-2 border-line bg-white p-5">
+      <h2 className="mb-4 text-lg font-bold">{t('cierre.discardedTabsTitle')}</h2>
+      <div className="mb-4">
+        <SummaryCell
+          label={t('cierre.discardedTabsSubtotal')}
+          value={formatMoney(discarded.totalDiscarded)}
+        />
+      </div>
+      <div className="overflow-x-auto rounded-lg border border-line">
+        <table className="w-full">
+          <thead>
+            <tr>
+              <Th>{t('common.date')}</Th>
+              <Th>{t('cierre.closedBy')}</Th>
+              <Th>{t('cierre.discardedTabLabel')}</Th>
+              <Th className="text-right">{t('cierre.discardedTabTotal')}</Th>
+              <Th>{t('cierre.discardedTabAuth')}</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {discarded.rows.map((row, index) => (
+              <tr key={`${row.createdAt}-${index}`} className="border-t border-line">
+                <Td>{formatDate(row.createdAt, true)}</Td>
+                <Td>{row.cashier}</Td>
+                <Td className="font-semibold">{row.label}</Td>
+                <Td className="text-right font-bold text-danger">{formatMoney(row.total)}</Td>
+                <Td>
+                  {row.authType === 'caja'
+                    ? t('cierre.discardedTabAuthCaja')
+                    : t('cierre.discardedTabAuthManager')}
+                </Td>
+              </tr>
             ))}
           </tbody>
         </table>

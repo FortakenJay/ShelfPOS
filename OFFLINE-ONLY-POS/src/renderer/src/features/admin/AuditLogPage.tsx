@@ -3,11 +3,26 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import i18n from 'i18next'
 import { api } from '@/lib/api'
-import { formatDate } from '@/lib/format'
+import { formatDate, formatMoney } from '@/lib/format'
 import { RequireRole } from '@/features/shell/Shell'
 import { Button, Input, Select, Td, Th } from '@/components/ui'
 import { rangeForReportPeriod } from '@/components/dateRangePresets'
 import type { DateRange, ReportPeriodPreset } from '@shared/types'
+
+function formatAuditDetail(actionKey: string, detail: string | null): string {
+  if (!detail) return '—'
+  if (actionKey.startsWith('cart_tab_discarded_')) {
+    try {
+      const parsed = JSON.parse(detail) as { label?: string; total?: number }
+      if (parsed.label && typeof parsed.total === 'number') {
+        return `${parsed.label} · ${formatMoney(parsed.total)}`
+      }
+    } catch {
+      /* use raw detail */
+    }
+  }
+  return detail
+}
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const
 const DEFAULT_PAGE_SIZE = 50
@@ -226,7 +241,7 @@ function AuditLog(): React.JSX.Element {
                   {row.entity ?? '—'}
                   {row.entity_id ? ` #${row.entity_id}` : ''}
                 </Td>
-                <Td className="text-slate-500">{row.detail ?? '—'}</Td>
+                <Td className="text-slate-500">{formatAuditDetail(row.action, row.detail)}</Td>
               </tr>
             ))}
           </tbody>

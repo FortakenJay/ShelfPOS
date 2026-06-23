@@ -12,6 +12,7 @@ import { registerPrintQueueHandlers } from './printQueue'
 import { registerBackupHandlers } from './backup'
 import { registerDiscountHandlers } from './discount'
 import { registerCartHandlers } from './cart'
+import { registerCartTabHandlers } from './cartTabs'
 import { registerPriceOverrideHandlers } from './priceOverride'
 import { registerDashboardHandlers } from './dashboard'
 import { registerUserHandlers } from './users'
@@ -34,6 +35,7 @@ export function registerIpcHandlers(backup: BackupService): void {
   registerBackupHandlers(backup)
   registerDiscountHandlers()
   registerCartHandlers()
+  registerCartTabHandlers()
   registerPriceOverrideHandlers()
   registerDashboardHandlers()
   registerUserHandlers()

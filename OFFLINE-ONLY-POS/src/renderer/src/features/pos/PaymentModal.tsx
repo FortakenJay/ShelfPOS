@@ -181,8 +181,9 @@ export function PaymentModal({
       title={t('pos.payTitle')}
       onClose={mutation.isPending ? undefined : onClose}
       size="xl"
+      bodyClassName="flex flex-col overflow-hidden p-4"
     >
-      <div className="grid grid-cols-[minmax(9.5rem,11rem)_minmax(0,1fr)] gap-5">
+      <div className="grid h-full min-h-0 grid-cols-[minmax(9rem,11rem)_minmax(0,1fr)] gap-4">
         <PaymentMethodSidebar
           splitPayment={splitPayment}
           method={singleMethod}
@@ -197,7 +198,7 @@ export function PaymentModal({
           onToggleSplit={toggleSplit}
         />
 
-        <div className="min-w-0">
+        <div className="flex min-h-0 min-w-0 flex-col">
           <PaymentInvoiceCustomerSection
             name={invoiceName}
             cedula={invoiceCedula}
@@ -205,55 +206,57 @@ export function PaymentModal({
             onCedulaChange={setInvoiceCedula}
           />
 
-          {splitPayment ? (
-            <div className="mt-4 flex min-h-[420px] flex-col gap-4">
-              <PaymentSplitSection
-                entries={entries}
-                remaining={remaining}
-                splitBalanced={splitBalanced}
-                onUpdateEntry={(id, patch) => dispatch({ type: 'updateEntry', id, patch })}
-                onRemoveEntry={(id) => dispatch({ type: 'removeEntry', id })}
-                onAddEntry={() => dispatch({ type: 'addEntry' })}
+          <div className="mt-2 flex min-h-0 flex-1 flex-col overflow-hidden">
+            {splitPayment ? (
+              <>
+                <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                  <PaymentSplitSection
+                    entries={entries}
+                    remaining={remaining}
+                    splitBalanced={splitBalanced}
+                    onUpdateEntry={(id, patch) => dispatch({ type: 'updateEntry', id, patch })}
+                    onRemoveEntry={(id) => dispatch({ type: 'removeEntry', id })}
+                    onAddEntry={() => dispatch({ type: 'addEntry' })}
+                  />
+                </div>
+                <div className="shrink-0 border-t-2 border-line pt-3">
+                  <PaymentCheckoutPad
+                    onDigit={() => {}}
+                    onBackspace={() => {}}
+                    onClear={() => {}}
+                    onConfirm={() => confirm()}
+                    canConfirm={canConfirm}
+                    loading={isPending}
+                    showKeys={false}
+                  />
+                </div>
+              </>
+            ) : (
+              <PaymentCheckoutPanel
+                total={total}
+                method={singleMethod}
+                tendered={tendered}
+                change={change}
+                cashShort={cashShort}
+                sinpeRef={sinpeRef}
+                canConfirm={canConfirm}
+                loading={isPending}
+                onTenderedChange={(value) => dispatch({ type: 'setTendered', value })}
+                onDigit={(d) =>
+                  dispatch({
+                    type: 'setTendered',
+                    value: (prev) => appendMoneyInputDigit(prev, d)
+                  })
+                }
+                onBackspace={() =>
+                  dispatch({ type: 'setTendered', value: (prev) => backspaceMoneyInput(prev) })
+                }
+                onClear={() => dispatch({ type: 'setTendered', value: '' })}
+                onSinpeRefChange={(value) => dispatch({ type: 'setSinpeRef', value })}
+                onConfirm={() => confirm()}
               />
-              <div className="mt-auto">
-                <PaymentCheckoutPad
-                  onDigit={() => {}}
-                  onBackspace={() => {}}
-                  onClear={() => {}}
-                  onConfirm={() => confirm()}
-                  canConfirm={canConfirm}
-                  loading={isPending}
-                  showKeys={false}
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="mt-4">
-            <PaymentCheckoutPanel
-              total={total}
-              method={singleMethod}
-              tendered={tendered}
-              change={change}
-              cashShort={cashShort}
-              sinpeRef={sinpeRef}
-              canConfirm={canConfirm}
-              loading={isPending}
-              onTenderedChange={(value) => dispatch({ type: 'setTendered', value })}
-              onDigit={(d) =>
-                dispatch({
-                  type: 'setTendered',
-                  value: (prev) => appendMoneyInputDigit(prev, d)
-                })
-              }
-              onBackspace={() =>
-                dispatch({ type: 'setTendered', value: (prev) => backspaceMoneyInput(prev) })
-              }
-              onClear={() => dispatch({ type: 'setTendered', value: '' })}
-              onSinpeRefChange={(value) => dispatch({ type: 'setSinpeRef', value })}
-              onConfirm={() => confirm()}
-            />
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </Modal>

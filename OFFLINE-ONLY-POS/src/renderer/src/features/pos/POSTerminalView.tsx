@@ -1,15 +1,20 @@
 import { OpenFloatModal } from './OpenFloatModal'
+import { CartTabsBar } from './CartTabsBar'
 import { POSCartPanel } from './POSCartPanel'
 import { POSModals } from './POSModals'
 import { POSSearchPanel } from './POSSearchPanel'
 import { POSSidebar } from './POSSidebar'
 import { LineDiscountPinModal } from './LineDiscountPinModal'
+import { PinModal } from '@/components/PinModal'
 import type { usePOSTerminal } from './usePOSTerminal'
 import type { CustomerInput } from '@shared/types'
+import { useTranslation } from 'react-i18next'
+import { formatMoney } from '@/lib/format'
 
 type POSTerminalState = ReturnType<typeof usePOSTerminal>
 
 export function POSTerminalView(state: POSTerminalState): React.JSX.Element {
+  const { t } = useTranslation()
   const {
     queryClient,
     inputRef,
@@ -17,6 +22,17 @@ export function POSTerminalView(state: POSTerminalState): React.JSX.Element {
     setQuery,
     cart,
     customer,
+    tabs,
+    activeTabId,
+    tabsReady,
+    switchTab,
+    newTab,
+    closeTab,
+    closeTabTarget,
+    closeTabPinError,
+    closeTabLoading,
+    confirmCloseTabWithPin,
+    cancelCloseTab,
     cashBlocked,
     scanner,
     debouncedQuery,
@@ -62,6 +78,16 @@ export function POSTerminalView(state: POSTerminalState): React.JSX.Element {
       )}
       <div className={`flex h-full ${cashBlocked ? 'pointer-events-none opacity-40' : ''}`}>
         <div className="flex min-h-0 min-w-0 flex-1 flex-col border-r-2 border-line">
+          {tabsReady && !payOpen && (
+            <CartTabsBar
+              tabs={tabs}
+              activeTabId={activeTabId}
+              activeTotal={total}
+              onSwitch={(id) => void switchTab(id)}
+              onNew={() => void newTab()}
+              onClose={(id) => void closeTab(id)}
+            />
+          )}
           <POSSearchPanel
             inputRef={inputRef}
             query={query}
@@ -162,6 +188,19 @@ export function POSTerminalView(state: POSTerminalState): React.JSX.Element {
             request={lineDiscountPin}
             onApplied={applyLineDiscountPin}
             onClose={closeLineDiscountPin}
+          />
+        )}
+        {closeTabTarget && (
+          <PinModal
+            title={t('pos.cartTabs.closeTitle')}
+            subtitle={t('pos.cartTabs.closeSubtitle', {
+              label: closeTabTarget.label,
+              amount: formatMoney(closeTabTarget.total)
+            })}
+            loading={closeTabLoading}
+            error={closeTabPinError ? t(closeTabPinError) : null}
+            onSubmit={(pin) => void confirmCloseTabWithPin(pin)}
+            onCancel={cancelCloseTab}
           />
         )}
       </div>

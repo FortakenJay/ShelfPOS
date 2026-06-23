@@ -37,6 +37,17 @@ Config: `doctor.config.json` in each app (`OFFLINE-ONLY-POS/`, `DASHBOARD/`).
 - Prefer fixing **errors** and high-confidence bugs; many POS warnings are pre-existing (React Compiler, `useProductManager` invalidation patterns).
 - Full triage playbook: `curl https://www.react.doctor/prompts/react-doctor-agent.md` (see `.claude/skills/react-doctor/SKILL.md`).
 
+### v1.4.0 baseline (cart tabs)
+
+| Check | Result |
+|-------|--------|
+| `npm run lint` | Clean |
+| React Doctor `--scope changed` | **97 / 100** (1 acceptable `PinModal` perf warning) |
+| Bugbot | Tab/pay race, post-sale tab cleanup, discard reorder, audit+delete transaction — fixed |
+| Cierre print/PDF | Discarded tabs section in `buildCierreLines` |
+
+Release notes: `OFFLINE-ONLY-POS/RELEASE_NOTES.md`. **Supabase:** no `SUPA.sql` change for cart tabs.
+
 ### Known POS hotspots (full scan)
 
 Remaining full-scan items are mostly main-process (`await` in print loops, `settings.ts`) — not React. Renderer fixes: printer status via `useQuery`, ref sync in effects, `openPayRef` for pay shortcuts.

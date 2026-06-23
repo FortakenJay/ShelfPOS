@@ -81,6 +81,7 @@ There is **no root package.json** — each project installs independently.
 | Concern | Path |
 |---------|------|
 | SQLite migrations | `OFFLINE-ONLY-POS/src/main/db/migrations.ts` |
+| Cart tabs (local) | `OFFLINE-ONLY-POS/src/main/db/repos/cartTabs.ts`, `features/pos/CartTabsBar.tsx` |
 | Sync enqueue | `OFFLINE-ONLY-POS/src/main/db/repos/syncQueue.ts` |
 | Supabase schema | `DASHBOARD/SUPA.sql` |
 | Dashboard auth | `DASHBOARD/src/lib/auth.tsx` |

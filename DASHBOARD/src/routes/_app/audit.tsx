@@ -6,6 +6,7 @@ import i18n from '#/lib/i18n'
 import { Button, Input, Select, Td, Th } from '#/components/ui'
 import { rangeForReportPeriod } from '#/lib/dateRangePresets'
 import { formatDateTime } from '#/lib/dates'
+import { formatMoney } from '#/lib/money'
 import {
   fetchAuditActions,
   fetchAuditLog,
@@ -15,6 +16,21 @@ import type { ReportPeriodPreset } from '#/lib/reports.types'
 import { useStore } from '#/lib/store-context'
 import { DASHBOARD_POLL_MS, DASHBOARD_STALE_MS, QUERY_GC_MS } from '#/lib/stores'
 import type { DateRange } from '#/lib/types'
+
+function formatAuditDetail(actionKey: string, detail: string | null): string {
+  if (!detail) return '—'
+  if (actionKey.startsWith('cart_tab_discarded_')) {
+    try {
+      const parsed = JSON.parse(detail) as { label?: string; total?: number }
+      if (parsed.label && typeof parsed.total === 'number') {
+        return `${parsed.label} · ${formatMoney(parsed.total)}`
+      }
+    } catch {
+      /* use raw detail */
+    }
+  }
+  return detail
+}
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const
 const DEFAULT_PAGE_SIZE = 50
@@ -280,7 +296,9 @@ function AuditPage() {
                   {row.entity ?? '—'}
                   {row.entity_id ? ` #${row.entity_id}` : ''}
                 </Td>
-                <Td className="text-slate-500">{row.detail ?? '—'}</Td>
+                <Td className="text-slate-500">
+                  {formatAuditDetail(row.action, row.detail)}
+                </Td>
               </tr>
             ))}
           </tbody>

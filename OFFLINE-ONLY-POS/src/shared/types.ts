@@ -684,6 +684,19 @@ export interface CierrePriceOverrideReport {
   sales: CierrePriceOverrideSale[]
 }
 
+export interface CierreDiscardedTabRow {
+  createdAt: string
+  cashier: string
+  label: string
+  total: number
+  authType: 'caja' | 'manager'
+}
+
+export interface CierreDiscardedTabsReport {
+  totalDiscarded: number
+  rows: CierreDiscardedTabRow[]
+}
+
 export interface CierrePreview {
   pendingSales: number
   /** Full totals for admin; cajero may receive only `{ sinpe }`. */
@@ -697,6 +710,8 @@ export interface CierrePreview {
   discounts?: CierreDiscountReport
   /** Admin-only. */
   priceOverrides?: CierrePriceOverrideReport
+  /** Admin-only. */
+  discardedTabs?: CierreDiscardedTabsReport
 }
 
 export interface CierreRecord {
@@ -798,6 +813,43 @@ export interface CartRemoveAuthorizeInput {
   pin: string
   productName: string
   quantity: number
+}
+
+export interface CartTabListItem {
+  id: number
+  label: string | null
+  position: number
+  cartJson: string
+}
+
+export interface CartTabCreateInput {
+  label?: string | null
+  position: number
+}
+
+export interface CartTabSaveInput {
+  id: number
+  cartJson: string
+}
+
+export interface CartTabRenameInput {
+  id: number
+  label: string | null
+}
+
+export interface CartTabDiscardAuditedInput {
+  id: number
+  pin: string
+  label: string
+  total: number
+}
+
+export interface CartTabReorderInput {
+  ids: number[]
+}
+
+export interface CartTabDiscardResult {
+  authType: 'caja' | 'manager'
 }
 
 export interface PriceOverrideAuthorizeInput {
@@ -1004,6 +1056,14 @@ export const IPC_CHANNELS = [
   'returns:create',
   'discount:authorize',
   'cart:removeAuthorize',
+  'cartTabs:list',
+  'cartTabs:create',
+  'cartTabs:save',
+  'cartTabs:rename',
+  'cartTabs:remove',
+  'cartTabs:complete',
+  'cartTabs:discardAudited',
+  'cartTabs:reorder',
   'priceOverride:authorize',
   'reports:run',
   'reports:print',

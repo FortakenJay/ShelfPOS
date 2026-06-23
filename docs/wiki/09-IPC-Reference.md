@@ -35,6 +35,7 @@ Preload whitelists channels — only listed channels can be invoked.
 | `cash.ts` | Float, movements |
 | `audit.ts` | Audit queries |
 | `cart.ts`, `discount.ts`, `priceOverride.ts` | PIN-gated overrides |
+| `cartTabs.ts` | Multi-cart tabs (list/create/save/discard/complete) |
 | `dashboard.ts` | Local admin KPIs |
 | `users.ts` | POS user CRUD |
 | `printQueue.ts` | Failed print retry |
@@ -48,6 +49,9 @@ Inspect `IPC_CHANNELS` for full list (~67 channels). Common:
 
 - `sales:create` — checkout transaction + enqueue
 - `sales:exportFacturaPdf` — A4 invoice PDF
+- `cartTabs:*` — POS cart tabs (`list`, `create`, `save`, `remove`, `complete`, `discardAudited`, `reorder`)
+- `cierre:confirm` — shift close + thermal print (`buildCierreLines`, includes discarded tabs from `audit_log`)
+- `cierre:print`, `cierre:exportPdf` — re-print / PDF for a past cierre (same line template)
 
 ## Sync side effect
 

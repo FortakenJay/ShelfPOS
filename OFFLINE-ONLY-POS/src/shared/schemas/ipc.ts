@@ -305,6 +305,30 @@ export const IPC_SCHEMAS = {
     productName: z.string().trim().min(1).max(200),
     quantity: quantitySchema
   }),
+  'cartTabs:list': voidInput,
+  'cartTabs:create': z.strictObject({
+    label: optionalTextSchema.nullish().optional(),
+    position: z.number().int().min(1)
+  }),
+  'cartTabs:save': z.strictObject({
+    id: positiveIdSchema,
+    cartJson: z.string().min(2).max(2_000_000)
+  }),
+  'cartTabs:rename': z.strictObject({
+    id: positiveIdSchema,
+    label: optionalTextSchema.nullish()
+  }),
+  'cartTabs:remove': z.strictObject({ id: positiveIdSchema }),
+  'cartTabs:complete': z.strictObject({ id: positiveIdSchema }),
+  'cartTabs:discardAudited': z.strictObject({
+    id: positiveIdSchema,
+    pin: pinSchema,
+    label: z.string().trim().min(1).max(120),
+    total: moneySchema
+  }),
+  'cartTabs:reorder': z.strictObject({
+    ids: z.array(positiveIdSchema).min(1).max(50)
+  }),
   'priceOverride:authorize': priceOverrideAuthorizeInputSchema,
   'reports:run': reportPayloadSchema,
   'reports:print': reportPayloadSchema,

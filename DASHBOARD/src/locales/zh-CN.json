@@ -472,6 +472,8 @@
       "price_override_sale": "销售含改价",
       "cart_line_removed_caja": "已从购物车移除商品（收银 PIN）",
       "cart_line_removed_manager": "已从购物车移除商品（经理 PIN）",
+      "cart_tab_discarded_caja": "已丢弃购物车（收银 PIN）",
+      "cart_tab_discarded_manager": "已丢弃购物车（经理 PIN）",
       "product_label_printed": "打印商品标签",
       "user_created": "创建用户",
       "user_updated": "更新用户",
