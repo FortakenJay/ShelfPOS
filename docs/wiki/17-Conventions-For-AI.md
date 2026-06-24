@@ -2,6 +2,8 @@
 
 Parent: [[Home]]
 
+**Read first:** [`../shelfpos_context.md`](../shelfpos_context.md) — single-file project context for LLMs.
+
 Read this before editing ShelfPOS. Rules align with `.cursor/rules/` in each project.
 
 ## Scope discipline

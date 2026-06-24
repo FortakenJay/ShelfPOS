@@ -6,10 +6,20 @@ Open this folder as an **Obsidian vault** (`File → Open folder as vault` → `
 
 ## For Cursor / other AI tools
 
-Point context at:
+**Best single file for LLM context:**
+
+- [`../shelfpos_context.md`](../shelfpos_context.md) — project overview, domain rules, architecture, DB, code index, known issues
+
+**Structured LLM chapters:**
+
+- [`../llm/README.md`](../llm/README.md) — overview, business rules, architecture, database, features, code index
+
+**Editing rules + deep runbooks:**
 
 - `docs/wiki/Home.md` — map of content
 - `docs/wiki/17-Conventions-For-AI.md` — editing rules
+
+**Architecture decisions:** [`../decisions/README.md`](../decisions/README.md)
 
 ## Pages
 
@@ -20,7 +30,7 @@ Point context at:
 | `02-Architecture.md` | Layers, principles |
 | `03-Data-Flow.md` | Sale → sync → dashboard |
 | `04-Multi-Tenant-Security.md` | RLS, claims, owners |
-| `05-SQLite-Schema.md` | Local DB v14 |
+| `05-SQLite-Schema.md` | Local DB v20 |
 | `06-Supabase-Schema.md` | Mirror + RPCs |
 | `07-POS-Main-Process.md` | Electron main |
 | `08-POS-Renderer.md` | React UI |

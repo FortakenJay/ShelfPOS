@@ -1,7 +1,7 @@
 # ShelfPOS Wiki
 
 > **For humans:** start here, then follow links by role.  
-> **For AI agents:** read [[17-Conventions-For-AI]] first, then the area you are editing.
+> **For AI agents:** read [`../shelfpos_context.md`](../shelfpos_context.md) first (master context), then [[17-Conventions-For-AI]], then the area you are editing. Expanded chapters: [`../llm/README.md`](../llm/README.md).
 
 ## What is ShelfPOS?
 
@@ -58,6 +58,9 @@ There is **no root package.json** — each project installs independently.
 - [[19-Edge-Cases-And-Runbooks]] — install, sync, dashboard pitfalls
 
 ### AI / contributors
+- [`../shelfpos_context.md`](../shelfpos_context.md) — **LLM master context (start here)**
+- [`../llm/README.md`](../llm/README.md) — structured LLM documentation
+- [`../decisions/README.md`](../decisions/README.md) — architecture decision records
 - [[17-Conventions-For-AI]]
 - [[18-Quality-And-Tooling]]
 
@@ -68,6 +71,8 @@ There is **no root package.json** — each project installs independently.
 | Fix a sale bug | [[03-Data-Flow]] → [[09-IPC-Reference]] → `OFFLINE-ONLY-POS/src/main/ipc/sales.ts` |
 | Fix sync | [[10-Sync-Service]] → `sync-service/src/sync.ts` |
 | Fix barcode / scan issues | [[08-POS-Renderer#Barcode scanner (USB HID)]] → `lib/useScanner.ts`, `usePOSTerminal.ts` |
+| See whole codebase dependencies | [`../llm/08-codebase-graph.md`](../llm/08-codebase-graph.md) |
+| UML (class, sequence, deployment) | [`../llm/09-uml-diagrams.md`](../llm/09-uml-diagrams.md) |
 | Fix dashboard KPIs | [[11-Dashboard]] → `DASHBOARD/src/lib/queries/dashboard.ts` |
 | Add a report | [[12-Reports-And-Exports]] |
 | Change Supabase schema | [[06-Supabase-Schema]] → `DASHBOARD/SUPA.sql` |
