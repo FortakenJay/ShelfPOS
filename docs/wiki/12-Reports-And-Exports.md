@@ -27,10 +27,11 @@ Defined in `DASHBOARD/src/lib/reports.types.ts`:
 
 ## Export pipeline
 
-1. `lib/reports/build-report-print-lines.ts` — neutral row model
+1. `lib/reports/build-report-print-lines.ts` — neutral row model (PDF / legacy print layout)
 2. `lib/reports/print-lines-to-pdf.ts` — jsPDF
-3. `lib/reports/print-lines-to-xlsx.ts` — ExcelJS
-4. `lib/reports-pdf.ts` — orchestration; bulk factura HTML for transaction logs
+3. `lib/reports/print-lines-to-xlsx.ts` — ExcelJS (receipt-style rows; factura layouts)
+4. `lib/reports/report-grid-to-xlsx.ts` — **table-grid Excel** for all “Descargar Excel” report types (summary, payments, top products, inventory, tax, transaction log, itemized)
+5. `lib/reports-pdf.ts` — orchestration; `downloadReportExcel` uses grid export; bulk factura HTML for transaction logs
 
 ## Date ranges
 

@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS public.products (
   price            REAL,
   cost_price       REAL,
   category         TEXT,
+  stock_provider   TEXT,
   stock            INTEGER,
   stock_threshold  INTEGER,
   tax_category     TEXT,
@@ -244,6 +245,7 @@ ALTER TABLE public.products ADD COLUMN IF NOT EXISTS name TEXT;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS price REAL;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS cost_price REAL;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS category TEXT;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS stock_provider TEXT;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS stock INTEGER;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS stock_threshold INTEGER;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS tax_category TEXT;
@@ -379,6 +381,9 @@ END $$;
 
 CREATE INDEX IF NOT EXISTS idx_products_store_category
   ON public.products (store_id, category);
+
+CREATE INDEX IF NOT EXISTS idx_products_store_provider
+  ON public.products (store_id, stock_provider);
 
 CREATE INDEX IF NOT EXISTS idx_products_store_deleted
   ON public.products (store_id, deleted_at);

@@ -122,6 +122,7 @@ export const api = {
   products: {
     list: (filters: ProductFilters) => call<ProductListResult>('products:list', filters),
     categories: () => call<string[]>('products:categories'),
+    stockProviders: () => call<string[]>('products:stockProviders'),
     byBarcode: (barcode: string) => call<Product | null>('products:byBarcode', { barcode }),
     search: (query: string) => call<Product[]>('products:search', { query }),
     create: (input: ProductInput) => call<Product>('products:create', input),

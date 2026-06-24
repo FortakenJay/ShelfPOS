@@ -16,6 +16,7 @@ function productFormState(product: Product | null) {
     price: product ? formatMoneyInputFromNumber(product.price) : '',
     costPrice: product?.cost_price != null ? formatMoneyInputFromNumber(product.cost_price) : '',
     category: product?.category ?? '',
+    stockProvider: product?.stock_provider ?? '',
     stock: '0',
     threshold: product?.stock_threshold != null ? String(product.stock_threshold) : '',
     bulkQty: product?.bulk_qty != null ? String(product.bulk_qty) : '',
@@ -28,6 +29,7 @@ interface ProductFormModalProps {
   product: Product | null
   defaultThreshold: number
   categories: string[]
+  stockProviders: string[]
   onClose: () => void
   onSaved: () => void
 }
@@ -36,6 +38,7 @@ export function ProductFormModal({
   product,
   defaultThreshold,
   categories,
+  stockProviders,
   onClose,
   onSaved
 }: ProductFormModalProps): React.JSX.Element {
@@ -83,6 +86,7 @@ export function ProductFormModal({
       price: priceNum,
       costPrice: moneyInputIsEmpty(form.costPrice) ? null : parseColonesInput(form.costPrice),
       category: form.category.trim() || null,
+      stockProvider: form.stockProvider.trim() || null,
       stock: isEdit ? 0 : Math.trunc(Number(form.stock) || 0),
       stockThreshold: form.threshold.trim() === '' ? null : Math.trunc(Number(form.threshold)),
       taxCategory: 'standard',
@@ -148,6 +152,30 @@ export function ProductFormModal({
                       className="rounded-md border border-line bg-slate-50 px-2 py-1 text-[13px] font-semibold text-slate-700 hover:border-primary hover:bg-white"
                     >
                       {c}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+            )}
+          </Field>
+          <Field label={`${t('products.stockProvider')} (${t('common.optional')})`}>
+            <Input
+              value={form.stockProvider}
+              onChange={(e) => patch({ stockProvider: e.target.value })}
+              placeholder={t('products.stockProviderHint')}
+            />
+            {stockProviders.length > 0 && (
+              <fieldset className="mt-2 border-0 p-0">
+                <legend className="sr-only">{t('products.stockProvider')}</legend>
+                <div className="flex flex-wrap gap-1">
+                  {stockProviders.map((provider) => (
+                    <button
+                      key={provider}
+                      type="button"
+                      onClick={() => patch({ stockProvider: provider })}
+                      className="rounded-md border border-line bg-slate-50 px-2 py-1 text-[13px] font-semibold text-slate-700 hover:border-primary hover:bg-white"
+                    >
+                      {provider}
                     </button>
                   ))}
                 </div>

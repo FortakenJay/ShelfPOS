@@ -3,7 +3,7 @@
 Parent: [[Home]]
 
 **Source of truth:** `OFFLINE-ONLY-POS/src/main/db/migrations.ts`  
-**Current version:** `SCHEMA_VERSION = 19`
+**Current version:** `SCHEMA_VERSION = 20`
 
 Migrations are **forward-only**, keyed by version number. `user_version` pragma updated after run. Pre-migration backup in `main/index.ts`.
 
@@ -13,7 +13,7 @@ Migrations are **forward-only**, keyed by version number. `user_version` pragma 
 |-------|---------|
 | `settings` | Key-value config (`store_name`, `sync_store_id`, PINs, tax, printer, …) |
 | `users` | POS login users (local passwords — **not synced**) |
-| `products` | Catalog, stock, soft-delete via `deleted_at` (v9) |
+| `products` | Catalog, stock, soft-delete via `deleted_at` (v9); optional `stock_provider` (v20) |
 | `sales` | Sale header, customer fields, consecutivo, discounts |
 | `sale_items` | Lines; `product_id` nullable for misc lines (v10); `barcode_snapshot` (v14) |
 | `sale_payments` | Split payments: cash / card / sinpe (canonical — not `sales.payment_method` for mirror) |
@@ -53,6 +53,7 @@ Enqueue **in the same transaction** as the business write (`enqueueSync` in `syn
 | `pos_last_seen_at` | Heartbeat → `stores.pos_last_seen_at` |
 | `sync_owner_claimed` | Set by sync-service after claim (runtime, not migration) |
 | `stock_threshold_default` | Low-stock alerts |
+| `scanner_burst_ms` | Max ms between keystrokes to classify USB HID scanner input (default **30**; Admin → Settings) |
 
 ## POS users vs Supabase pos_users
 
@@ -74,6 +75,7 @@ Hidden recovery user **`SAKEN`** (v15+): local admin, never listed in UI, never 
 | v14 | `sale_items.barcode_snapshot` |
 | v15–v18 | Hidden `SAKEN` recovery user; env-gated login |
 | v19 | `cart_tabs` — multi-cart tabs per register (not synced; discard audited to `audit_log`) |
+| v20 | `products.stock_provider` — optional supplier (nullable; synced to Supabase) |
 
 ## Related
 

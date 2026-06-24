@@ -6,12 +6,14 @@ import type { StockStatus } from '@shared/types'
 interface ProductsPageFiltersProps {
   filters: ProductFiltersState
   categories: string[] | undefined
+  stockProviders: string[] | undefined
   onPatch: (patch: Partial<ProductFiltersState>) => void
 }
 
 export function ProductsPageFilters({
   filters,
   categories,
+  stockProviders,
   onPatch
 }: ProductsPageFiltersProps): React.JSX.Element {
   const { t } = useTranslation()
@@ -47,6 +49,20 @@ export function ProductsPageFilters({
           {categories?.map((c) => (
             <option key={c} value={c}>
               {c}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      <Field label={t('products.stockProvider')} className="w-52 shrink-0">
+        <Select
+          value={filters.stockProvider}
+          onChange={(e) => onPatch({ stockProvider: e.target.value })}
+          className="w-full"
+        >
+          <option value="">{t('products.filters.allProviders')}</option>
+          {stockProviders?.map((provider) => (
+            <option key={provider} value={provider}>
+              {provider}
             </option>
           ))}
         </Select>

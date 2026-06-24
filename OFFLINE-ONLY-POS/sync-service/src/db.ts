@@ -120,7 +120,7 @@ export interface SyncQueueRow {
 /** Column lists aligned with the Supabase mirror schema (excludes deprecated local-only columns). */
 const LIVE_ROW_SQL: Record<SyncTableName, string> = {
   products: `
-    SELECT id, barcode, name, price, cost_price, category, stock, stock_threshold,
+    SELECT id, barcode, name, price, cost_price, category, stock_provider, stock, stock_threshold,
            tax_category, bulk_qty, bulk_price, factura_negativo, deleted_at, created_at, updated_at
     FROM products WHERE id = ?`,
   sales: `

@@ -87,6 +87,7 @@ function ProductManager({
       <ProductsPageFilters
         filters={pm.filters}
         categories={pm.categoryRows}
+        stockProviders={pm.stockProviderRows}
         onPatch={pm.patchFilters}
       />
 
@@ -119,6 +120,7 @@ function ProductManager({
         setUi={pm.setUi}
         defaultThreshold={pm.defaultThreshold}
         categories={pm.categoryRows ?? []}
+        stockProviders={pm.stockProviderRows ?? []}
         exportTemplatePending={pm.exportTemplate.isPending}
         importConfirmPending={pm.importConfirmMutation.isPending}
         deletePending={pm.deleteMutation.isPending}

@@ -13,6 +13,7 @@ interface ProductManagerModalsProps {
   setUi: React.Dispatch<React.SetStateAction<ProductManagerUiState>>
   defaultThreshold: number
   categories: string[]
+  stockProviders: string[]
   exportTemplatePending: boolean
   importConfirmPending: boolean
   deletePending: boolean
@@ -29,6 +30,7 @@ export function ProductManagerModals({
   setUi,
   defaultThreshold,
   categories,
+  stockProviders,
   exportTemplatePending,
   importConfirmPending,
   deletePending,
@@ -48,6 +50,7 @@ export function ProductManagerModals({
           product={ui.formProduct === 'new' ? null : ui.formProduct}
           defaultThreshold={defaultThreshold}
           categories={categories}
+          stockProviders={stockProviders}
           onClose={() => setUi((u) => ({ ...u, formProduct: null }))}
           onSaved={() => {
             setUi((u) => ({ ...u, formProduct: null }))

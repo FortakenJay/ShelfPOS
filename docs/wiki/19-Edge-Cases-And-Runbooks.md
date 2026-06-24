@@ -162,16 +162,21 @@ npm run backfill
 
 ### Cloud wipe procedure
 
-See `DASHBOARD/scripts/wipe-supabase-mirror-data.sql`.
+See `DASHBOARD/scripts/wipe-supabase-mirror-data.sql` (BEFORE/AFTER row counts, OK/FAIL check).
 
 | Step | Why |
 |------|-----|
+| Confirm **production** Supabase project URL | Wrong project = data loss on wrong tenant |
+| Apply latest `SUPA.sql` if schema drifted | Idempotent DDL + column patches |
 | Close POS | Stops new queue rows |
 | Stop ShelfPOSSync | Prevents immediate re-upsert |
 | Run SQL as **postgres** role | `authenticated`/`anon` delete 0 rows (RLS) |
+| Verify AFTER counts are 0 | Script prints per-table counts |
 | Re-pair every register | Wipe truncates `store_access` + `store_pairings` |
 
-Optional local reset: delete `%APPDATA%\shelfpos\shelf.db` and re-run Setup (no `reset-fresh-install.ps1` in repo yet).
+**Keeps:** `auth.users` (dashboard logins), schema, indexes, RLS, RPCs. Optional commented block can remove non-superadmin auth users — superadmin is never deleted by default.
+
+**Does not wipe:** local `shelf.db` on registers. Optional per-PC: delete `%APPDATA%\shelfpos\shelf.db` and re-run Setup on test machines only.
 
 ---
 
@@ -236,6 +241,18 @@ Optional local reset: delete `%APPDATA%\shelfpos\shelf.db` and re-run Setup (no 
 
 Local-only `cart_tabs` table — **not synced**. Open carts survive tab switch; discarded tabs may audit via `audit_log` (synced).
 
+### Barcode scanner (scans but item not added)
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| Barcode appears in search box, nothing added | Burst timing failed (`scanner_burst_ms` too low) or product missing from catalog | Raise threshold to **50–100 ms** (Admin → Settings); verify barcode in Products |
+| “Producto no encontrado” toast | `byBarcode` miss — code not in DB or inactive/deleted | Fix catalog row |
+| Stock toast, no line added | `addToCart` blocked | Restock or reduce qty |
+| Nothing happens, search empty | Modal open (pay, PIN, customer) or cash float blocked | Close modal / open float |
+| Works on second scan, not first | Pre-fix: stale React state on Enter; ensure app is current | Restart POS after update |
+
+**Settings key:** `scanner_burst_ms` in SQLite `settings` (default 30). See [[08-POS-Renderer#Barcode scanner (USB HID)]].
+
 ### Misc items (`PRECIO*`)
 
 No catalog row; `sale_items.product_id` is NULL. **Not returnable** by design. Sales with only misc lines omitted from return search.
@@ -266,6 +283,8 @@ Updates **pairing code only** — cannot fix wrong `SUPABASE_URL` or secret key 
 | Two registers overwrite each other | Unique `sync_store_id` per PC |
 | Invite link “invalid” | Expired; use operator reset-password or new invite |
 | Movements “missing” old rows | Paginate — no longer capped at 500 |
+| Barcode in search, not in cart | [[19-Edge-Cases-And-Runbooks#Barcode scanner (scans but item not added)]] — raise `scanner_burst_ms`; check catalog/stock |
+| `no such column: stock_provider` | POS on old schema — restart app so migration **v20** runs; apply `SUPA.sql` on Supabase |
 
 ---
 

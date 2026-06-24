@@ -2,7 +2,7 @@ import type Database from 'better-sqlite3'
 import { HIDDEN_OPERATOR_USERNAME } from '../../shared/operator-account'
 import { OPERATOR_PLACEHOLDER_PASSWORD_HASH } from '../services/operatorConfig'
 
-export const SCHEMA_VERSION = 19
+export const SCHEMA_VERSION = 20
 
 type Migration = (db: Database.Database) => void
 
@@ -452,6 +452,14 @@ const migrations: Record<number, Migration> = {
         updated_at TEXT NOT NULL
       );
       CREATE INDEX idx_cart_tabs_position ON cart_tabs(position);
+    `)
+  },
+
+  // v20 — optional stock source/supplier (nullable; e.g. Walmart).
+  20: (db) => {
+    db.exec(`
+      ALTER TABLE products ADD COLUMN stock_provider TEXT;
+      CREATE INDEX IF NOT EXISTS idx_products_stock_provider ON products(stock_provider);
     `)
   },
 }

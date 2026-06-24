@@ -94,6 +94,7 @@ export function parseProductRow(
     price,
     costPrice: parseOptionalNumber(cell(row, columns.cost_price)),
     category: cell(row, columns.category) || null,
+    stockProvider: null,
     stock: stock < 0 ? 0 : stock,
     stockThreshold: threshold != null && threshold >= 0 ? threshold : null,
     taxCategory: STANDARD_TAX,

@@ -439,9 +439,9 @@ export function usePOSTerminal() {
 
   const onEnter = async (): Promise<boolean> => {
     if (cashBlocked) return false
-    const value = query.trim()
-    const isScan = scanner.consumeIsScan(value.length)
+    const value = (inputRef.current?.value ?? query).trim()
     if (!value) return false
+    const isScan = scanner.consumeIsScan(value.length)
 
     const miscPrice = parseMiscPriceInput(value)
     if (miscPrice != null) {
@@ -459,7 +459,19 @@ export function usePOSTerminal() {
         }
         return false
       }
+      toasts.error('errors.productNotFound')
       return false
+    }
+
+    if (/^[0-9]{4,}$/.test(value)) {
+      const product = await api.products.byBarcode(value)
+      if (product) {
+        if (addToCart(product)) {
+          setQuery('')
+          return true
+        }
+        return false
+      }
     }
     if (searchResults?.length === 1) {
       if (addToCart(searchResults[0])) {
@@ -520,8 +532,9 @@ export function usePOSTerminal() {
     onScan: async (barcode) => {
       const product = await api.products.byBarcode(barcode)
       if (product) {
-        addToCart(product)
-        focusSearch()
+        if (addToCart(product)) focusSearch()
+      } else {
+        toasts.error('errors.productNotFound')
       }
     }
   })

@@ -67,6 +67,7 @@ There is **no root package.json** — each project installs independently.
 |------------|------|
 | Fix a sale bug | [[03-Data-Flow]] → [[09-IPC-Reference]] → `OFFLINE-ONLY-POS/src/main/ipc/sales.ts` |
 | Fix sync | [[10-Sync-Service]] → `sync-service/src/sync.ts` |
+| Fix barcode / scan issues | [[08-POS-Renderer#Barcode scanner (USB HID)]] → `lib/useScanner.ts`, `usePOSTerminal.ts` |
 | Fix dashboard KPIs | [[11-Dashboard]] → `DASHBOARD/src/lib/queries/dashboard.ts` |
 | Add a report | [[12-Reports-And-Exports]] |
 | Change Supabase schema | [[06-Supabase-Schema]] → `DASHBOARD/SUPA.sql` |
@@ -84,6 +85,9 @@ There is **no root package.json** — each project installs independently.
 |---------|------|
 | SQLite migrations | `OFFLINE-ONLY-POS/src/main/db/migrations.ts` |
 | Cart tabs (local) | `OFFLINE-ONLY-POS/src/main/db/repos/cartTabs.ts`, `features/pos/CartTabsBar.tsx` |
+| Barcode scanner | `OFFLINE-ONLY-POS/src/renderer/src/lib/useScanner.ts`, `features/pos/posKeyboard.ts`, `usePOSTerminal.ts` |
+| Report Excel grids | `DASHBOARD/src/lib/reports/report-grid-to-xlsx.ts` |
+| Supabase production wipe | `DASHBOARD/scripts/wipe-supabase-mirror-data.sql` |
 | Sync enqueue | `OFFLINE-ONLY-POS/src/main/db/repos/syncQueue.ts` |
 | Supabase schema | `DASHBOARD/SUPA.sql` |
 | Dashboard auth | `DASHBOARD/src/lib/auth.tsx` |

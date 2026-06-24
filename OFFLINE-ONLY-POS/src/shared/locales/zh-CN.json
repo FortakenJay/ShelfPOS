@@ -235,6 +235,8 @@
     "price": "价格 (₡)",
     "costPrice": "成本价 (₡)",
     "category": "分类",
+    "stockProvider": "供应商",
+    "stockProviderHint": "例如 Walmart、Auto Mercado",
     "stock": "库存",
     "threshold": "低库存警戒值",
     "thresholdHint": "留空 = 使用全局默认值（{{value}}）",
@@ -251,6 +253,7 @@
       "zero": "零库存",
       "negative": "负库存",
       "allCategories": "所有分类",
+      "allProviders": "全部供应商",
       "searchPlaceholder": "按名称或条码搜索…"
     },
     "pagination": {

@@ -235,6 +235,8 @@
     "price": "Precio (₡)",
     "costPrice": "Precio de costo (₡)",
     "category": "Categoría",
+    "stockProvider": "Proveedor",
+    "stockProviderHint": "Ej. Walmart, Auto Mercado",
     "stock": "Stock",
     "threshold": "Alerta de stock bajo",
     "thresholdHint": "Vacío = usar el valor global ({{value}})",
@@ -251,6 +253,7 @@
       "zero": "Agotado",
       "negative": "Negativo",
       "allCategories": "Todas las categorías",
+      "allProviders": "Todos los proveedores",
       "searchPlaceholder": "Buscar por nombre o código…"
     },
     "pagination": {

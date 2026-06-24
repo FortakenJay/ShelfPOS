@@ -29,6 +29,10 @@ function buildProductListWhere(filters: ProductFilters): {
     where.push('category = @category')
     params.category = filters.category
   }
+  if (filters.stockProvider) {
+    where.push('stock_provider = @stockProvider')
+    params.stockProvider = filters.stockProvider
+  }
   switch (filters.stockStatus) {
     case 'low':
       where.push('stock > 0 AND stock <= COALESCE(stock_threshold, @def)')
@@ -100,6 +104,15 @@ export function listCategories(): string[] {
     )
     .all() as { category: string }[]
   return rows.map((r) => r.category)
+}
+
+export function listStockProviders(): string[] {
+  const rows = getDb()
+    .prepare(
+      `SELECT DISTINCT stock_provider FROM products WHERE ${ACTIVE_PRODUCT_SQL} AND stock_provider IS NOT NULL AND stock_provider != '' ORDER BY stock_provider COLLATE NOCASE`
+    )
+    .all() as { stock_provider: string }[]
+  return rows.map((r) => r.stock_provider)
 }
 
 /** Applies a stock delta and records the adjustment. Must run inside a transaction. */

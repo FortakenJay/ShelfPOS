@@ -39,13 +39,14 @@ export function ProductsTable({
             <Th className="text-center">{t('products.stock')}</Th>
             <Th className="text-center">{t('products.threshold')}</Th>
             <Th>{t('products.category')}</Th>
+            <Th>{t('products.stockProvider')}</Th>
             <Th className="text-right">{t('common.actions')}</Th>
           </tr>
         </thead>
         <tbody>
           {rows?.length === 0 && (
             <tr>
-              <Td className="py-8 text-center text-slate-500" colSpan={7}>
+              <Td className="py-8 text-center text-slate-500" colSpan={8}>
                 {t('products.empty')}
               </Td>
             </tr>
@@ -78,6 +79,7 @@ export function ProductsTable({
               </Td>
               <Td className="text-center text-slate-500">{p.stock_threshold ?? defaultThreshold}</Td>
               <Td>{p.category ?? '—'}</Td>
+              <Td>{p.stock_provider ?? '—'}</Td>
               <Td className="text-right whitespace-nowrap">
                 <Button variant="ghost" onClick={() => onAdjust(p)} className="!min-h-9">
                   {t('products.adjust.title')}

@@ -35,6 +35,7 @@ ShelfPOS/
 | `src/lib/` | Auth, store context, reports builders, PDF/XLSX |
 | `src/components/` | Shell, charts, report tables |
 | `SUPA.sql` | **Canonical** Supabase DDL + RLS + RPCs |
+| `scripts/wipe-supabase-mirror-data.sql` | Production mirror reset (keeps `auth.users`, schema, RLS) |
 | `SUPA-data-cleanup.sql` | Optional one-off cleanup (not routine) |
 
 Deployed to **Vercel**; env: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.

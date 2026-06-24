@@ -92,6 +92,7 @@ export interface Product {
   price: number
   cost_price: number | null
   category: string | null
+  stock_provider: string | null
   stock: number
   stock_threshold: number | null
   tax_category: TaxCategory
@@ -109,6 +110,7 @@ export interface ProductInput {
   price: number
   costPrice: number | null
   category: string | null
+  stockProvider: string | null
   stock: number
   stockThreshold: number | null
   taxCategory: TaxCategory
@@ -120,6 +122,7 @@ export interface ProductInput {
 export interface ProductFilters {
   search?: string
   category?: string
+  stockProvider?: string
   stockStatus?: StockStatus
   page?: number
   pageSize?: number
@@ -1034,6 +1037,7 @@ export const IPC_CHANNELS = [
   'settings:printPinCard',
   'products:list',
   'products:categories',
+  'products:stockProviders',
   'products:create',
   'products:update',
   'products:delete',

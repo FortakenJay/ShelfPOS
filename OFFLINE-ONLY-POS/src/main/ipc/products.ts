@@ -12,6 +12,7 @@ import {
   getProductByBarcode,
   listCategories,
   listProducts,
+  listStockProviders,
   searchProducts,
   softDeleteProduct
 } from '../db/repos/products'
@@ -95,6 +96,8 @@ export function registerProductHandlers(): void {
 
   handle<void, string[]>('products:categories', 'authed', () => listCategories())
 
+  handle<void, string[]>('products:stockProviders', 'authed', () => listStockProviders())
+
   handle<{ barcode: string }, Product | null>('products:byBarcode', 'authed', ({ barcode }) =>
     getProductByBarcode(barcode.trim()) ?? null
   )
@@ -163,8 +166,8 @@ export function registerProductHandlers(): void {
       return db.transaction(() => {
         const result = db
           .prepare(
-            `INSERT INTO products (barcode, name, price, cost_price, category, stock, stock_threshold, tax_category, bulk_qty, bulk_price, factura_negativo, created_at, updated_at)
-             VALUES (?,?,?,?,?,0,?,?,?,?,?,?,?)`
+            `INSERT INTO products (barcode, name, price, cost_price, category, stock_provider, stock, stock_threshold, tax_category, bulk_qty, bulk_price, factura_negativo, created_at, updated_at)
+             VALUES (?,?,?,?,?,?,0,?,?,?,?,?,?,?)`
           )
           .run(
             input.barcode.trim(),
@@ -172,6 +175,7 @@ export function registerProductHandlers(): void {
             input.price,
             input.costPrice ?? null,
             input.category?.trim() || null,
+            input.stockProvider?.trim() || null,
             input.stockThreshold ?? null,
             'standard',
             input.bulkQty ?? null,
@@ -199,7 +203,7 @@ export function registerProductHandlers(): void {
       const db = getDb()
       db.transaction(() => {
         db.prepare(
-          `UPDATE products SET barcode = ?, name = ?, price = ?, cost_price = ?, category = ?, stock_threshold = ?, tax_category = ?, bulk_qty = ?, bulk_price = ?, factura_negativo = ?, updated_at = ?
+          `UPDATE products SET barcode = ?, name = ?, price = ?, cost_price = ?, category = ?, stock_provider = ?, stock_threshold = ?, tax_category = ?, bulk_qty = ?, bulk_price = ?, factura_negativo = ?, updated_at = ?
            WHERE id = ?`
         ).run(
           input.barcode.trim(),
@@ -207,6 +211,7 @@ export function registerProductHandlers(): void {
           input.price,
           input.costPrice ?? null,
           input.category?.trim() || null,
+          input.stockProvider?.trim() || null,
           input.stockThreshold ?? null,
           'standard',
           input.bulkQty ?? null,

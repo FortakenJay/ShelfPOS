@@ -24,6 +24,8 @@ Every `AppError` key in **both**:
 
 `toastApiError(toasts, err)` — interpolates `ApiError.vars`
 
+**Scan misses (renderer-only, no IPC):** failed `products:byBarcode` on classified scan shows `errors.productNotFound`. Out-of-stock still comes from `addToCart` → `errors.outOfStock` / `errors.insufficientStock`.
+
 ### Stock
 
 Race-safe: `UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?`

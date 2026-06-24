@@ -84,8 +84,10 @@ export function usePosEnterShortcut({
       if (event.target instanceof HTMLButtonElement) return
       if (event.target instanceof HTMLElement && event.target.closest('dialog[open]')) return
 
-      const trimmed = query.trim()
       const isSearchInput = event.target === searchInputRef.current
+      const trimmed = isSearchInput
+        ? (searchInputRef.current?.value ?? '').trim()
+        : query.trim()
 
       if (isEditableElement(event.target) && !isSearchInput) return
 

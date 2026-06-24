@@ -20,7 +20,7 @@ Parent: [[Home]]
 | Path | Role |
 |------|------|
 | `db/index.ts` | Open DB, pragmas (WAL, foreign_keys) |
-| `db/migrations.ts` | Schema version 19 |
+| `db/migrations.ts` | Schema version 20 |
 | `db/repos/cartTabs.ts` | Open cart tab rows (`cart_json` snapshots) |
 | `db/repos/*.ts` | SQL only — no Electron imports in repos |
 | `ipc/*.ts` | `handle(channel, roles, zodSchema, fn)` |

@@ -40,6 +40,7 @@ const productInputSchema = z.strictObject({
   price: moneySchema,
   costPrice: moneySchema.nullable(),
   category: z.string().trim().max(100).nullable(),
+  stockProvider: z.string().trim().max(100).nullable(),
   stock: z.number().int().min(0).max(MAX_PRODUCT_STOCK),
   stockThreshold: z.number().int().min(0).max(MAX_PRODUCT_STOCK).nullable(),
   taxCategory: taxCategorySchema,
@@ -52,6 +53,7 @@ const productFiltersSchema = z
   .strictObject({
     search: z.string().trim().max(100).optional(),
     category: z.string().trim().max(100).optional(),
+    stockProvider: z.string().trim().max(100).optional(),
     stockStatus: stockStatusSchema.optional(),
     page: z.number().int().min(1).max(10_000).optional(),
     pageSize: z.number().int().min(1).max(200).optional()
@@ -262,6 +264,7 @@ export const IPC_SCHEMAS = {
   }),
   'products:list': productFiltersSchema,
   'products:categories': voidInput,
+  'products:stockProviders': voidInput,
   'products:create': productInputSchema,
   'products:update': productUpdateInputSchema,
   'products:delete': z.strictObject({ id: positiveIdSchema }),

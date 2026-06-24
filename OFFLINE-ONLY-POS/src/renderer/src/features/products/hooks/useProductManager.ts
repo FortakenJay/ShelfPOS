@@ -19,6 +19,7 @@ export type ProductManagerUiState = {
 export type ProductFiltersState = {
   search: string
   category: string
+  stockProvider: string
   stockStatus: StockStatus
 }
 
@@ -32,6 +33,7 @@ export function useProductManager(options?: {
   const [filters, setFilters] = useState<ProductFiltersState>({
     search: options?.initialSearch ?? '',
     category: '',
+    stockProvider: '',
     stockStatus: options?.initialStockStatus ?? 'all'
   })
   const [ui, setUi] = useState<ProductManagerUiState>({
@@ -57,6 +59,7 @@ export function useProductManager(options?: {
   const queryFilters = {
     search: debouncedSearch || undefined,
     category: filters.category || undefined,
+    stockProvider: filters.stockProvider || undefined,
     stockStatus: filters.stockStatus,
     page,
     pageSize
@@ -69,6 +72,10 @@ export function useProductManager(options?: {
   const { data: categoryRows } = useQuery({
     queryKey: ['products', 'categories'],
     queryFn: api.products.categories
+  })
+  const { data: stockProviderRows } = useQuery({
+    queryKey: ['products', 'stockProviders'],
+    queryFn: api.products.stockProviders
   })
   const { data: settingsData } = useQuery({ queryKey: ['settings'], queryFn: api.settings.get })
 
@@ -224,6 +231,7 @@ export function useProductManager(options?: {
     productList,
     productsLoading,
     categoryRows,
+    stockProviderRows,
     settingsData,
     defaultThreshold,
     stockCellClass,

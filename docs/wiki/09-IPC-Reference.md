@@ -27,7 +27,7 @@ Preload whitelists channels — only listed channels can be invoked.
 | `auth.ts` | Login, logout, session |
 | `firstRun.ts` | Wizard, language |
 | `settings.ts` | Store config, PINs, language |
-| `products.ts` | CRUD, import, labels, stock |
+| `products.ts` | CRUD, import, labels, stock, `stockProviders` |
 | `sales.ts` | Checkout, reprint, factura PDF export |
 | `returns.ts` | Returns + restock |
 | `reports.ts` | Local report generation |
@@ -50,6 +50,7 @@ Inspect `IPC_CHANNELS` for full list (~67 channels). Common:
 - `sales:create` — checkout transaction + enqueue
 - `sales:exportFacturaPdf` — A4 invoice PDF
 - `cartTabs:*` — POS cart tabs (`list`, `create`, `save`, `remove`, `complete`, `discardAudited`, `reorder`)
+- `products:stockProviders` — distinct `stock_provider` values for catalog filter/form datalist
 - `cierre:confirm` — shift close + thermal print (`buildCierreLines`, includes discarded tabs from `audit_log`)
 - `cierre:print`, `cierre:exportPdf` — re-print / PDF for a past cierre (same line template)
 

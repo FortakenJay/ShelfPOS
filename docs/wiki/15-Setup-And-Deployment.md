@@ -275,6 +275,7 @@ In **`app_metadata`**, not `user_metadata`. See [[04-Multi-Tenant-Security]].
 | Sync errors | Service logs under `Program Files\ShelfPOS\sync-service\logs\` **and** `sync.txt` under service account profile — see [[10-Sync-Service#where-logs-live-two-places]] |
 | Queue stuck / partial dashboard | `npm run queue:diagnose` in `sync-service`; `[GAVE_UP]` in `sync.txt` |
 | Cloud wipe did nothing | SQL Editor role must be **postgres**; stop sync service first |
+| Wipe deleted dashboard logins | Should not happen — script keeps `auth.users`; only mirror tables truncated. Re-run latest `wipe-supabase-mirror-data.sql` |
 | Data on POS, not dashboard | `store_id` mismatch, wrong Supabase project, or run `npm run backfill` after wipe |
 
 Full runbook: [[19-Edge-Cases-And-Runbooks]].
