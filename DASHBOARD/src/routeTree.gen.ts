@@ -9,8 +9,10 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as CreateAccountRouteImport } from './routes/create-account'
+import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppReportsRouteImport } from './routes/_app/reports'
@@ -19,7 +21,18 @@ import { Route as AppLinkPosRouteImport } from './routes/_app/link-pos'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppCierresRouteImport } from './routes/_app/cierres'
 import { Route as AppAuditRouteImport } from './routes/_app/audit'
+import { Route as AppAdminRouteImport } from './routes/_app/admin'
+import { Route as ApiOperatorStoresRouteImport } from './routes/api/operator/stores'
+import { Route as ApiOperatorResetOwnerPasswordRouteImport } from './routes/api/operator/reset-owner-password'
+import { Route as ApiOperatorInviteOwnerRouteImport } from './routes/api/operator/invite-owner'
+import { Route as ApiCronBillingRemindersRouteImport } from './routes/api/cron/billing-reminders'
+import { Route as ApiOperatorStoresStoreIdBillingRouteImport } from './routes/api/operator/stores/$storeId/billing'
 
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -28,6 +41,11 @@ const LoginRoute = LoginRouteImport.update({
 const CreateAccountRoute = CreateAccountRouteImport.update({
   id: '/create-account',
   path: '/create-account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AcceptInviteRoute = AcceptInviteRouteImport.update({
+  id: '/accept-invite',
+  path: '/accept-invite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRouteRoute = AppRouteRouteImport.update({
@@ -69,88 +87,181 @@ const AppAuditRoute = AppAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const ApiOperatorStoresRoute = ApiOperatorStoresRouteImport.update({
+  id: '/api/operator/stores',
+  path: '/api/operator/stores',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOperatorResetOwnerPasswordRoute =
+  ApiOperatorResetOwnerPasswordRouteImport.update({
+    id: '/api/operator/reset-owner-password',
+    path: '/api/operator/reset-owner-password',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiOperatorInviteOwnerRoute = ApiOperatorInviteOwnerRouteImport.update({
+  id: '/api/operator/invite-owner',
+  path: '/api/operator/invite-owner',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCronBillingRemindersRoute = ApiCronBillingRemindersRouteImport.update({
+  id: '/api/cron/billing-reminders',
+  path: '/api/cron/billing-reminders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOperatorStoresStoreIdBillingRoute =
+  ApiOperatorStoresStoreIdBillingRouteImport.update({
+    id: '/$storeId/billing',
+    path: '/$storeId/billing',
+    getParentRoute: () => ApiOperatorStoresRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/accept-invite': typeof AcceptInviteRoute
   '/create-account': typeof CreateAccountRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/admin': typeof AppAdminRoute
   '/audit': typeof AppAuditRoute
   '/cierres': typeof AppCierresRoute
   '/dashboard': typeof AppDashboardRoute
   '/link-pos': typeof AppLinkPosRoute
   '/movements': typeof AppMovementsRoute
   '/reports': typeof AppReportsRoute
+  '/api/cron/billing-reminders': typeof ApiCronBillingRemindersRoute
+  '/api/operator/invite-owner': typeof ApiOperatorInviteOwnerRoute
+  '/api/operator/reset-owner-password': typeof ApiOperatorResetOwnerPasswordRoute
+  '/api/operator/stores': typeof ApiOperatorStoresRouteWithChildren
+  '/api/operator/stores/$storeId/billing': typeof ApiOperatorStoresStoreIdBillingRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/accept-invite': typeof AcceptInviteRoute
   '/create-account': typeof CreateAccountRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/admin': typeof AppAdminRoute
   '/audit': typeof AppAuditRoute
   '/cierres': typeof AppCierresRoute
   '/dashboard': typeof AppDashboardRoute
   '/link-pos': typeof AppLinkPosRoute
   '/movements': typeof AppMovementsRoute
   '/reports': typeof AppReportsRoute
+  '/api/cron/billing-reminders': typeof ApiCronBillingRemindersRoute
+  '/api/operator/invite-owner': typeof ApiOperatorInviteOwnerRoute
+  '/api/operator/reset-owner-password': typeof ApiOperatorResetOwnerPasswordRoute
+  '/api/operator/stores': typeof ApiOperatorStoresRouteWithChildren
+  '/api/operator/stores/$storeId/billing': typeof ApiOperatorStoresStoreIdBillingRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_app': typeof AppRouteRouteWithChildren
+  '/accept-invite': typeof AcceptInviteRoute
   '/create-account': typeof CreateAccountRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/_app/admin': typeof AppAdminRoute
   '/_app/audit': typeof AppAuditRoute
   '/_app/cierres': typeof AppCierresRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/link-pos': typeof AppLinkPosRoute
   '/_app/movements': typeof AppMovementsRoute
   '/_app/reports': typeof AppReportsRoute
+  '/api/cron/billing-reminders': typeof ApiCronBillingRemindersRoute
+  '/api/operator/invite-owner': typeof ApiOperatorInviteOwnerRoute
+  '/api/operator/reset-owner-password': typeof ApiOperatorResetOwnerPasswordRoute
+  '/api/operator/stores': typeof ApiOperatorStoresRouteWithChildren
+  '/api/operator/stores/$storeId/billing': typeof ApiOperatorStoresStoreIdBillingRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/accept-invite'
     | '/create-account'
     | '/login'
+    | '/reset-password'
+    | '/admin'
     | '/audit'
     | '/cierres'
     | '/dashboard'
     | '/link-pos'
     | '/movements'
     | '/reports'
+    | '/api/cron/billing-reminders'
+    | '/api/operator/invite-owner'
+    | '/api/operator/reset-owner-password'
+    | '/api/operator/stores'
+    | '/api/operator/stores/$storeId/billing'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/accept-invite'
     | '/create-account'
     | '/login'
+    | '/reset-password'
+    | '/admin'
     | '/audit'
     | '/cierres'
     | '/dashboard'
     | '/link-pos'
     | '/movements'
     | '/reports'
+    | '/api/cron/billing-reminders'
+    | '/api/operator/invite-owner'
+    | '/api/operator/reset-owner-password'
+    | '/api/operator/stores'
+    | '/api/operator/stores/$storeId/billing'
   id:
     | '__root__'
     | '/'
     | '/_app'
+    | '/accept-invite'
     | '/create-account'
     | '/login'
+    | '/reset-password'
+    | '/_app/admin'
     | '/_app/audit'
     | '/_app/cierres'
     | '/_app/dashboard'
     | '/_app/link-pos'
     | '/_app/movements'
     | '/_app/reports'
+    | '/api/cron/billing-reminders'
+    | '/api/operator/invite-owner'
+    | '/api/operator/reset-owner-password'
+    | '/api/operator/stores'
+    | '/api/operator/stores/$storeId/billing'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRouteRoute: typeof AppRouteRouteWithChildren
+  AcceptInviteRoute: typeof AcceptInviteRoute
   CreateAccountRoute: typeof CreateAccountRoute
   LoginRoute: typeof LoginRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiCronBillingRemindersRoute: typeof ApiCronBillingRemindersRoute
+  ApiOperatorInviteOwnerRoute: typeof ApiOperatorInviteOwnerRoute
+  ApiOperatorResetOwnerPasswordRoute: typeof ApiOperatorResetOwnerPasswordRoute
+  ApiOperatorStoresRoute: typeof ApiOperatorStoresRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -163,6 +274,13 @@ declare module '@tanstack/react-router' {
       path: '/create-account'
       fullPath: '/create-account'
       preLoaderRoute: typeof CreateAccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accept-invite': {
+      id: '/accept-invite'
+      path: '/accept-invite'
+      fullPath: '/accept-invite'
+      preLoaderRoute: typeof AcceptInviteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app': {
@@ -221,10 +339,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuditRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/admin': {
+      id: '/_app/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/api/operator/stores': {
+      id: '/api/operator/stores'
+      path: '/api/operator/stores'
+      fullPath: '/api/operator/stores'
+      preLoaderRoute: typeof ApiOperatorStoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/operator/reset-owner-password': {
+      id: '/api/operator/reset-owner-password'
+      path: '/api/operator/reset-owner-password'
+      fullPath: '/api/operator/reset-owner-password'
+      preLoaderRoute: typeof ApiOperatorResetOwnerPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/operator/invite-owner': {
+      id: '/api/operator/invite-owner'
+      path: '/api/operator/invite-owner'
+      fullPath: '/api/operator/invite-owner'
+      preLoaderRoute: typeof ApiOperatorInviteOwnerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cron/billing-reminders': {
+      id: '/api/cron/billing-reminders'
+      path: '/api/cron/billing-reminders'
+      fullPath: '/api/cron/billing-reminders'
+      preLoaderRoute: typeof ApiCronBillingRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/operator/stores/$storeId/billing': {
+      id: '/api/operator/stores/$storeId/billing'
+      path: '/$storeId/billing'
+      fullPath: '/api/operator/stores/$storeId/billing'
+      preLoaderRoute: typeof ApiOperatorStoresStoreIdBillingRouteImport
+      parentRoute: typeof ApiOperatorStoresRoute
+    }
   }
 }
 
 interface AppRouteRouteChildren {
+  AppAdminRoute: typeof AppAdminRoute
   AppAuditRoute: typeof AppAuditRoute
   AppCierresRoute: typeof AppCierresRoute
   AppDashboardRoute: typeof AppDashboardRoute
@@ -234,6 +395,7 @@ interface AppRouteRouteChildren {
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppAdminRoute: AppAdminRoute,
   AppAuditRoute: AppAuditRoute,
   AppCierresRoute: AppCierresRoute,
   AppDashboardRoute: AppDashboardRoute,
@@ -246,11 +408,28 @@ const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
   AppRouteRouteChildren,
 )
 
+interface ApiOperatorStoresRouteChildren {
+  ApiOperatorStoresStoreIdBillingRoute: typeof ApiOperatorStoresStoreIdBillingRoute
+}
+
+const ApiOperatorStoresRouteChildren: ApiOperatorStoresRouteChildren = {
+  ApiOperatorStoresStoreIdBillingRoute: ApiOperatorStoresStoreIdBillingRoute,
+}
+
+const ApiOperatorStoresRouteWithChildren =
+  ApiOperatorStoresRoute._addFileChildren(ApiOperatorStoresRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRouteRoute: AppRouteRouteWithChildren,
+  AcceptInviteRoute: AcceptInviteRoute,
   CreateAccountRoute: CreateAccountRoute,
   LoginRoute: LoginRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  ApiCronBillingRemindersRoute: ApiCronBillingRemindersRoute,
+  ApiOperatorInviteOwnerRoute: ApiOperatorInviteOwnerRoute,
+  ApiOperatorResetOwnerPasswordRoute: ApiOperatorResetOwnerPasswordRoute,
+  ApiOperatorStoresRoute: ApiOperatorStoresRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

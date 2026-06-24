@@ -10,7 +10,12 @@ export function getSupabase(): SupabaseClient {
   if (!url || !anonKey) {
     throw new Error('Faltan VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY')
   }
-  client ??= createClient(url, anonKey)
+  client ??= createClient(url, anonKey, {
+    auth: {
+      detectSessionInUrl: true,
+      persistSession: true,
+    },
+  })
   return client
 }
 

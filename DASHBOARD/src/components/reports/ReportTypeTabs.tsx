@@ -26,7 +26,7 @@ export function ReportTypeTabs({
   const { t } = useTranslation()
 
   return (
-    <div className="mb-4 flex flex-wrap justify-center gap-2">
+    <div className="mb-4 flex flex-wrap justify-start gap-2">
       {REPORT_TYPES.map((rt) => (
         <Link
           key={rt}

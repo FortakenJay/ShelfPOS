@@ -4,21 +4,26 @@ import { getSupabase } from '#/lib/supabase'
 import type { StoreId } from '#/lib/stores'
 import type { CashMovementRow } from '#/lib/types'
 
-const DISPLAY_LIMIT = 500
+export const CASH_MOVEMENTS_PAGE_SIZE_DEFAULT = 50
 
 export interface CashMovementsResult {
   rows: CashMovementRow[]
   total: number
-  truncated: boolean
-  limit: number
+  page: number
+  pageSize: number
 }
 
 export async function fetchCashMovements(
   storeId: StoreId,
   from: string,
   to: string,
+  options: { page: number; pageSize: number },
 ): Promise<CashMovementsResult> {
   const bounds = rangeBounds(from, to)
+  const page = Math.max(1, options.page)
+  const pageSize = Math.max(1, options.pageSize)
+  const offset = (page - 1) * pageSize
+
   const { data, error, count } = await getSupabase()
     .from('cash_movements')
     .select('id, store_id, type, amount, reason, user_id, created_at, cierre_id', {
@@ -29,7 +34,7 @@ export async function fetchCashMovements(
     .lte('created_at', bounds.to)
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
-    .limit(DISPLAY_LIMIT)
+    .range(offset, offset + pageSize - 1)
   if (error) throw error
 
   const userIds = data
@@ -45,11 +50,10 @@ export async function fetchCashMovements(
         : '—',
   }))
 
-  const total = count ?? rows.length
   return {
     rows,
-    total,
-    truncated: total > DISPLAY_LIMIT,
-    limit: DISPLAY_LIMIT,
+    total: count ?? rows.length,
+    page,
+    pageSize,
   }
 }

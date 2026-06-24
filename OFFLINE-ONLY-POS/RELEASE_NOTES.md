@@ -1,5 +1,47 @@
 # ShelfPOS release notes
 
+## 1.5.0 — Beta (producción)
+
+Primera versión beta en tiendas reales (cliente piloto + tienda de mamá). Alpha interna cerrada.
+
+### Correcciones de edge cases (antes del ship)
+
+- Sync verifica `store_access` al arrancar; limpia `sync_owner_claimed` obsoleto tras wipe en Supabase.
+- Cola de sync procesada en serie (evita races sale_items / sales).
+- Instalador: perfil del cajero vía `UserAppData` (UAC); `pending_sync_store_id` si aún no hay `shelf.db`.
+- Re-instalación conserva `STORE_PAIRING_CODE` en `sync.env`.
+- Advertencia si la clave de Supabase parece anon/publishable.
+
+### POS (Electron)
+
+- Carritos con pestañas (heredado de 1.4.0).
+- Cierre de cajero: resumen de caja en cajón; sin totales de ventas duplicados arriba.
+- Vincular panel (`/sync-setup`): código de emparejamiento; estado `linked` requiere servicio activo.
+
+### Sync (`@shelfpos/sync-service` 1.5.0)
+
+- Misma versión que POS para releases empaquetados.
+- Backfill (`npm run backfill`) lee `%APPDATA%\shelfpos\sync.env` con DPAPI.
+- Documentación de operación: [[19-Edge-Cases-And-Runbooks]].
+
+### Dashboard (1.5.0)
+
+- Reporte resumen: desglose diario en rangos multi-día + total del período.
+- Movimientos de caja: paginación real (sin tope de 500 filas).
+- Vincular POS: UI unificada (nombre de caja + código en una fila).
+- Invitación por correo: flujo `/accept-invite` corregido.
+- Portal operador: facturación, recordatorios Discord, gestión de tiendas.
+
+### Despliegue
+
+| Componente | Versión | Acción |
+|------------|---------|--------|
+| POS Windows | 1.5.0 | `npm run release:win` → `ShelfPOS-1.5.0-win.zip` |
+| Sync service | 1.5.0 | Incluido en ZIP; `Install-ShelfPOS` |
+| Dashboard | 1.5.0 | Deploy Vercel (`DASHBOARD/`) |
+
+---
+
 ## 1.4.0
 
 ### Carritos con pestañas (cart tabs)

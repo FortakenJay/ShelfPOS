@@ -14,6 +14,8 @@ import { BackupService } from './services/backup'
 
 import { purgeExpiredReportData } from './services/dataRetention'
 
+import { applyPendingSyncStoreId } from './services/pendingStoreId'
+
 import { enqueueAllPosUsersSync } from './db/repos/syncQueue'
 
 import { initPrinter, flushPendingPrintJobs } from './services/printer'
@@ -162,7 +164,7 @@ async function initData(): Promise<BackupService> {
 
   }
 
-
+  applyPendingSyncStoreId(userData)
 
   try {
 

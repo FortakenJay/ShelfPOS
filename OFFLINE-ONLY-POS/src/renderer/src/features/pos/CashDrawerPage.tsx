@@ -34,7 +34,7 @@ function CashDrawer(): React.JSX.Element {
             canEdit
             sidebar={
               data?.floatOpened ? (
-                <CashDrawerSummary summary={data} openedAt={data.openedAt} />
+                <CashDrawerSummary summary={data} />
               ) : undefined
             }
           />

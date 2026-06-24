@@ -7,8 +7,9 @@ Parent: [[Home]]
 | Variable | Where | Purpose |
 |----------|-------|---------|
 | `VITE_SUPABASE_URL` | `.env.local` / Vercel | Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | `.env.local` / Vercel | Public anon key (RLS enforced) |
-| `VITE_SIGNUP_INVITE_KEY` | `.env.local` / Vercel | Secret for `/create-account?key=…` (disable open signup in Supabase too) |
+| `VITE_SUPABASE_ANON_KEY` | `.env.local` / Vercel | Publishable key (`sb_publishable_…` or legacy anon) — RLS enforced |
+| `SUPABASE_SECRET_KEY` | `.env.local` / Vercel **server only** | Secret API key (`sb_secret_…`) — operator invite links; never expose to browser |
+| `VITE_SIGNUP_INVITE_KEY` | `.env.local` / Vercel | Optional fallback for `/create-account?key=…` |
 
 Template: `DASHBOARD/.example.env`
 
@@ -29,7 +30,7 @@ Template: `DASHBOARD/.example.env`
 | Variable | Purpose |
 |----------|---------|
 | `SUPABASE_URL` | Required |
-| `SUPABASE_SERVICE_KEY` | Required — **secret**, service role |
+| `SUPABASE_SECRET_KEY` | Required — Supabase secret API key (`sb_secret_…`), bypasses RLS |
 | `SQLITE_PATH` | Required — path to `shelf.db` |
 | `STORE_PAIRING_CODE` | One-time owner link (dashboard → Vincular POS) |
 | `STORE_CLAIM_CODE` | Legacy alias for `STORE_PAIRING_CODE` |
@@ -66,7 +67,7 @@ Workflow: [[15-Setup-And-Deployment#POS operator recovery (SAKEN)]]
 - `sync.env`
 - `operator.env`
 - `.env.local`
-- Never commit service role keys or license private keys
+- Never commit Supabase secret keys or license private keys
 
 ## Related
 

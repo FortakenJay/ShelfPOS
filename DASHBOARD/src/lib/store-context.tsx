@@ -1,12 +1,14 @@
 import {
   createContext,
   use,
+  useEffect,
   useState,
 } from 'react'
 import type { ReactNode } from 'react'
-import { useRouterState } from '@tanstack/react-router'
+import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '#/lib/auth'
+import { isSuperadminUser } from '#/lib/roles'
 import { fetchStores } from '#/lib/queries/stores'
 import { QUERY_GC_MS, STORES_STALE_MS } from '#/lib/stores'
 import type { StoreId, StoreInfo } from '#/lib/stores'
@@ -18,6 +20,7 @@ interface StoreContextValue {
   storeId: StoreId
   storeLabel: string
   setStoreId: (id: StoreId) => void
+  isSuperadmin: boolean
 }
 
 const StoreContext = createContext<StoreContextValue | null>(null)
@@ -31,10 +34,17 @@ function resolveStoreId(stores: StoreInfo[]): StoreId {
   return stores[0].storeId
 }
 
+function isOperatorPath(pathname: string): boolean {
+  return pathname === '/admin' || pathname.startsWith('/admin/')
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading } = useAuth()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const allowWithoutStore = pathname === '/link-pos'
+  const navigate = useNavigate()
+  const isSuperadmin = isSuperadminUser(user)
+  const allowWithoutStore =
+    isOperatorPath(pathname) || (!isSuperadmin && pathname === '/link-pos')
 
   const { data: stores = [], isPending, isError, isFetching, refetch } = useQuery({
     queryKey: ['stores', user?.id],
@@ -58,16 +68,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const value: StoreContextValue =
     allowWithoutStore && stores.length === 0
-      ? { stores, storeId: '', storeLabel: '', setStoreId }
-      : { stores, storeId: resolvedStoreId, storeLabel, setStoreId }
+      ? { stores, storeId: '', storeLabel: '', setStoreId, isSuperadmin }
+      : { stores, storeId: resolvedStoreId, storeLabel, setStoreId, isSuperadmin }
+
+  useEffect(() => {
+    if (authLoading || !user || !isSuperadmin) return
+    if (pathname === '/link-pos') {
+      void navigate({ to: '/admin', replace: true })
+      return
+    }
+    if (stores.length > 0) return
+    if (isOperatorPath(pathname)) return
+    void navigate({ to: '/admin', replace: true })
+  }, [authLoading, user, isSuperadmin, stores.length, pathname, navigate])
 
   const waitingForStores =
-    Boolean(user) && isPending && stores.length === 0
+    Boolean(user) && isPending && stores.length === 0 && !isSuperadmin
 
   let body: ReactNode
   if (authLoading || waitingForStores) {
     body = <FullScreenSpinner />
-  } else if (!allowWithoutStore && (isError || stores.length === 0)) {
+  } else if (!isSuperadmin && !allowWithoutStore && (isError || stores.length === 0)) {
     body = (
       <NoStoresPage
         loadFailed={isError}

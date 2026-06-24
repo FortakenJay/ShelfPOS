@@ -13,8 +13,8 @@
   <dict>
     <key>SUPABASE_URL</key>
     <string>https://your-project.supabase.co</string>
-    <key>SUPABASE_SERVICE_KEY</key>
-    <string>your-service-role-key</string>
+    <key>SUPABASE_SECRET_KEY</key>
+    <string>sb_secret_...</string>
     <key>SQLITE_PATH</key>
     <string>/Users/You/Library/Application Support/shelfpos/shelf.db</string>
   </dict>

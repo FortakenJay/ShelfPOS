@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button } from '#/components/ui'
+import { Button, Field, Input } from '#/components/ui'
 import { createStorePairing } from '#/lib/queries/store-claims'
 
 export function StorePairingList({
@@ -14,10 +15,12 @@ export function StorePairingList({
 }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const [label, setLabel] = useState('')
 
   const addPairing = useMutation({
-    mutationFn: () => createStorePairing(),
+    mutationFn: () => createStorePairing(label.trim() || undefined),
     onSuccess: () => {
+      setLabel('')
       void queryClient.invalidateQueries({ queryKey: ['store-pairings'] })
       void queryClient.invalidateQueries({ queryKey: ['store-claim', 'active'] })
     },
@@ -56,14 +59,27 @@ export function StorePairingList({
         </ul>
       )}
 
-      <Button
-        type="button"
-        variant="primary"
-        disabled={addPairing.isPending}
-        onClick={() => addPairing.mutate()}
-      >
-        {addPairing.isPending ? t('linkPos.generating') : t('linkPos.addRegister')}
-      </Button>
+      <div className="flex flex-col gap-3 border-t border-line pt-5 sm:flex-row sm:items-end">
+        <Field
+          label={t('linkPos.labelOptional')}
+          className="mb-0 min-w-0 flex-1 sm:min-w-[200px]"
+        >
+          <Input
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            placeholder={t('linkPos.labelPlaceholder')}
+          />
+        </Field>
+        <Button
+          type="button"
+          variant="primary"
+          className="w-full shrink-0 sm:w-auto"
+          disabled={addPairing.isPending}
+          onClick={() => addPairing.mutate()}
+        >
+          {addPairing.isPending ? t('linkPos.generating') : t('linkPos.addRegister')}
+        </Button>
+      </div>
     </div>
   )
 }

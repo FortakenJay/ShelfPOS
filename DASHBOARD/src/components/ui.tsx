@@ -8,7 +8,7 @@ import type {
 } from 'react'
 
 type ButtonVariant = 'primary' | 'cta' | 'danger' | 'outline' | 'ghost'
-type ButtonSize = 'md' | 'lg'
+type ButtonSize = 'sm' | 'md' | 'lg'
 
 const VARIANT: Record<ButtonVariant, string> = {
   primary: 'bg-primary text-white hover:bg-primary-dark disabled:bg-slate-400',
@@ -21,6 +21,7 @@ const VARIANT: Record<ButtonVariant, string> = {
 }
 
 const SIZE: Record<ButtonSize, string> = {
+  sm: 'min-h-[36px] px-3 py-1.5 text-[13px]',
   md: 'min-h-[44px] px-4 text-[15px]',
   lg: 'min-h-[52px] px-6 text-lg',
 }
@@ -75,13 +76,15 @@ export function Field({
   label,
   error,
   children,
+  className = '',
 }: {
   label: string
   error?: string
   children: ReactNode
+  className?: string
 }) {
   return (
-    <label className="mb-4 block">
+    <label className={className ? `block ${className}` : 'mb-4 block'}>
       <span className="mb-1 block text-[15px] font-semibold text-slate-700">
         {label}
       </span>

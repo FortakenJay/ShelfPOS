@@ -4,7 +4,7 @@ import {
   readSyncSetupStatus,
   restartSyncService,
   restartSyncServiceIfInstalled,
-  writeSyncConfig,
+  writePairingCodeOnly,
   type SyncSetupSaveInput,
   type SyncSetupStatus,
 } from '../services/syncConfig'
@@ -16,7 +16,7 @@ export function registerSyncSetupHandlers(): void {
     if (!input?.pairingCode) {
       throw new AppError('errors.invalidInput')
     }
-    writeSyncConfig(input)
+    writePairingCodeOnly(input.pairingCode)
     restartSyncServiceIfInstalled()
     return readSyncSetupStatus()
   })

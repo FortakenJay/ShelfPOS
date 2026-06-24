@@ -24,7 +24,7 @@ export function LoginPage(): React.JSX.Element {
     try {
       const user = await api.auth.login(username.trim(), password)
       queryClient.clear()
-      void navigate({ to: await homeAfterLogin(user), replace: true })
+      void navigate({ to: homeAfterLogin(user), replace: true })
     } catch (err) {
       setError(t(err instanceof ApiError ? err.key : 'errors.unknown'))
       setBusy(false)

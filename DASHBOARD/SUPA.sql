@@ -355,7 +355,23 @@ ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS display_name TEXT;
 ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS pos_last_seen_at TEXT;
 ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS stock_threshold_default INTEGER NOT NULL DEFAULT 5;
 ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now();
+ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS billing_email TEXT;
+ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS billing_interval TEXT;
+ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS next_payment_at TIMESTAMPTZ;
+ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS billing_paid BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS billing_reminder_week_for DATE;
+ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS billing_reminder_due_for DATE;
 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'stores_billing_interval_check'
+  ) THEN
+    ALTER TABLE public.stores
+      ADD CONSTRAINT stores_billing_interval_check
+      CHECK (billing_interval IS NULL OR billing_interval IN ('weekly', 'monthly', 'annual'));
+  END IF;
+END $$;
 
 -- =============================================================================
 -- SECTION 4 — INDEXES
@@ -590,6 +606,7 @@ DECLARE
   v_pairing_id UUID;
   v_role TEXT;
   v_display TEXT;
+  v_owner_email TEXT;
 BEGIN
   v_role := COALESCE(
     current_setting('request.jwt.claims', true)::json ->> 'role',
@@ -617,6 +634,10 @@ BEGIN
     RAISE EXCEPTION 'invalid or expired pairing code';
   END IF;
 
+  SELECT u.email INTO v_owner_email
+  FROM auth.users u
+  WHERE u.id = v_user_id;
+
   IF EXISTS (
     SELECT 1
     FROM public.store_access sa
@@ -626,10 +647,11 @@ BEGIN
     RAISE EXCEPTION 'store already owned by another account';
   END IF;
 
-  INSERT INTO public.stores (store_id, display_name)
-  VALUES (p_store_id, COALESCE(v_display, p_store_id))
+  INSERT INTO public.stores (store_id, display_name, billing_email)
+  VALUES (p_store_id, COALESCE(v_display, p_store_id), v_owner_email)
   ON CONFLICT (store_id) DO UPDATE
-  SET display_name = COALESCE(EXCLUDED.display_name, public.stores.display_name);
+  SET display_name = COALESCE(EXCLUDED.display_name, public.stores.display_name),
+      billing_email = COALESCE(public.stores.billing_email, EXCLUDED.billing_email);
 
   INSERT INTO public.store_access (user_id, store_id, role)
   VALUES (v_user_id, p_store_id, 'owner')
@@ -807,7 +829,7 @@ CREATE POLICY "block dashboard writes to pos_users"
 -- 2. Optional superadmin: set app_metadata (not user_metadata) via Supabase Admin API:
 --    { "role": "superadmin" } — users cannot self-edit app_metadata.
 -- 3. Dashboard: sign in → Link POS → copy claim code → add to sync.env
--- 4. sync.env: SUPABASE_URL, SUPABASE_SERVICE_KEY, SQLITE_PATH, STORE_CLAIM_CODE
+-- 4. sync.env: SUPABASE_URL, SUPABASE_SECRET_KEY, SQLITE_PATH, STORE_PAIRING_CODE
 -- 5. Restart ShelfPOS Sync — claim_store_sync binds store_id to that owner
 --
 -- Existing data (before multi-tenant): assign owners manually, e.g.

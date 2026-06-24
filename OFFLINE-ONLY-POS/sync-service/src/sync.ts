@@ -5,12 +5,13 @@ import {
   getLiveRow,
   markError,
   markSynced,
-  readSyncOwnerClaimed,
+  clearSyncOwnerClaimed,
   writeSyncOwnerClaimed,
   type SyncDbContext,
   type SyncQueueRow,
   type SyncTableName
 } from './db.js'
+import { logSyncServiceError } from './errorLog.js'
 
 export const BATCH_SIZE = 100
 export const POLL_INTERVAL_MS = 5000
@@ -23,8 +24,8 @@ export async function checkConnectivity(config: SyncConfig): Promise<boolean> {
       method: 'HEAD',
       signal: AbortSignal.timeout(3000),
       headers: {
-        apikey: config.supabaseServiceKey,
-        Authorization: `Bearer ${config.supabaseServiceKey}`
+        apikey: config.supabaseSecretKey,
+        Authorization: `Bearer ${config.supabaseSecretKey}`
       }
     })
     return res.ok
@@ -42,8 +43,8 @@ async function supabaseUpsert(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      apikey: config.supabaseServiceKey,
-      Authorization: `Bearer ${config.supabaseServiceKey}`,
+      apikey: config.supabaseSecretKey,
+      Authorization: `Bearer ${config.supabaseSecretKey}`,
       Prefer: 'resolution=merge-duplicates'
     },
     body: JSON.stringify(payload)
@@ -66,8 +67,8 @@ async function supabaseDelete(
   const res = await fetch(`${config.supabaseUrl}/rest/v1/${tableName}?${params}`, {
     method: 'DELETE',
     headers: {
-      apikey: config.supabaseServiceKey,
-      Authorization: `Bearer ${config.supabaseServiceKey}`
+      apikey: config.supabaseSecretKey,
+      Authorization: `Bearer ${config.supabaseSecretKey}`
     }
   })
   if (!res.ok && res.status !== 404) {
@@ -160,8 +161,8 @@ export async function syncStoreRegistry(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      apikey: config.supabaseServiceKey,
-      Authorization: `Bearer ${config.supabaseServiceKey}`,
+      apikey: config.supabaseSecretKey,
+      Authorization: `Bearer ${config.supabaseSecretKey}`,
       Prefer: 'return=minimal,resolution=merge-duplicates'
     },
     body: JSON.stringify(payload)
@@ -171,6 +172,26 @@ export async function syncStoreRegistry(
   }
 }
 
+export async function storeHasDashboardAccess(
+  config: SyncConfig,
+  storeId: string,
+): Promise<boolean> {
+  const res = await fetch(
+    `${config.supabaseUrl}/rest/v1/store_access?store_id=eq.${encodeURIComponent(storeId)}&select=user_id&limit=1`,
+    {
+      headers: {
+        apikey: config.supabaseSecretKey,
+        Authorization: `Bearer ${config.supabaseSecretKey}`,
+      },
+    },
+  )
+  if (!res.ok) {
+    throw new Error(`store_access check: ${res.status} ${await res.text()}`)
+  }
+  const rows = (await res.json()) as unknown[]
+  return Array.isArray(rows) && rows.length > 0
+}
+
 /** Link this POS store_id to the dashboard account that generated the pairing code. */
 export async function claimStoreIfNeeded(
   config: SyncConfig,
@@ -178,7 +199,24 @@ export async function claimStoreIfNeeded(
   storeId: string,
   displayName: string,
 ): Promise<void> {
-  if (readSyncOwnerClaimed(db)) return
+  const isOnline = await checkConnectivity(config)
+
+  if (isOnline) {
+    try {
+      const hasAccess = await storeHasDashboardAccess(config, storeId)
+      if (hasAccess) {
+        writeSyncOwnerClaimed(db)
+        return
+      }
+      clearSyncOwnerClaimed(db)
+      console.warn(
+        `[sync-service] no dashboard access for store_id=${storeId} — re-pair from owner panel if needed`,
+      )
+    } catch (err) {
+      logSyncServiceError('store access check failed', err)
+      if (!config.storeClaimCode) return
+    }
+  }
 
   const code = config.storeClaimCode
   if (!code) {
@@ -192,8 +230,8 @@ export async function claimStoreIfNeeded(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      apikey: config.supabaseServiceKey,
-      Authorization: `Bearer ${config.supabaseServiceKey}`,
+      apikey: config.supabaseSecretKey,
+      Authorization: `Bearer ${config.supabaseSecretKey}`,
     },
     body: JSON.stringify({
       p_claim_code: code,

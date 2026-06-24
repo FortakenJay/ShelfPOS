@@ -792,13 +792,12 @@ export interface SyncSetupStatus {
   configPath: string
   supabaseUrl: string | null
   hasPairingCode: boolean
+  serviceInstalled: boolean
   serviceRunning: boolean | null
   storeId: string
 }
 
 export interface SyncSetupSaveInput {
-  supabaseUrl: string
-  serviceKey: string
   pairingCode: string
 }
 

@@ -1,8 +1,12 @@
 import Database from 'better-sqlite3'
+import { existsSync, readFileSync, unlinkSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import type { SyncConfig } from './config.js'
 
 const SYNC_STORE_SETTING = 'sync_store_id'
 const SYNC_OWNER_CLAIMED_SETTING = 'sync_owner_claimed'
+const DEFAULT_SYNC_STORE_ID = 'store_a'
+const PENDING_STORE_ID_FILE = 'pending_sync_store_id'
 const STORE_NAME_SETTING = 'store_name'
 const POS_LAST_SEEN_SETTING = 'pos_last_seen_at'
 const STOCK_THRESHOLD_SETTING = 'stock_threshold_default'
@@ -50,10 +54,42 @@ export function writeSyncOwnerClaimed(db: Database.Database): void {
   ).run(SYNC_OWNER_CLAIMED_SETTING)
 }
 
+export function clearSyncOwnerClaimed(db: Database.Database): void {
+  db.prepare(
+    `INSERT INTO settings (key, value) VALUES (?, '0')
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+  ).run(SYNC_OWNER_CLAIMED_SETTING)
+}
+
+/** Apply store_id from installer when shelf.db was created after Install-ShelfPOS. */
+export function applyPendingSyncStoreId(db: Database.Database, sqlitePath: string): void {
+  const pendingPath = join(dirname(sqlitePath), PENDING_STORE_ID_FILE)
+  if (!existsSync(pendingPath)) return
+
+  const pending = readFileSync(pendingPath, 'utf8').trim()
+  try {
+    unlinkSync(pendingPath)
+  } catch {
+    /* best effort */
+  }
+
+  if (!/^store_[a-z0-9_]+$/.test(pending)) return
+
+  const current = readSetting(db, SYNC_STORE_SETTING)
+  if (!current || current === DEFAULT_SYNC_STORE_ID) {
+    db.prepare(
+      `INSERT INTO settings (key, value) VALUES (?, ?)
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    ).run(SYNC_STORE_SETTING, pending)
+    console.info(`[sync-service] applied pending sync_store_id=${pending}`)
+  }
+}
+
 export function openDatabase(sqlitePath: string): Database.Database {
   const db = new Database(sqlitePath, { readonly: false, fileMustExist: true })
   db.pragma('journal_mode = WAL')
   db.pragma('busy_timeout = 5000')
+  applyPendingSyncStoreId(db, sqlitePath)
   return db
 }
 

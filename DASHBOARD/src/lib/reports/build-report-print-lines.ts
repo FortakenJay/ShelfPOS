@@ -150,13 +150,50 @@ function salePaymentSummaryLines(
 function buildSummaryLines(
   data: SalesSummaryReport,
   rangeLabel: string,
+  range: DateRange,
   t: Translate,
   storeName: string,
 ): PrintLine[] {
-  return [
-    ...reportHeader(t('reports.types.summary'), rangeLabel, t, storeName),
-    ...summaryMetricLines(t, data),
-  ]
+  const lines = reportHeader(t('reports.types.summary'), rangeLabel, t, storeName)
+
+  if (range.from !== range.to && data.days && data.days.length > 0) {
+    for (const day of data.days) {
+      lines.push({ t: 'hr' })
+      lines.push({
+        t: 'text',
+        v: t('reports.summary.daySection', {
+          date: formatReportTimestamp(day.date, false),
+        }),
+        bold: true,
+      })
+      lines.push({
+        t: 'row',
+        l: t('print.report.revenue'),
+        r: formatMoney(day.totalRevenue),
+        bold: true,
+      })
+      lines.push({
+        t: 'row',
+        l: t('print.report.transactions'),
+        r: String(day.txCount),
+      })
+      lines.push({
+        t: 'row',
+        l: t('print.report.avgTicket'),
+        r: formatMoney(day.avgTicket),
+      })
+    }
+    lines.push({ t: 'hr' })
+    lines.push({
+      t: 'text',
+      v: t('reports.summary.periodTotal'),
+      bold: true,
+      big: true,
+    })
+  }
+
+  lines.push(...summaryMetricLines(t, data))
+  return lines
 }
 
 function buildPaymentReportLines(
@@ -428,7 +465,7 @@ export function buildReportPrintLines(
 
   switch (report.type) {
     case 'summary':
-      return buildSummaryLines(report.data, rangeLabel, t, storeName)
+      return buildSummaryLines(report.data, rangeLabel, range, t, storeName)
     case 'byPayment':
       return buildPaymentReportLines(report.data, rangeLabel, t, storeName)
     case 'topProducts':

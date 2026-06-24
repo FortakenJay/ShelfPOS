@@ -1,10 +1,8 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { StorePairingList } from '#/components/StorePairingList'
-import { Button, Field, Input } from '#/components/ui'
-import { createStorePairing, listPendingPairings } from '#/lib/queries/store-claims'
+import { listPendingPairings } from '#/lib/queries/store-claims'
 import { useToast } from '#/lib/toast'
 
 export const Route = createFileRoute('/_app/link-pos')({
@@ -15,7 +13,6 @@ function LinkPosPage() {
   const { t } = useTranslation()
   const { show } = useToast()
   const queryClient = useQueryClient()
-  const [label, setLabel] = useState('')
 
   const copyPairingCode = async (code: string): Promise<void> => {
     try {
@@ -34,14 +31,6 @@ function LinkPosPage() {
     queryKey: ['store-pairings'],
     queryFn: listPendingPairings,
     staleTime: 30_000,
-  })
-
-  const addLabeled = useMutation({
-    mutationFn: () => createStorePairing(label.trim() || undefined),
-    onSuccess: () => {
-      setLabel('')
-      void queryClient.invalidateQueries({ queryKey: ['store-pairings'] })
-    },
   })
 
   return (
@@ -66,27 +55,6 @@ function LinkPosPage() {
             loading={listLoading}
             onCopy={(c) => void copyPairingCode(c)}
           />
-
-          <div className="mt-6 border-t border-line pt-5">
-            <p className="mb-3 text-[14px] font-semibold text-slate-800">{t('linkPos.labeledTitle')}</p>
-            <div className="flex flex-wrap items-end gap-3">
-              <Field label={t('linkPos.labelOptional')} className="min-w-[200px] flex-1">
-                <Input
-                  value={label}
-                  onChange={(e) => setLabel(e.target.value)}
-                  placeholder={t('linkPos.labelPlaceholder')}
-                />
-              </Field>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={addLabeled.isPending}
-                onClick={() => addLabeled.mutate()}
-              >
-                {addLabeled.isPending ? t('linkPos.generating') : t('linkPos.addLabeled')}
-              </Button>
-            </div>
-          </div>
         </div>
 
         <div className="mt-6">

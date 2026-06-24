@@ -5,11 +5,13 @@
  * Run while sync-service is stopped, or expect duplicate upserts (harmless).
  *
  * Usage: node scripts/backfill-mirror.cjs
- * Env: sync.env (SUPABASE_URL, SUPABASE_SERVICE_KEY, SQLITE_PATH)
+ * Env: sync.env (SUPABASE_URL, SUPABASE_SECRET_KEY, SQLITE_PATH)
  */
 
 const fs = require('node:fs')
 const path = require('node:path')
+const { execFileSync } = require('node:child_process')
+const { homedir } = require('node:os')
 const Database = require('better-sqlite3')
 
 const CHUNK = 500
@@ -28,14 +30,56 @@ function loadEnvFile(filePath) {
   }
 }
 
-loadEnvFile(path.join(SERVICE_ROOT, 'sync.env'))
+function defaultSyncConfigPath() {
+  const appData = process.env.APPDATA || path.join(homedir(), 'AppData', 'Roaming')
+  return path.join(appData, 'shelfpos', 'sync.env')
+}
+
+function loadSyncConfig() {
+  if (process.env.SHELFPOS_SYNC_CONFIG) {
+    loadEnvFile(process.env.SHELFPOS_SYNC_CONFIG)
+  } else if (fs.existsSync(defaultSyncConfigPath())) {
+    loadEnvFile(defaultSyncConfigPath())
+  } else {
+    loadEnvFile(path.join(SERVICE_ROOT, 'sync.env'))
+  }
+}
+
+function decryptDpapi(value) {
+  if (!value.startsWith('dpapi:')) return value
+  const script = `
+$blob = [Console]::In.ReadToEnd().Trim()
+Add-Type -AssemblyName System.Security
+$enc = [Convert]::FromBase64String($blob)
+$bytes = [System.Security.Cryptography.ProtectedData]::Unprotect($enc, $null, 'LocalMachine')
+Write-Output ([System.Text.Encoding]::UTF8.GetString($bytes))
+`.trim()
+  const blob = value.slice('dpapi:'.length)
+  return execFileSync(
+    'powershell.exe',
+    ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script],
+    { encoding: 'utf8', windowsHide: true, input: blob },
+  ).trim()
+}
+
+function resolveSecretKey() {
+  const raw = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_KEY
+  if (!raw) return ''
+  try {
+    return decryptDpapi(raw)
+  } catch (err) {
+    throw new Error(`Failed to decrypt SUPABASE_SECRET_KEY: ${err.message}`)
+  }
+}
+
+loadSyncConfig()
 
 const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, '')
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY
+const supabaseSecretKey = resolveSecretKey()
 const sqlitePath = process.env.SQLITE_PATH
 
-if (!supabaseUrl || !supabaseServiceKey || !sqlitePath) {
-  console.error('Missing SUPABASE_URL, SUPABASE_SERVICE_KEY, or SQLITE_PATH in sync.env')
+if (!supabaseUrl || !supabaseSecretKey || !sqlitePath) {
+  console.error('Missing SUPABASE_URL, SUPABASE_SECRET_KEY, or SQLITE_PATH in sync.env')
   process.exit(1)
 }
 
@@ -116,8 +160,8 @@ async function upsertChunk(table, rows, storeId) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      apikey: supabaseServiceKey,
-      Authorization: `Bearer ${supabaseServiceKey}`,
+      apikey: supabaseSecretKey,
+      Authorization: `Bearer ${supabaseSecretKey}`,
       Prefer: 'resolution=merge-duplicates,return=minimal',
     },
     body: JSON.stringify(payload),
@@ -142,8 +186,8 @@ async function syncStoreRegistry(storeId, db) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      apikey: supabaseServiceKey,
-      Authorization: `Bearer ${supabaseServiceKey}`,
+      apikey: supabaseSecretKey,
+      Authorization: `Bearer ${supabaseSecretKey}`,
       Prefer: 'return=minimal,resolution=merge-duplicates',
     },
     body: JSON.stringify({
@@ -159,9 +203,14 @@ async function syncStoreRegistry(storeId, db) {
   console.log(`stores: upserted ${storeId} (${displayName})`)
 }
 
+const LOCAL_TABLE = {
+  pos_users: 'users',
+}
+
 async function backfillTable(table, storeId, db) {
   const sql = TABLE_SELECT[table]
-  const total = db.prepare(`SELECT COUNT(*) AS c FROM ${table}`).get().c
+  const localTable = LOCAL_TABLE[table] ?? table
+  const total = db.prepare(`SELECT COUNT(*) AS c FROM ${localTable}`).get().c
   if (total === 0) {
     console.log(`${table}: skip (0 rows)`)
     return

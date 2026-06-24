@@ -8,7 +8,7 @@ Defined in `DASHBOARD/src/lib/reports.types.ts`:
 
 | Type | Purpose |
 |------|---------|
-| `summary` | Period totals |
+| `summary` | Period totals; multi-day ranges show **daily breakdown** + period total |
 | `byPayment` | Cash / card / sinpe breakdown |
 | `topProducts` | Best sellers |
 | `inventory` | Stock snapshot |
@@ -21,7 +21,7 @@ Defined in `DASHBOARD/src/lib/reports.types.ts`:
 ## UI
 
 - `routes/_app/reports.tsx` — tabs, date range, search
-- `components/reports/ReportTypeTabs.tsx` — centered tabs
+- `components/reports/ReportTypeTabs.tsx` — report type tabs (left-aligned row)
 - `components/reports/tables/*` — one table per type
 - `SaleFacturaPdfButton.tsx` — per-sale invoice download
 
@@ -47,3 +47,4 @@ Bounds via `lib/dates.ts` → `rangeBounds()` for Supabase `created_at` filters.
 
 - [[13-Factura-PDF]]
 - [[11-Dashboard]]
+- [[19-Edge-Cases-And-Runbooks]]

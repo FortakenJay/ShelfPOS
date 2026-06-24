@@ -7,7 +7,7 @@ import { applyEnvFile } from './parseEnv.js'
 
 export interface SyncConfig {
   supabaseUrl: string
-  supabaseServiceKey: string
+  supabaseSecretKey: string
   sqlitePath: string
   storeClaimCode: string | null
 }
@@ -43,13 +43,17 @@ function loadConfigFile(): void {
   loadEnvFile(localSyncConfigPath())
 }
 
-function resolveServiceKey(raw: string | undefined): string {
+function readSecretKeyEnv(): string | undefined {
+  return process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_KEY
+}
+
+function resolveSecretKey(raw: string | undefined): string {
   if (!raw) return ''
   try {
     return decryptDpapi(raw)
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    throw new Error(`Failed to decrypt SUPABASE_SERVICE_KEY: ${msg}`)
+    throw new Error(`Failed to decrypt SUPABASE_SECRET_KEY: ${msg}`)
   }
 }
 
@@ -57,22 +61,22 @@ export function loadConfig(): SyncConfig {
   loadConfigFile()
 
   const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, '')
-  const supabaseServiceKey = resolveServiceKey(process.env.SUPABASE_SERVICE_KEY)
+  const supabaseSecretKey = resolveSecretKey(readSecretKeyEnv())
   const sqlitePath = process.env.SQLITE_PATH
   const pairingCode =
     process.env.STORE_PAIRING_CODE?.trim() ||
     process.env.STORE_CLAIM_CODE?.trim() ||
     null
 
-  if (!supabaseUrl || !supabaseServiceKey || !sqlitePath) {
+  if (!supabaseUrl || !supabaseSecretKey || !sqlitePath) {
     throw new Error(
-      'Missing config: SUPABASE_URL, SUPABASE_SERVICE_KEY, SQLITE_PATH (env vars or sync.env)',
+      'Missing config: SUPABASE_URL, SUPABASE_SECRET_KEY, SQLITE_PATH (env vars or sync.env)',
     )
   }
 
   return {
     supabaseUrl,
-    supabaseServiceKey,
+    supabaseSecretKey,
     sqlitePath,
     storeClaimCode: pairingCode,
   }

@@ -9,3 +9,11 @@ export function isSignupInviteValid(key: string): boolean {
   if (!secret?.trim()) return false
   return key.trim() === secret.trim()
 }
+
+/** Full owner signup URL for the operator portal (same secret as env invite key). */
+export function buildOwnerSignupUrl(origin: string): string | null {
+  const secret = import.meta.env.VITE_SIGNUP_INVITE_KEY as string | undefined
+  if (!secret?.trim() || !origin.trim()) return null
+  const base = origin.replace(/\/$/, '')
+  return `${base}/create-account?key=${encodeURIComponent(secret.trim())}`
+}

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { formatDate, formatMoney } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
 import type { CashSummary } from '@shared/types'
 
 function StatBox({ label, value, highlight = false }: {
@@ -26,15 +26,11 @@ function StatBox({ label, value, highlight = false }: {
 
 export function CashDrawerSummary({
   summary,
-  openedAt,
   expectedSinpe,
-  pending,
   className = ''
 }: {
   summary: CashSummary
-  openedAt?: string
   expectedSinpe?: number
-  pending?: number
   className?: string
 }): React.JSX.Element {
   const { t } = useTranslation()
@@ -42,23 +38,6 @@ export function CashDrawerSummary({
   return (
     <section className={`rounded-lg border-2 border-line bg-white p-5 ${className}`}>
       <h2 className="mb-3 text-lg font-bold">{t('cash.summaryTitle')}</h2>
-
-      {(openedAt || pending != null) && (
-        <div className="mb-4 flex flex-wrap gap-x-6 gap-y-1 text-[14px] text-slate-600">
-          {openedAt && (
-            <p>
-              {t('cash.periodSince')}:{' '}
-              <span className="font-semibold text-slate-900">{formatDate(openedAt, true)}</span>
-            </p>
-          )}
-          {pending != null && (
-            <p>
-              {t('cierre.pendingTx')}:{' '}
-              <span className="font-semibold text-slate-900">{pending}</span>
-            </p>
-          )}
-        </div>
-      )}
 
       <div className="grid grid-cols-2 gap-3">
         <StatBox label={t('cash.openingFloat')} value={formatMoney(summary.openingFloat)} />

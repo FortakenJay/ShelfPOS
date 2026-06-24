@@ -136,7 +136,20 @@ Within one batch, entries are processed **in parallel** (`Promise.all`). Retries
 
 ### One-shot catch-up
 
-`npm run backfill` (`scripts/backfill-mirror.cjs`) — pushes all live rows directly, bypassing the queue. Run with service stopped, or expect harmless duplicate upserts.
+`npm run backfill` (`scripts/backfill-mirror.cjs`) — pushes all live rows directly, bypassing the queue.
+
+**Config resolution order:** `SHELFPOS_SYNC_CONFIG` → `%APPDATA%\shelfpos\sync.env` (production, DPAPI decrypt) → `sync-service/sync.env` (dev).
+
+Run with service **stopped**, or expect harmless duplicate upserts. Backfill does **not** create `store_access` — owners still need a successful claim to see data in the dashboard.
+
+### Where logs live (two places)
+
+| Log | Path |
+|-----|------|
+| WinSW service logs | `C:\Program Files\ShelfPOS\sync-service\logs\` |
+| `sync.txt` (claim, `[RETRY]`, `[GAVE_UP]`) | Service process `%APPDATA%\shelfpos\error\` — often **LocalSystem** profile, not the cashier's folder |
+
+See [[19-Edge-Cases-And-Runbooks#sync-service]] for stale claim after cloud wipe and wrong API key symptoms.
 
 ### Queue compaction
 
@@ -190,7 +203,7 @@ Each queue row is independent. A sale can partially sync (e.g. `sales` synced, `
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `SUPABASE_URL` | Yes | Project URL |
-| `SUPABASE_SERVICE_KEY` | Yes | Service role (bypasses RLS) |
+| `SUPABASE_SECRET_KEY` | Yes | Supabase secret API key (`sb_secret_…`, bypasses RLS) |
 | `SQLITE_PATH` | Yes | Path to `shelf.db` |
 | `STORE_PAIRING_CODE` | First link only | From dashboard **Vincular POS** |
 | `STORE_CLAIM_CODE` | Legacy alias | Same as `STORE_PAIRING_CODE` |
@@ -207,9 +220,9 @@ Template: `sync.env.example`
 
 Written by installer (`write-sync-env.cjs`) or POS **Vincular con el panel** (`syncConfig.ts`). Service reads via `SHELFPOS_SYNC_CONFIG`.
 
-### Encrypted service key
+### Encrypted secret key
 
-`SUPABASE_SERVICE_KEY` is stored as `dpapi:<base64>` (Windows DPAPI **LocalMachine**). Only decrypts on the **same PC**.
+`SUPABASE_SECRET_KEY` is stored as `dpapi:<base64>` (Windows DPAPI **LocalMachine**). Only decrypts on the **same PC**.
 
 Plaintext key still supported for dev/non-Windows.
 
@@ -222,8 +235,11 @@ Plaintext key still supported for dev/non-Windows.
 
 1. On startup, `claimStoreIfNeeded()` calls RPC `claim_store_sync(code, sync_store_id)`.
 2. Success → `store_access` row + SQLite `sync_owner_claimed=1`.
-3. Pairing code can be removed from `sync.env` afterward.
+3. Pairing code can be removed from `sync.env` afterward (not auto-cleared).
 4. If unset, sync continues but owners cannot see the store until linked.
+5. If `sync_owner_claimed=1` locally but cloud `store_access` was wiped, claim is **skipped** — reset via POS `/sync-setup` with a **new** dashboard code.
+
+**Linking does not backfill history** — it only grants dashboard access. Use backfill if mirror was wiped but local SQLite has data.
 
 ---
 
@@ -265,11 +281,11 @@ When adding a synced column:
 ## Windows service commands
 
 ```powershell
-sc.exe query ShelfPOSSync
-Restart-Service ShelfPOSSync
+sc.exe query shelfpossync.exe
+Restart-Service shelfpossync.exe
 ```
 
-Or **services.msc** → **ShelfPOSSync**.
+Display name in **services.msc**: **ShelfPOSSync**. Internal name for `sc.exe` / POS restart: **`shelfpossync.exe`**.
 
 ---
 
@@ -280,3 +296,4 @@ Or **services.msc** → **ShelfPOSSync**.
 - [[05-SQLite-Schema]]
 - [[14-Environment-Variables]]
 - [[15-Setup-And-Deployment]]
+- [[19-Edge-Cases-And-Runbooks]]

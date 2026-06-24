@@ -21,7 +21,7 @@ One Supabase project serves **many store owners** (e.g. your mom + a customer). 
 
 - **Authenticated users:** `SELECT` on mirror tables **only** where `can_access_store(store_id)`.
 - **Writes:** blocked on all mirror tables for `authenticated` role.
-- **Sync service:** uses **service role key** → bypasses RLS for upserts/deletes.
+- **Sync service:** uses **secret API key** → bypasses RLS for upserts/deletes.
 
 ## Pairing model (`store_pairings`)
 
@@ -76,7 +76,7 @@ Superadmin bypasses `can_access_store` for support.
 
 ## Service role key risks
 
-The sync service holds the **project service role key** on each POS PC. Anyone with that key can write all mirror data. Mitigations:
+The sync service holds the **project secret API key** on each POS PC. Anyone with that key can write all mirror data. Mitigations:
 
 - Key stays on server/PC, not in dashboard bundle
 - Dashboard reads use **anon key + RLS**
@@ -95,14 +95,17 @@ ON CONFLICT DO NOTHING;
 ## Production onboarding (summary)
 
 1. **You:** `SUPA.sql` + deploy dashboard (Vercel) — once.
-2. **Per shop:** install POS + sync with unique `sync_store_id`.
-3. **Owner:** sign up on live dashboard → **Vincular POS** → claim code.
-4. **That PC only:** `STORE_CLAIM_CODE` in `%APPDATA%\shelfpos\sync.env` → restart `ShelfPOSSync`.
+2. **Per register:** install POS + sync with unique `sync_store_id`.
+3. **Owner:** sign up on live dashboard → **Vincular POS** → pairing code (one per register).
+4. **That PC only:** `STORE_PAIRING_CODE` in `%APPDATA%\shelfpos\sync.env` → `ShelfPOSSync` running.
 
-Full steps: [[15-Setup-And-Deployment]].
+**Claim grants access only** — it does not copy historical sales into a new owner's view if mirror was empty; use sync backfill if cloud was wiped.
+
+Full steps: [[15-Setup-And-Deployment]]. Pitfalls: [[19-Edge-Cases-And-Runbooks]].
 
 ## Related
 
 - [[06-Supabase-Schema]]
 - [[15-Setup-And-Deployment]]
 - [[10-Sync-Service]]
+- [[19-Edge-Cases-And-Runbooks]]

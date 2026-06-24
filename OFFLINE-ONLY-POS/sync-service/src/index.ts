@@ -38,7 +38,9 @@ async function runSyncCycle(
   if (pending.length === 0) return POLL_INTERVAL_MS
 
   const ctx = { db, storeId, config }
-  await Promise.all(pending.map((entry) => processEntry(ctx, entry)))
+  for (const entry of pending) {
+    await processEntry(ctx, entry)
+  }
   return 0
 }
 

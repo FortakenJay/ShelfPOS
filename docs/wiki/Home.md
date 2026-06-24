@@ -12,7 +12,7 @@ flowchart LR
   POS[Electron POS] --> SQLite[(shelf.db)]
   SQLite --> Queue[sync_queue]
   Queue --> Sync[ShelfPOS Sync service]
-  Sync -->|service role| SB[(Supabase mirror)]
+  Sync -->|secret key| SB[(Supabase mirror)]
   Dash[Dashboard] -->|anon + JWT + RLS| SB
 ```
 
@@ -20,9 +20,9 @@ flowchart LR
 
 | Folder | App | Stack |
 |--------|-----|-------|
-| `OFFLINE-ONLY-POS/` | Cashier + admin on Windows | Electron 28+, React 19, better-sqlite3 |
-| `OFFLINE-ONLY-POS/sync-service/` | Background sync | Node 24+, better-sqlite3, REST → Supabase |
-| `DASHBOARD/` | Owner web panel | TanStack Start, React 19, Supabase JS |
+| `OFFLINE-ONLY-POS/` | Cashier + admin on Windows (**v1.5.0**) | Electron 28+, React 19, better-sqlite3 |
+| `OFFLINE-ONLY-POS/sync-service/` | Background sync (**v1.5.0**) | Node 24+, better-sqlite3, REST → Supabase |
+| `DASHBOARD/` | Owner web panel (**v1.5.0**) | TanStack Start, React 19, Supabase JS |
 
 There is **no root package.json** — each project installs independently.
 
@@ -55,6 +55,7 @@ There is **no root package.json** — each project installs independently.
 ### Ops
 - [[14-Environment-Variables]]
 - [[15-Setup-And-Deployment]]
+- [[19-Edge-Cases-And-Runbooks]] — install, sync, dashboard pitfalls
 
 ### AI / contributors
 - [[17-Conventions-For-AI]]
@@ -70,6 +71,7 @@ There is **no root package.json** — each project installs independently.
 | Add a report | [[12-Reports-And-Exports]] |
 | Change Supabase schema | [[06-Supabase-Schema]] → `DASHBOARD/SUPA.sql` |
 | Onboard a new store owner | [[15-Setup-And-Deployment]] (production checklist) |
+| Troubleshoot missing cloud data / bad install | [[19-Edge-Cases-And-Runbooks]] |
 | Remote POS password recovery | [[15-Setup-And-Deployment#POS operator recovery (SAKEN)]] |
 | Lint / Doctor before commit | [[18-Quality-And-Tooling]] |
 | Production link POS → dashboard | [[15-Setup-And-Deployment#Link POS to owner (production, per shop)]] |

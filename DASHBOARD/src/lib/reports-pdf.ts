@@ -2,8 +2,8 @@ import { buildReportPrintLines } from '#/lib/reports/build-report-print-lines'
 import { buildCombinedFacturaHtml } from '#/lib/factura-pdf'
 import { downloadFacturaHtml } from '#/lib/download-factura-pdf'
 import { fetchFacturaPdfDataBatch } from '#/lib/queries/factura-pdf'
+import { downloadReportGridXlsx } from '#/lib/reports/report-grid-to-xlsx'
 import { downloadPrintLinesPdf } from '#/lib/reports/print-lines-to-pdf'
-import { downloadPrintLinesXlsx } from '#/lib/reports/print-lines-to-xlsx'
 import type { DateRange } from '#/lib/types'
 import type { ReportData } from '#/lib/reports.types'
 
@@ -29,9 +29,13 @@ export async function downloadReportExcel(args: {
   t: Translate
 }): Promise<void> {
   const { report, storeLabel, range, t } = args
-  const lines = buildLines(report, storeLabel, range, t)
-  const sheetName = t(`reports.types.${report.type}`)
-  await downloadPrintLinesXlsx(lines, `${exportBasename(report, range)}.xlsx`, sheetName)
+  await downloadReportGridXlsx({
+    report,
+    storeLabel,
+    range,
+    t,
+    filename: `${exportBasename(report, range)}.xlsx`,
+  })
 }
 
 export async function downloadReportPdf(args: {

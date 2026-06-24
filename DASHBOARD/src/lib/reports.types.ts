@@ -20,6 +20,13 @@ export interface PeriodCashTotals {
   cashSales: number
 }
 
+export interface SalesSummaryDayRow {
+  date: string
+  totalRevenue: number
+  txCount: number
+  avgTicket: number
+}
+
 export interface SalesSummaryReport {
   totalRevenue: number
   txCount: number
@@ -29,6 +36,8 @@ export interface SalesSummaryReport {
   totalDiscount: number
   grossProfit: number
   cash: PeriodCashTotals
+  /** Per-day rows when the report range spans multiple days (days with sales only). */
+  days?: SalesSummaryDayRow[]
 }
 
 export interface PaymentMethodReport {

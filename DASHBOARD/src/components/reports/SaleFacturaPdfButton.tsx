@@ -9,10 +9,12 @@ export function SaleFacturaPdfButton({
   saleId,
   consecutivo,
   size = 'sm',
+  className = '',
 }: {
   saleId: number
   consecutivo?: string | null
   size?: 'sm' | 'md'
+  className?: string
 }): React.JSX.Element {
   const { t } = useTranslation()
   const { storeId, storeLabel } = useStore()
@@ -38,6 +40,7 @@ export function SaleFacturaPdfButton({
       onClick={onExport}
       disabled={busy}
       title={failed ? t('errors.facturaPdfFailed') : undefined}
+      className={`whitespace-nowrap ${className}`.trim()}
     >
       {busy ? t('reports.facturaPdf.exporting') : t('reports.facturaPdf.download')}
     </Button>

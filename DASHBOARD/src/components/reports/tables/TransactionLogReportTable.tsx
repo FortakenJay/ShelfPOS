@@ -47,7 +47,9 @@ export function TransactionLogReportTable({ data }: { data: TransactionLogReport
             </Td>
             <Td className="text-right font-bold">{formatMoney(row.total)}</Td>
             <Td className="text-right">
-              <SaleFacturaPdfButton saleId={row.saleId} consecutivo={row.consecutivo} />
+              <div className="inline-flex py-0.5 pl-2">
+                <SaleFacturaPdfButton saleId={row.saleId} consecutivo={row.consecutivo} />
+              </div>
             </Td>
           </tr>
         ))}

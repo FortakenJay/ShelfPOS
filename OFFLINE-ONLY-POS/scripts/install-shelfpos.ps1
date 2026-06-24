@@ -32,7 +32,8 @@ param(
   [string]$SupabaseServiceKey,
   [string]$StoreName,
   [string]$StoreId,
-  [string]$StoreClaimCode
+  [string]$StoreClaimCode,
+  [string]$UserAppData
 )
 
 $ErrorActionPreference = 'Stop'
@@ -40,7 +41,6 @@ $BundleRoot = $PSScriptRoot
 $ServiceName = 'shelfpossync.exe'
 $ServiceDisplayName = 'ShelfPOSSync'
 $InstallDir = Join-Path ${env:ProgramFiles} 'ShelfPOS\sync-service'
-$SqlitePath = Join-Path $env:APPDATA 'shelfpos\shelf.db'
 
 function Test-IsAdministrator {
   $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -64,6 +64,8 @@ function Ensure-Administrator {
   if ($StoreName) { $argList += '-StoreName'; $argList += $StoreName }
   if ($StoreId) { $argList += '-StoreId'; $argList += $StoreId }
   if ($StoreClaimCode) { $argList += '-StoreClaimCode'; $argList += $StoreClaimCode }
+  if ($UserAppData) { $argList += '-UserAppData'; $argList += $UserAppData }
+  elseif ($env:APPDATA) { $argList += '-UserAppData'; $argList += $env:APPDATA }
 
   $proc = Start-Process -FilePath 'powershell.exe' -Verb RunAs -ArgumentList $argList -PassThru -Wait
   exit $(if ($null -ne $proc.ExitCode) { $proc.ExitCode } else { 1 })
@@ -134,6 +136,17 @@ function Get-ExistingStoreIdByName(
 
 Ensure-Administrator
 
+if (-not $UserAppData) {
+  $UserAppData = $env:APPDATA
+}
+$env:APPDATA = $UserAppData
+$SqlitePath = Join-Path $UserAppData 'shelfpos\shelf.db'
+$ShelfposDataDir = Split-Path $SqlitePath -Parent
+
+if ((Test-IsAdministrator) -and $UserAppData -ne [Environment]::GetFolderPath('ApplicationData')) {
+  Write-Host "Using cashier profile APPDATA: $UserAppData" -ForegroundColor DarkGray
+}
+
 Write-Host ''
 Write-Host '=== ShelfPOS sync service installer ===' -ForegroundColor Cyan
 Write-Host '    (Install ShelfPOS app separately via ShelfPOS Setup*.exe first.)' -ForegroundColor DarkGray
@@ -144,7 +157,10 @@ if (-not $SupabaseUrl) {
   $SupabaseUrl = Prompt-Required 'Supabase URL (https://xxx.supabase.co)'
 }
 if (-not $SupabaseServiceKey) {
-  $SupabaseServiceKey = Prompt-Required 'Supabase service role key' -Secret
+  $SupabaseServiceKey = Prompt-Required 'Supabase secret key (sb_secret_… or legacy service_role JWT)' -Secret
+}
+if ($SupabaseServiceKey -match '(?i)publishable|anon' -or $SupabaseServiceKey.Length -lt 32) {
+  Write-Host 'WARNING: This does not look like a Supabase secret/service_role key. Sync and claim will fail with anon key.' -ForegroundColor Yellow
 }
 
 $StoreId = if ($null -ne $StoreId) { $StoreId.Trim() } else { '' }
@@ -336,8 +352,11 @@ if (Test-Path $SqlitePath) {
     (Join-Path $InstallDir 'scripts\set-store-id.cjs') `
     $SqlitePath $StoreId
 } else {
+  $pendingPath = Join-Path $ShelfposDataDir 'pending_sync_store_id'
+  New-Item -ItemType Directory -Path $ShelfposDataDir -Force | Out-Null
+  Set-Content -Path $pendingPath -Value $StoreId -Encoding UTF8 -NoNewline
   Write-Host "SQLite not found yet ($SqlitePath)." -ForegroundColor DarkYellow
-  Write-Host "Open ShelfPOS once, then re-run this script to set store ID." -ForegroundColor DarkYellow
+  Write-Host "Wrote pending_sync_store_id — open ShelfPOS once, then: Restart-Service $ServiceName" -ForegroundColor DarkYellow
 }
 
 $ScriptJs = Join-Path $InstallDir 'dist\index.js'

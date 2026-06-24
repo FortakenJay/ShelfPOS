@@ -10,18 +10,19 @@ flowchart TB
     SQL[SUPA.sql on Supabase]
     Vercel[Deploy DASHBOARD to Vercel]
   end
-  subgraph perShop [Per shop / customer]
-    Install[Install POS + ShelfPOSSync]
+  subgraph perRegister [Per register / caja]
+    Setup[ShelfPOS Setup.exe — first launch creates shelf.db]
+    Install[Install-ShelfPOS — URL, secret key, store id, optional pairing code]
     Account[Owner signs up on live dashboard]
-    Code[Owner generates claim code]
-    Env[STORE_CLAIM_CODE in sync.env on that PC]
-    Restart[Restart ShelfPOSSync service]
+    Code[Owner generates pairing code on /link-pos]
+    Claim[ShelfPOSSync claims via STORE_PAIRING_CODE]
   end
-  SQL --> Install
+  SQL --> Setup
   Vercel --> Account
+  Setup --> Install
   Account --> Code
-  Code --> Env
-  Env --> Restart
+  Code --> Install
+  Install --> Claim
 ```
 
 ---
@@ -34,15 +35,17 @@ flowchart TB
 | 2 | Enable Auth (email/password) in Supabase | You | Once |
 | 3 | Deploy dashboard with `VITE_SUPABASE_*` | You | Once per deploy |
 | 4 | Build release: `npm run release:win` | You | Per POS version |
-| 5 | Install POS + sync on shop PC | You / installer | Per shop |
-| 6 | Unique `sync_store_id` per shop | Installer | Per shop |
+| 5 | Install POS + sync on shop PC | You / installer | Per register |
+| 6 | Unique `sync_store_id` **per register (caja)** — not shared across PCs | Installer | Per register |
 | 7 | Owner account on **production** dashboard URL | Each owner | Per shop |
-| 8 | **Vincular POS** → claim code | Each owner | Per shop (once) |
-| 9 | `STORE_CLAIM_CODE` in that PC's `sync.env` | You or owner | Per shop (once) |
-| 10 | Restart **ShelfPOSSync** Windows service | You or owner | After step 9 |
+| 8 | **Vincular POS** → pairing code (one code per register) | Each owner | Per register (once) |
+| 9 | Pairing code in that PC's `sync.env` (`STORE_PAIRING_CODE` or legacy `STORE_CLAIM_CODE`) | Installer, owner, or `/sync-setup` | Per register (once) |
+| 10 | **ShelfPOSSync** Windows service running | Installer | After step 9 |
 | 11 | Owner refreshes dashboard — store appears | Owner | Verify |
 
-**Do not** bake `STORE_CLAIM_CODE` into the installer for all customers. It is a per-machine pairing step after the owner generates it on the live dashboard.
+**Do not** bake pairing codes into the installer for all customers. Each register gets its own code from the owner's dashboard login.
+
+**Install order:** Run **ShelfPOS Setup** at least once before **Install-ShelfPOS** so `shelf.db` exists and `set-store-id.cjs` can run. Otherwise SQLite defaults to `store_a` until you re-run the installer or `set-store-id.cjs`. See [[19-Edge-Cases-And-Runbooks#install-order-setup-vs-install-shelfpos-vs-first-pos-launch]].
 
 ---
 
@@ -80,11 +83,13 @@ Template: `DASHBOARD/.example.env`
 ### Installer
 
 1. Build: `npm run release:win` in `OFFLINE-ONLY-POS/`.
-2. Customer runs **ShelfPOS Setup** (`.exe`), then **Install-ShelfPOS** (`.cmd` / `Install-ShelfPOS.ps1` as Administrator).
-3. Installer parameters (or prompts):
+2. Customer runs **ShelfPOS Setup** (`.exe`) **at least once** (creates `%APPDATA%\shelfpos\shelf.db`).
+3. Run **Install-ShelfPOS** (`.cmd` / `Install-ShelfPOS.ps1`) — **as the cashier Windows user**, not elevated to a different profile unless you fix `SQLITE_PATH` afterward.
+4. Installer parameters (or prompts):
    - `SupabaseUrl` — production project URL
-   - `SupabaseServiceKey` — **service role** key (not anon)
-   - `StoreName` or `StoreId` — becomes unique `sync_store_id` (e.g. `store_tienda_maria`)
+   - `SupabaseSecretKey` — Supabase **secret** API key (`sb_secret_…` or legacy JWT service_role — **not** anon/publishable)
+   - `StoreName` or `StoreId` — becomes unique `sync_store_id` (e.g. `store_tienda_maria_register_1`)
+   - `StoreClaimCode` (optional) — dashboard pairing code from `/link-pos`
 
 ### What the installer writes
 
@@ -94,7 +99,7 @@ Template: `DASHBOARD/.example.env`
 
 ```env
 SUPABASE_URL=https://YOUR-PROJECT.supabase.co
-SUPABASE_SERVICE_KEY=your-service-role-key
+SUPABASE_SECRET_KEY=sb_secret_...
 SQLITE_PATH=C:\Users\<User>\AppData\Roaming\shelfpos\shelf.db
 ```
 
@@ -107,10 +112,10 @@ SQLITE_PATH=C:\Users\<User>\AppData\Roaming\shelfpos\shelf.db
 Sync runs but logs:
 
 ```text
-STORE_CLAIM_CODE not set — dashboard owners cannot see this store until linked
+STORE_PAIRING_CODE not set — dashboard owners cannot see this store until linked
 ```
 
-That is expected until the owner completes linking below.
+(Legacy logs may say `STORE_CLAIM_CODE`.) That is expected until the owner completes linking below.
 
 ---
 
@@ -128,7 +133,7 @@ On the **production** dashboard:
 
 1. Run **Install-ShelfPOS** after ShelfPOS Setup.
 2. When prompted for **Linking code**, paste the dashboard code (or pass `-StoreClaimCode AB12CD34`).
-3. Installer writes `STORE_CLAIM_CODE` into `sync.env` and starts **ShelfPOSSync**.
+3. Installer writes `STORE_PAIRING_CODE` into `sync.env` and starts **ShelfPOSSync**.
 
 Press Enter at the prompt to skip linking and add the code later manually.
 
@@ -223,11 +228,11 @@ In **`app_metadata`**, not `user_metadata`. See [[04-Multi-Tenant-Security]].
 | Step | Updates | Rewrites `sync.env`? |
 |------|---------|----------------------|
 | **ShelfPOS Setup.exe** | Electron POS only | No |
-| **Install-ShelfPOS.cmd** | `Program Files\ShelfPOS\sync-service\` + re-registers service | **Yes** (full overwrite) |
+| **Install-ShelfPOS.cmd** | `Program Files\ShelfPOS\sync-service\` + re-registers service | **Yes** (full overwrite — save pairing code first) |
 
 **Typical version bump:** customer runs `Setup.exe`; you run `Install-ShelfPOS` from the new release ZIP only if `sync-service` changed.
 
-**Release notes:** `OFFLINE-ONLY-POS/RELEASE_NOTES.md` (e.g. v1.4.0 — cart tabs, quality baseline).
+**Release notes:** `OFFLINE-ONLY-POS/RELEASE_NOTES.md` (current: **v1.5.0** — beta producción).
 
 **Config only** (URL, key, pairing code): POS **Vincular con el panel** (`/sync-setup`) or edit `%APPDATA%\shelfpos\sync.env` → `Restart-Service ShelfPOSSync`.
 
@@ -261,12 +266,18 @@ In **`app_metadata`**, not `user_metadata`. See [[04-Multi-Tenant-Security]].
 | Symptom | Check |
 |---------|-------|
 | `relation "store_claim_codes" does not exist` on fresh `SUPA.sql` | Use latest `SUPA.sql` — legacy DROP POLICY lines removed |
-| `STORE_CLAIM_CODE not set` | Add code to production `sync.env`, restart service |
+| `STORE_PAIRING_CODE` / `STORE_CLAIM_CODE not set` | Add code to production `sync.env`, restart service |
 | Claim failed | Code expired (24h), already used, or wrong Supabase URL |
+| POS shows linked, dashboard empty | Stale `sync_owner_claimed` after cloud wipe — re-pair via `/sync-setup`; see [[19-Edge-Cases-And-Runbooks]] |
 | Store already owned | Another user has `store_access` for that `store_id` |
 | Owner sees no stores | Claim not run, wrong account, or RLS / `SUPA.sql` not applied |
-| Sync errors | `%APPDATA%\Roaming\shelfpos\error\sync.txt` |
-| Queue stuck | `npm run queue:diagnose` in `sync-service` |
+| Sales local only | Service stopped, wrong `SQLITE_PATH`, or elevated install to wrong `%APPDATA%` |
+| Sync errors | Service logs under `Program Files\ShelfPOS\sync-service\logs\` **and** `sync.txt` under service account profile — see [[10-Sync-Service#where-logs-live-two-places]] |
+| Queue stuck / partial dashboard | `npm run queue:diagnose` in `sync-service`; `[GAVE_UP]` in `sync.txt` |
+| Cloud wipe did nothing | SQL Editor role must be **postgres**; stop sync service first |
+| Data on POS, not dashboard | `store_id` mismatch, wrong Supabase project, or run `npm run backfill` after wipe |
+
+Full runbook: [[19-Edge-Cases-And-Runbooks]].
 
 ---
 
@@ -278,7 +289,7 @@ In **`app_metadata`**, not `user_metadata`. See [[04-Multi-Tenant-Security]].
 | `npm run doctor` | Same — React Doctor `--scope changed` |
 | `npx react-doctor@latest --verbose --scope full` | Baseline / docs-only commits |
 | `npm run queue:diagnose` | `sync-service/` |
-| Read `sync.txt` | `%APPDATA%\Roaming\shelfpos\error\` |
+| Read `sync.txt` | Often under **service account** `%APPDATA%\shelfpos\error\` (not always cashier profile) |
 | `sc.exe query shelfpossync.exe` | Windows — service status (internal name) |
 | Bugbot / `/review-bugs` | Branch diff review in Cursor |
 

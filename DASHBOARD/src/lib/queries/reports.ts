@@ -1,4 +1,6 @@
 import {
+  daysInRange,
+  dbTimestampDay,
   rangeBounds,
   rangeBoundsFromDateRange,
 } from '#/lib/dates'
@@ -12,6 +14,7 @@ import type {
   PaymentMethodReport,
   ReportData,
   ReportType,
+  SalesSummaryDayRow,
   SalesSummaryReport,
   SalePaymentSnapshot,
   TaxBreakdownReport,
@@ -300,9 +303,39 @@ async function grossProfitForSales(
   return profit
 }
 
+function buildSummaryDays(range: DateRange, sales: SaleRow[]): SalesSummaryDayRow[] | undefined {
+  if (range.from === range.to) return undefined
+
+  const byDay = new Map<string, SaleRow[]>()
+  for (const day of daysInRange(range.from, range.to)) {
+    byDay.set(day, [])
+  }
+  for (const sale of sales) {
+    if (!sale.created_at) continue
+    const day = dbTimestampDay(sale.created_at)
+    byDay.get(day)?.push(sale)
+  }
+
+  const rows: SalesSummaryDayRow[] = []
+  for (const date of daysInRange(range.from, range.to)) {
+    const daySales = byDay.get(date) ?? []
+    const txCount = daySales.length
+    if (txCount === 0) continue
+    const totalRevenue = round2(daySales.reduce((sum, s) => sum + (s.total ?? 0), 0))
+    rows.push({
+      date,
+      totalRevenue,
+      txCount,
+      avgTicket: round2(totalRevenue / txCount),
+    })
+  }
+  return rows.length > 0 ? rows : undefined
+}
+
 async function runSummary(
   storeId: StoreId,
   bounds: { from: string; to: string },
+  range: DateRange,
 ): Promise<SalesSummaryReport> {
   const sales = await salesInRange(storeId, bounds.from, bounds.to)
   const saleIds = sales.map((s) => s.id)
@@ -318,6 +351,8 @@ async function runSummary(
   ])
   const itemsSold = items.reduce((sum, i) => sum + (i.quantity ?? 0), 0)
 
+  const days = buildSummaryDays(range, sales)
+
   return {
     totalRevenue,
     txCount,
@@ -332,6 +367,7 @@ async function runSummary(
       cashOut: cashMovements.cashOut,
       cashSales: summarizePayments(payments).cash,
     },
+    ...(days && days.length > 0 ? { days } : {}),
   }
 }
 
@@ -587,7 +623,7 @@ export async function runReport(
   const bounds = boundsForReport(type, range)
   switch (type) {
     case 'summary':
-      return { type, data: await runSummary(storeId, bounds) }
+      return { type, data: await runSummary(storeId, bounds, range) }
     case 'byPayment':
       return { type, data: await runByPayment(storeId, bounds) }
     case 'topProducts':
@@ -608,7 +644,7 @@ export async function runReport(
     case 'itemizedSales':
       return { type, data: await runItemizedSales(storeId, bounds) }
     default:
-      return { type: 'summary', data: await runSummary(storeId, bounds) }
+      return { type: 'summary', data: await runSummary(storeId, bounds, range) }
   }
 }
 

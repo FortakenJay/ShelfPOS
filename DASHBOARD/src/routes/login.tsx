@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useReducer } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { AuthProvider, useAuth } from '#/lib/auth'
+import { postLoginPath } from '#/lib/roles'
 import { Button, Field, FullScreenSpinner, Input } from '#/components/ui'
 import { AppLogo } from '#/components/AppLogo'
 import { LanguageSwitcher } from '#/components/LanguageSwitcher'
@@ -62,7 +63,7 @@ function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      void navigate({ to: '/dashboard', replace: true })
+      void navigate({ to: postLoginPath(user), replace: true })
     }
   }, [loading, user, navigate])
 

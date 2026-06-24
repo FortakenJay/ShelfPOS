@@ -26,7 +26,11 @@ export function ItemizedSalesReportTable({ data }: { data: ItemizedSalesReport }
               </span>
             </div>
             <span className="text-lg font-extrabold">{formatMoney(sale.total)}</span>
-            <SaleFacturaPdfButton saleId={sale.saleId} consecutivo={sale.consecutivo} />
+            <SaleFacturaPdfButton
+              saleId={sale.saleId}
+              consecutivo={sale.consecutivo}
+              className="ml-2"
+            />
           </div>
           <table className="w-full">
             <thead>

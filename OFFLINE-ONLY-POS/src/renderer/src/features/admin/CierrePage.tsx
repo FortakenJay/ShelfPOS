@@ -15,7 +15,6 @@ import { rangeForReportPeriod } from '@/components/dateRangePresets'
 import type {
   CierreDiscountReport,
   CierreDiscardedTabsReport,
-  CierrePreview,
   CierrePriceOverrideReport,
   CierreRecord,
   DateRange
@@ -144,7 +143,6 @@ function Cierre(): React.JSX.Element {
       <div className="mx-auto w-full max-w-6xl space-y-6">
         <h1 className="text-2xl font-bold">{t('cierre.title')}</h1>
 
-        <CierreSummary preview={preview} pending={pending} />
         <CierreDiscardedTabs discarded={preview?.discardedTabs} />
         <CierreDiscounts discounts={preview?.discounts} />
         <CierrePriceOverrides overrides={preview?.priceOverrides} />
@@ -157,9 +155,7 @@ function Cierre(): React.JSX.Element {
           {preview?.cash && (
             <CashDrawerSummary
               summary={preview.cash}
-              openedAt={preview.openedAt}
               expectedSinpe={preview.totals?.sinpe}
-              pending={pending}
               className="h-full"
             />
           )}
@@ -339,47 +335,6 @@ function CierreReconciliation({
         >
           {difference == null ? '—' : formatMoney(difference)}
         </div>
-      </div>
-    </div>
-  )
-}
-
-function CierreSummary({
-  preview,
-  pending
-}: {
-  preview: CierrePreview | undefined
-  pending: number
-}): React.JSX.Element {
-  const { t } = useTranslation()
-
-  return (
-    <div className="rounded-lg border-2 border-line bg-white p-5">
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <SummaryCell
-          label={t('cierre.openedAt')}
-          value={preview?.openedAt ? formatDate(preview.openedAt, true) : '—'}
-        />
-        <SummaryCell label={t('cierre.pendingTx')} value={String(pending)} />
-        <SummaryCell
-          label={t('cierre.totalCash')}
-          value={preview?.totals?.cash != null ? formatMoney(preview.totals.cash) : '—'}
-        />
-        <SummaryCell
-          label={t('cierre.totalCard')}
-          value={preview?.totals?.card != null ? formatMoney(preview.totals.card) : '—'}
-        />
-        <SummaryCell
-          label={t('cierre.totalSinpe')}
-          value={preview?.totals ? formatMoney(preview.totals.sinpe) : '—'}
-        />
-        <SummaryCell label={t('cierre.returnsCount')} value={String(preview?.returnsCount ?? 0)} />
-      </div>
-      <div className="flex items-center justify-between rounded-md bg-chrome px-4 py-3 text-white">
-        <span className="text-[16px] font-bold">{t('cierre.totalSales')}</span>
-        <span className="text-3xl font-extrabold">
-          {preview?.totals?.total != null ? formatMoney(preview.totals.total) : '—'}
-        </span>
       </div>
     </div>
   )
