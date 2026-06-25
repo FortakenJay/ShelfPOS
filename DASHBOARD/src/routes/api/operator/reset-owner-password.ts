@@ -18,6 +18,18 @@ function json(data: unknown, status = 200): Response {
   return Response.json(data, { status })
 }
 
+function hasLocalhostRedirect(actionLink: string): boolean {
+  try {
+    const parsed = new URL(actionLink)
+    const redirectTo = parsed.searchParams.get('redirect_to') ?? ''
+    if (!redirectTo) return false
+    const redirectUrl = new URL(redirectTo)
+    return redirectUrl.hostname === 'localhost' || redirectUrl.hostname === '127.0.0.1'
+  } catch {
+    return false
+  }
+}
+
 export const Route = createFileRoute('/api/operator/reset-owner-password')({
   server: {
     handlers: {
@@ -50,6 +62,19 @@ export const Route = createFileRoute('/api/operator/reset-owner-password')({
 
         const redirectTo = resolveDashboardRedirect('/reset-password', body.redirectOrigin, request)
         console.info('[reset-owner-password] redirectTo:', redirectTo)
+        const preview = await admin.auth.admin.generateLink({
+          type: 'recovery',
+          email,
+          options: { redirectTo },
+        })
+        if (preview.error) {
+          return json({ error: mapSupabaseResetError(preview.error.message) }, 400)
+        }
+
+        const previewActionLink = preview.data.properties.action_link
+        if (!previewActionLink || hasLocalhostRedirect(previewActionLink)) {
+          return json({ error: 'reset_link_failed' }, 500)
+        }
 
         if (body.sendEmail) {
           const { error } = await admin.auth.resetPasswordForEmail(email, { redirectTo })
@@ -59,25 +84,10 @@ export const Route = createFileRoute('/api/operator/reset-owner-password')({
           return json({ email, sent: true })
         }
 
-        const { data, error } = await admin.auth.admin.generateLink({
-          type: 'recovery',
-          email,
-          options: { redirectTo },
-        })
-
-        if (error) {
-          return json({ error: mapSupabaseResetError(error.message) }, 400)
-        }
-
-        const actionLink = data.properties.action_link
-        if (!actionLink) {
-          return json({ error: 'reset_link_failed' }, 500)
-        }
-
         return json({
           email,
-          actionLink,
-          expiresAt: data.properties.expires_at ?? null,
+          actionLink: previewActionLink,
+          expiresAt: null,
         })
       },
     },

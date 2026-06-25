@@ -23,6 +23,18 @@ function json(data: unknown, status = 200): Response {
   return Response.json(data, { status })
 }
 
+function hasLocalhostRedirect(actionLink: string): boolean {
+  try {
+    const parsed = new URL(actionLink)
+    const redirectTo = parsed.searchParams.get('redirect_to') ?? ''
+    if (!redirectTo) return false
+    const redirectUrl = new URL(redirectTo)
+    return redirectUrl.hostname === 'localhost' || redirectUrl.hostname === '127.0.0.1'
+  } catch {
+    return false
+  }
+}
+
 async function generateInviteLink(
   admin: NonNullable<ReturnType<typeof createSupabaseAdmin>>,
   email: string,
@@ -44,6 +56,10 @@ async function generateInviteLink(
 
   const actionLink = data.properties.action_link
   if (!actionLink) {
+    return { ok: false, error: 'invite_link_failed' }
+  }
+  if (hasLocalhostRedirect(actionLink)) {
+    console.error('[invite-owner] generated localhost redirect, refusing link')
     return { ok: false, error: 'invite_link_failed' }
   }
 
@@ -86,6 +102,10 @@ export const Route = createFileRoute('/api/operator/invite-owner')({
 
         const redirectTo = resolveDashboardRedirect('/accept-invite', body.redirectOrigin, request)
         console.info('[invite-owner] redirectTo:', redirectTo)
+        const preview = await generateInviteLink(admin, email, redirectTo)
+        if (!preview.ok) {
+          return json({ error: preview.error }, 400)
+        }
 
         if (body.sendEmail) {
           const { error } = await admin.auth.admin.inviteUserByEmail(email, {
@@ -99,31 +119,22 @@ export const Route = createFileRoute('/api/operator/invite-owner')({
           const mapped = mapSupabaseInviteError(error)
 
           if (mapped !== 'owner_already_exists' && isSupabaseEmailDeliveryError(error)) {
-            const link = await generateInviteLink(admin, email, redirectTo)
-            if (link.ok) {
-              return json({
-                email,
-                sent: false,
-                emailFailed: true,
-                actionLink: link.actionLink,
-                expiresAt: link.expiresAt,
-              })
-            }
-            return json({ error: link.error }, 400)
+            return json({
+              email,
+              sent: false,
+              emailFailed: true,
+              actionLink: preview.actionLink,
+              expiresAt: preview.expiresAt,
+            })
           }
 
           return json({ error: mapped }, 400)
         }
 
-        const link = await generateInviteLink(admin, email, redirectTo)
-        if (!link.ok) {
-          return json({ error: link.error }, 400)
-        }
-
         return json({
           email,
-          actionLink: link.actionLink,
-          expiresAt: link.expiresAt,
+          actionLink: preview.actionLink,
+          expiresAt: preview.expiresAt,
         })
       },
     },
