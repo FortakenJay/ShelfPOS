@@ -12,6 +12,7 @@ import { isSuperadminUser } from '#/lib/roles'
 import { fetchStores } from '#/lib/queries/stores'
 import { QUERY_GC_MS, STORES_STALE_MS } from '#/lib/stores'
 import type { StoreId, StoreInfo } from '#/lib/stores'
+import { isOwnerAppPath, isOperatorPortalPath } from '#/components/shell/nav'
 import { FullScreenSpinner } from '#/components/ui'
 import { NoStoresPage } from '#/components/NoStoresPage'
 
@@ -34,22 +35,18 @@ function resolveStoreId(stores: StoreInfo[]): StoreId {
   return stores[0].storeId
 }
 
-function isOperatorPath(pathname: string): boolean {
-  return pathname === '/admin' || pathname.startsWith('/admin/')
-}
-
 export function StoreProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading } = useAuth()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const navigate = useNavigate()
   const isSuperadmin = isSuperadminUser(user)
   const allowWithoutStore =
-    isOperatorPath(pathname) || (!isSuperadmin && pathname === '/link-pos')
+    isOperatorPortalPath(pathname) || (!isSuperadmin && pathname === '/link-pos')
 
   const { data: stores = [], isPending, isError, isFetching, refetch } = useQuery({
     queryKey: ['stores', user?.id],
     queryFn: fetchStores,
-    enabled: !authLoading && Boolean(user),
+    enabled: !authLoading && Boolean(user) && !isSuperadmin,
     staleTime: STORES_STALE_MS,
     gcTime: QUERY_GC_MS,
     refetchIntervalInBackground: false,
@@ -73,14 +70,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (authLoading || !user || !isSuperadmin) return
-    if (pathname === '/link-pos') {
+    if (isOperatorPortalPath(pathname)) return
+    if (isOwnerAppPath(pathname) || pathname === '/link-pos') {
       void navigate({ to: '/admin', replace: true })
-      return
     }
-    if (stores.length > 0) return
-    if (isOperatorPath(pathname)) return
-    void navigate({ to: '/admin', replace: true })
-  }, [authLoading, user, isSuperadmin, stores.length, pathname, navigate])
+  }, [authLoading, user, isSuperadmin, pathname, navigate])
 
   const waitingForStores =
     Boolean(user) && isPending && stores.length === 0 && !isSuperadmin
@@ -99,6 +93,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       />
     )
   } else if (!allowWithoutStore && !resolvedStoreId) {
+    body = <FullScreenSpinner />
+  } else if (isSuperadmin && !isOperatorPortalPath(pathname)) {
     body = <FullScreenSpinner />
   } else {
     body = children

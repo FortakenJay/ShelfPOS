@@ -21,19 +21,20 @@ export const OWNER_NAV: ShellNavItem[] = [
   { to: '/link-pos', labelKey: 'nav.linkPos', icon: 'link' },
 ]
 
-/** Operator support view — read tenant data; no POS linking. */
-export const OPERATOR_SUPPORT_NAV: ShellNavItem[] = [
-  {
-    to: '/dashboard',
-    labelKey: 'nav.dashboard',
-    icon: 'dashboard',
-    search: { tab: 'home' },
-  },
-  { to: '/reports', labelKey: 'nav.reports', icon: 'reports' },
-  { to: '/cierres', labelKey: 'nav.cierres', icon: 'cierre' },
-  { to: '/movements', labelKey: 'nav.cashMovements', icon: 'cashMovements' },
-  { to: '/audit', labelKey: 'nav.audit', icon: 'audit' },
-]
+const OWNER_APP_PATHS = [
+  '/dashboard',
+  '/reports',
+  '/cierres',
+  '/movements',
+  '/audit',
+  '/link-pos',
+] as const
+
+export function isOwnerAppPath(pathname: string): boolean {
+  return OWNER_APP_PATHS.some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`),
+  )
+}
 
 export const OPERATOR_PLATFORM_NAV: ShellNavItem[] = [
   { to: '/admin', labelKey: 'nav.operatorPortal', icon: 'operator' },

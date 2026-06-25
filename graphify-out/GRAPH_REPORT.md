@@ -1,16 +1,16 @@
 # Graph Report - ShelfPOS  (2026-06-25)
 
 ## Corpus Check
-- 571 files · ~3,874,961 words
+- 571 files · ~3,875,193 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3330 nodes · 6728 edges · 201 communities (189 shown, 12 thin omitted)
+- 3332 nodes · 6733 edges · 201 communities (188 shown, 13 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 262 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `ea6cacad`
+- Built from commit: `e26c275d`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -123,6 +123,7 @@
 - [[_COMMUNITY_Community 106|Community 106]]
 - [[_COMMUNITY_Community 107|Community 107]]
 - [[_COMMUNITY_Community 108|Community 108]]
+- [[_COMMUNITY_Community 109|Community 109]]
 - [[_COMMUNITY_Community 110|Community 110]]
 - [[_COMMUNITY_Community 111|Community 111]]
 - [[_COMMUNITY_Community 112|Community 112]]
@@ -188,7 +189,6 @@
 - [[_COMMUNITY_Community 176|Community 176]]
 - [[_COMMUNITY_Community 177|Community 177]]
 - [[_COMMUNITY_Community 178|Community 178]]
-- [[_COMMUNITY_Community 179|Community 179]]
 - [[_COMMUNITY_Community 180|Community 180]]
 - [[_COMMUNITY_Community 181|Community 181]]
 - [[_COMMUNITY_Community 182|Community 182]]
@@ -220,69 +220,69 @@
   DASHBOARD/src/components/DateRangePicker.tsx → OFFLINE-ONLY-POS/src/main/services/i18n.ts
 - `LanguageSwitcher()` --calls--> `t()`  [INFERRED]
   DASHBOARD/src/components/LanguageSwitcher.tsx → OFFLINE-ONLY-POS/src/main/services/i18n.ts
+- `StatusBadge()` --calls--> `t()`  [INFERRED]
+  DASHBOARD/src/components/dashboard/InventoryManagementSection.tsx → OFFLINE-ONLY-POS/src/main/services/i18n.ts
+- `InventoryProductTable()` --calls--> `t()`  [INFERRED]
+  DASHBOARD/src/components/dashboard/InventoryManagementSection.tsx → OFFLINE-ONLY-POS/src/main/services/i18n.ts
 - `ByPaymentReportTable()` --calls--> `t()`  [INFERRED]
   DASHBOARD/src/components/reports/tables/ByPaymentReportTable.tsx → OFFLINE-ONLY-POS/src/main/services/i18n.ts
-- `InventoryReportTable()` --calls--> `t()`  [INFERRED]
-  DASHBOARD/src/components/reports/tables/InventoryReportTable.tsx → OFFLINE-ONLY-POS/src/main/services/i18n.ts
-- `TopProductsReportTable()` --calls--> `t()`  [INFERRED]
-  DASHBOARD/src/components/reports/tables/TopProductsReportTable.tsx → OFFLINE-ONLY-POS/src/main/services/i18n.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (201 total, 12 thin omitted)
+## Communities (201 total, 13 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.07
-Nodes (55): round2(), CIERRE, CIERRE_ADMIN, CIERRE_EXPORT, cierrePrintLines(), getCierreById(), listCierreDiscrepancyAlerts(), runReport() (+47 more)
+Nodes (40): CIERRE, CIERRE_ADMIN, CIERRE_EXPORT, cierrePrintLines(), getCierreById(), listCierreDiscrepancyAlerts(), cierreDiscardedTabs(), cierrePriceOverrides() (+32 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.08
-Nodes (45): PRODUCT_COLUMNS, assignProductBarcode(), isUniqueViolation(), MANAGE, printLabelForProduct(), printProductLabel(), productForBarcodePrint(), ProductPrintKind (+37 more)
+Cohesion: 0.15
+Nodes (20): getProductByBarcode(), buildCsv(), parseCsv(), mapProductCsvHeaders(), applyImportStock(), applyProductImport(), buildProductImportPreview(), cell() (+12 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.17
-Nodes (18): addBillingInterval(), isBillingInterval(), toUtcDateKey(), addDaysUtc(), BillingReminderRunResult, markStorePaid(), runBillingReminders(), StoreBillingRow (+10 more)
+Cohesion: 0.06
+Nodes (56): authorizeCron(), addBillingInterval(), BILLING_INTERVALS, BillingInterval, isBillingInterval(), toUtcDateKey(), billingRemindersConfigured(), getBillingCronSecret() (+48 more)
 
 ### Community 3 - "Community 3"
-Cohesion: 0.08
-Nodes (58): buildDashboardAlerts(), buildRecentActivity(), employeePerformanceFromSales(), posUserUsernameMap(), recentEmployeeActivity(), teamMembersFromPosUsers(), dayBounds(), daysInRange() (+50 more)
+Cohesion: 0.09
+Nodes (41): buildDashboardAlerts(), buildRecentActivity(), countInventoryAlerts(), DashboardInventoryHealth, DashboardStockMovementPoint, DashboardStockStatus, inventoryBundleFromProducts(), inventoryKpiPriorCounts() (+33 more)
 
 ### Community 4 - "Community 4"
-Cohesion: 0.24
-Nodes (15): ADMIN, assertNotLastAdmin(), countActiveAdmins(), deactivateAppUser(), getAppUserById(), insertAppUser(), listAppUsers(), mapUser() (+7 more)
+Cohesion: 0.10
+Nodes (35): PRODUCT_COLUMNS, localNow(), ADMIN, assertNotLastAdmin(), insertCashMovement(), applyStockDelta(), buildProductListWhere(), enqueueProductSync() (+27 more)
 
 ### Community 5 - "Community 5"
 Cohesion: 0.08
-Nodes (46): PRINTER_ACTION, getPrintJob(), listPendingPrintJobIds(), markPrintJob(), align(), attemptPrintJob(), barcodeDataCode128(), bold() (+38 more)
+Nodes (44): PRINTER_ACTION, getPrintJob(), markPrintJob(), align(), attemptPrintJob(), barcodeDataCode128(), bold(), CODEPAGE_PC850 (+36 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.07
-Nodes (46): getDbPath(), assertFirstRun(), ID_TYPES, nextConsecutivo(), PAYMENT_METHODS, PricedSaleLine, SALES_OR_ADMIN, SELL (+38 more)
+Cohesion: 0.05
+Nodes (57): assertFirstRun(), ID_TYPES, nextConsecutivo(), PAYMENT_METHODS, PricedSaleLine, SALES_OR_ADMIN, SELL, ID_TYPES (+49 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.11
-Nodes (44): boundsForReport(), buildReportPrintLines(), isMultiDay(), reportRangeLabel(), formatDate(), formatMoney(), buildCierreLines(), buildInventoryReportLines() (+36 more)
+Cohesion: 0.10
+Nodes (50): boundsForReport(), buildReportPrintLines(), isMultiDay(), reportRangeLabel(), runReport(), inventorySnapshot(), inventorySnapshotPage(), topProducts() (+42 more)
 
 ### Community 8 - "Community 8"
-Cohesion: 0.06
-Nodes (37): channelSet, listFailedPrintJobs(), listPrintJobsForPage(), ApiResult, BatchPrintItem, CartRemoveAuthorizeInput, CierreDiscardedTabRow, CierreDiscountItem (+29 more)
+Cohesion: 0.05
+Nodes (47): channelSet, listFailedPrintJobs(), listPendingPrintJobIds(), ApiResult, BatchPrintItem, CierreDiscardedTabRow, CierreDiscountItem, CierreDiscountSale (+39 more)
 
 ### Community 9 - "Community 9"
 Cohesion: 0.10
 Nodes (46): defaultSyncConfigPath(), loadConfig(), loadConfigFile(), loadEnvFile(), localSyncConfigPath(), readSecretKeyEnv(), resolveSecretKey(), SyncConfig (+38 more)
 
 ### Community 10 - "Community 10"
-Cohesion: 0.18
-Nodes (23): rangeBoundsFromDateRange(), boundsForReport(), cashierNamesForSales(), fetchReportForExport(), grossProfitForSales(), paymentsBySale(), paymentsForSaleIds(), ProductCostRow (+15 more)
+Cohesion: 0.11
+Nodes (43): rangeBoundsFromDateRange(), facturaPrintTimestamp(), formatFacturaDateTime(), getSupabase(), fetchInChunks(), netProductStockChangeSince(), paymentsForSaleIds(), buildFacturaFromSale() (+35 more)
 
 ### Community 11 - "Community 11"
-Cohesion: 0.05
-Nodes (31): AdminCash(), AdminCierreSummary(), CierreDiscardedTabs(), CierreDiscounts(), CierreHistory(), CierrePriceOverrides(), CierreReconciliation(), CierreStep (+23 more)
+Cohesion: 0.06
+Nodes (33): AdminCash(), AdminCierreSummary(), CierreDiscardedTabs(), CierreDiscounts(), CierreHistory(), CierrePriceOverrides(), CierreReconciliation(), CierreStep (+25 more)
 
 ### Community 12 - "Community 12"
 Cohesion: 0.06
-Nodes (41): Route, Route, Route, Route, Register, Route, Route, Route (+33 more)
+Nodes (41): Route, Route, Route, Route, Route, Register, Route, Route (+33 more)
 
 ### Community 13 - "Community 13"
 Cohesion: 0.07
@@ -293,12 +293,12 @@ Cohesion: 0.05
 Nodes (41): Architecture summary, Business goals, Cart tab, `cart_tabs` (local), Cierre, Code index — where things live, DASHBOARD, Dashboard dependency map (+33 more)
 
 ### Community 15 - "Community 15"
-Cohesion: 0.11
-Nodes (27): PinCardPrintModal(), draftFromSettings(), EMISOR_KEYS, emisorDraftDirty(), GENERAL_KEYS, generalDraftDirty(), sectionDirty(), SettingsDraft (+19 more)
+Cohesion: 0.09
+Nodes (30): PinCardPrintModal(), cloudStatusKey(), SettingsCloudPanel(), draftFromSettings(), EMISOR_KEYS, emisorDraftDirty(), GENERAL_KEYS, generalDraftDirty() (+22 more)
 
 ### Community 16 - "Community 16"
-Cohesion: 0.09
-Nodes (30): downloadFacturaHtml(), downloadFacturaPdf(), facturaExportFilename(), buildCombinedFacturaHtml(), buildFacturaHtml(), buildFacturaPages(), buildPage(), buildSummaryBlock() (+22 more)
+Cohesion: 0.10
+Nodes (29): downloadFacturaHtml(), downloadFacturaPdf(), facturaExportFilename(), buildCombinedFacturaHtml(), buildFacturaHtml(), buildFacturaPages(), buildPage(), buildSummaryBlock() (+21 more)
 
 ### Community 17 - "Community 17"
 Cohesion: 0.05
@@ -306,26 +306,26 @@ Nodes (38): Backfill, Barcode scanner (scans but item not added), Batch label / 
 
 ### Community 18 - "Community 18"
 Cohesion: 0.07
-Nodes (44): TrendBadge(), ByPaymentReportTable(), InventoryReportTable(), TopProductsReportTable(), formatReportTimestamp(), formatMoney(), InventoryReport, InventoryRow (+36 more)
+Nodes (26): ByPaymentReportTable(), InventoryReportTable(), ItemizedSalesReportTable(), SummaryReportTable(), TaxBreakdownReportTable(), TopProductsReportTable(), TransactionLogReportTable(), InventoryReport (+18 more)
 
 ### Community 19 - "Community 19"
-Cohesion: 0.11
-Nodes (18): AuthContext, AuthProvider(), AuthSlice, AuthSliceAction, AuthState, signIn(), signOut(), signUp() (+10 more)
+Cohesion: 0.10
+Nodes (19): AuthContext, AuthProvider(), AuthSlice, AuthSliceAction, AuthState, signIn(), signOut(), signUp() (+11 more)
 
 ### Community 20 - "Community 20"
-Cohesion: 0.14
-Nodes (17): CierresPage(), usernameMapForUserIds(), downloadCierresPdf(), Translate, formatDateTime(), rangeBounds(), StoreId, anonKey (+9 more)
+Cohesion: 0.17
+Nodes (12): CierresPage(), SectionHeading(), downloadCierresPdf(), Translate, valueOrDash(), rangeBounds(), formatColones(), formatMoneyPdf() (+4 more)
 
 ### Community 21 - "Community 21"
-Cohesion: 0.16
-Nodes (26): ActivityAlertsSection(), CategoryPerformanceChart(), ChartFrame(), ChartLoading(), DashboardHomeCharts(), DashboardCard(), DashboardEmpty(), FooterLink() (+18 more)
+Cohesion: 0.24
+Nodes (14): ChartFrame(), ChartLoading(), DashboardCard(), DashboardEmpty(), FooterLink(), CHART_COLORS, InventoryProductTable(), STATUS_STYLES (+6 more)
 
 ### Community 22 - "Community 22"
-Cohesion: 0.13
+Cohesion: 0.12
 Nodes (14): GRID_KEYS, PaymentCheckoutPad(), PaymentCheckoutPanel(), buildPaymentCustomer(), PaymentInvoiceCustomerSection(), METHODS, PaymentMethodButtons(), PaymentMethodSidebar() (+6 more)
 
 ### Community 23 - "Community 23"
-Cohesion: 0.05
+Cohesion: 0.06
 Nodes (50): adjustStockInputSchema, auditLogFilterSchema, cajaPinChangeInputSchema, cashMovementInputSchema, cierreConfirmInputSchema, createReturnInputSchema, createSaleInputSchema, createSaleItemInputSchema (+42 more)
 
 ### Community 24 - "Community 24"
@@ -345,8 +345,8 @@ Cohesion: 0.07
 Nodes (27): Register, adminCashRoute, adminIndexRoute, auditRoute, cashRoute, chooseLanguageRoute, cierreRoute, dashboardRoute (+19 more)
 
 ### Community 28 - "Community 28"
-Cohesion: 0.16
-Nodes (19): cachedInventoryTotal(), ReportsPage(), ReportsPageContent(), clampInventoryPage(), inventoryTotalPages(), parsePositiveInt(), parseReportSearch(), PERIOD_PRESETS (+11 more)
+Cohesion: 0.14
+Nodes (22): cachedInventoryTotal(), ReportsPage(), ReportsPageContent(), clampInventoryPage(), inventoryTotalPages(), parsePositiveInt(), parseReportSearch(), PERIOD_PRESETS (+14 more)
 
 ### Community 29 - "Community 29"
 Cohesion: 0.08
@@ -358,7 +358,7 @@ Nodes (27): devDependencies, electron, electron-builder, electron-vite, eslint, 
 
 ### Community 31 - "Community 31"
 Cohesion: 0.13
-Nodes (24): formatReportNow(), autosizeColumns(), BORDER_THIN, buildByPaymentTable(), buildInventoryTable(), buildItemizedSalesTable(), buildReportTables(), buildSummaryTables() (+16 more)
+Nodes (25): formatDateTime(), formatReportNow(), autosizeColumns(), BORDER_THIN, buildByPaymentTable(), buildInventoryTable(), buildItemizedSalesTable(), buildReportTables() (+17 more)
 
 ### Community 32 - "Community 32"
 Cohesion: 0.08
@@ -374,67 +374,67 @@ Nodes (25): dependencies, better-sqlite3, node-windows, description, devDependen
 
 ### Community 35 - "Community 35"
 Cohesion: 0.14
-Nodes (18): inviteErrorKey(), OperatorPortalPage(), resetErrorKey(), Route, generateOwnerInviteLink(), OperatorInviteError, OperatorInviteErrorCode, OwnerInviteEmailResult (+10 more)
+Nodes (19): inviteErrorKey(), OperatorPortalPage(), resetErrorKey(), isSuperadminUser(), postLoginPath(), generateOwnerInviteLink(), OperatorInviteError, OperatorInviteErrorCode (+11 more)
 
 ### Community 36 - "Community 36"
-Cohesion: 0.09
-Nodes (51): daysAgoLocal(), daysInRange(), pad(), rangeBounds(), todayLocal(), getDb(), buildAlerts(), categoryPerformance() (+43 more)
+Cohesion: 0.12
+Nodes (46): daysAgoLocal(), daysInRange(), pad(), rangeBounds(), round2(), todayLocal(), getDb(), getDbPath() (+38 more)
 
 ### Community 37 - "Community 37"
 Cohesion: 0.10
-Nodes (30): localNow(), SELL, CartTabDbRow, completeCartTab(), createCartTab(), deleteCartTabRow(), discardCartTabAudited(), EMPTY_SNAPSHOT (+22 more)
+Nodes (29): SELL, parseCartTabSnapshot(), CartTabDbRow, completeCartTab(), createCartTab(), deleteCartTabRow(), discardCartTabAudited(), EMPTY_SNAPSHOT (+21 more)
 
 ### Community 38 - "Community 38"
 Cohesion: 0.08
 Nodes (21): ADR-001: SQLite as Source of Truth (Offline-First), Alternatives considered, Consequences, Context, Decision, Related, ADR-002: One-Way Sync via Queue + Windows Service, Alternatives considered (+13 more)
 
 ### Community 39 - "Community 39"
-Cohesion: 0.11
-Nodes (39): registerAuditHandlers(), registerAuthHandlers(), registerBackupHandlers(), registerCartHandlers(), SELL, registerCartTabHandlers(), registerCashHandlers(), registerCierreHandlers() (+31 more)
+Cohesion: 0.09
+Nodes (48): registerAuditHandlers(), registerAuthHandlers(), registerBackupHandlers(), registerCartHandlers(), SELL, registerCartTabHandlers(), registerCashHandlers(), registerCierreHandlers() (+40 more)
 
 ### Community 40 - "Community 40"
 Cohesion: 0.08
 Nodes (25): 1. Owner signs up and gets a code, 2. Install sync on the shop PC, 3. Verify, After install (before claim), Dashboard deploy (Vercel), Diagnostics, Installer, Legacy / migration (skip claim) (+17 more)
 
 ### Community 41 - "Community 41"
-Cohesion: 0.17
-Nodes (9): ProductsPageFilters(), ProductsPageFiltersProps, ProductsPageToolbar(), ProductsPageToolbarProps, ProductFiltersState, PAGE_SIZE_OPTIONS, ProductsPagination(), ProductsPaginationProps (+1 more)
+Cohesion: 0.16
+Nodes (10): ProductManagerModals(), ProductsPageFilters(), ProductsPageFiltersProps, ProductsPageToolbar(), ProductsPageToolbarProps, ProductFiltersState, PAGE_SIZE_OPTIONS, ProductsPagination() (+2 more)
 
 ### Community 42 - "Community 42"
-Cohesion: 0.10
-Nodes (19): ProductManagerModals(), ProductManagerModalsProps, ProductManagerUiState, AdjustStockModal(), REASONS, OPTIONAL_COLS, ProductCsvHelpModal(), ProductCsvHelpModalProps (+11 more)
+Cohesion: 0.11
+Nodes (18): ProductManagerModalsProps, ProductManagerUiState, AdjustStockModal(), REASONS, OPTIONAL_COLS, ProductCsvHelpModal(), ProductCsvHelpModalProps, REQUIRED_COLS (+10 more)
 
 ### Community 43 - "Community 43"
-Cohesion: 0.15
-Nodes (12): CartTabsBar(), CartTabsBarProps, LineDiscountPinModal(), LineDiscountPinRequest, OpenFloatModal(), POSModals(), POSSearchPanel(), POSSearchPanelProps (+4 more)
+Cohesion: 0.10
+Nodes (20): CartTabsBar(), CartTabsBarProps, LineDiscountPinModal(), LineDiscountPinRequest, OpenFloatModal(), isEditableElement(), shouldKeepSearchFocused(), usePosEnterShortcut() (+12 more)
 
 ### Community 44 - "Community 44"
-Cohesion: 0.11
-Nodes (18): CustomerModal(), CustomerModalProps, ID_TYPES, cartLineToSaleInput(), usePosEnterShortcut(), usePosSearchFocus(), POSModalsProps, POSTerminal() (+10 more)
+Cohesion: 0.12
+Nodes (15): CustomerModal(), CustomerModalProps, ID_TYPES, cartLineToSaleInput(), POSModalsProps, PriceOverrideAction, PriceOverrideModal(), PriceOverrideState (+7 more)
 
 ### Community 45 - "Community 45"
-Cohesion: 0.28
-Nodes (11): AuditMeta, auditWhere(), countAudit(), listAudit(), listAuditActions(), listAuditPage(), listAuditUsers(), AuditLogFilter (+3 more)
+Cohesion: 0.15
+Nodes (17): AuditLogAction, auditLogReducer(), AuditLogState, AuditPage(), formatAuditDetail(), PAGE_SIZE_OPTIONS, isHiddenOperatorUsername(), ReportPeriodPreset (+9 more)
 
 ### Community 46 - "Community 46"
 Cohesion: 0.17
 Nodes (15): AccountsStep(), Step, AccountDraft, EMPTY_ACCOUNT_DRAFT, EMPTY_PIN_FIELDS, EMPTY_VALIDATION, MANAGED_ROLES, PinFieldsState (+7 more)
 
 ### Community 47 - "Community 47"
-Cohesion: 0.18
-Nodes (15): CASH, CASH_READ, cashDrawerStatus(), cashMovementTotals(), hasOpeningFloat(), listCashMovements(), listOpenCashMovements(), openCashSummary() (+7 more)
+Cohesion: 0.19
+Nodes (13): CASH, CASH_READ, cashDrawerStatus(), hasOpeningFloat(), listCashMovements(), listOpenCashMovements(), periodOpenedAt(), CashDrawerStatus (+5 more)
 
 ### Community 48 - "Community 48"
-Cohesion: 0.15
-Nodes (19): buildFacturaHtml(), buildPage(), buildSummaryBlock(), buildTableRows(), escapeHtml(), FacturaPdfData, FacturaPdfItem, formatDocumentNumber() (+11 more)
+Cohesion: 0.16
+Nodes (18): buildFacturaHtml(), buildPage(), buildSummaryBlock(), buildTableRows(), escapeHtml(), FacturaPdfCustomer, FacturaPdfItem, formatDocumentNumber() (+10 more)
 
 ### Community 49 - "Community 49"
-Cohesion: 0.10
-Nodes (32): AuditLogAction, auditLogReducer(), AuditLogState, AuditPage(), formatAuditDetail(), PAGE_SIZE_OPTIONS, DateRangePicker(), presetWithTime() (+24 more)
+Cohesion: 0.18
+Nodes (19): DateRangePicker(), presetWithTime(), withTimeDefaults(), dashboardAlertSearch(), presetMonth(), presetToday(), presetWeek(), rangeForReportPeriod() (+11 more)
 
 ### Community 50 - "Community 50"
-Cohesion: 0.25
-Nodes (11): authorizeCron(), Route, billingRemindersConfigured(), getBillingCronSecret(), getDiscordBillingWebhookUrl(), getSupabaseAnonKey(), getSupabaseSecretKey(), getSupabaseUrl() (+3 more)
+Cohesion: 0.27
+Nodes (19): formatReportTimestamp(), formatMoney(), buildInventoryLines(), buildItemizedSalesLines(), buildPaymentReportLines(), buildReportPrintLines(), buildSummaryLines(), buildTaxLines() (+11 more)
 
 ### Community 51 - "Community 51"
 Cohesion: 0.10
@@ -445,12 +445,12 @@ Cohesion: 0.10
 Nodes (21): devDependencies, eslint, eslint-plugin-react, eslint-plugin-react-compiler, eslint-plugin-react-doctor, eslint-plugin-react-hooks, globals, jsdom (+13 more)
 
 ### Community 53 - "Community 53"
-Cohesion: 0.05
-Nodes (44): parseSaleActivityTotal(), buildEmployeeOverviewFromPosUsers(), EMPTY_DASHBOARD_TEAM, isActivePosUser(), parsePosUserRole(), posUserRoleMap(), PosUserRow, ROLE_DESCRIPTION_KEYS (+36 more)
+Cohesion: 0.10
+Nodes (20): parseSaleActivityTotal(), panelAlertSeverityClass(), CashierPerformanceRow, CategoryPerformanceRow, DashboardActivityItem, DashboardActivityKind, DashboardAlert, DashboardAlertKind (+12 more)
 
 ### Community 54 - "Community 54"
-Cohesion: 0.17
-Nodes (12): FormAction, FormState, initialFormState, PagePhase, SetPasswordFromAuthCallback(), SetPasswordI18nNamespace, AuthCallbackErrorNamespace, completeAuthCallbackErrorKey() (+4 more)
+Cohesion: 0.16
+Nodes (15): FormAction, FormState, initialFormState, PagePhase, SetPasswordFromAuthCallback(), SetPasswordI18nNamespace, AuthCallbackErrorNamespace, completeAuthCallbackErrorKey() (+7 more)
 
 ### Community 55 - "Community 55"
 Cohesion: 0.10
@@ -462,19 +462,19 @@ Nodes (17): A1. Compilar el instalador, A2. Verificar que tienes llave de licenc
 
 ### Community 57 - "Community 57"
 Cohesion: 0.16
-Nodes (15): BILLING_INTERVALS, BillingInterval, draftFromStore(), isPosOnline(), OperatorStoresTable(), StoreBillingRow(), StoreDraft, toDateInputValue() (+7 more)
+Nodes (13): formatPaymentMethod(), headerAliases(), LANGUAGES, NORMALIZED_TO_PRODUCT_KEY, normalizeHeader(), parseFacturaNegativo(), parsePaymentMethod(), PRODUCT_CSV_KEYS (+5 more)
 
 ### Community 58 - "Community 58"
 Cohesion: 0.10
 Nodes (20): `audit_log`, `cart_tabs` (local), `cash_movements`, `cierres`, Database Reference, Entity relationship diagram, `print_jobs` (local), `products` (+12 more)
 
 ### Community 59 - "Community 59"
-Cohesion: 0.21
-Nodes (9): CartLineDiscountInput(), CartMiscNameInput(), cartLineDiscountPercentDisplay(), formatPercentDisplay(), parseDiscountPercentInput(), POSCartPanel(), commitEditableOnEnter(), isEditableElement() (+1 more)
+Cohesion: 0.29
+Nodes (7): CartLineDiscountInput(), CartMiscNameInput(), cartLineDiscountPercentDisplay(), formatPercentDisplay(), parseDiscountPercentInput(), POSCartPanel(), commitEditableOnEnter()
 
 ### Community 61 - "Community 61"
 Cohesion: 0.05
-Nodes (60): setDb(), getDbVersion(), Migration, migrations, runMigrations(), OnLicenseActivated, registerLicenseHandlers(), applyEnvFile() (+52 more)
+Nodes (62): setDb(), getDbVersion(), Migration, migrations, runMigrations(), OnLicenseActivated, registerLicenseHandlers(), applyEnvFile() (+54 more)
 
 ### Community 62 - "Community 62"
 Cohesion: 0.11
@@ -485,16 +485,16 @@ Cohesion: 0.11
 Nodes (18): 1.4.0, 1.5.0 — Beta (producción), 1.6.1, Calidad, Calidad (1.4.0), Carritos con pestañas (cart tabs), Correcciones de edge cases (antes del ship), Corrección (+10 more)
 
 ### Community 64 - "Community 64"
-Cohesion: 0.19
-Nodes (11): LinkPosPage(), Route, StoreClaimCodeCard(), StorePairingList(), ToastContext, useToast(), createStorePairing(), ensureStorePairingCode() (+3 more)
+Cohesion: 0.15
+Nodes (13): LinkPosPage(), Route, NotFoundPage(), StatusPageLayout(), StoreClaimCodeCard(), StorePairingList(), ToastContext, useToast() (+5 more)
 
 ### Community 65 - "Community 65"
 Cohesion: 0.14
 Nodes (13): ActivityAlertsSection(), EmployeeSection(), InventoryManagementSection(), InventoryProductTable(), ProductAnalyticsTables(), ProductPerformanceTable(), StatusBadge(), TaxSummarySection() (+5 more)
 
 ### Community 66 - "Community 66"
-Cohesion: 0.18
-Nodes (12): AuthedShell(), NoStoresPage(), AppQueryProvider(), useAuth(), queryClient, isOperatorPath(), resolveStoreId(), StoreContext (+4 more)
+Cohesion: 0.11
+Nodes (21): MovementsPage(), Route, CashMovementsTable(), CashMovementType, AppQueryProvider(), usernameMapForUserIds(), queryClient, isOperatorPath() (+13 more)
 
 ### Community 67 - "Community 67"
 Cohesion: 0.11
@@ -505,8 +505,8 @@ Cohesion: 0.19
 Nodes (11): cartLineGross(), cartLineTotal(), cartLineUnitPrice(), miscLineUnitPrice(), catalogUnitPrice(), effectiveUnitPrice(), lineGross(), lineTotal() (+3 more)
 
 ### Community 69 - "Community 69"
-Cohesion: 0.22
-Nodes (11): PriceOverrideAction, PriceOverrideModal(), PriceOverrideState, appendMoneyInputDigit(), backspaceMoneyInput(), digitsFromMoneyInput(), formatColones(), formatMoneyInputFromDigits() (+3 more)
+Cohesion: 0.40
+Nodes (8): appendMoneyInputDigit(), backspaceMoneyInput(), digitsFromMoneyInput(), formatColones(), formatMoneyInputFromDigits(), formatMoneyInputFromNumber(), moneyInputIsEmpty(), onMoneyInputChange()
 
 ### Community 70 - "Community 70"
 Cohesion: 0.11
@@ -517,20 +517,20 @@ Cohesion: 0.18
 Nodes (11): DashboardChartFallback(), CHART_COLORS, InventoryHealthChart(), ProductAnalyticsCharts(), SalesAnalyticsSection(), StockMovementChart(), DashboardHomeCharts(), DashboardCard() (+3 more)
 
 ### Community 72 - "Community 72"
-Cohesion: 0.11
-Nodes (15): AuthCallbackRedirect(), DashboardI18nSync(), NotFoundPage(), StatusPageLayout(), LANGUAGES, LanguageSwitcher(), AuthCallbackRoute, getAuthCallbackRoute() (+7 more)
+Cohesion: 0.13
+Nodes (12): AuthCallbackRedirect(), DashboardI18nSync(), LANGUAGES, LanguageSwitcher(), AuthCallbackRoute, getAuthCallbackRoute(), redirectAuthCallbackToRoute(), DashboardLanguage (+4 more)
 
 ### Community 73 - "Community 73"
-Cohesion: 0.22
-Nodes (7): Cierre(), parseColonesInput(), DiscountAction, DiscountModal(), DiscountModalProps, DiscountState, entryAmount()
+Cohesion: 0.12
+Nodes (11): Cierre(), parseColonesInput(), CashDrawer(), CashDrawerSummary(), CashMovementsPanel(), PendingMovement, DiscountAction, DiscountModal() (+3 more)
 
 ### Community 74 - "Community 74"
 Cohesion: 0.12
 Nodes (17): A1. Compilar el instalador, A2. Verificar que tienes llave de licencias, A3. (Opcional) Licencia anticipada, C1. Copiar del USB al disco local, C2. Ejecutar el instalador, C3. Qué instala (referencia), Checklist copiar/pegar (cada cliente), Comandos de referencia rápida (+9 more)
 
 ### Community 75 - "Community 75"
-Cohesion: 0.17
-Nodes (13): CartTabSnapshot, EMPTY_CART_TAB_SNAPSHOT, isEmptySnapshot(), parseCartTabSnapshot(), serializeCartTabSnapshot(), snapshotTotal(), CartTabSnapshot, cartTabSnapshotTotal() (+5 more)
+Cohesion: 0.38
+Nodes (5): CartTabSnapshot, EMPTY_CART_TAB_SNAPSHOT, isEmptySnapshot(), serializeCartTabSnapshot(), snapshotTotal()
 
 ### Community 76 - "Community 76"
 Cohesion: 0.12
@@ -541,8 +541,8 @@ Cohesion: 0.12
 Nodes (16): Barcode scan, Cart tabs, Cierre (shift close), Cloud production wipe, Dashboard reports, Factura PDF, Feature Documentation, Local POS reports (+8 more)
 
 ### Community 78 - "Community 78"
-Cohesion: 0.09
-Nodes (27): IMPORT_STOCK_GARBAGE_THRESHOLD, formatPaymentMethod(), headerAliases(), LANGUAGES, NORMALIZED_TO_PRODUCT_KEY, normalizeHeader(), parseFacturaNegativo(), parsePaymentMethod() (+19 more)
+Cohesion: 0.20
+Nodes (14): IMPORT_STOCK_GARBAGE_THRESHOLD, ProductCsvKey, ParsedCsv, cell(), EFACTURA_HEADERS, efacturaRowToProductCsvRow(), findHeaderRow(), mapLetterColumns() (+6 more)
 
 ### Community 79 - "Community 79"
 Cohesion: 0.30
@@ -581,8 +581,8 @@ Cohesion: 0.23
 Nodes (9): alertMessage(), CierreDiscrepancyAlerts(), CierreDiscrepancyBanner(), dismissCierreIds(), dismissedListeners, emitDismissedChange(), readDismissedIds(), useCierreDiscrepancyAlerts() (+1 more)
 
 ### Community 88 - "Community 88"
-Cohesion: 0.08
-Nodes (15): ExportBackup(), PrintQueue(), FormAction, FormState, UserFormModal(), UserModalState, UsersInitialSetupModal(), UserModalState (+7 more)
+Cohesion: 0.18
+Nodes (7): FormAction, FormState, UserFormModal(), UserModalState, UsersInitialSetupModal(), UserModalState, Users()
 
 ### Community 89 - "Community 89"
 Cohesion: 0.15
@@ -601,16 +601,16 @@ Cohesion: 0.26
 Nodes (9): Get-ShelfPosSyncServices(), Invoke-ShelfPosUninstaller(), Remove-ShelfPosWindowsService(), Stop-AndRemove-Service(), Stop-ShelfPosAppProcesses(), Test-SyncRemovalNeeded(), Write-Ok(), Write-Skip() (+1 more)
 
 ### Community 93 - "Community 93"
-Cohesion: 0.26
-Nodes (13): generateInviteLink(), hasLocalhostRedirect(), InviteBody, getConfiguredDashboardOrigin(), getForwardedOrigin(), isLocalOrigin(), isValidEmail(), normalizeEmail() (+5 more)
+Cohesion: 0.18
+Nodes (6): ExportBackup(), PrintQueue(), useProductManager(), useToasts(), ProductManager(), SyncSetupPage()
 
 ### Community 94 - "Community 94"
 Cohesion: 0.21
 Nodes (8): LazyInventoryHealthChart(), LazyProductAnalyticsCharts(), LazySalesAnalyticsSection(), DashboardPanelToolbar(), Dashboard(), DashboardTabContent(), useDashboard(), AdminSidebarNotifications()
 
 ### Community 95 - "Community 95"
-Cohesion: 0.47
-Nodes (3): cloudStatusKey(), SettingsCloudPanel(), Settings()
+Cohesion: 0.38
+Nodes (3): ItemizedSalesReportTable(), TransactionLogReportTable(), SaleReceiptActions()
 
 ### Community 96 - "Community 96"
 Cohesion: 0.29
@@ -633,8 +633,8 @@ Cohesion: 0.17
 Nodes (12): Code review (Bugbot), Interpreting scores, Known POS hotspots (full scan), Lint, Pre-commit checklist, Quality & Tooling, React Doctor, Related (+4 more)
 
 ### Community 101 - "Community 101"
-Cohesion: 0.12
-Nodes (16): DashboardPage(), Route, MovementsPage(), Route, CashMovementsTable(), CashMovementType, DashboardTabNav(), TAB_LABEL_KEYS (+8 more)
+Cohesion: 0.09
+Nodes (29): DashboardPage(), Route, DashboardTabNav(), TAB_LABEL_KEYS, DashboardTabContent(), buildEmployeeOverviewFromPosUsers(), employeePerformanceFromSales(), EMPTY_DASHBOARD_TEAM (+21 more)
 
 ### Community 102 - "Community 102"
 Cohesion: 0.18
@@ -663,6 +663,10 @@ Nodes (5): Ensure-Administrator(), Get-SyncSourceCandidates(), Resolve-SyncSourc
 ### Community 108 - "Community 108"
 Cohesion: 0.18
 Nodes (11): Auth (`lib/auth.tsx`), Common edge cases, Dashboard, Dashboard data helpers, Pagination limits, Queries layer (`lib/queries/`), Query cache, Related (+3 more)
+
+### Community 109 - "Community 109"
+Cohesion: 0.33
+Nodes (4): AddProductResult, clampCopies(), copiesFromText(), QueueItem
 
 ### Community 110 - "Community 110"
 Cohesion: 0.20
@@ -697,8 +701,8 @@ Cohesion: 0.67
 Nodes (3): C1. Ejecutar el instalador, C2. Qué instala (referencia), Parte C — Instalar en el PC del cliente
 
 ### Community 118 - "Community 118"
-Cohesion: 0.28
-Nodes (4): CashDrawer(), CashDrawerSummary(), CashMovementsPanel(), PendingMovement
+Cohesion: 0.33
+Nodes (3): shelfLabelBigCols(), shelfLabelTextCols(), wrapShelfLabelText()
 
 ### Community 119 - "Community 119"
 Cohesion: 0.28
@@ -729,8 +733,8 @@ Cohesion: 0.32
 Nodes (5): DashboardTabNav(), TAB_LABEL_KEYS, DASHBOARD_TAB_SEARCH, DASHBOARD_TABS, DashboardTab
 
 ### Community 126 - "Community 126"
-Cohesion: 0.27
-Nodes (10): RelativeTime(), StoreStatusBadge(), StoreStatusDot(), formatRelativeTime(), parseDbTimestamp(), findPresence(), StorePresence, fetchStorePresence() (+2 more)
+Cohesion: 0.12
+Nodes (26): RelativeTime(), Shell(), StoreStatusBadge(), StoreStatusDot(), formatRelativeTime(), parseDbTimestamp(), useStore(), findPresence() (+18 more)
 
 ### Community 127 - "Community 127"
 Cohesion: 0.25
@@ -739,10 +743,6 @@ Nodes (8): Architecture summary, Business goals, Main modules, Monorepo layout, 
 ### Community 128 - "Community 128"
 Cohesion: 0.25
 Nodes (7): background_color, display, icons, name, short_name, start_url, theme_color
-
-### Community 129 - "Community 129"
-Cohesion: 0.22
-Nodes (11): PRESENCE_STALE_MS, prefetchDashboard(), isNavItemActive(), isOperatorPortalPath(), navLinkClass(), OPERATOR_PLATFORM_NAV, OPERATOR_SUPPORT_NAV, OWNER_NAV (+3 more)
 
 ### Community 130 - "Community 130"
 Cohesion: 0.36
@@ -769,12 +769,12 @@ Cohesion: 0.29
 Nodes (6): After making React code changes:, Command, Configuring or explaining rules, /doctor — full local triage workflow, For general cleanup or code improvement:, React Doctor
 
 ### Community 136 - "Community 136"
-Cohesion: 0.17
-Nodes (10): shouldIgnoreShortcutTarget(), shouldSkipGlobalScanTarget(), useDebouncedValue(), useGlobalBarcodeScanner(), useScannerDetector(), AddProductResult, BatchLabelPrintModal(), clampCopies() (+2 more)
+Cohesion: 0.33
+Nodes (6): shouldIgnoreShortcutTarget(), shouldSkipGlobalScanTarget(), useDebouncedValue(), useGlobalBarcodeScanner(), useScannerDetector(), BatchLabelPrintModal()
 
 ### Community 137 - "Community 137"
-Cohesion: 0.22
-Nodes (7): isSuperadminUser(), postLoginPath(), initialLoginFormState, LoginFormAction, LoginFormState, LoginPage(), Route
+Cohesion: 0.16
+Nodes (9): AuthedShell(), Route, NoStoresPage(), useAuth(), initialLoginFormState, LoginFormAction, LoginFormState, LoginPage() (+1 more)
 
 ### Community 138 - "Community 138"
 Cohesion: 0.29
@@ -809,8 +809,8 @@ Cohesion: 0.38
 Nodes (5): decryptDpapi(), encryptDpapi(), PS_DECRYPT, PS_ENCRYPT, runPs()
 
 ### Community 148 - "Community 148"
-Cohesion: 0.20
-Nodes (11): labelLinesForProduct(), shelfLabelBigCols(), shelfLabelTextCols(), wrapShelfLabelText(), resolveLabelPrintLines(), buildProductBarcodeLabelLines(), buildShelfLabelLines(), barcodePrintValue() (+3 more)
+Cohesion: 0.19
+Nodes (20): assignProductBarcode(), isUniqueViolation(), labelLinesForProduct(), MANAGE, printLabelForProduct(), printProductLabel(), productForBarcodePrint(), ProductPrintKind (+12 more)
 
 ### Community 149 - "Community 149"
 Cohesion: 0.29
@@ -908,10 +908,6 @@ Nodes (4): Antes de empezar, En el PC del cliente, En tu PC (tú / soporte), Qu�
 Cohesion: 0.50
 Nodes (4): B1. Estructura recomendada, B2. Contenido sugerido para `LEEME.txt`, B3. Antes de desconectar el USB, Parte B — Preparar la memoria USB
 
-### Community 179 - "Community 179"
-Cohesion: 0.33
-Nodes (5): Shell(), useStore(), useSidebarCollapsed(), OperatorShell(), OwnerShell()
-
 ### Community 180 - "Community 180"
 Cohesion: 0.50
 Nodes (4): Activación en el PC del cliente, Cómo enviar el JWT al cliente, Después de activar, Entregar y activar la licencia
@@ -933,24 +929,24 @@ Cohesion: 0.29
 Nodes (6): ADR-004: Multi-Tenant RLS + Pairing Codes, Alternatives considered, Consequences, Context, Decision, Related
 
 ## Knowledge Gaps
-- **1222 isolated node(s):** `OwnerInviteEmailResult`, `OperatorInviteErrorCode`, `InviteBody`, `AuthCallbackRoute`, `AuthState` (+1217 more)
+- **1222 isolated node(s):** `SetPasswordI18nNamespace`, `PagePhase`, `FormState`, `FormAction`, `initialFormState` (+1217 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **12 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **13 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `t()` connect `Community 11` to `Community 129`, `Community 133`, `Community 6`, `Community 7`, `Community 136`, `Community 137`, `Community 13`, `Community 15`, `Community 18`, `Community 19`, `Community 20`, `Community 21`, `Community 22`, `Community 28`, `Community 29`, `Community 31`, `Community 35`, `Community 39`, `Community 41`, `Community 42`, `Community 43`, `Community 44`, `Community 46`, `Community 49`, `Community 179`, `Community 54`, `Community 184`, `Community 57`, `Community 59`, `Community 64`, `Community 65`, `Community 66`, `Community 69`, `Community 71`, `Community 72`, `Community 73`, `Community 78`, `Community 87`, `Community 88`, `Community 94`, `Community 95`, `Community 101`, `Community 114`, `Community 118`, `Community 124`, `Community 125`, `Community 126`?**
-  _High betweenness centrality (0.196) - this node is a cross-community bridge._
+- **Why does `t()` connect `Community 11` to `Community 129`, `Community 2`, `Community 133`, `Community 6`, `Community 7`, `Community 136`, `Community 137`, `Community 13`, `Community 15`, `Community 18`, `Community 19`, `Community 20`, `Community 21`, `Community 22`, `Community 28`, `Community 29`, `Community 31`, `Community 35`, `Community 41`, `Community 42`, `Community 43`, `Community 44`, `Community 45`, `Community 46`, `Community 49`, `Community 50`, `Community 54`, `Community 184`, `Community 57`, `Community 59`, `Community 64`, `Community 65`, `Community 66`, `Community 71`, `Community 72`, `Community 73`, `Community 87`, `Community 88`, `Community 93`, `Community 94`, `Community 95`, `Community 101`, `Community 114`, `Community 124`, `Community 125`, `Community 126`?**
+  _High betweenness centrality (0.192) - this node is a cross-community bridge._
 - **Why does `useSession()` connect `Community 13` to `Community 73`, `Community 15`?**
-  _High betweenness centrality (0.017) - this node is a cross-community bridge._
-- **Why does `SetPasswordFromAuthCallback()` connect `Community 54` to `Community 66`, `Community 11`, `Community 12`?**
   _High betweenness centrality (0.012) - this node is a cross-community bridge._
+- **Why does `ReportsPageContent()` connect `Community 28` to `Community 11`?**
+  _High betweenness centrality (0.011) - this node is a cross-community bridge._
 - **Are the 190 inferred relationships involving `t()` (e.g. with `AdminCash()` and `AuditLog()`) actually correct?**
   _`t()` has 190 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `OwnerInviteEmailResult`, `OperatorInviteErrorCode`, `InviteBody` to the rest of the system?**
+- **What connects `SetPasswordI18nNamespace`, `PagePhase`, `FormState` to the rest of the system?**
   _1222 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.06662770309760374 - nodes in this community are weakly interconnected._
-- **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.08055152394775036 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06866002214839424 - nodes in this community are weakly interconnected._
+- **Should `Community 2` be split into smaller, more focused modules?**
+  _Cohesion score 0.055944055944055944 - nodes in this community are weakly interconnected._
