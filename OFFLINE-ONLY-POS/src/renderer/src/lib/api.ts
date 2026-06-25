@@ -41,6 +41,7 @@ import type {
   PrinterStatusInfo,
   PriceOverrideAuthorizeInput,
   Product,
+  BatchPrintItem,
   ProductFilters,
   ProductListResult,
   ProductImportPreview,
@@ -141,10 +142,17 @@ export const api = {
       call<ProductImportResult>('products:importEfacturaConfirm', { filePath, stockMode }),
     printLabel: (productId: number, copies = 1) =>
       call<{ printStatus: PrintStatus }>('products:printLabel', { productId, copies }),
-    printLabelBatch: (productIds: number[]) =>
+    printBarcode: (productId: number, copies = 1) =>
+      call<{ printStatus: PrintStatus }>('products:printBarcode', { productId, copies }),
+    printLabelBatch: (items: BatchPrintItem[]) =>
       call<{ printStatus: PrintStatus; printed: number; failed: number; total: number }>(
         'products:printLabelBatch',
-        { productIds },
+        { items },
+      ),
+    printBarcodeBatch: (items: BatchPrintItem[]) =>
+      call<{ printStatus: PrintStatus; printed: number; failed: number; total: number }>(
+        'products:printBarcodeBatch',
+        { items },
       )
   },
   sales: {
@@ -229,7 +237,6 @@ export const api = {
   },
   printer: {
     openDrawer: () => call<null>('printer:openDrawer'),
-    colonTest: () => call<null>('printer:colonTest'),
     status: () => call<PrinterStatusInfo>('printer:status'),
     test: () => call<null>('printer:test')
   },

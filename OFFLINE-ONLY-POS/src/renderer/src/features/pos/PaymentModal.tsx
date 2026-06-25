@@ -48,7 +48,7 @@ export function PaymentModal({
   const toasts = useToasts()
   const queryClient = useQueryClient()
   const { data: settings } = useQuery({ queryKey: ['settings'], queryFn: api.settings.get })
-  const { state, dispatch } = usePaymentModalState(initialMethod)
+  const { state, dispatch } = usePaymentModalState(initialMethod, total)
   const [printReceipt, setPrintReceipt] = useState(true)
   const [invoiceName, setInvoiceName] = useState(customer?.name ?? '')
   const [invoiceCedula, setInvoiceCedula] = useState(customer?.id ?? '')
@@ -153,7 +153,7 @@ export function PaymentModal({
 
   const selectMethod = (method: PaymentMethod): void => {
     if (splitPayment) return
-    dispatch({ type: 'setSingleMethod', value: method })
+    dispatch({ type: 'setSingleMethod', value: method, total })
   }
 
   usePaymentKeyboard({
@@ -173,7 +173,7 @@ export function PaymentModal({
   })
 
   const toggleSplit = (): void => {
-    dispatch({ type: 'toggleSplit', enabled: !splitPayment, initialMethod: singleMethod })
+    dispatch({ type: 'toggleSplit', enabled: !splitPayment, initialMethod: singleMethod, total })
   }
 
   return (

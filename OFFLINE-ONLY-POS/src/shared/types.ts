@@ -61,6 +61,7 @@ export interface AppSettings {
   shortcutCashOut: ActionShortcutKey
   shortcutDrawerAction: ActionShortcutKey
   shortcutPrintLabel: ActionShortcutKey
+  shortcutPrintBarcode: ActionShortcutKey
   shortcutPayCash: ActionShortcutKey
   shortcutPayCard: ActionShortcutKey
   shortcutPaySinpe: ActionShortcutKey
@@ -117,6 +118,11 @@ export interface ProductInput {
   bulkQty: number | null
   bulkPrice: number | null
   facturaNegativo: boolean
+}
+
+export interface BatchPrintItem {
+  productId: number
+  copies?: number
 }
 
 export interface ProductFilters {
@@ -922,6 +928,7 @@ export interface SettingsUpdateInput {
   shortcutCashOut?: ActionShortcutKey
   shortcutDrawerAction?: ActionShortcutKey
   shortcutPrintLabel?: ActionShortcutKey
+  shortcutPrintBarcode?: ActionShortcutKey
   shortcutPayCash?: ActionShortcutKey
   shortcutPayCard?: ActionShortcutKey
   shortcutPaySinpe?: ActionShortcutKey
@@ -990,9 +997,9 @@ export interface AuditUser {
 // --- printing ---
 
 export type PrintLine =
-  | { t: 'text'; v: string; align?: 'lt' | 'ct' | 'rt'; bold?: boolean; big?: boolean; huge?: boolean }
-  | { t: 'row'; l: string; r: string; bold?: boolean }
-  | { t: 'barcode'; v: string; h?: number; w?: number; align?: 'lt' | 'ct' | 'rt' }
+  | { t: 'text'; v: string; align?: 'lt' | 'ct' | 'rt'; bold?: boolean; big?: boolean; huge?: boolean; mega?: boolean }
+  | { t: 'row'; l: string; r: string; bold?: boolean; big?: boolean }
+  | { t: 'barcode'; v: string; h?: number; w?: number; align?: 'lt' | 'ct' | 'rt'; hri?: boolean }
   | { t: 'hr' }
   | { t: 'feed'; n?: number }
 
@@ -1001,6 +1008,9 @@ export interface PrintPayload {
   lines: PrintLine[]
   /** Pulse cash drawer after receipt body (cash sales only). */
   openDrawer?: boolean
+  /** Rebuild lines from product at print time (shelf / barcode labels). */
+  productId?: number
+  labelKind?: 'shelf' | 'barcode'
 }
 
 // --- IPC ---
@@ -1048,7 +1058,9 @@ export const IPC_CHANNELS = [
   'products:importEfacturaPreview',
   'products:importEfacturaConfirm',
   'products:printLabel',
+  'products:printBarcode',
   'products:printLabelBatch',
+  'products:printBarcodeBatch',
   'products:byBarcode',
   'products:search',
   'sales:create',
@@ -1092,7 +1104,6 @@ export const IPC_CHANNELS = [
   'printQueue:list',
   'printQueue:retry',
   'printer:openDrawer',
-  'printer:colonTest',
   'printer:status',
   'printer:test',
   'backup:info',

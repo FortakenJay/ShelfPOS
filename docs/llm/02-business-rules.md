@@ -105,6 +105,25 @@ USB HID scanners type digits rapidly + Enter.
 
 Enter handler reads **live input value** (not stale React state). Numeric fallback tries `byBarcode` when burst detection fails.
 
+## Money display (CRC)
+
+| Surface | Symbol | Helper |
+|---------|--------|--------|
+| Screen UI | **₡** (colón) | `formatColones` in `shared/money.ts` |
+| Thermal print | **¢** (cent, CP850) | `formatColonesPrint` + `encodePrintText` in `printer.ts` |
+
+Receipts include footer `print.receipt.centDisclaimer` explaining ¢ = colón costarricense.
+
+## Product label printing
+
+| Type | Use | Notes |
+|------|-----|-------|
+| Shelf etiqueta | Display stand (name + price) | 20 mm; `products:printLabel` |
+| Barcode sticker | Scan at POS | CODE128; uses barcode or **product id** if no código |
+| Batch | Restock / new inventory | `items[]` with `copies` 1–99; max 200 products |
+
+Not returnable misc lines do not affect label printing.
+
 ## Roles (POS)
 
 | Role | Typical access |

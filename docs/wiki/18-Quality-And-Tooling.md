@@ -37,6 +37,14 @@ Config: `doctor.config.json` in each app (`OFFLINE-ONLY-POS/`, `DASHBOARD/`).
 - Prefer fixing **errors** and high-confidence bugs; many POS warnings are pre-existing (React Compiler, `useProductManager` invalidation patterns).
 - Full triage playbook: `curl https://www.react.doctor/prompts/react-doctor-agent.md` (see `.claude/skills/react-doctor/SKILL.md`).
 
+### v1.6.1 (POS)
+
+| Component | Version |
+|-----------|---------|
+| POS + installer | 1.6.1 |
+| sync-service | 1.6.1 |
+| Dashboard | 1.5.0 |
+
 ### v1.5.0 beta (producción)
 
 | Componente | Versión |

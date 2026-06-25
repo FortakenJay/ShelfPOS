@@ -1,8 +1,8 @@
-import { formatColones } from '../../shared/money'
+import { formatColonesPrint } from '../../shared/money'
 import type { Language } from '../../shared/types'
 
 export function formatMoney(n: number, _lang: Language): string {
-  return formatColones(n)
+  return formatColonesPrint(n)
 }
 
 /** Formats a local 'YYYY-MM-DD[ HH:mm:ss]' string per locale, without Date parsing. */

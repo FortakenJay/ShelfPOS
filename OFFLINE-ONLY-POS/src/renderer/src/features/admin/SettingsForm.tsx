@@ -67,6 +67,7 @@ function commitSavedDraft(
     input.shortcutCashOut !== undefined ||
     input.shortcutDrawerAction !== undefined ||
     input.shortcutPrintLabel !== undefined ||
+    input.shortcutPrintBarcode !== undefined ||
     input.shortcutPayCash !== undefined ||
     input.shortcutPayCard !== undefined ||
     input.shortcutPaySinpe !== undefined
@@ -76,6 +77,7 @@ function commitSavedDraft(
     next.shortcutCashOut = draft.shortcutCashOut
     next.shortcutDrawerAction = draft.shortcutDrawerAction
     next.shortcutPrintLabel = draft.shortcutPrintLabel
+    next.shortcutPrintBarcode = draft.shortcutPrintBarcode
     next.shortcutPayCash = draft.shortcutPayCash
     next.shortcutPayCard = draft.shortcutPayCard
     next.shortcutPaySinpe = draft.shortcutPaySinpe
@@ -145,6 +147,7 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
     draft.shortcutCashOut,
     draft.shortcutDrawerAction,
     draft.shortcutPrintLabel,
+    draft.shortcutPrintBarcode,
     draft.shortcutPayCash,
     draft.shortcutPayCard,
     draft.shortcutPaySinpe
@@ -254,6 +257,7 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
             shortcutCashOut: draft.shortcutCashOut,
             shortcutDrawerAction: draft.shortcutDrawerAction,
             shortcutPrintLabel: draft.shortcutPrintLabel,
+            shortcutPrintBarcode: draft.shortcutPrintBarcode,
             shortcutPayCash: draft.shortcutPayCash,
             shortcutPayCard: draft.shortcutPayCard,
             shortcutPaySinpe: draft.shortcutPaySinpe

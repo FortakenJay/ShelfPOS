@@ -8,6 +8,8 @@ files:
 extraResources:
   - from: public/ShelfPOS.png
     to: ShelfPOS.png
+  - from: public/colon.png
+    to: colon.png
 asarUnpack:
   - '**/node_modules/better-sqlite3/**'
   - '**/node_modules/usb/**'

@@ -89,12 +89,26 @@ export function listProducts(filters: ProductFilters): ProductListResult {
 }
 
 export function searchProducts(query: string, limit = 20): Product[] {
+  const trimmed = query.trim()
   const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 100)
-  return getDb()
+
+  const likeResults = getDb()
     .prepare(
       `${productSelect} WHERE ${ACTIVE_PRODUCT_SQL} AND (name LIKE ? OR barcode LIKE ?) ORDER BY name COLLATE NOCASE LIMIT ?`
     )
-    .all(`%${query}%`, `%${query}%`, safeLimit) as Product[]
+    .all(`%${trimmed}%`, `%${trimmed}%`, safeLimit) as Product[]
+
+  if (/^\d+$/.test(trimmed)) {
+    const id = Number(trimmed)
+    if (Number.isSafeInteger(id) && id > 0) {
+      const exact = getProduct(id)
+      if (exact && !likeResults.some((p) => p.id === exact.id)) {
+        return [exact, ...likeResults].slice(0, safeLimit)
+      }
+    }
+  }
+
+  return likeResults
 }
 
 export function listCategories(): string[] {

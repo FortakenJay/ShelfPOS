@@ -3,7 +3,8 @@ import { useSearch } from '@tanstack/react-router'
 import { eventToShortcutKey, shouldIgnoreShortcutTarget } from '@/lib/shortcuts'
 import { useToasts } from '@/lib/toast'
 import { RequireRole } from '@/features/shell/Shell'
-import type { StockStatus } from '@shared/types'
+import { canPrintProductBarcode } from '@shared/barcode'
+import type { Product, StockStatus } from '@shared/types'
 import { ProductsPagination } from './ProductsPagination'
 import { ProductsTable } from './ProductsTable'
 import { ProductsPageToolbar } from './components/ProductsPageToolbar'
@@ -24,6 +25,11 @@ export function ProductsPage(): React.JSX.Element {
   )
 }
 
+function singleFilteredProduct(items: Product[] | undefined): Product | null {
+  const rows = items ?? []
+  return rows.length === 1 ? rows[0] : null
+}
+
 function ProductManager({
   stock,
   q
@@ -33,38 +39,67 @@ function ProductManager({
 }): React.JSX.Element {
   const pm = useProductManager({ initialStockStatus: stock, initialSearch: q })
   const toasts = useToasts()
+  const printPromptProductId = pm.ui.printPromptProduct?.id
 
   useEffect(() => {
-    const shortcut = pm.settingsData?.shortcutPrintLabel
-    if (!shortcut) return
-    if (pm.ui.formProduct || pm.ui.adjustProduct || pm.ui.deleteProduct || pm.ui.importPreview || pm.ui.batchLabelOpen) return
+    const labelShortcut = pm.settingsData?.shortcutPrintLabel
+    const barcodeShortcut = pm.settingsData?.shortcutPrintBarcode
+    if (!labelShortcut && !barcodeShortcut) return
+    if (pm.ui.formProduct || pm.ui.adjustProduct || pm.ui.deleteProduct || pm.ui.importPreview || pm.ui.batchPrintOpen || pm.ui.printPromptProduct) return
 
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.defaultPrevented) return
       if (shouldIgnoreShortcutTarget(event.target)) return
-      if (eventToShortcutKey(event) !== shortcut) return
-      const rows = pm.productList?.items ?? []
-      if (rows.length !== 1) {
-        toasts.info('products.printLabelSingleHint')
+      const key = eventToShortcutKey(event)
+      if (key !== labelShortcut && key !== barcodeShortcut) return
+
+      const product = singleFilteredProduct(pm.productList?.items)
+      if (!product) {
+        toasts.info(
+          key === barcodeShortcut ? 'products.printBarcodeSingleHint' : 'products.printLabelSingleHint'
+        )
         return
       }
+
+      if (key === barcodeShortcut) {
+        if (!canPrintProductBarcode(product)) {
+          toasts.error('products.batchLabels.noBarcode')
+          return
+        }
+        event.preventDefault()
+        pm.printBarcode.mutate({ productId: product.id, copies: 1 })
+        return
+      }
+
       event.preventDefault()
-      pm.printLabel.mutate({ productId: rows[0].id, copies: 1 })
+      pm.printLabel.mutate({ productId: product.id, copies: 1 })
     }
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [
     pm.productList?.items,
+    pm.printBarcode,
     pm.printLabel,
+    pm.settingsData?.shortcutPrintBarcode,
     pm.settingsData?.shortcutPrintLabel,
     pm.ui.adjustProduct,
     pm.ui.deleteProduct,
     pm.ui.formProduct,
     pm.ui.importPreview,
-    pm.ui.batchLabelOpen,
+    pm.ui.batchPrintOpen,
+    pm.ui.printPromptProduct,
     toasts
   ])
+
+  const printPromptPrintingLabel =
+    pm.printLabel.isPending && pm.printLabel.variables?.productId === printPromptProductId
+  const printPromptPrintingBarcode =
+    pm.printBarcode.isPending && pm.printBarcode.variables?.productId === printPromptProductId
+
+  const closeBatchOnPrintResult = (printed: number): void => {
+    if (printed > 0) pm.setUi((u) => ({ ...u, batchPrintOpen: null }))
+  }
 
   return (
     <div className="p-6">
@@ -81,7 +116,8 @@ function ProductManager({
         onImportCsv={() => pm.importPreviewMutation.mutate()}
         onImportEfactura={() => pm.importEfacturaPreviewMutation.mutate()}
         onNewProduct={() => pm.setUi((u) => ({ ...u, formProduct: 'new' }))}
-        onBatchLabels={() => pm.setUi((u) => ({ ...u, batchLabelOpen: true }))}
+        onBatchLabels={() => pm.setUi((u) => ({ ...u, batchPrintOpen: 'labels' }))}
+        onBatchBarcodes={() => pm.setUi((u) => ({ ...u, batchPrintOpen: 'barcodes' }))}
       />
 
       <ProductsPageFilters
@@ -99,6 +135,7 @@ function ProductManager({
         onQuickAdjust={(productId, delta) => pm.quickAdjust.mutate({ productId, delta })}
         onAdjust={(p) => pm.setUi((u) => ({ ...u, adjustProduct: p }))}
         onPrintLabel={(p) => pm.printLabel.mutate({ productId: p.id, copies: 1 })}
+        onPrintBarcode={(p) => pm.printBarcode.mutate({ productId: p.id, copies: 1 })}
         onEdit={(p) => pm.setUi((u) => ({ ...u, formProduct: p }))}
         onDelete={(p) => pm.setUi((u) => ({ ...u, deleteProduct: p }))}
       />
@@ -131,14 +168,42 @@ function ProductManager({
         }
         onProductsSaved={pm.invalidateProducts}
         batchLabelPrinting={pm.printLabelBatch.isPending}
-        onBatchLabelPrint={(productIds) =>
-          pm.printLabelBatch.mutate(productIds, {
-            onSuccess: (result) => {
-              if (result.printStatus === 'printed') {
-                pm.setUi((u) => ({ ...u, batchLabelOpen: false }))
+        batchBarcodePrinting={pm.printBarcodeBatch.isPending}
+        printPromptPrintingLabel={printPromptPrintingLabel}
+        printPromptPrintingBarcode={printPromptPrintingBarcode}
+        onBatchLabelPrint={(items) =>
+          pm.printLabelBatch.mutate(items, {
+            onSuccess: (result) => closeBatchOnPrintResult(result.printed)
+          })
+        }
+        onBatchBarcodePrint={(items) =>
+          pm.printBarcodeBatch.mutate(items, {
+            onSuccess: (result) => closeBatchOnPrintResult(result.printed)
+          })
+        }
+        onPrintPromptLabel={(productId) =>
+          pm.printLabel.mutate(
+            { productId, copies: 1 },
+            {
+              onSuccess: ({ printStatus }) => {
+                if (printStatus === 'printed') {
+                  pm.setUi((u) => ({ ...u, printPromptProduct: null }))
+                }
               }
             }
-          })
+          )
+        }
+        onPrintPromptBarcode={(productId) =>
+          pm.printBarcode.mutate(
+            { productId, copies: 1 },
+            {
+              onSuccess: ({ printStatus }) => {
+                if (printStatus === 'printed') {
+                  pm.setUi((u) => ({ ...u, printPromptProduct: null }))
+                }
+              }
+            }
+          )
         }
       />
     </div>

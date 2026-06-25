@@ -60,6 +60,32 @@ Scanners emulate a keyboard: rapid digits + Enter. Detection lives in:
 
 Optional **`stock_provider`** (v20) — free-text supplier label (e.g. Walmart). Filter on Products page; `products:stockProviders` returns distinct values. Synced to Supabase; CSV import leaves provider null on new rows.
 
+### Product label printing (thermal)
+
+Two separate print actions on **Productos** (`product_manager` / `admin`). Both use the configured label printer via `print_jobs` + ESC/POS (`insertPrintJob('label', …)`). All thermal money uses **¢** (CP850); on-screen prices use **₡**.
+
+| UI (ES) | IPC | Template | Content | Use |
+|---------|-----|----------|---------|-----|
+| **Imprimir etiqueta** | `products:printLabel` | `buildShelfLabelLines` | **20 mm** label: CODE128 + spaced código (when printable), **bold big** name, **bold huge** price | Display stand / shelf |
+| **Imprimir código de barras** | `products:printBarcode` | `buildProductBarcodeLabelLines` | Large CODE128 (h=100, w=3) with **digits under bars** (HRI) | Sticker on the product |
+
+**Barcode value:** `barcodePrintValue()` in `shared/barcode.ts` — printable `products.barcode` or numeric `product.id`. First barcode print without código assigns id to DB (`productForBarcodePrint` in `products.ts` IPC) so POS scan works.
+
+**Batch modals** (toolbar):
+
+| Button | Mode | IPC |
+|--------|------|-----|
+| **Etiquetas en lote** | `labels` | `products:printLabelBatch` |
+| **Códigos de barras en lote** | `barcodes` | `products:printBarcodeBatch` |
+
+`BatchLabelPrintModal`: POS-style debounced search + scanner (same burst pattern as caja), draggable results list, queue table with per-row copies. Payload: `{ items: { productId, copies? }[] }` — max **200** products, **1–99** copies each (`MAX_LABEL_COPIES` in `shared/printLimits.ts`). Ambiguous search → toast + pick from dropdown. Re-adding same product merges copies.
+
+After **create product**, `ProductLabelPrintPromptModal` offers both prints (+ **Después**). Keyboard shortcuts (Settings → **Atajos**): **Imprimir etiqueta de producto** (default F6) and **Imprimir código de barras de producto** (default F11) — each prints when exactly one product is visible in the filtered list.
+
+Shelf etiqueta targets **20 mm** height (half of 40 mm stock). Override label width with `SHELFPOS_LABEL_WIDTH_MM` (default 58). Audit: `product_label_printed` / `product_barcode_printed`.
+
+**Code:** `features/products/` (`ProductsTable`, `BatchLabelPrintModal`, `ProductLabelPrintPromptModal`, `useProductManager`), `main/ipc/products.ts`, `main/services/printTemplates.ts`, `shared/barcode.ts`, `shared/printLimits.ts`, `shared/money.ts`.
+
 ## Locales
 
 `src/shared/locales/es.json`, `zh-CN.json` — shared with main for error keys.

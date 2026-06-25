@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, ApiError } from '@/lib/api'
 import { useToasts } from '@/lib/toast'
 import { useDebouncedValue } from '@/lib/useScanner'
-import type { Product, ProductImportError, ProductImportPreview, ProductImportStockMode, StockStatus } from '@shared/types'
+import type { BatchPrintItem, Product, ProductImportError, ProductImportPreview, ProductImportStockMode, StockStatus } from '@shared/types'
 
 export type ProductManagerUiState = {
   formProduct: Product | null | 'new'
@@ -13,7 +13,8 @@ export type ProductManagerUiState = {
   csvHelpOpen: boolean
   importPreview: ProductImportPreview | null
   importFormat: 'csv' | 'efactura'
-  batchLabelOpen: boolean
+  batchPrintOpen: 'labels' | 'barcodes' | null
+  printPromptProduct: Product | null
 }
 
 export type ProductFiltersState = {
@@ -44,7 +45,8 @@ export function useProductManager(options?: {
     csvHelpOpen: false,
     importPreview: null,
     importFormat: 'csv',
-    batchLabelOpen: false
+    batchPrintOpen: null,
+    printPromptProduct: null
   })
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(50)
@@ -194,13 +196,39 @@ export function useProductManager(options?: {
     onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
   })
 
+  const printBarcode = useMutation({
+    mutationFn: (input: { productId: number; copies?: number }) =>
+      api.products.printBarcode(input.productId, input.copies ?? 1),
+    onSuccess: ({ printStatus }) => {
+      if (printStatus === 'printed') toasts.success('products.barcodePrinted')
+      else toasts.error('pos.printFailed')
+      void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
+    },
+    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+  })
+
   const printLabelBatch = useMutation({
-    mutationFn: (productIds: number[]) => api.products.printLabelBatch(productIds),
+    mutationFn: (items: BatchPrintItem[]) => api.products.printLabelBatch(items),
     onSuccess: ({ printStatus, printed, failed, total }) => {
       if (printStatus === 'printed') {
         toasts.success('products.batchLabels.printed', { count: printed })
       } else if (printed > 0) {
         toasts.info('products.batchLabels.partial', { printed, failed, total })
+      } else {
+        toasts.error('pos.printFailed')
+      }
+      void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
+    },
+    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+  })
+
+  const printBarcodeBatch = useMutation({
+    mutationFn: (items: BatchPrintItem[]) => api.products.printBarcodeBatch(items),
+    onSuccess: ({ printStatus, printed, failed, total }) => {
+      if (printStatus === 'printed') {
+        toasts.success('products.batchLabels.barcodesPrinted', { count: printed })
+      } else if (printed > 0) {
+        toasts.info('products.batchLabels.barcodesPartial', { printed, failed, total })
       } else {
         toasts.error('pos.printFailed')
       }
@@ -240,7 +268,9 @@ export function useProductManager(options?: {
     exportTemplate,
     exportProducts,
     printLabel,
+    printBarcode,
     printLabelBatch,
+    printBarcodeBatch,
     importPreviewMutation,
     importEfacturaPreviewMutation,
     importConfirmMutation,

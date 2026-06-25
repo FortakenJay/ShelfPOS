@@ -232,7 +232,7 @@ In **`app_metadata`**, not `user_metadata`. See [[04-Multi-Tenant-Security]].
 
 **Typical version bump:** customer runs `Setup.exe`; you run `Install-ShelfPOS` from the new release ZIP only if `sync-service` changed.
 
-**Release notes:** `OFFLINE-ONLY-POS/RELEASE_NOTES.md` (current: **v1.5.0** — beta producción).
+**Release notes:** `OFFLINE-ONLY-POS/RELEASE_NOTES.md` (current: **v1.6.1**).
 
 **Config only** (URL, key, pairing code): POS **Vincular con el panel** (`/sync-setup`) or edit `%APPDATA%\shelfpos\sync.env` → `Restart-Service ShelfPOSSync`.
 

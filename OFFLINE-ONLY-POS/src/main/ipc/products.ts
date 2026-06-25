@@ -21,9 +21,13 @@ import { session } from '../services/session'
 import { writeAudit } from '../db/repos/audit'
 import { buildCsv } from '../services/csv'
 import { PRODUCT_CSV_KEYS, productCsvHeaders } from '../services/csvColumns'
-import { buildShelfLabelLines } from '../services/printTemplates'
+import { buildProductBarcodeLabelLines, buildShelfLabelLines } from '../services/printTemplates'
+import { labelPrintPayload } from '../services/labelPrintLines'
+import type { PrintLine } from '../../shared/types'
 import { insertPrintJob } from '../db/repos/printJobs'
-import { attemptPrintJob, probePrinter, isPrintableCode128Barcode } from '../services/printer'
+import { attemptPrintJob, probePrinter } from '../services/printer'
+import { barcodePrintValue, isPrintableCode128Barcode } from '../../shared/barcode'
+import { MAX_LABEL_COPIES } from '../../shared/printLimits'
 import {
   applyProductImport,
   buildProductImportPreview,
@@ -44,11 +48,99 @@ import type {
 } from '../../shared/types'
 
 const MANAGE: ('product_manager' | 'admin')[] = ['product_manager', 'admin']
-const MAX_LABEL_COPIES = 20
 const MAX_BATCH_LABEL_PRODUCTS = 200
+
+function normalizeBatchPrintItems(
+  items: { productId: number; copies?: number }[]
+): { productId: number; copies: number }[] {
+  const seen = new Set<number>()
+  const normalized: { productId: number; copies: number }[] = []
+  for (const raw of items) {
+    const productId = Math.trunc(raw.productId)
+    if (productId <= 0 || seen.has(productId)) continue
+    seen.add(productId)
+    normalized.push({
+      productId,
+      copies: Math.max(1, Math.min(MAX_LABEL_COPIES, Math.trunc(raw.copies ?? 1))),
+    })
+  }
+  return normalized
+}
 
 function isUniqueViolation(err: unknown): boolean {
   return err instanceof Error && err.message.includes('UNIQUE constraint failed')
+}
+
+type ProductPrintKind = 'shelf' | 'barcode'
+
+function assignProductBarcode(productId: number, barcode: string): Product {
+  const db = getDb()
+  const now = localNow()
+  try {
+    db.prepare('UPDATE products SET barcode = ?, updated_at = ? WHERE id = ?').run(barcode, now, productId)
+  } catch (err) {
+    if (isUniqueViolation(err)) throw new AppError('errors.barcodeExists')
+    throw err
+  }
+  enqueueProductSync(productId, 'update', db)
+  const product = getProduct(productId)
+  if (!product) throw new AppError('errors.productNotFound')
+  return product
+}
+
+/** Assign numeric id as barcode when missing so printed stickers scan at POS. */
+function productForBarcodePrint(productId: number): Product {
+  const product = getProduct(productId)
+  if (!product) throw new AppError('errors.productNotFound')
+  const cleaned = product.barcode.replace(/[^\x20-\x7e]/g, '').trim()
+  if (cleaned && isPrintableCode128Barcode(cleaned)) return product
+  return assignProductBarcode(productId, barcodePrintValue(product))
+}
+
+function labelLinesForProduct(
+  product: Product,
+  kind: ProductPrintKind,
+  lang: ReturnType<typeof receiptLanguage>,
+): PrintLine[] {
+  if (kind === 'barcode') {
+    return buildProductBarcodeLabelLines({ barcode: barcodePrintValue(product) }, lang)
+  }
+  return buildShelfLabelLines(
+    { productName: product.name, price: product.price, barcode: product.barcode },
+    lang
+  )
+}
+
+async function printProductLabel(
+  productId: number,
+  copies: number,
+  lang: ReturnType<typeof receiptLanguage>,
+  kind: ProductPrintKind,
+): Promise<{ printStatus: PrintStatus; printedCopies: number }> {
+  const product = getProduct(productId)
+  if (!product) throw new AppError('errors.productNotFound')
+  const productForPrint = kind === 'barcode' ? productForBarcodePrint(productId) : product
+  if (kind !== 'barcode' && !productForPrint.name.trim()) {
+    throw new AppError('errors.invalidInput')
+  }
+
+  const labelCopies = Math.max(1, Math.min(MAX_LABEL_COPIES, Math.trunc(copies)))
+  let printStatus: PrintStatus = 'printed'
+  let printedCopies = 0
+  const lines = labelLinesForProduct(productForPrint, kind, lang)
+  for (let i = 0; i < labelCopies; i++) {
+    const printJobId = insertPrintJob('label', null, labelPrintPayload(productId, kind, lang, lines))
+    if ((await attemptPrintJob(printJobId)) === 'printed') printedCopies++
+    else printStatus = 'failed'
+  }
+  if (printedCopies > 0) {
+    writeAudit(kind === 'barcode' ? 'product_barcode_printed' : 'product_label_printed', {
+      entity: 'product',
+      entityId: productId,
+      detail: `${product.name} x${printedCopies}`,
+    })
+  }
+  return { printStatus, printedCopies }
 }
 
 async function printLabelForProduct(
@@ -56,37 +148,7 @@ async function printLabelForProduct(
   copies: number,
   lang: ReturnType<typeof receiptLanguage>,
 ): Promise<{ printStatus: PrintStatus; printedCopies: number }> {
-  const product = getProduct(productId)
-  if (!product) throw new AppError('errors.productNotFound')
-  if (!product.barcode.trim()) throw new AppError('errors.invalidInput')
-  if (!isPrintableCode128Barcode(product.barcode)) throw new AppError('errors.invalidInput')
-
-  const labelCopies = Math.max(1, Math.min(MAX_LABEL_COPIES, Math.trunc(copies)))
-  let printStatus: PrintStatus = 'printed'
-  let printedCopies = 0
-  for (let i = 0; i < labelCopies; i++) {
-    const printJobId = insertPrintJob('label', null, {
-      lang,
-      lines: buildShelfLabelLines(
-        {
-          productName: product.name,
-          price: product.price,
-          barcode: product.barcode,
-        },
-        lang,
-      ),
-    })
-    if ((await attemptPrintJob(printJobId)) === 'printed') printedCopies++
-    else printStatus = 'failed'
-  }
-  if (printedCopies > 0) {
-    writeAudit('product_label_printed', {
-      entity: 'product',
-      entityId: productId,
-      detail: `${product.name} x${printedCopies}`,
-    })
-  }
-  return { printStatus, printedCopies }
+  return printProductLabel(productId, copies, lang, 'shelf')
 }
 
 export function registerProductHandlers(): void {
@@ -117,20 +179,23 @@ export function registerProductHandlers(): void {
     },
   )
 
+  handle<{ productId: number; copies?: number }, { printStatus: PrintStatus }>(
+    'products:printBarcode',
+    MANAGE,
+    async ({ productId, copies }) => {
+      await probePrinter()
+      const lang = receiptLanguage()
+      const { printStatus } = await printProductLabel(productId, copies ?? 1, lang, 'barcode')
+      return { printStatus }
+    },
+  )
+
   handle<
-    { productIds: number[] },
+    { items: { productId: number; copies?: number }[] },
     { printStatus: PrintStatus; printed: number; failed: number; total: number }
-  >('products:printLabelBatch', MANAGE, async ({ productIds }) => {
-    const seen = new Set<number>()
-    const ids: number[] = []
-    for (const raw of productIds) {
-      const id = Math.trunc(raw)
-      if (id > 0 && !seen.has(id)) {
-        seen.add(id)
-        ids.push(id)
-      }
-    }
-    if (ids.length === 0 || ids.length > MAX_BATCH_LABEL_PRODUCTS) {
+  >('products:printLabelBatch', MANAGE, async ({ items }) => {
+    const normalized = normalizeBatchPrintItems(items)
+    if (normalized.length === 0 || normalized.length > MAX_BATCH_LABEL_PRODUCTS) {
       throw new AppError('errors.invalidInput')
     }
 
@@ -139,9 +204,9 @@ export function registerProductHandlers(): void {
     let printed = 0
     let failed = 0
 
-    for (const productId of ids) {
+    for (const { productId, copies } of normalized) {
       try {
-        const result = await printLabelForProduct(productId, 1, lang)
+        const result = await printLabelForProduct(productId, copies, lang)
         if (result.printStatus === 'printed') printed++
         else failed++
       } catch {
@@ -153,7 +218,39 @@ export function registerProductHandlers(): void {
       printStatus: failed === 0 ? 'printed' : 'failed',
       printed,
       failed,
-      total: ids.length,
+      total: normalized.length,
+    }
+  })
+
+  handle<
+    { items: { productId: number; copies?: number }[] },
+    { printStatus: PrintStatus; printed: number; failed: number; total: number }
+  >('products:printBarcodeBatch', MANAGE, async ({ items }) => {
+    const normalized = normalizeBatchPrintItems(items)
+    if (normalized.length === 0 || normalized.length > MAX_BATCH_LABEL_PRODUCTS) {
+      throw new AppError('errors.invalidInput')
+    }
+
+    await probePrinter()
+    const lang = receiptLanguage()
+    let printed = 0
+    let failed = 0
+
+    for (const { productId, copies } of normalized) {
+      try {
+        const result = await printProductLabel(productId, copies, lang, 'barcode')
+        if (result.printStatus === 'printed') printed++
+        else failed++
+      } catch {
+        failed++
+      }
+    }
+
+    return {
+      printStatus: failed === 0 ? 'printed' : 'failed',
+      printed,
+      failed,
+      total: normalized.length,
     }
   })
 

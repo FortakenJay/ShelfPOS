@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { IpcChannel } from '../types'
+import { MAX_LABEL_COPIES } from '../printLimits'
 import {
   actionShortcutKeySchema,
   barcodeSchema,
@@ -184,6 +185,7 @@ const settingsUpdateInputSchema = z.strictObject({
   shortcutCashOut: actionShortcutKeySchema.optional(),
   shortcutDrawerAction: actionShortcutKeySchema.optional(),
   shortcutPrintLabel: actionShortcutKeySchema.optional(),
+  shortcutPrintBarcode: actionShortcutKeySchema.optional(),
   shortcutPayCash: actionShortcutKeySchema.optional(),
   shortcutPayCard: actionShortcutKeySchema.optional(),
   shortcutPaySinpe: actionShortcutKeySchema.optional()
@@ -282,10 +284,33 @@ export const IPC_SCHEMAS = {
   }),
   'products:printLabel': z.strictObject({
     productId: positiveIdSchema,
-    copies: z.number().int().min(1).max(20).optional()
+    copies: z.number().int().min(1).max(MAX_LABEL_COPIES).optional()
+  }),
+  'products:printBarcode': z.strictObject({
+    productId: positiveIdSchema,
+    copies: z.number().int().min(1).max(MAX_LABEL_COPIES).optional()
   }),
   'products:printLabelBatch': z.strictObject({
-    productIds: z.array(positiveIdSchema).min(1).max(200)
+    items: z
+      .array(
+        z.strictObject({
+          productId: positiveIdSchema,
+          copies: z.number().int().min(1).max(MAX_LABEL_COPIES).optional()
+        })
+      )
+      .min(1)
+      .max(200)
+  }),
+  'products:printBarcodeBatch': z.strictObject({
+    items: z
+      .array(
+        z.strictObject({
+          productId: positiveIdSchema,
+          copies: z.number().int().min(1).max(MAX_LABEL_COPIES).optional()
+        })
+      )
+      .min(1)
+      .max(200)
   }),
   'products:byBarcode': z.strictObject({ barcode: barcodeSchema }),
   'products:search': z.strictObject({ query: z.string().trim().max(100) }),
@@ -355,7 +380,6 @@ export const IPC_SCHEMAS = {
   'printQueue:list': printQueueListInputSchema,
   'printQueue:retry': z.strictObject({ id: positiveIdSchema }),
   'printer:openDrawer': voidInput,
-  'printer:colonTest': voidInput,
   'printer:status': voidInput,
   'printer:test': voidInput,
   'backup:info': voidInput,

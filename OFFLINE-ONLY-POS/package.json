@@ -1,6 +1,6 @@
 {
   "name": "shelfpos",
-  "version": "1.5.0",
+  "version": "1.6.1",
   "description": "Offline retail POS system (Electron) for small shops in Costa Rica",
   "main": "./out/main/index.js",
   "author": "ShelfPOS",

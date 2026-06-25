@@ -10,6 +10,7 @@ import { AppError } from '../errors'
 import { getPrintJob, listPendingPrintJobIds, markPrintJob } from '../db/repos/printJobs'
 import type { Language, PrintLine, PrintPayload, PrintStatus, PrinterStatusInfo } from '../../shared/types'
 import { isPrintableCode128Barcode } from '../../shared/barcode'
+import { resolveLabelPrintLines } from './labelPrintLines'
 
 const execFileAsync = promisify(execFile)
 
@@ -33,7 +34,20 @@ const LINE_WIDTH = Number(process.env.SHELFPOS_LINE_WIDTH) || 48
 let resolvedPrinterName: string | null = null
 let printerReady = false
 
+/** One physical printer — serialize all RAW jobs (receipt + label + drawer). */
+let printerQueue: Promise<void> = Promise.resolve()
+
+function enqueuePrinterTask<T>(task: () => Promise<T>): Promise<T> {
+  const result = printerQueue.then(task)
+  printerQueue = result.then(
+    () => undefined,
+    () => undefined
+  )
+  return result
+}
+
 const PROBE_TIMEOUT_MS = 5_000
+const INTER_JOB_DELAY_MS = 0
 
 let lastPrinterDetails: Pick<PrinterStatusInfo, 'driver' | 'datatype' | 'port'> = {
   driver: null,
@@ -198,10 +212,20 @@ function visualLen(s: string): number {
   return len
 }
 
-function padRow(left: string, right: string): string {
-  const space = LINE_WIDTH - visualLen(left) - visualLen(right)
-  if (space < 1) return `${left}\n${' '.repeat(Math.max(0, LINE_WIDTH - visualLen(right)))}${right}`
-  return `${left}${' '.repeat(space)}${right}`
+
+function compactMoneyText(part: string): string {
+  return part.replace(/[₡¢]\s*([\d\s]+)/g, (_, digits: string) => `¢${digits.replace(/\s/g, '')}`)
+}
+
+function padRow(left: string, right: string, cols = LINE_WIDTH): string {
+  const l = compactMoneyText(left)
+  const r = compactMoneyText(right)
+  // ¢ prints as one column — must count it in width or amounts clip off the right.
+  const leftVis = visualLen(l)
+  const rightVis = visualLen(r)
+  const space = cols - leftVis - rightVis
+  if (space < 1) return `${l}\n${' '.repeat(Math.max(0, cols - rightVis))}${r}`
+  return `${l}${' '.repeat(space)}${r}`
 }
 
 // --- ESC/POS command bytes ---
@@ -209,72 +233,18 @@ const ESC = 0x1b
 const GS = 0x1d
 const INIT = [ESC, 0x40] // ESC @ — reset
 const CODEPAGE_PC850 = [ESC, 0x74, 0x02] // ESC t 2
-const CODEPAGE_PC437 = [ESC, 0x74, 0x00] // ESC t 0
-const BARCODE_CODE128 = 0x49 // GS k 73
+const BARCODE_CODE128 = 0x49 // GS k 73 — CODE128 subset B via `{B` prefix
 const align = (a: 'lt' | 'ct' | 'rt'): number[] => [ESC, 0x61, a === 'ct' ? 1 : a === 'rt' ? 2 : 0]
 const bold = (on: boolean): number[] => [ESC, 0x45, on ? 1 : 0]
 const size = (big: boolean): number[] => [GS, 0x21, big ? 0x11 : 0x00] // double width+height
 /** 3× width and height (shelf label price). */
 const sizeHuge = (): number[] => [GS, 0x21, 0x22]
+/** 4× width and height (shelf label name — 2× the old `big` size). */
+const sizeMega = (): number[] => [GS, 0x21, 0x33]
 const FEED = (n: number): number[] => [ESC, 0x64, n] // ESC d n
 const PARTIAL_CUT = [GS, 0x56, 0x42, 0x00] // GS V 66 0 — feed + partial cut
 const OPEN_CASH_DRAWER = [ESC, 0x70, 0x00, 0x19, 0xfa] // ESC p 0 25 250
 const LF = 0x0a
-
-/** 24×12 dot pattern for Costa Rican colón (Font A, ESC & y=3). */
-const COLON_SIGN_MATRIX = [
-  '000111110000',
-  '001000001000',
-  '010000000100',
-  '010000000100',
-  '100000000010',
-  '100000000010',
-  '100000000010',
-  '111111000010',
-  '100000000010',
-  '100000000010',
-  '111111000010',
-  '100000000010',
-  '100000000010',
-  '010000000100',
-  '010000000100',
-  '001000001000',
-  '000111110000',
-  '000000000000',
-  '000000000000',
-  '000000000000',
-  '000000000000',
-  '000000000000',
-  '000000000000',
-  '000000000000'
-] as const
-
-/** Slot for the user-defined colón glyph (CP850 ~). Avoid ~ in product names. */
-const COLON_GLYPH_CHAR = 0x7e
-const COLON_GLYPH = String.fromCharCode(COLON_GLYPH_CHAR)
-
-function matrixToUserDefinedChar(charCode: number, rows: readonly string[]): Buffer {
-  const width = rows[0]?.length ?? 12
-  const height = rows.length
-  const y = 3
-  const columns: number[] = []
-  for (let col = 0; col < width; col++) {
-    const colBytes = [0, 0, 0]
-    for (let row = 0; row < height; row++) {
-      if (rows[row]?.[col] === '1') {
-        const byteIdx = Math.floor(row / 8)
-        const bitIdx = 7 - (row % 8)
-        colBytes[byteIdx] |= 1 << bitIdx
-      }
-    }
-    columns.push(...colBytes)
-  }
-  return Buffer.from([ESC, 0x26, y, charCode, charCode, width, ...columns])
-}
-
-const DEFINE_COLON_GLYPH = matrixToUserDefinedChar(COLON_GLYPH_CHAR, COLON_SIGN_MATRIX)
-const SELECT_USER_CHARS = [ESC, 0x25, 1] as const
-const CANCEL_USER_CHARS = [ESC, 0x25, 0] as const
 
 /** Unicode arrows/dashes that CP850 cannot render → ASCII. */
 function replacePrintArrows(s: string): string {
@@ -289,20 +259,10 @@ function normalizePrintSpaces(s: string): string {
   return s.replace(/[\u00A0\u202F]/g, ' ')
 }
 
-/** CP850 has no colón sign — sanitize for Spanish receipt printing. */
-function sanitizeForCp850(s: string): string {
-  return replacePrintArrows(normalizePrintSpaces(s)).replace(/₡/g, 'C')
-}
-
-/** Shelf labels: ₡ → user-defined colón glyph; arrows → ASCII. */
-function encodeLabelText(s: string): Buffer {
-  const text = replacePrintArrows(normalizePrintSpaces(s)).replace(/₡/g, COLON_GLYPH)
-  return iconv.encode(text, 'cp850')
-}
-
-function encodeText(s: string, label = false): Buffer {
-  if (label) return encodeLabelText(s)
-  return iconv.encode(sanitizeForCp850(s), 'cp850')
+/** CP850 cent (¢); legacy ₡ in templates is normalized before encode. */
+function encodePrintText(s: string): Buffer {
+  const normalized = replacePrintArrows(normalizePrintSpaces(s)).replace(/₡/g, '¢')
+  return iconv.encode(normalized, 'cp850')
 }
 
 function barcodeDataCode128(value: string): Buffer | null {
@@ -317,22 +277,18 @@ function barcodeDataCode128(value: string): Buffer | null {
 export { isPrintableCode128Barcode }
 
 /** Renders the abstract print lines into a raw ESC/POS byte stream (Spanish / CP850). */
-function toEscPos(lines: PrintLine[], options?: { openDrawer?: boolean; label?: boolean }): Buffer {
+function toEscPos(
+  lines: PrintLine[],
+  options?: { openDrawer?: boolean; label?: boolean }
+): Buffer {
   const isLabel = options?.label === true
   const chunks: Buffer[] = []
   const cmd = (...bytes: number[]): void => {
     chunks.push(Buffer.from(bytes))
   }
-  const write = (s: string): void => {
-    chunks.push(encodeText(s, isLabel))
-  }
 
   cmd(...INIT)
   cmd(...CODEPAGE_PC850)
-  if (isLabel) {
-    chunks.push(DEFINE_COLON_GLYPH)
-    cmd(...SELECT_USER_CHARS)
-  }
 
   for (const line of lines) {
     switch (line.t) {
@@ -341,18 +297,22 @@ function toEscPos(lines: PrintLine[], options?: { openDrawer?: boolean; label?: 
         break
       case 'hr':
         cmd(...align('lt'), ...bold(false), ...size(false))
-        write('-'.repeat(LINE_WIDTH))
+        chunks.push(encodePrintText('-'.repeat(LINE_WIDTH)))
         cmd(LF)
         break
-      case 'row':
-        cmd(...align('lt'), ...bold(!!line.bold), ...size(false))
-        write(padRow(line.l, line.r))
-        cmd(LF, ...bold(false))
+      case 'row': {
+        const big = !!line.big
+        const cols = big ? Math.floor(LINE_WIDTH / 2) : LINE_WIDTH
+        const padded = padRow(compactMoneyText(line.l), compactMoneyText(line.r), cols)
+        cmd(...align('lt'), ...bold(!!line.bold), ...size(big))
+        chunks.push(encodePrintText(padded))
+        cmd(LF, ...size(false), ...bold(false))
         break
+      }
       case 'text': {
-        const scale = line.huge ? sizeHuge() : size(!!line.big)
-        cmd(...align(line.align ?? 'lt'), ...bold(!!line.bold), ...scale)
-        write(line.v)
+        const scaleCmd = line.mega ? sizeMega() : line.huge ? sizeHuge() : size(!!line.big)
+        cmd(...align(line.align ?? 'lt'), ...bold(!!line.bold), ...scaleCmd)
+        chunks.push(encodePrintText(line.v))
         cmd(LF, ...size(false), ...bold(false))
         break
       }
@@ -362,7 +322,7 @@ function toEscPos(lines: PrintLine[], options?: { openDrawer?: boolean; label?: 
         const height = Math.max(24, Math.min(255, line.h ?? (isLabel ? 24 : 40)))
         const width = Math.max(2, Math.min(6, line.w ?? 2))
         cmd(...align(line.align ?? 'ct'))
-        cmd(GS, 0x48, 0x00) // HRI off
+        cmd(GS, 0x48, line.hri ? 2 : 0) // HRI below when requested (standard retail barcode)
         cmd(GS, 0x68, height)
         cmd(GS, 0x77, width)
         cmd(GS, 0x6b, BARCODE_CODE128, data.length)
@@ -375,9 +335,6 @@ function toEscPos(lines: PrintLine[], options?: { openDrawer?: boolean; label?: 
 
   if (options?.openDrawer) {
     cmd(...OPEN_CASH_DRAWER)
-  }
-  if (isLabel) {
-    cmd(...CANCEL_USER_CHARS)
   }
   cmd(...align('lt'), ...FEED(isLabel ? 1 : 4), ...PARTIAL_CUT)
   return Buffer.concat(chunks)
@@ -448,7 +405,9 @@ namespace ShelfPos {
   }
 }
 '@
-Add-Type -TypeDefinition $src -Language CSharp
+if (-not ('ShelfPos.RawPrinter' -as [type])) {
+  Add-Type -TypeDefinition $src -Language CSharp
+}
 $info = Get-Printer -Name $Printer
 $errors = [System.Collections.Generic.List[string]]::new()
 try {
@@ -482,38 +441,41 @@ async function getRawPrintScriptPath(): Promise<string> {
 }
 
 async function sendRawToPrinter(data: Buffer, printerName: string): Promise<void> {
-  const dir = join(tmpdir(), `shelfpos-print-${randomUUID()}`)
-  const binPath = join(dir, 'job.bin')
-  await mkdir(dir, { recursive: true })
-  try {
-    await writeFile(binPath, data)
-    const scriptPath = await getRawPrintScriptPath()
-    await execFileAsync('powershell.exe', [
-      '-NoProfile',
-      '-NonInteractive',
-      '-ExecutionPolicy',
-      'Bypass',
-      '-File',
-      scriptPath,
-      '-Printer',
-      printerName,
-      '-Path',
-      binPath
-    ])
-  } catch (err) {
-    const execErr = err as NodeJS.ErrnoException & { stderr?: string; stdout?: string }
-    const detail = [
-      execErr.message,
-      execErr.stderr?.toString().trim(),
-      execErr.stdout?.toString().trim()
-    ]
-      .filter(Boolean)
-      .join(' | ')
-    console.error(`[printer] raw send failed (${printerName}):`, detail)
-    throw new AppError('errors.printerNotFound', { name: 'RawPrint' })
-  } finally {
-    await rm(dir, { recursive: true, force: true })
-  }
+  return enqueuePrinterTask(async () => {
+    const dir = join(tmpdir(), `shelfpos-print-${randomUUID()}`)
+    const binPath = join(dir, 'job.bin')
+    await mkdir(dir, { recursive: true })
+    try {
+      await writeFile(binPath, data)
+      const scriptPath = await getRawPrintScriptPath()
+      await execFileAsync('powershell.exe', [
+        '-NoProfile',
+        '-NonInteractive',
+        '-ExecutionPolicy',
+        'Bypass',
+        '-File',
+        scriptPath,
+        '-Printer',
+        printerName,
+        '-Path',
+        binPath
+      ])
+    } catch (err) {
+      const execErr = err as NodeJS.ErrnoException & { stderr?: string; stdout?: string }
+      const detail = [
+        execErr.message,
+        execErr.stderr?.toString().trim(),
+        execErr.stdout?.toString().trim()
+      ]
+        .filter(Boolean)
+        .join(' | ')
+      console.error(`[printer] raw send failed (${printerName}):`, detail)
+      throw new AppError('errors.printerNotFound', { name: 'RawPrint' })
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+      await new Promise((resolve) => setTimeout(resolve, INTER_JOB_DELAY_MS))
+    }
+  })
 }
 
 export async function printLines(
@@ -543,85 +505,29 @@ export async function tryOpenCashDrawer(): Promise<void> {
   }
 }
 
-type TestStripWriter = {
-  chunks: Buffer[]
-  cmd: (...bytes: number[]) => void
-  cp850: (s: string) => Buffer
-}
-
-function appendColonTestStrip(
-  w: TestStripWriter,
-  n: number,
-  desc: string,
-  codepage: readonly number[],
-  priceLine: Buffer,
-  opts?: { userGlyphs?: boolean; cancelGlyphs?: boolean }
-): void {
-  w.cmd(...INIT, ...codepage)
-  if (opts?.userGlyphs) w.chunks.push(DEFINE_COLON_GLYPH)
-  if (opts?.userGlyphs) w.cmd(...SELECT_USER_CHARS)
-  w.cmd(...align('ct'), ...bold(true))
-  w.chunks.push(w.cp850(`PRUEBA ${n}`))
-  w.cmd(LF, ...bold(false), ...align('ct'))
-  w.chunks.push(w.cp850(desc))
-  w.cmd(LF, ...align('ct'), ...bold(true), ...size(true))
-  w.chunks.push(priceLine)
-  w.cmd(LF, ...size(false), ...bold(false))
-  if (opts?.cancelGlyphs) w.cmd(...CANCEL_USER_CHARS)
-  w.cmd(...align('lt'), ...FEED(1), ...PARTIAL_CUT)
-}
-
-/** Prints 7 mini-labels, each testing a different colón/¢ encoding. */
-function buildColonSymbolTestBuffer(): Buffer {
-  const chunks: Buffer[] = []
-  const cmd = (...bytes: number[]): void => {
-    chunks.push(Buffer.from(bytes))
-  }
-  const cp850 = (s: string): Buffer => iconv.encode(s, 'cp850')
-  const w: TestStripWriter = { chunks, cmd, cp850 }
-  const amount = cp850('3 000')
-
-  appendColonTestStrip(w, 1, 'CP850 byte 9B (cent)', CODEPAGE_PC850, Buffer.concat([Buffer.from([0x9b]), amount]))
-  appendColonTestStrip(w, 2, 'CP850 byte BD (iconv)', CODEPAGE_PC850, Buffer.concat([Buffer.from([0xbd]), amount]))
-  appendColonTestStrip(w, 3, 'Letra C', CODEPAGE_PC850, cp850('C3 000'))
-  appendColonTestStrip(w, 4, 'Unicode cent iconv', CODEPAGE_PC850, Buffer.concat([cp850('¢'), amount]))
-  appendColonTestStrip(w, 5, 'UTF-8 colón', [], Buffer.from('₡3 000', 'utf8'))
-  appendColonTestStrip(w, 6, 'PC437 byte 9B', CODEPAGE_PC437, Buffer.concat([Buffer.from([0x9b]), amount]))
-  appendColonTestStrip(
-    w,
-    7,
-    'Glyph ESC & (~)',
-    CODEPAGE_PC850,
-    Buffer.concat([Buffer.from([COLON_GLYPH_CHAR]), amount]),
-    { userGlyphs: true, cancelGlyphs: true }
-  )
-
-  return Buffer.concat(chunks)
-}
-
-/** Diagnostic: print all colón encoding variants (admin troubleshooting). */
-export async function printColonSymbolTest(): Promise<void> {
-  const printerName = getActivePrinterName()
-  await ensurePrinterExists(printerName)
-  await sendRawToPrinter(buildColonSymbolTestBuffer(), printerName)
-}
-
-/** Diagnostic: one-line receipt test (admin troubleshooting). */
+/** Diagnostic receipt test (admin troubleshooting). */
 export async function printTestReceipt(): Promise<void> {
-  await printLines([{ t: 'text', v: 'ShelfPOS TEST', align: 'ct', bold: true, big: true }])
+  await printLines([
+    { t: 'text', v: 'PRUEBA IMPRESORA', align: 'ct', bold: true, big: true },
+    { t: 'hr' },
+    { t: 'text', v: '¢3 000', align: 'ct', bold: true, big: true },
+    { t: 'text', v: '¢475', align: 'ct' },
+    { t: 'row', l: 'TOTAL', r: '¢3 475', bold: true, big: true }
+  ])
 }
 
-/**
- * Queues a print job without blocking checkout. Jobs stay `pending` in the DB
- * when no printer is connected; otherwise printing runs on the next event-loop tick.
- */
+/** Queue print without blocking checkout; status updated when the job finishes. */
 export function schedulePrintJob(jobId: number): PrintStatus {
   const job = getPrintJob(jobId)
   if (!job) return 'failed'
-  setImmediate(() => {
-    void attemptPrintJob(jobId)
-  })
-  return printerReady ? 'printed' : 'failed'
+  if (!printerReady) {
+    void probePrinter().then((found) => {
+      if (found) void attemptPrintJob(jobId)
+    })
+    return 'failed'
+  }
+  void attemptPrintJob(jobId)
+  return 'printed'
 }
 
 /** Attempts to print a stored job, updating its status. */
@@ -636,9 +542,13 @@ export async function attemptPrintJob(jobId: number): Promise<PrintStatus> {
     }
   }
   const payload = JSON.parse(job.payload) as PrintPayload
-  const printOpts = { label: job.job_type === 'label', openDrawer: payload.openDrawer === true }
+  const lines = resolveLabelPrintLines(payload)
+  const printOpts = {
+    label: job.job_type === 'label',
+    openDrawer: payload.openDrawer === true
+  }
   try {
-    await printLines(payload.lines, payload.lang, printOpts)
+    await printLines(lines, payload.lang, printOpts)
     markPrintJob(jobId, 'printed')
     return 'printed'
   } catch (err) {

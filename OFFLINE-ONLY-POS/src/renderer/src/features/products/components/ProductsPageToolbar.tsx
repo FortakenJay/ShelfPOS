@@ -13,6 +13,7 @@ interface ProductsPageToolbarProps {
   onImportEfactura: () => void
   onNewProduct: () => void
   onBatchLabels: () => void
+  onBatchBarcodes: () => void
 }
 
 export function ProductsPageToolbar({
@@ -26,7 +27,8 @@ export function ProductsPageToolbar({
   onImportCsv,
   onImportEfactura,
   onNewProduct,
-  onBatchLabels
+  onBatchLabels,
+  onBatchBarcodes
 }: ProductsPageToolbarProps): React.JSX.Element {
   const { t } = useTranslation()
 
@@ -52,6 +54,9 @@ export function ProductsPageToolbar({
           </Button>
           <Button variant="outline" onClick={onBatchLabels}>
             {t('products.batchLabels.button')}
+          </Button>
+          <Button variant="outline" onClick={onBatchBarcodes}>
+            {t('products.batchLabels.barcodeButton')}
           </Button>
           <Button onClick={onNewProduct}>{t('products.newProduct')}</Button>
         </div>

@@ -32,6 +32,7 @@ interface ProductFormModalProps {
   stockProviders: string[]
   onClose: () => void
   onSaved: () => void
+  onCreated?: (product: Product) => void
 }
 
 export function ProductFormModal({
@@ -40,7 +41,8 @@ export function ProductFormModal({
   categories,
   stockProviders,
   onClose,
-  onSaved
+  onSaved,
+  onCreated
 }: ProductFormModalProps): React.JSX.Element {
   const { t } = useTranslation()
   const toasts = useToasts()
@@ -54,10 +56,14 @@ export function ProductFormModal({
   const mutation = useMutation({
     mutationFn: (input: ProductInput) =>
       isEdit ? api.products.update(product.id, input) : api.products.create(input),
-    onSuccess: () => {
+    onSuccess: (saved) => {
       toasts.success(isEdit ? 'products.updated' : 'products.created')
       void queryClient.invalidateQueries({ queryKey: ['products'] })
-      onSaved()
+      if (!isEdit && onCreated) {
+        onCreated(saved)
+      } else {
+        onSaved()
+      }
     },
     onError: (err) => {
       setError(t(err instanceof ApiError ? err.key : 'errors.unknown'))

@@ -5,7 +5,8 @@ import { AdjustStockModal } from '../AdjustStockModal'
 import { ProductCsvHelpModal } from '../ProductCsvHelpModal'
 import { ProductImportPreviewModal } from '../ProductImportPreviewModal'
 import { BatchLabelPrintModal } from '../BatchLabelPrintModal'
-import type { ProductImportStockMode } from '@shared/types'
+import { ProductLabelPrintPromptModal } from '../ProductLabelPrintPromptModal'
+import type { BatchPrintItem, ProductImportStockMode } from '@shared/types'
 import type { ProductManagerUiState } from '../hooks/useProductManager'
 
 interface ProductManagerModalsProps {
@@ -18,11 +19,17 @@ interface ProductManagerModalsProps {
   importConfirmPending: boolean
   deletePending: boolean
   batchLabelPrinting: boolean
+  batchBarcodePrinting: boolean
+  printPromptPrintingLabel: boolean
+  printPromptPrintingBarcode: boolean
   onDeleteConfirm: (id: number) => void
   onExportTemplate: () => void
   onImportConfirm: (filePath: string, format: 'csv' | 'efactura', stockMode: ProductImportStockMode) => void
   onProductsSaved: () => void
-  onBatchLabelPrint: (productIds: number[]) => void
+  onBatchLabelPrint: (items: BatchPrintItem[]) => void
+  onBatchBarcodePrint: (items: BatchPrintItem[]) => void
+  onPrintPromptLabel: (productId: number) => void
+  onPrintPromptBarcode: (productId: number) => void
 }
 
 export function ProductManagerModals({
@@ -35,11 +42,17 @@ export function ProductManagerModals({
   importConfirmPending,
   deletePending,
   batchLabelPrinting,
+  batchBarcodePrinting,
+  printPromptPrintingLabel,
+  printPromptPrintingBarcode,
   onDeleteConfirm,
   onExportTemplate,
   onImportConfirm,
   onProductsSaved,
-  onBatchLabelPrint
+  onBatchLabelPrint,
+  onBatchBarcodePrint,
+  onPrintPromptLabel,
+  onPrintPromptBarcode
 }: ProductManagerModalsProps): React.JSX.Element {
   const { t } = useTranslation()
 
@@ -54,6 +67,10 @@ export function ProductManagerModals({
           onClose={() => setUi((u) => ({ ...u, formProduct: null }))}
           onSaved={() => {
             setUi((u) => ({ ...u, formProduct: null }))
+            onProductsSaved()
+          }}
+          onCreated={(created) => {
+            setUi((u) => ({ ...u, formProduct: null, printPromptProduct: created }))
             onProductsSaved()
           }}
         />
@@ -129,11 +146,24 @@ export function ProductManagerModals({
           }
         />
       )}
-      {ui.batchLabelOpen && (
+      {ui.batchPrintOpen && (
         <BatchLabelPrintModal
-          printing={batchLabelPrinting}
-          onClose={() => setUi((u) => ({ ...u, batchLabelOpen: false }))}
-          onPrint={onBatchLabelPrint}
+          mode={ui.batchPrintOpen}
+          printingLabels={batchLabelPrinting}
+          printingBarcodes={batchBarcodePrinting}
+          onClose={() => setUi((u) => ({ ...u, batchPrintOpen: null }))}
+          onPrintLabels={onBatchLabelPrint}
+          onPrintBarcodes={onBatchBarcodePrint}
+        />
+      )}
+      {ui.printPromptProduct && (
+        <ProductLabelPrintPromptModal
+          product={ui.printPromptProduct}
+          printingLabel={printPromptPrintingLabel}
+          printingBarcode={printPromptPrintingBarcode}
+          onPrintLabel={() => onPrintPromptLabel(ui.printPromptProduct!.id)}
+          onPrintBarcode={() => onPrintPromptBarcode(ui.printPromptProduct!.id)}
+          onSkip={() => setUi((u) => ({ ...u, printPromptProduct: null }))}
         />
       )}
     </>

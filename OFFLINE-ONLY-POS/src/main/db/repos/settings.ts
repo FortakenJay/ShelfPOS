@@ -37,6 +37,7 @@ export const SETTING_KEYS = {
   shortcutCashOut: 'shortcut_cash_out',
   shortcutDrawerAction: 'shortcut_drawer_action',
   shortcutPrintLabel: 'shortcut_print_label',
+  shortcutPrintBarcode: 'shortcut_print_barcode',
   shortcutPayCash: 'shortcut_pay_cash',
   shortcutPayCard: 'shortcut_pay_card',
   shortcutPaySinpe: 'shortcut_pay_sinpe',
@@ -69,6 +70,7 @@ function resolvePayShortcuts(
     | 'shortcutCashOut'
     | 'shortcutDrawerAction'
     | 'shortcutPrintLabel'
+    | 'shortcutPrintBarcode'
   >,
   storedPay: { cash: string | null; card: string | null; sinpe: string | null }
 ): Pick<AppSettings, 'shortcutPayCash' | 'shortcutPayCard' | 'shortcutPaySinpe'> {
@@ -77,7 +79,8 @@ function resolvePayShortcuts(
     existing.shortcutCashIn,
     existing.shortcutCashOut,
     existing.shortcutDrawerAction,
-    existing.shortcutPrintLabel
+    existing.shortcutPrintLabel,
+    existing.shortcutPrintBarcode
   ])
 
   const pick = (stored: string | null, preferred: ActionShortcutKey[]): ActionShortcutKey => {
@@ -132,6 +135,7 @@ export function getAppSettings(): AppSettings {
   const shortcutCashOut = shortcutOrDefault(SETTING_KEYS.shortcutCashOut, 'F9')
   const shortcutDrawerAction = shortcutOrDefault(SETTING_KEYS.shortcutDrawerAction, 'F10')
   const shortcutPrintLabel = shortcutOrDefault(SETTING_KEYS.shortcutPrintLabel, 'F6')
+  const shortcutPrintBarcode = shortcutOrDefault(SETTING_KEYS.shortcutPrintBarcode, 'F11')
 
   const storedPayCash = getSetting(SETTING_KEYS.shortcutPayCash)
   const storedPayCard = getSetting(SETTING_KEYS.shortcutPayCard)
@@ -143,7 +147,8 @@ export function getAppSettings(): AppSettings {
       shortcutCashIn,
       shortcutCashOut,
       shortcutDrawerAction,
-      shortcutPrintLabel
+      shortcutPrintLabel,
+      shortcutPrintBarcode
     },
     { cash: storedPayCash, card: storedPayCard, sinpe: storedPaySinpe }
   )
@@ -162,6 +167,7 @@ export function getAppSettings(): AppSettings {
     shortcutCashOut,
     shortcutDrawerAction,
     shortcutPrintLabel,
+    shortcutPrintBarcode,
     shortcutPayCash: payShortcuts.shortcutPayCash,
     shortcutPayCard: payShortcuts.shortcutPayCard,
     shortcutPaySinpe: payShortcuts.shortcutPaySinpe,

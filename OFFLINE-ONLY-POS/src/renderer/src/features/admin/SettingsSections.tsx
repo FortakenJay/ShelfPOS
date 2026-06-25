@@ -219,7 +219,6 @@ export function SettingsShortcutsSection({
 }): React.JSX.Element {
   const { t } = useTranslation()
   const toasts = useToasts()
-  const [colonTestPending, setColonTestPending] = useState(false)
   const [printerTestPending, setPrinterTestPending] = useState(false)
 
   const {
@@ -244,15 +243,6 @@ export function SettingsShortcutsSection({
       })
   }
 
-  const runColonTest = (): void => {
-    if (colonTestPending) return
-    setColonTestPending(true)
-    void api.printer
-      .colonTest()
-      .then(() => toasts.success('settings.colonTestSent'))
-      .catch((err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown'))
-      .finally(() => setColonTestPending(false))
-  }
   const optionLabel = (k: ActionShortcutKey): string => t(`settings.shortcuts.options.${k}`, k)
 
   return (
@@ -312,6 +302,18 @@ export function SettingsShortcutsSection({
           <Select
             value={draft.shortcutPrintLabel}
             onChange={(e) => onChange({ shortcutPrintLabel: e.target.value as ActionShortcutKey })}
+          >
+            {SHORTCUT_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {optionLabel(opt)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label={t('settings.shortcuts.printBarcode')}>
+          <Select
+            value={draft.shortcutPrintBarcode}
+            onChange={(e) => onChange({ shortcutPrintBarcode: e.target.value as ActionShortcutKey })}
           >
             {SHORTCUT_OPTIONS.map((opt) => (
               <option key={opt} value={opt}>
@@ -389,16 +391,6 @@ export function SettingsShortcutsSection({
             {t('settings.printerTest')}
           </Button>
         </div>
-        <p className="mb-2 text-[14px] font-semibold text-slate-700">{t('settings.colonTest')}</p>
-        <p className="mb-3 text-[13px] text-slate-500">{t('settings.colonTestHint')}</p>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={colonTestPending}
-          onClick={runColonTest}
-        >
-          {t('settings.colonTest')}
-        </Button>
       </div>
       <SettingsSaveRow saving={saving} disabled={!dirty || hasConflict} onSave={onSave} />
     </section>

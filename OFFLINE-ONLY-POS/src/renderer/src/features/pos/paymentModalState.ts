@@ -1,5 +1,10 @@
 import { useReducer, type Dispatch } from 'react'
+import { formatMoneyInputFromNumber, roundColones } from '@shared/money'
 import type { PaymentMethod } from '@shared/types'
+
+function defaultCashTendered(total: number): string {
+  return formatMoneyInputFromNumber(roundColones(total))
+}
 
 export interface PaymentEntry {
   id: string
@@ -23,21 +28,24 @@ export interface PaymentModalState {
 }
 
 type PaymentModalAction =
-  | { type: 'toggleSplit'; enabled: boolean; initialMethod: PaymentMethod }
-  | { type: 'setSingleMethod'; value: PaymentMethod }
+  | { type: 'toggleSplit'; enabled: boolean; initialMethod: PaymentMethod; total: number }
+  | { type: 'setSingleMethod'; value: PaymentMethod; total: number }
   | { type: 'setSinpeRef'; value: string }
   | { type: 'setTendered'; value: string | ((prev: string) => string) }
   | { type: 'updateEntry'; id: string; patch: Partial<PaymentEntry> }
   | { type: 'addEntry' }
   | { type: 'removeEntry'; id: string }
 
-export function createInitialPaymentState(initialMethod: PaymentMethod): PaymentModalState {
+export function createInitialPaymentState(
+  initialMethod: PaymentMethod,
+  total: number
+): PaymentModalState {
   return {
     splitPayment: false,
     singleMethod: initialMethod,
     sinpeRef: '',
     entries: [newPaymentEntry(initialMethod)],
-    tendered: ''
+    tendered: initialMethod === 'cash' ? defaultCashTendered(total) : ''
   }
 }
 
@@ -60,15 +68,22 @@ function paymentModalReducer(
           ]
         }
       }
-      return {
-        ...state,
-        splitPayment: false,
-        tendered: '',
-        sinpeRef: state.entries.find((e) => e.method === 'sinpe')?.ref ?? state.sinpeRef,
-        singleMethod: state.entries[0]?.method ?? action.initialMethod
+      {
+        const singleMethod = state.entries[0]?.method ?? action.initialMethod
+        return {
+          ...state,
+          splitPayment: false,
+          tendered: singleMethod === 'cash' ? defaultCashTendered(action.total) : '',
+          sinpeRef: state.entries.find((e) => e.method === 'sinpe')?.ref ?? state.sinpeRef,
+          singleMethod
+        }
       }
     case 'setSingleMethod':
-      return { ...state, singleMethod: action.value }
+      return {
+        ...state,
+        singleMethod: action.value,
+        tendered: action.value === 'cash' ? defaultCashTendered(action.total) : ''
+      }
     case 'setSinpeRef':
       return { ...state, sinpeRef: action.value }
     case 'setTendered':
@@ -96,14 +111,18 @@ function paymentModalReducer(
   }
 }
 
-export function usePaymentModalState(initialMethod: PaymentMethod): {
+export function usePaymentModalState(
+  initialMethod: PaymentMethod,
+  total: number
+): {
   state: PaymentModalState
   dispatch: Dispatch<PaymentModalAction>
 } {
   const [state, dispatch] = useReducer(
     paymentModalReducer,
-    initialMethod,
-    createInitialPaymentState
+    { initialMethod, total },
+    ({ initialMethod: method, total: saleTotal }) =>
+      createInitialPaymentState(method, saleTotal)
   )
   return { state, dispatch }
 }

@@ -1,5 +1,38 @@
 # ShelfPOS release notes
 
+## 1.6.1
+
+### Nuevo — impresión en lote (Productos)
+
+- **Etiquetas en lote** y **Códigos de barras en lote**: cola con búsqueda/escaneo estilo caja, copias por producto (1–99), dos modos en la barra de Productos.
+- Etiqueta de exhibición: nombre grande en negrita, precio enorme; sticker CODE128 con dígitos bajo las barras (HRI).
+- Sin código imprimible: se usa y guarda el **ID numérico** del producto para escaneo en caja.
+- Tras crear producto: modal para imprimir etiqueta o código de barras.
+- Térmica: montos con **¢** (CP850); pantalla sigue con **₡**. Pie de recibo con aclaración.
+
+### Corrección
+
+- Esquema IPC: restaurado import de `zod` (rompía typecheck).
+- Búsqueda numérica en lote ya no oculta coincidencias por nombre/código; toast de búsqueda ambigua restaurado.
+
+### Calidad
+
+| Check | Resultado |
+|-------|-----------|
+| `npm run lint` | Pasa |
+| React Doctor (`--scope changed`) | **97 / 100** |
+| Bugbot (rama local) | Sin hallazgos tras correcciones |
+
+### Despliegue
+
+| Componente | Versión | Acción |
+|------------|---------|--------|
+| POS Windows | 1.6.1 | `npm run release:win` → `ShelfPOS-1.6.1-win.zip` |
+| Sync service | 1.6.1 | Incluido en ZIP; sin cambios de protocolo |
+| Dashboard | 1.5.0 | Sin cambios en esta release |
+
+---
+
 ## 1.5.0 — Beta (producción)
 
 Primera versión beta en tiendas reales (cliente piloto + tienda de mamá). Alpha interna cerrada.

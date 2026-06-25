@@ -85,12 +85,12 @@ Each card: purpose, entry point, data, permissions, edge cases.
 
 | | |
 |--|--|
-| **Purpose** | CRUD, CSV/eFactura import, label print |
-| **Entry** | `ProductsPage`, `ProductForm` |
-| **IPC** | `products:*`, `products:stockProviders` |
+| **Purpose** | CRUD, CSV/eFactura import, shelf + barcode label print |
+| **Entry** | `ProductsPage`, `ProductForm`, `BatchLabelPrintModal` |
+| **IPC** | `products:*`, `products:stockProviders`, `products:printLabel`, `products:printBarcode`, `products:printLabelBatch`, `products:printBarcodeBatch` |
 | **Tables** | `products`, `stock_adjustments` |
 | **Permissions** | `product_manager` / `admin` |
-| **Edge cases** | Soft delete; `stock_provider` filter; barcode UNIQUE |
+| **Edge cases** | Soft delete; `stock_provider` filter; barcode UNIQUE; thermal prints use **¢**; barcode sticker falls back to product id; batch copies 1–99 (`shared/printLimits.ts`); `searchProducts` merges exact id with name/barcode `LIKE` |
 
 ---
 

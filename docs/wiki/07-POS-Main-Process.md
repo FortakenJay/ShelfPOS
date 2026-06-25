@@ -49,12 +49,14 @@ All multi-step writes use `db.transaction()`. Sync enqueue inside same transacti
 ## Printing
 
 - Receipts via `print_jobs` queue + `printer.ts`
+- **Thermal currency:** **¢** (CP850 cent sign) on receipts and labels via `formatColonesPrint` + `encodePrintText` (normalizes legacy **₡** in templates). Screen UI still shows **₡**. Receipt footer disclaimer: `print.receipt.centDisclaimer`.
+- **Product labels (thermal):** `buildShelfLabelLines` (shelf tag: barcode + código, bold name, huge price) and `buildProductBarcodeLabelLines` (CODE128 sticker with HRI). IPC: `products:printLabel`, `products:printBarcode`, batch variants (`items[]` with optional `copies`, max 99 per product). See [[08-POS-Renderer#product-label-printing-thermal]].
 - **Cierre ticket / PDF:** `buildCierreLines` in `printTemplates.ts` — includes payment totals, discounts, price overrides, **discarded cart tabs** (from `audit_log`), cash count, top products. Used on `cierre:confirm` print, `cierre:print`, and `cierre:exportPdf`.
 - **Cash drawer:** ESC/POS pulse at end of receipt when sale includes cash (`PrintPayload.openDrawer`); manual kick via `printer:openDrawer` or cash-movement shortcuts
 - Epson TM-T20/T81III: Windows RAW spooler; env `SHELFPOS_PRINTER_NAME` override
-- Encoding: `iconv-lite` for thermal code pages
-- Env overrides: `SHELFPOS_PRINTER_NAME`, `SHELFPOS_LINE_WIDTH`
-- IPC: `printer:status`, `printer:test`, `printer:colonTest`
+- Encoding: `iconv-lite` CP850 for thermal text
+- Env overrides: `SHELFPOS_PRINTER_NAME`, `SHELFPOS_LINE_WIDTH`, `SHELFPOS_LABEL_WIDTH_MM` (default 58)
+- IPC: `printer:status`, `printer:test` (sample receipt with ¢ amounts)
 
 ## License
 

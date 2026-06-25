@@ -23,6 +23,9 @@ Quick lookup when an LLM (or human) needs the right file.
 | Preload bridge | `OFFLINE-ONLY-POS/src/preload/index.ts` |
 | Locales (errors + UI) | `OFFLINE-ONLY-POS/src/shared/locales/es.json`, `zh-CN.json` |
 | Misc item parse | `OFFLINE-ONLY-POS/src/shared/miscItem.ts` |
+| Money / thermal ¢ | `OFFLINE-ONLY-POS/src/shared/money.ts` (`formatColonesPrint`) |
+| Barcode print helpers | `OFFLINE-ONLY-POS/src/shared/barcode.ts` |
+| Label copy limits | `OFFLINE-ONLY-POS/src/shared/printLimits.ts` |
 | Electron entry | `OFFLINE-ONLY-POS/src/main/index.ts` |
 | Printer / receipts | `OFFLINE-ONLY-POS/src/main/services/printer.ts` |
 | Factura PDF | `OFFLINE-ONLY-POS/src/main/services/facturaPdf.ts` |

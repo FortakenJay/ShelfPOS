@@ -1,6 +1,12 @@
 import { t } from './i18n'
 import { formatDate, formatMoney } from './format'
-import { formatSpacedBarcode } from '../../shared/barcode'
+import { formatSpacedBarcode, isPrintableCode128Barcode } from '../../shared/barcode'
+import {
+  SHELF_LABEL_BARCODE_HEIGHT,
+  SHELF_LABEL_BARCODE_WIDTH,
+  shelfLabelTextCols,
+  wrapShelfLabelText
+} from './labelLayout'
 import { localNow } from '../db/helpers'
 import type {
   AppSettings,
@@ -194,8 +200,13 @@ export function buildReceiptLines(args: ReceiptArgs, lang: Language): PrintLine[
   }
 
   lines.push({ t: 'hr' })
-  lines.push({ t: 'text', v: t(lang, 'print.receipt.total'), align: 'ct' })
-  lines.push({ t: 'text', v: money(args.total), align: 'ct', bold: true, big: true })
+  lines.push({
+    t: 'row',
+    l: t(lang, 'print.receipt.total'),
+    r: money(args.total),
+    bold: true,
+    big: true
+  })
   lines.push({ t: 'feed', n: 1 })
 
   // Payment breakdown (supports split payments).
@@ -216,6 +227,7 @@ export function buildReceiptLines(args: ReceiptArgs, lang: Language): PrintLine[
   }
 
   lines.push({ t: 'feed', n: 1 })
+  lines.push({ t: 'text', v: t(lang, 'print.receipt.centDisclaimer'), align: 'ct' })
   lines.push({ t: 'text', v: t(lang, 'print.receipt.thanks'), align: 'ct' })
   if (args.footer) {
     for (const fl of args.footer.split('\n')) {
@@ -748,29 +760,68 @@ export function buildItemizedSalesReportLines(
   return lines
 }
 
+/** Display-stand / shelf tag: 20 mm — centered barcode, spaced código, name, price. */
 export function buildShelfLabelLines(args: {
   productName: string
   price: number
-  barcode: string
+  barcode?: string
 }, lang: Language): PrintLine[] {
   const name = args.productName.trim().toUpperCase()
-  const barcode = args.barcode.trim()
-  const spacedCode = formatSpacedBarcode(barcode)
   const priceLine = formatMoney(Math.trunc(args.price), lang)
+  const barcode = args.barcode?.trim() ?? ''
+  const spacedCode = formatSpacedBarcode(barcode)
+  const printableBarcode = barcode.length > 0 && isPrintableCode128Barcode(barcode)
 
-  const lines: PrintLine[] = [
-    { t: 'barcode', v: barcode, h: 40, w: 2, align: 'lt' },
-  ]
-  if (spacedCode) {
-    lines.push({ t: 'text', v: spacedCode, align: 'lt' })
+  const nameBig = true
+  const nameCols = shelfLabelTextCols(nameBig)
+  const nameLines = wrapShelfLabelText(name, nameCols, 2)
+
+  const lines: PrintLine[] = []
+
+  if (barcode.length > 0 && printableBarcode) {
+    lines.push({
+      t: 'barcode',
+      v: barcode,
+      h: SHELF_LABEL_BARCODE_HEIGHT,
+      w: SHELF_LABEL_BARCODE_WIDTH,
+      align: 'ct'
+    })
   }
-  lines.push(
-    { t: 'feed', n: 1 },
-    { t: 'text', v: name, align: 'ct' },
-    { t: 'feed', n: 1 },
-    { t: 'text', v: priceLine, align: 'ct', bold: true, huge: true },
-  )
+  if (spacedCode) {
+    lines.push({ t: 'text', v: spacedCode, align: 'ct' })
+  }
+
+  for (const line of nameLines) {
+    lines.push({ t: 'text', v: line, align: 'ct', bold: true, big: true })
+  }
+
+  lines.push({
+    t: 'text',
+    v: priceLine,
+    align: 'ct',
+    bold: true,
+    huge: true
+  })
+
   return lines
+}
+
+const PRODUCT_BARCODE_HEIGHT = 100
+const PRODUCT_BARCODE_WIDTH = 3
+
+/** Product sticker: large scannable CODE128 with digits below (standard retail style). */
+export function buildProductBarcodeLabelLines(args: { barcode: string }, _lang: Language): PrintLine[] {
+  const barcode = args.barcode.trim()
+  return [
+    {
+      t: 'barcode',
+      v: barcode,
+      h: PRODUCT_BARCODE_HEIGHT,
+      w: PRODUCT_BARCODE_WIDTH,
+      align: 'ct',
+      hri: true
+    }
+  ]
 }
 
 const PIN_CARD_BARCODE_HEIGHT = 72

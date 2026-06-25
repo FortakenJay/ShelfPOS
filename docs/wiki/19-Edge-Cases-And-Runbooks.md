@@ -253,6 +253,18 @@ Local-only `cart_tabs` table — **not synced**. Open carts survive tab switch; 
 
 **Settings key:** `scanner_burst_ms` in SQLite `settings` (default 30). See [[08-POS-Renderer#Barcode scanner (USB HID)]].
 
+### Batch label / barcode print
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| Batch feels slow | Each batch IPC calls `probePrinter()`; labels print **sequentially** per product/copy (serialized `enqueuePrinterTask`) | Expected for thermal RAW; reduce queue size or copies |
+| “Varios productos coinciden” | Enter on ambiguous search | Pick from dropdown (by design) |
+| Numeric search misses name match | — | Fixed: `searchProducts` runs `LIKE` then merges exact id |
+| Product without código won’t sticker | — | Batch barcode mode assigns **product id** as CODE128 on first print |
+| Copies reset to 1 | Empty copies field on add | Blank while typing is OK; empty on add defaults to **1** |
+
+See [[08-POS-Renderer#product-label-printing-thermal]].
+
 ### Misc items (`PRECIO*`)
 
 No catalog row; `sale_items.product_id` is NULL. **Not returnable** by design. Sales with only misc lines omitted from return search.

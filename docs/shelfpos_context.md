@@ -10,7 +10,7 @@
 | Field | Value |
 |-------|--------|
 | **Name** | ShelfPOS |
-| **Version** | 1.5.0 (monorepo apps) |
+| **Version** | 1.6.1 (POS + sync); Dashboard 1.5.0 |
 | **Purpose** | Offline-first retail POS for small shops (Costa Rica focus) with optional cloud owner dashboard |
 | **Repo layout** | `OFFLINE-ONLY-POS/` (Electron), `DASHBOARD/` (web), `sync-service/` (Windows background sync) |
 | **Not in repo** | Root `package.json` — each app installs independently |
@@ -145,6 +145,23 @@ Browser-style multi-cart on one register (`cart_tabs` table, **local only**, not
 ### Cierre
 
 Shift close — totals by payment method, cash count, discrepancy, discarded cart tabs in print/PDF.
+
+### Product label printing (inventory)
+
+Two thermal prints from **Productos** (not PDF):
+
+1. **Imprimir etiqueta** — display stand / shelf tag (**20 mm**): `buildShelfLabelLines` + `labelLayout.ts` — centered CODE128 (when printable), spaced código, **bold large name**, **bold huge price**.
+2. **Imprimir código de barras** — product sticker: large CODE128 with **HRI digits below** (`buildProductBarcodeLabelLines`, height 100 / width 3).
+
+**Currency on thermal:** screen UI uses **₡** (`formatColones`); receipts and labels use **¢** via CP850 (`formatColonesPrint` in `shared/money.ts`, `encodePrintText` in `printer.ts`). Receipt footer: `print.receipt.centDisclaimer`.
+
+**Barcode without código:** `barcodePrintValue()` (`shared/barcode.ts`) uses printable CODE128 from `products.barcode`, else numeric **product id**; first barcode print can persist id to DB so POS scan works.
+
+**Batch modal** (`BatchLabelPrintModal`): toolbar **Etiquetas en lote** / **Códigos de barras en lote** — POS-style search (scan, name, barcode, ID), per-row copies, queue. IPC payload: `{ items: { productId, copies? }[] }` (not bare id list). Copies **1–99** (`MAX_LABEL_COPIES` in `shared/printLimits.ts`). Max **200** distinct products per batch.
+
+IPC: `products:printLabel`, `products:printBarcode`, `products:printLabelBatch`, `products:printBarcodeBatch`. After create: `ProductLabelPrintPromptModal`. Settings shortcuts: shelf etiqueta (F6), product barcode (F11) when one product is filtered.
+
+**Search:** `searchProducts` runs name/barcode `LIKE` first; numeric queries also prepend exact id match when not already in results.
 
 ### Return (devolución)
 
@@ -316,6 +333,7 @@ lib/reports/        → PDF + Excel builders (report-grid-to-xlsx.ts)
 | **Barcode scan** | `usePOSTerminal.onEnter`, `useGlobalBarcodeScanner` | products | sales+ | `scanner_burst_ms`; stale Enter fixed via inputRef |
 | **Returns** | `ReturnModal` → `returns:create` | return_items, products | PIN | Misc not returnable |
 | **Stock adjust** | Products admin | stock_adjustments | product_manager+ | Synced |
+| **Product labels** | Products → Imprimir etiqueta / código / batch modals | print_jobs, audit_log | product_manager+ | Thermal ¢ not ₡; barcode fallback = product id; copies 1–99 |
 | **Cierre** | `CierrePage` → `cierre:confirm` | cierres, cash_movements | admin/caja PIN | Discarded tabs in audit |
 | **Cart tab discard** | `cartTabs:discardAudited` | cart_tabs, audit_log | caja/manager PIN | Local cart only |
 | **Inventory report** | Dashboard `/reports` | products (mirror) | owner RLS | 200/page cap |

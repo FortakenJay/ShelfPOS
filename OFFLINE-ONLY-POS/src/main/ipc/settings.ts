@@ -26,6 +26,7 @@ const SHORTCUT_KEYS: (keyof Pick<
   | 'shortcutCashOut'
   | 'shortcutDrawerAction'
   | 'shortcutPrintLabel'
+  | 'shortcutPrintBarcode'
   | 'shortcutPayCash'
   | 'shortcutPayCard'
   | 'shortcutPaySinpe'
@@ -35,6 +36,7 @@ const SHORTCUT_KEYS: (keyof Pick<
   'shortcutCashOut',
   'shortcutDrawerAction',
   'shortcutPrintLabel',
+  'shortcutPrintBarcode',
   'shortcutPayCash',
   'shortcutPayCard',
   'shortcutPaySinpe'
@@ -58,6 +60,7 @@ export function registerSettingsHandlers(): void {
       shortcutCashOut: input.shortcutCashOut ?? current.shortcutCashOut,
       shortcutDrawerAction: input.shortcutDrawerAction ?? current.shortcutDrawerAction,
       shortcutPrintLabel: input.shortcutPrintLabel ?? current.shortcutPrintLabel,
+      shortcutPrintBarcode: input.shortcutPrintBarcode ?? current.shortcutPrintBarcode,
       shortcutPayCash: input.shortcutPayCash ?? current.shortcutPayCash,
       shortcutPayCard: input.shortcutPayCard ?? current.shortcutPayCard,
       shortcutPaySinpe: input.shortcutPaySinpe ?? current.shortcutPaySinpe
@@ -125,6 +128,9 @@ export function registerSettingsHandlers(): void {
     }
     if (input.shortcutPrintLabel !== undefined) {
       setSetting(SETTING_KEYS.shortcutPrintLabel, input.shortcutPrintLabel)
+    }
+    if (input.shortcutPrintBarcode !== undefined) {
+      setSetting(SETTING_KEYS.shortcutPrintBarcode, input.shortcutPrintBarcode)
     }
     if (input.shortcutPayCash !== undefined) setSetting(SETTING_KEYS.shortcutPayCash, input.shortcutPayCash)
     if (input.shortcutPayCard !== undefined) setSetting(SETTING_KEYS.shortcutPayCard, input.shortcutPayCard)
