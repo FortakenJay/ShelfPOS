@@ -49,6 +49,7 @@ export const Route = createFileRoute('/api/operator/reset-owner-password')({
         }
 
         const redirectTo = resolveDashboardRedirect('/reset-password', body.redirectOrigin, request)
+        console.info('[reset-owner-password] redirectTo:', redirectTo)
 
         if (body.sendEmail) {
           const { error } = await admin.auth.resetPasswordForEmail(email, { redirectTo })

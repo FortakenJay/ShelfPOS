@@ -85,6 +85,7 @@ export const Route = createFileRoute('/api/operator/invite-owner')({
         }
 
         const redirectTo = resolveDashboardRedirect('/accept-invite', body.redirectOrigin, request)
+        console.info('[invite-owner] redirectTo:', redirectTo)
 
         if (body.sendEmail) {
           const { error } = await admin.auth.admin.inviteUserByEmail(email, {

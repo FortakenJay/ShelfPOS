@@ -19,7 +19,8 @@ function isLocalOrigin(value: string): boolean {
   }
 }
 
-const PRODUCTION_ORIGIN = 'https://shelfpos.net'
+/** Real users receive these links by email — never localhost unless explicitly configured. */
+export const PRODUCTION_DASHBOARD_ORIGIN = 'https://shelfpos.net'
 
 function getConfiguredDashboardOrigin(): string {
   const fromEnv =
@@ -27,8 +28,7 @@ function getConfiguredDashboardOrigin(): string {
     process.env.DASHBOARD_PUBLIC_URL?.trim() ||
     ''
   if (fromEnv) return normalizeOrigin(fromEnv)
-  if (process.env.VERCEL_ENV === 'production') return PRODUCTION_ORIGIN
-  return ''
+  return PRODUCTION_DASHBOARD_ORIGIN
 }
 
 function getForwardedOrigin(request: Request): string {
@@ -39,32 +39,16 @@ function getForwardedOrigin(request: Request): string {
   return isLocalOrigin(origin) ? '' : origin
 }
 
-function pickDashboardOrigin(clientOrigin: string | undefined, request: Request): string {
-  const candidates = [
-    getConfiguredDashboardOrigin(),
-    getForwardedOrigin(request),
-    request.headers.get('origin') ?? '',
-    clientOrigin?.trim() ?? '',
-  ]
-    .map(normalizeOrigin)
-    .filter(Boolean)
-
-  return candidates.find((candidate) => !isLocalOrigin(candidate)) ?? candidates[0] ?? ''
-}
-
+/** Absolute URL for Supabase invite/reset emails. Never falls back to localhost. */
 export function resolveDashboardRedirect(
   path: '/accept-invite' | '/reset-password',
-  clientOrigin: string | undefined,
+  _clientOrigin: string | undefined,
   request: Request,
 ): string {
-  const picked = pickDashboardOrigin(clientOrigin, request)
-  const configured = getConfiguredDashboardOrigin()
-
-  let base = picked
-  if (!base || isLocalOrigin(base)) {
-    base = configured || (process.env.VERCEL_ENV === 'production' ? PRODUCTION_ORIGIN : '')
+  let base = getConfiguredDashboardOrigin()
+  if (isLocalOrigin(base)) {
+    base = getForwardedOrigin(request) || PRODUCTION_DASHBOARD_ORIGIN
   }
-  if (!base) base = 'http://localhost:3000'
-
+  if (!base || isLocalOrigin(base)) base = PRODUCTION_DASHBOARD_ORIGIN
   return `${normalizeOrigin(base)}${path}`
 }

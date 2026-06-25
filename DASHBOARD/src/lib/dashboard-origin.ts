@@ -12,7 +12,5 @@ export function getDashboardPublicOrigin(): string {
     }
   }
 
-  if (import.meta.env.PROD) return PRODUCTION_ORIGIN
-  if (typeof window !== 'undefined') return window.location.origin.replace(/\/$/, '')
-  return ''
+  return PRODUCTION_ORIGIN
 }
