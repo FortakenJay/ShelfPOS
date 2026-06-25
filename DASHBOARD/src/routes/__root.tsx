@@ -8,6 +8,7 @@ import { I18nextProvider } from 'react-i18next'
 
 import appCss from '../styles.css?url'
 import i18n from '#/lib/i18n'
+import { AuthCallbackRedirect } from '#/components/AuthCallbackRedirect'
 import { DashboardI18nSync } from '#/components/DashboardI18nSync'
 import { NotFoundPage } from '#/components/NotFoundPage'
 
@@ -38,6 +39,7 @@ function RootDocument() {
       <body>
         <I18nextProvider i18n={i18n}>
           <DashboardI18nSync>
+            <AuthCallbackRedirect />
             <div id="app" className="h-full">
               <Outlet />
             </div>

@@ -2478,5 +2478,785 @@
     "mtime": 1781650473.7805166,
     "ast_hash": "709781a3c319c1443209d1b6c3b40672",
     "semantic_hash": ""
+  },
+  "DASHBOARD/.output/nitro.json": {
+    "mtime": 1782263635.434533,
+    "ast_hash": "17a314fa9f0cc192c21eb205d6bd09c3",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/DashboardPrimitives-CuF78Nz1.js": {
+    "mtime": 1782263632.4535196,
+    "ast_hash": "cb7af04663def45d73682bd050c66df2",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/DateRangePicker-CNQC6rRk.js": {
+    "mtime": 1782263632.4575093,
+    "ast_hash": "8759376bd664e705774ff3939baa3ebe",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/SetPasswordFromAuthCallback-Dky4xts1.js": {
+    "mtime": 1782263632.4575093,
+    "ast_hash": "d8999c93d196668958a97fd179105a81",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/Trans-BDFaDd7H.js": {
+    "mtime": 1782263632.4575093,
+    "ast_hash": "89bff3b18670e607750a71466f154e23",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/accept-invite-D2k7iMQB.js": {
+    "mtime": 1782263632.4575093,
+    "ast_hash": "d0f7374e20885b2087379732fec94e3d",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/admin-DSrcN4rZ.js": {
+    "mtime": 1782263632.4596305,
+    "ast_hash": "073316f8ac45988e8f00143066810008",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/audit-X8gS4zq-.js": {
+    "mtime": 1782263632.4602053,
+    "ast_hash": "4273e79b7c6fd39c316ba2d93ff0ae76",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/auth-D0muSkIx.js": {
+    "mtime": 1782263632.4612308,
+    "ast_hash": "c753ad13f4974bf55f4e15f2184e9399",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/chunk-aKtaBQYM.js": {
+    "mtime": 1782263632.4612308,
+    "ast_hash": "fe1c45aeeb5cda97a4081341cf8c64f0",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/cierres-B2djIBFt.js": {
+    "mtime": 1782263632.4632523,
+    "ast_hash": "31aa57278b78e6a1cc8e43108ce5148f",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/create-account-BDcvpzYl.js": {
+    "mtime": 1782263632.4632523,
+    "ast_hash": "dcb28e3df379a01918f01f1410a3e0eb",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/dashboard-BOQ4RPWu.js": {
+    "mtime": 1782263632.464287,
+    "ast_hash": "9b78c16a211fcfa1e883b3e7cae0b9ec",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/dashboard-BlJGWSAW.js": {
+    "mtime": 1782263632.464287,
+    "ast_hash": "99428e34826451045f290c4d26bc479a",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/dates-WdXwRkek.js": {
+    "mtime": 1782263632.464287,
+    "ast_hash": "219a96a42eabd30664a9da03b5e1da7b",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/es6-YFwph0iN.js": {
+    "mtime": 1782263632.4663367,
+    "ast_hash": "6dc5d198784fdb2e53dc166d3fab215d",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/hidden-operator-BibuIO_o.js": {
+    "mtime": 1782263632.4663367,
+    "ast_hash": "c6bf428c677f1a138e167dcad98992f4",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/html2canvas-B1hV9e2W.js": {
+    "mtime": 1782263632.4683492,
+    "ast_hash": "882b8204c0685ec1a8fffd2f24d2af5a",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/i18n-MXsbJkPc.js": {
+    "mtime": 1782263632.4683492,
+    "ast_hash": "49f35ba85b1a8f364498b98a9a1a925f",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/index-EXPQaUMc.js": {
+    "mtime": 1782263632.4535196,
+    "ast_hash": "486c6a1591634768b79ddc5d910e283a",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/index.es-Cac8UpV8.js": {
+    "mtime": 1782263632.4683492,
+    "ast_hash": "3c8dce2626a1570d1d5d12f2c910ee62",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/jspdf.es.min-DuMljelw.js": {
+    "mtime": 1782263632.4683492,
+    "ast_hash": "65a27385012e49caaee782902a52f721",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/link-CpM3gg6e.js": {
+    "mtime": 1782263632.472084,
+    "ast_hash": "e88f35b40a3b3f8ad7a2d79667dcd2de",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/link-pos-gFWqGhtC.js": {
+    "mtime": 1782263632.4730923,
+    "ast_hash": "f0bda70bc73d9e1d6522f0ad121eb97b",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/login-Bs6P3ney.js": {
+    "mtime": 1782263632.4730923,
+    "ast_hash": "a9f3c41390e4da9740c2024e6af9f885",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/movements-KTl3x_q-.js": {
+    "mtime": 1782263632.4741206,
+    "ast_hash": "8a4875fa371d0814117527b727561bac",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/purify.es-Bu4Grnl0.js": {
+    "mtime": 1782263632.4756467,
+    "ast_hash": "24769ea8c26c6ef1dce5dfa943e43d22",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/react-dom-CCMiT4Yj.js": {
+    "mtime": 1782263632.4771624,
+    "ast_hash": "b5c7b462b0585d346f6c1e9a3537bfad",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/redirect-BB44wZa9.js": {
+    "mtime": 1782263632.4771624,
+    "ast_hash": "c51cf795a8491bf8b554851c04936671",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/reports-BpAjZvwU.js": {
+    "mtime": 1782263632.4771624,
+    "ast_hash": "d8abc18041b82e27c43fa284fcc1c426",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/reset-password-CD1dQLH7.js": {
+    "mtime": 1782263632.4771624,
+    "ast_hash": "dcca528c7d511644d3e6cdfd3f17a6e5",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/roles-CcXswxaY.js": {
+    "mtime": 1782263632.4819655,
+    "ast_hash": "2721d469a6805126d0a91666277f2cc1",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/route-BNTG-bu1.js": {
+    "mtime": 1782263632.4819655,
+    "ast_hash": "98a94b6a8c5e834a87b1d57e30b8f723",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/shim-1M4DcUx-.js": {
+    "mtime": 1782263632.4834888,
+    "ast_hash": "4ce0aebd07760b484108e5c0819552ae",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/store-claims-EGvBo5w_.js": {
+    "mtime": 1782263632.4834888,
+    "ast_hash": "ed92d27ca79a49fd547d58ab6ccb4ed3",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/store-context-DzHSrBR1.js": {
+    "mtime": 1782263632.4874237,
+    "ast_hash": "2c7563470bd86c458aea7cb9bbc43a70",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/supabase-DjbYB0WC.js": {
+    "mtime": 1782263632.4884787,
+    "ast_hash": "1c2b069e15fb81d4b3066b2c5a0e4665",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/supabase-page-Ct9SP-se.js": {
+    "mtime": 1782263632.4884787,
+    "ast_hash": "b84bbd1b05ee1050eddb0193696f9e88",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/tax-breakdown-D4Oo2HRG.js": {
+    "mtime": 1782263632.489316,
+    "ast_hash": "eac0da5b495cb455d806eef7914c7708",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/toast-jLMRokF1.js": {
+    "mtime": 1782263632.4913466,
+    "ast_hash": "80bf1da64505fb9a66acec246b6700c7",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/typeof-B5XbjTb1.js": {
+    "mtime": 1782263632.4913466,
+    "ast_hash": "e5b1b92bc600b33580c464f0dde34fbf",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/ui-RWoHUZtr.js": {
+    "mtime": 1782263632.4930093,
+    "ast_hash": "3bd2b10a682ce2ff7566a18cef28c96d",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/useStore-DthrIqTK.js": {
+    "mtime": 1782263632.4936602,
+    "ast_hash": "de1ada02649acd715f470a61c17a2fb9",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/assets/with-selector-DBIVBGJy.js": {
+    "mtime": 1782263632.494177,
+    "ast_hash": "1ca8f182c52af10df591e11687df0448",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/manifest.json": {
+    "mtime": 1781766490.2013116,
+    "ast_hash": "bb4db06c845c70f588222a0e7e8793a7",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_chunks/ssr-renderer.mjs": {
+    "mtime": 1782263635.2894464,
+    "ast_hash": "b62bbd2c32958b31ad36f4ab548fd70c",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/@fast-csv/format+[...].mjs": {
+    "mtime": 1782263635.294372,
+    "ast_hash": "a77e559b184e10488888a32deef93bae",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/@fast-csv/parse+[...].mjs": {
+    "mtime": 1782263635.294372,
+    "ast_hash": "c9e73caf52aa4e132b22674b8a8a903e",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/@reduxjs/toolkit+[...].mjs": {
+    "mtime": 1782263635.294372,
+    "ast_hash": "3718f511b5ef5de1d8b1b4615c543465",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/@supabase/storage-js+[...].mjs": {
+    "mtime": 1782263635.294372,
+    "ast_hash": "7bd2be44c8c366c650569e595d1983de",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/@tanstack/query-persist-client-core+[...].mjs": {
+    "mtime": 1782263635.3021948,
+    "ast_hash": "da4bd89c14a768b0acad575129376a0e",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/@tanstack/query-sync-storage-persister+[...].mjs": {
+    "mtime": 1782263635.3032403,
+    "ast_hash": "d902156c1f0ac619a96007a1303f4a9b",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/@tanstack/react-query-persist-client+[...].mjs": {
+    "mtime": 1782263635.3078463,
+    "ast_hash": "a9ff88396b859d9e8c9e944eba19706f",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/@tanstack/react-router+[...].mjs": {
+    "mtime": 1782263635.3078463,
+    "ast_hash": "b942163baf8ff737c3926751337e2a43",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/@tanstack/router-core+[...].mjs": {
+    "mtime": 1782263635.3095517,
+    "ast_hash": "a28ada58524b3c4845358274b463ad51",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/archiver+[...].mjs": {
+    "mtime": 1782263635.310408,
+    "ast_hash": "e0f055ed844121846f4ce2f186fff521",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/babel__runtime.mjs": {
+    "mtime": 1782263635.310408,
+    "ast_hash": "3aeb2c102271806db634c2835883887d",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/big-integer.mjs": {
+    "mtime": 1782263635.313429,
+    "ast_hash": "bb6ed69e679a196519f85add9eb0e824",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/binary+[...].mjs": {
+    "mtime": 1782263635.313429,
+    "ast_hash": "80c2c4850817bee6b048fc7e04cc3222",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/bluebird.mjs": {
+    "mtime": 1782263635.3162053,
+    "ast_hash": "993f6f01586a321032e4f5b2932a6ce8",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/buffer-indexof-polyfill.mjs": {
+    "mtime": 1782263635.3179164,
+    "ast_hash": "b88298bbc96faee840de2c09c4a3585a",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/canvg+[...].mjs": {
+    "mtime": 1782263635.3186903,
+    "ast_hash": "be0cc35468fc88f1a39e6c11be28e418",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/clsx.mjs": {
+    "mtime": 1782263635.3186903,
+    "ast_hash": "edba18fa66e7526a94b65a5866f4763c",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/d3-array.mjs": {
+    "mtime": 1782263635.3216195,
+    "ast_hash": "56e1b6e4e0729729e279149985957b1b",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/d3-color.mjs": {
+    "mtime": 1782263635.3216195,
+    "ast_hash": "fe95841305c9da92622782964c4b8aeb",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/d3-format.mjs": {
+    "mtime": 1782263635.323128,
+    "ast_hash": "6f88a354249ba2fe088a0ff7d57bca18",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/d3-interpolate.mjs": {
+    "mtime": 1782263635.323128,
+    "ast_hash": "c751df73f513b2f8c3556e50d82e07db",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/d3-path.mjs": {
+    "mtime": 1782263635.323128,
+    "ast_hash": "5ca2759c27cdb5b29deffe4bef1aeddf",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/d3-scale+[...].mjs": {
+    "mtime": 1782263635.325263,
+    "ast_hash": "55a504b0476edd6890a30af02a816a3a",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/d3-shape.mjs": {
+    "mtime": 1782263635.326265,
+    "ast_hash": "3a8bdd70c0f4e449b35116047f65b585",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/dayjs.mjs": {
+    "mtime": 1782263635.3275423,
+    "ast_hash": "2634100bf6f2c6340b693899b0bf51e4",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/decimal.js-light.mjs": {
+    "mtime": 1782263635.3275423,
+    "ast_hash": "91db63c9222d4e7a007fa9291493b1db",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/dompurify.mjs": {
+    "mtime": 1782263635.3275423,
+    "ast_hash": "f48f219658d0d029d39324a15f450fe9",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/duplexer2+[...].mjs": {
+    "mtime": 1782263635.3275423,
+    "ast_hash": "03ca22fd7c9bcabaf9399c72a3ddbffe",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/es-toolkit.mjs": {
+    "mtime": 1782263635.3332253,
+    "ast_hash": "e97f439c08d8f58c52107374d9725a24",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/eventemitter3.mjs": {
+    "mtime": 1782263635.3332253,
+    "ast_hash": "0df9142c050aebfe0d13c1e6532a58c3",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/exceljs+[...].mjs": {
+    "mtime": 1782263635.3358293,
+    "ast_hash": "655b0d2f0347b71d9e8d2ef082c7f90e",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/fast-png+iobuffer+pako.mjs": {
+    "mtime": 1782263635.3368297,
+    "ast_hash": "d33a196f51d13e7bc1afc4ece349d0b3",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/fflate.mjs": {
+    "mtime": 1782263635.3372984,
+    "ast_hash": "55d69dd43b074c876478b84caa66edf2",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/h3+rou3+srvx.mjs": {
+    "mtime": 1782263635.3372984,
+    "ast_hash": "b57ed27efcc81f423a7877cc1ac66c08",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/h3-v2.mjs": {
+    "mtime": 1782263635.3372984,
+    "ast_hash": "a08e7da8892eac03e95ac0fe2986ba44",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/html-parse-stringify+[...].mjs": {
+    "mtime": 1782263635.3372984,
+    "ast_hash": "d18053eddd3522f05378fb84df331fa5",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/html2canvas.mjs": {
+    "mtime": 1782263635.3372984,
+    "ast_hash": "f0ec4d29e08efffced531eefd8c5a3fd",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/i18next.mjs": {
+    "mtime": 1782263635.3421183,
+    "ast_hash": "e1c65d3717aa5e763ce6b44e6f944a4a",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/immer.mjs": {
+    "mtime": 1782263635.3428884,
+    "ast_hash": "84888a2e0f120bcf046dc769151b6ea5",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/jspdf.mjs": {
+    "mtime": 1782263635.3433962,
+    "ast_hash": "067fdaee7da65c00a1bc3882b035af22",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/lucide-react.mjs": {
+    "mtime": 1782263635.34631,
+    "ast_hash": "2b1b171ee076119a4bda640172737eec",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/react+tanstack__react-query.mjs": {
+    "mtime": 1782263635.3478825,
+    "ast_hash": "cf86240365714e7134d459eee40ae5bc",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/react-i18next.mjs": {
+    "mtime": 1782263635.3483994,
+    "ast_hash": "428629768b7abbdb95b3664921d44c9b",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/react-is.mjs": {
+    "mtime": 1782263635.3494809,
+    "ast_hash": "1fe1841afa79c562e003e363f21a7302",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/react-redux+[...].mjs": {
+    "mtime": 1782263635.3500216,
+    "ast_hash": "cb4468b59cd8d74f5e1d3ee3585cfac8",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/recharts+[...].mjs": {
+    "mtime": 1782263635.3510756,
+    "ast_hash": "6053aa8a673099a0b471ed9a7de9b33e",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/supabase__auth-js.mjs": {
+    "mtime": 1782263635.3517342,
+    "ast_hash": "6be19da72cd62f0c940a806f0f6b6f04",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/supabase__functions-js.mjs": {
+    "mtime": 1782263635.3525405,
+    "ast_hash": "1ccbec91fb1e836680489cc5d8a009ec",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/supabase__phoenix.mjs": {
+    "mtime": 1782263635.3536096,
+    "ast_hash": "14b2eeb6dbd4aa16d13652ddde176bb5",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/supabase__postgrest-js.mjs": {
+    "mtime": 1782263635.3541443,
+    "ast_hash": "51ee26c7e69133e828c84e2331753db6",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/supabase__realtime-js.mjs": {
+    "mtime": 1782263635.3552208,
+    "ast_hash": "48f841579b2e5d51ffb17c398daa21d4",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/supabase__supabase-js.mjs": {
+    "mtime": 1782263635.3552208,
+    "ast_hash": "c148f3baa18b03f1722981a53dafabed",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/tanstack__history.mjs": {
+    "mtime": 1782263635.3552208,
+    "ast_hash": "dc9e269510fc641cf0762a9aa3375d0d",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/tanstack__query-core.mjs": {
+    "mtime": 1782263635.3587656,
+    "ast_hash": "54009c94fe53eebcc6de22d0588acd14",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_libs/ufo.mjs": {
+    "mtime": 1782263635.3604584,
+    "ast_hash": "eb5ef2465e8f643ca2281ee7f22e7e7c",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_runtime.mjs": {
+    "mtime": 1782263635.3609657,
+    "ast_hash": "88acde94122ea62ccba41d865b99faf1",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/DashboardPrimitives-Dljh1RvZ.mjs": {
+    "mtime": 1782263635.3634863,
+    "ast_hash": "f39870fc8d5fa65ad198da5ce7a0260c",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/DateRangePicker-DwGtfymT.mjs": {
+    "mtime": 1782263635.3634863,
+    "ast_hash": "e1be413e70c176f39d3c095153cf0d6f",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/LanguageSwitcher-BqkravHk.mjs": {
+    "mtime": 1782263635.3634863,
+    "ast_hash": "e466d04cb22c067c38f32a3e54af1c62",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/SetPasswordFromAuthCallback-CrM3uZ21.mjs": {
+    "mtime": 1782263635.366285,
+    "ast_hash": "16240983c4bfd28c1834bfed30a4ed93",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/StatusPageLayout-C6V5yzFt.mjs": {
+    "mtime": 1782263635.366285,
+    "ast_hash": "367100aacb624739f3ad3567343942b6",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/accept-invite-CUI42kq7.mjs": {
+    "mtime": 1782263635.366285,
+    "ast_hash": "ce6dcee4b86af12a4dbab28bb1a04880",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/admin-CIF_hnCg.mjs": {
+    "mtime": 1782263635.3678713,
+    "ast_hash": "b3b32975c23e3b8e14942c5760b04181",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/audit-BzPJYOeP.mjs": {
+    "mtime": 1782263635.3687081,
+    "ast_hash": "d312dd0b51441898af5d15f1ac066b49",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/auth-DMMSWZFs.mjs": {
+    "mtime": 1782263635.3687081,
+    "ast_hash": "02eea304251f237f561175b930a276ba",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/billing-BUAkEtZf.mjs": {
+    "mtime": 1782263635.3687081,
+    "ast_hash": "25dc77fb072db82a2e76d69d272475d1",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/billing-reminders-jvNx7aSh.mjs": {
+    "mtime": 1782263635.3687081,
+    "ast_hash": "d683a2690a53bac1a7005a44e74cfa40",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/cierres-BFiH0ion.mjs": {
+    "mtime": 1782263635.3687081,
+    "ast_hash": "db9eb7d666a4980be29f40e61c5e40e7",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/cierres-Bi__xoHY.mjs": {
+    "mtime": 1782263635.3687081,
+    "ast_hash": "c69cab18d6c3d450e7d64f8a3639e413",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/create-account-Cz9xJrG_.mjs": {
+    "mtime": 1782263635.3735175,
+    "ast_hash": "24e39ca9bae857b1b64dab0e44342219",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/create-account-c91kkq58.mjs": {
+    "mtime": 1782263635.3735175,
+    "ast_hash": "988496dea57ff8cdb8474ea206956351",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/dashboard-CPwi6n02.mjs": {
+    "mtime": 1782263635.3752673,
+    "ast_hash": "6f846b8c4c1862c1f6600c2ec6ceeb45",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/dashboard-DY3BGAVG.mjs": {
+    "mtime": 1782263635.3762052,
+    "ast_hash": "23c598c79e2391b0422110254600c6d5",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/dashboard-qHhsnBg4.mjs": {
+    "mtime": 1782263635.3771136,
+    "ast_hash": "0cdc49c20b720076dfd9bd0833da9dbd",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/dateRangePresets-PERwuqjg.mjs": {
+    "mtime": 1782263635.3771136,
+    "ast_hash": "d3c6c67b537cd7ae0a7f08aea4fb6714",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/dates-Dn00VbPT.mjs": {
+    "mtime": 1782263635.3771136,
+    "ast_hash": "ea295dac197b09035d1ad2746f1caae2",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/empty-plugin-adapters-D9UWiqvJ.mjs": {
+    "mtime": 1782263635.3771136,
+    "ast_hash": "079b4f8cadd6230f6c65e3611d478334",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/hidden-operator-h-qFl3cN.mjs": {
+    "mtime": 1782263635.3771136,
+    "ast_hash": "bd904e006bb68fc46fdc35eaf1d5fab2",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/i18n-R9BoLbng.mjs": {
+    "mtime": 1782263635.3771136,
+    "ast_hash": "df300c338e1111e356bb11db0c435b5d",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/link-pos-CItBBaDs.mjs": {
+    "mtime": 1782263635.3771136,
+    "ast_hash": "b5618cd0810f362bd84479bbf85f9faf",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/login-B4H4GdlS.mjs": {
+    "mtime": 1782263635.3832154,
+    "ast_hash": "affda37c7b8bd1105eb1ab74c37f8cfc",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/movements-D77ePnys.mjs": {
+    "mtime": 1782263635.3845148,
+    "ast_hash": "8dbef816e296dd29936840d358d8df1e",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/reports-CLOzUuC4.mjs": {
+    "mtime": 1782263635.385328,
+    "ast_hash": "ef8c06ef6870bf946fbba56367be3aa3",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/reports-vjRyU6fe.mjs": {
+    "mtime": 1782263635.385328,
+    "ast_hash": "3f356ebe5a673bea6b2ffe0b15c749f2",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/reset-password-Ba7gO_Hs.mjs": {
+    "mtime": 1782263635.385328,
+    "ast_hash": "80b7479e0100bdcecc9532b09bdc749a",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/roles-BfJlZqIK.mjs": {
+    "mtime": 1782263635.385328,
+    "ast_hash": "9e6400bccf15053150e6227a5629b597",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/route-DUId91g0.mjs": {
+    "mtime": 1782263635.385328,
+    "ast_hash": "f960be1b3e1f231afb505db50934cc36",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/router-CiN13MUH.mjs": {
+    "mtime": 1782263635.385328,
+    "ast_hash": "566f124150407c37951891a39eaaf36a",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/ssr.mjs": {
+    "mtime": 1782263635.385328,
+    "ast_hash": "c879ec05614887e6b3001fd678327075",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/start-5Z2QO8AU.mjs": {
+    "mtime": 1782263635.385328,
+    "ast_hash": "86ae61b18e450ea7a50bcbc949baab13",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/store-claims-p8t4lrHv.mjs": {
+    "mtime": 1782263635.3928804,
+    "ast_hash": "9c67e646eeace0410d9fce1b29a1cba8",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/store-context-DBKAVpJB.mjs": {
+    "mtime": 1782263635.393386,
+    "ast_hash": "5998bc2b80ef84f4cd1517ead85c540f",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/supabase-Bldq0vkB.mjs": {
+    "mtime": 1782263635.3943944,
+    "ast_hash": "325cd530aff22715450d22567862a962",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/supabase-page-X3iMlFEc.mjs": {
+    "mtime": 1782263635.3954375,
+    "ast_hash": "36c5d6b2560a96a3987dd72ca8466bca",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/tax-breakdown-DCNnyPKh.mjs": {
+    "mtime": 1782263635.3954375,
+    "ast_hash": "dd509ce3effc1d0fa84def81f8099bdb",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/toast-c4f6nLkp.mjs": {
+    "mtime": 1782263635.3964376,
+    "ast_hash": "fbe98adeeaeff681ba0b9ac864a6e775",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_ssr/ui-BYkjF4jF.mjs": {
+    "mtime": 1782263635.3974414,
+    "ast_hash": "4ef400196d1e443fef1b7e3c0d3c57d0",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/_tanstack-start-manifest_v-f7GZ7ewM.mjs": {
+    "mtime": 1782263635.3974414,
+    "ast_hash": "24e3ef572c90c2b1eca68459dc61817d",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/index.mjs": {
+    "mtime": 1782263635.2894464,
+    "ast_hash": "76ad89b2cafab02e4fd8c811d8330b8a",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/server/package.json": {
+    "mtime": 1782263634.7943654,
+    "ast_hash": "2e1a6582a43b686fbe372e4f9cfc036e",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/robots.txt": {
+    "mtime": 1781766490.2048426,
+    "ast_hash": "61c27d2cd39a713f7829422c3d9edcc7",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/ShelfPOS.png": {
+    "mtime": 1781766490.1760564,
+    "ast_hash": "e17592a3e7e0285eaf717f54d37d41a3",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/appSHELFPOS.png": {
+    "mtime": 1781766490.1844635,
+    "ast_hash": "709781a3c319c1443209d1b6c3b40672",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/favicon-16.png": {
+    "mtime": 1781766490.1844635,
+    "ast_hash": "f2754f77925190cda5ac1611d4780246",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/favicon-32.png": {
+    "mtime": 1781766490.1844635,
+    "ast_hash": "cf594ff2f8d73b3193a2c3ff726b3b78",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/favicon-48.png": {
+    "mtime": 1781766490.1927288,
+    "ast_hash": "8d31828c8d9c8a690d06c1206631494e",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/icon-192.png": {
+    "mtime": 1781766490.1947384,
+    "ast_hash": "e659666d039a3d71a19fae8b1b6abd30",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/icon-512.png": {
+    "mtime": 1781766490.1967466,
+    "ast_hash": "1366a5ee64e51227401facf7d5884b85",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/logo192.png": {
+    "mtime": 1781766490.2001877,
+    "ast_hash": "33dbdd0177549353eeeb785d02c294af",
+    "semantic_hash": ""
+  },
+  "DASHBOARD/.output/public/logo512.png": {
+    "mtime": 1781766490.2013116,
+    "ast_hash": "917515db74ea8d1aee6a246cfbcc0b45",
+    "semantic_hash": ""
   }
 }

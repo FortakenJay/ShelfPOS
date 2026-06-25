@@ -45,10 +45,7 @@ export async function generateOwnerResetLink(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({
-      email,
-      redirectOrigin: window.location.origin,
-    }),
+    body: JSON.stringify({ email }),
   })
 
   const payload = (await parseResetResponse(res)) as
@@ -78,11 +75,7 @@ export async function sendOwnerResetEmail(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({
-      email,
-      sendEmail: true,
-      redirectOrigin: window.location.origin,
-    }),
+    body: JSON.stringify({ email, sendEmail: true }),
   })
 
   const payload = (await parseResetResponse(res)) as

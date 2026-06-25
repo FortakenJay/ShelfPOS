@@ -157,7 +157,7 @@ if (-not $SupabaseUrl) {
   $SupabaseUrl = Prompt-Required 'Supabase URL (https://xxx.supabase.co)'
 }
 if (-not $SupabaseServiceKey) {
-  $SupabaseServiceKey = Prompt-Required 'Supabase secret key (sb_secret_… or legacy service_role JWT)' -Secret
+  $SupabaseServiceKey = Prompt-Required 'Supabase secret key (sb_secret_... or legacy service_role JWT)' -Secret
 }
 if ($SupabaseServiceKey -match '(?i)publishable|anon' -or $SupabaseServiceKey.Length -lt 32) {
   Write-Host 'WARNING: This does not look like a Supabase secret/service_role key. Sync and claim will fail with anon key.' -ForegroundColor Yellow
@@ -356,7 +356,7 @@ if (Test-Path $SqlitePath) {
   New-Item -ItemType Directory -Path $ShelfposDataDir -Force | Out-Null
   Set-Content -Path $pendingPath -Value $StoreId -Encoding UTF8 -NoNewline
   Write-Host "SQLite not found yet ($SqlitePath)." -ForegroundColor DarkYellow
-  Write-Host "Wrote pending_sync_store_id — open ShelfPOS once, then: Restart-Service $ServiceName" -ForegroundColor DarkYellow
+  Write-Host "Wrote pending_sync_store_id - open ShelfPOS once, then: Restart-Service $ServiceName" -ForegroundColor DarkYellow
 }
 
 $ScriptJs = Join-Path $InstallDir 'dist\index.js'
@@ -383,7 +383,7 @@ try {
 if ($LASTEXITCODE -ne 0) {
   Write-Host ''
   Write-Host 'Service registration failed. Run in foreground to see the error:' -ForegroundColor Red
-  Write-Host "  & `"$NodeExe`" `"$ScriptJs`""
+  Write-Host ('  & "{0}" "{1}"' -f $NodeExe, $ScriptJs)
   Pause-OnFailure 1
 }
 
@@ -415,8 +415,8 @@ if ($svc.Status -eq 'Running') {
   Write-Host "  sc.exe query $ServiceName"
   Write-Host "  Start-Service $ServiceName"
   Write-Host 'If it stops immediately, run in foreground (shows the real error):' -ForegroundColor Yellow
-  Write-Host "  `$env:SHELFPOS_SYNC_CONFIG = `"$configPath`""
-  Write-Host "  & `"$NodeExe`" `"$ScriptJs`""
+  Write-Host ('  $env:SHELFPOS_SYNC_CONFIG = "{0}"' -f $configPath)
+  Write-Host ('  & "{0}" "{1}"' -f $NodeExe, $ScriptJs)
   Pause-OnFailure 1
 }
 

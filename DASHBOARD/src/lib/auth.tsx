@@ -6,6 +6,7 @@ import {
 } from 'react'
 import type { ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
+import { getDashboardPublicOrigin } from '#/lib/dashboard-origin'
 import { getSupabase, supabaseConfigured } from '#/lib/supabase'
 import { clearPersistedDashboardCache } from '#/lib/clear-dashboard-cache'
 
@@ -56,9 +57,11 @@ async function signIn(email: string, password: string) {
 }
 
 async function signUp(email: string, password: string) {
+  const origin = getDashboardPublicOrigin()
   const { error } = await getSupabase().auth.signUp({
     email,
     password,
+    options: origin ? { emailRedirectTo: `${origin}/dashboard` } : undefined,
   })
   return { error: error?.message ?? null }
 }

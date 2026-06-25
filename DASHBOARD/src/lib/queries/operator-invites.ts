@@ -48,10 +48,7 @@ export async function generateOwnerInviteLink(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({
-      email,
-      redirectOrigin: window.location.origin,
-    }),
+    body: JSON.stringify({ email }),
   })
 
   const payload = (await parseInviteResponse(res)) as
@@ -81,11 +78,7 @@ export async function sendOwnerInviteEmail(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({
-      email,
-      sendEmail: true,
-      redirectOrigin: window.location.origin,
-    }),
+    body: JSON.stringify({ email, sendEmail: true }),
   })
 
   const payload = (await parseInviteResponse(res)) as
