@@ -1,0 +1,6 @@
+# Only graph the two ShelfPOS apps (not root docs, release artifacts, etc.)
+*
+!OFFLINE-ONLY-POS/
+!OFFLINE-ONLY-POS/**
+!DASHBOARD/
+!DASHBOARD/**

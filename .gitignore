@@ -44,3 +44,6 @@ coverage/
 
 # TypeScript incremental
 *.tsbuildinfo
+
+# Graphify (https://graphify.net/) — commit graphify-out/; keep local cost log out
+graphify-out/cost.json
