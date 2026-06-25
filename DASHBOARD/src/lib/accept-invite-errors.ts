@@ -14,6 +14,9 @@ export function completeAuthCallbackErrorKey(
   if (lower.includes('expired') || lower.includes('invalid jwt')) {
     return `${namespace}.errors.expired`
   }
+  if (lower.includes('auth session missing') || lower.includes('session missing')) {
+    return `${namespace}.errors.session_missing`
+  }
   if (lower.includes('invalid')) {
     return `${namespace}.errors.invalid`
   }

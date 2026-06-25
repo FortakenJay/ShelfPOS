@@ -18,6 +18,10 @@ function stripAuthParamsFromUrl(): void {
   window.history.replaceState({}, '', window.location.pathname)
 }
 
+function parseHashParams(): URLSearchParams {
+  return new URLSearchParams(window.location.hash.replace(/^#/, ''))
+}
+
 /** True when the URL carries Supabase auth callback params from an invite/reset link. */
 export function hasAuthCallbackInUrl(): boolean {
   const params = new URLSearchParams(window.location.search)
@@ -25,6 +29,26 @@ export function hasAuthCallbackInUrl(): boolean {
   if (params.get('token_hash') && params.get('type')) return true
   const hash = window.location.hash
   return hash.includes('access_token') || hash.includes('error=')
+}
+
+async function setSessionFromHash(
+  sb: SupabaseClient,
+): Promise<{ ok: true } | { ok: false; error: string } | null> {
+  const hashParams = parseHashParams()
+  const errorDesc = hashParams.get('error_description') ?? hashParams.get('error')
+  if (errorDesc) return { ok: false, error: errorDesc }
+
+  const accessToken = hashParams.get('access_token')
+  const refreshToken = hashParams.get('refresh_token')
+  if (!accessToken || !refreshToken) return null
+
+  const { error } = await sb.auth.setSession({
+    access_token: accessToken,
+    refresh_token: refreshToken,
+  })
+  if (error) return { ok: false, error: error.message }
+  stripAuthParamsFromUrl()
+  return { ok: true }
 }
 
 export async function establishSessionFromAuthCallback(
@@ -52,17 +76,16 @@ export async function establishSessionFromAuthCallback(
     return { ok: true }
   }
 
-  const hash = window.location.hash
-  if (hash.includes('access_token') || hash.includes('error=')) {
+  if (window.location.hash.includes('access_token') || window.location.hash.includes('error=')) {
+    const fromHash = await setSessionFromHash(sb)
+    if (fromHash) return fromHash
+
     const { data, error } = await sb.auth.getSession()
     if (error) return { ok: false, error: error.message }
     if (data.session) {
       stripAuthParamsFromUrl()
       return { ok: true }
     }
-    const hashParams = new URLSearchParams(hash.replace(/^#/, ''))
-    const desc = hashParams.get('error_description')
-    if (desc) return { ok: false, error: desc }
   }
 
   const { data } = await sb.auth.getSession()

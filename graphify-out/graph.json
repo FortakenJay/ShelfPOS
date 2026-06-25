@@ -4,6 +4,96 @@
   "graph": {},
   "nodes": [
     {
+      "label": "operator-invites.ts",
+      "file_type": "code",
+      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "queries_operator_invites",
+      "community": 35,
+      "norm_label": "operator-invites.ts"
+    },
+    {
+      "label": "OwnerInviteLinkResult",
+      "file_type": "code",
+      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "queries_operator_invites_ownerinvitelinkresult",
+      "community": 35,
+      "norm_label": "ownerinvitelinkresult"
+    },
+    {
+      "label": "OwnerInviteEmailResult",
+      "file_type": "code",
+      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
+      "source_location": "L7",
+      "_origin": "ast",
+      "id": "queries_operator_invites_ownerinviteemailresult",
+      "community": 35,
+      "norm_label": "ownerinviteemailresult"
+    },
+    {
+      "label": "OperatorInviteErrorCode",
+      "file_type": "code",
+      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
+      "source_location": "L15",
+      "_origin": "ast",
+      "id": "queries_operator_invites_operatorinviteerrorcode",
+      "community": 35,
+      "norm_label": "operatorinviteerrorcode"
+    },
+    {
+      "label": "OperatorInviteError",
+      "file_type": "code",
+      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
+      "source_location": "L29",
+      "_origin": "ast",
+      "id": "queries_operator_invites_operatorinviteerror",
+      "community": 35,
+      "norm_label": "operatorinviteerror"
+    },
+    {
+      "label": ".constructor()",
+      "file_type": "code",
+      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
+      "source_location": "L30",
+      "_origin": "ast",
+      "id": "queries_operator_invites_operatorinviteerror_constructor",
+      "community": 35,
+      "norm_label": ".constructor()"
+    },
+    {
+      "label": "parseInviteResponse()",
+      "file_type": "code",
+      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
+      "source_location": "L36",
+      "_origin": "ast",
+      "id": "queries_operator_invites_parseinviteresponse",
+      "community": 35,
+      "norm_label": "parseinviteresponse()"
+    },
+    {
+      "label": "generateOwnerInviteLink()",
+      "file_type": "code",
+      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
+      "source_location": "L44",
+      "_origin": "ast",
+      "id": "queries_operator_invites_generateownerinvitelink",
+      "community": 35,
+      "norm_label": "generateownerinvitelink()"
+    },
+    {
+      "label": "sendOwnerInviteEmail()",
+      "file_type": "code",
+      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
+      "source_location": "L74",
+      "_origin": "ast",
+      "id": "queries_operator_invites_sendownerinviteemail",
+      "community": 35,
+      "norm_label": "sendownerinviteemail()"
+    },
+    {
       "label": "invite-owner.ts",
       "file_type": "code",
       "source_file": "DASHBOARD/src/routes/api/operator/invite-owner.ts",
@@ -332,96 +422,6 @@
       "community": 66,
       "norm_label": "useauth()",
       "id": "lib_auth_useauth"
-    },
-    {
-      "label": "operator-invites.ts",
-      "file_type": "code",
-      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 35,
-      "norm_label": "operator-invites.ts",
-      "id": "queries_operator_invites"
-    },
-    {
-      "label": "OwnerInviteLinkResult",
-      "file_type": "code",
-      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 35,
-      "norm_label": "ownerinvitelinkresult",
-      "id": "queries_operator_invites_ownerinvitelinkresult"
-    },
-    {
-      "label": "OwnerInviteEmailResult",
-      "file_type": "code",
-      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
-      "source_location": "L7",
-      "_origin": "ast",
-      "community": 35,
-      "norm_label": "ownerinviteemailresult",
-      "id": "queries_operator_invites_ownerinviteemailresult"
-    },
-    {
-      "label": "OperatorInviteErrorCode",
-      "file_type": "code",
-      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
-      "source_location": "L15",
-      "_origin": "ast",
-      "community": 35,
-      "norm_label": "operatorinviteerrorcode",
-      "id": "queries_operator_invites_operatorinviteerrorcode"
-    },
-    {
-      "label": "OperatorInviteError",
-      "file_type": "code",
-      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
-      "source_location": "L26",
-      "_origin": "ast",
-      "community": 35,
-      "norm_label": "operatorinviteerror",
-      "id": "queries_operator_invites_operatorinviteerror"
-    },
-    {
-      "label": ".constructor()",
-      "file_type": "code",
-      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
-      "source_location": "L27",
-      "_origin": "ast",
-      "community": 35,
-      "norm_label": ".constructor()",
-      "id": "queries_operator_invites_operatorinviteerror_constructor"
-    },
-    {
-      "label": "parseInviteResponse()",
-      "file_type": "code",
-      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
-      "source_location": "L33",
-      "_origin": "ast",
-      "community": 35,
-      "norm_label": "parseinviteresponse()",
-      "id": "queries_operator_invites_parseinviteresponse"
-    },
-    {
-      "label": "generateOwnerInviteLink()",
-      "file_type": "code",
-      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
-      "source_location": "L41",
-      "_origin": "ast",
-      "community": 35,
-      "norm_label": "generateownerinvitelink()",
-      "id": "queries_operator_invites_generateownerinvitelink"
-    },
-    {
-      "label": "sendOwnerInviteEmail()",
-      "file_type": "code",
-      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
-      "source_location": "L71",
-      "_origin": "ast",
-      "community": 35,
-      "norm_label": "sendownerinviteemail()",
-      "id": "queries_operator_invites_sendownerinviteemail"
     },
     {
       "label": "operator-password-reset.ts",
@@ -33309,6 +33309,163 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "DASHBOARD/src/routes/_app/admin.tsx",
+      "source_location": "L8",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "app_admin",
+      "target": "queries_operator_invites"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
+      "source_location": "L41",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "queries_operator_invites",
+      "target": "queries_operator_invites_generateownerinvitelink"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "queries_operator_invites",
+      "target": "queries_operator_invites_operatorinviteerror"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "queries_operator_invites",
+      "target": "queries_operator_invites_operatorinviteerrorcode"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "queries_operator_invites",
+      "target": "queries_operator_invites_ownerinviteemailresult"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "queries_operator_invites",
+      "target": "queries_operator_invites_ownerinvitelinkresult"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
+      "source_location": "L33",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "queries_operator_invites",
+      "target": "queries_operator_invites_parseinviteresponse"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
+      "source_location": "L74",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "queries_operator_invites",
+      "target": "queries_operator_invites_sendownerinviteemail"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "DASHBOARD/src/routes/_app/admin.tsx",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "app_admin",
+      "target": "queries_operator_invites_ownerinvitelinkresult"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "DASHBOARD/src/routes/_app/admin.tsx",
+      "source_location": "L8",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "app_admin",
+      "target": "queries_operator_invites_operatorinviteerror"
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
+      "source_location": "L27",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "queries_operator_invites_operatorinviteerror",
+      "target": "queries_operator_invites_operatorinviteerror_constructor"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
+      "source_location": "L57",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "queries_operator_invites_generateownerinvitelink",
+      "target": "queries_operator_invites_parseinviteresponse"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
+      "source_location": "L91",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "queries_operator_invites_sendownerinviteemail",
+      "target": "queries_operator_invites_parseinviteresponse"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "DASHBOARD/src/routes/_app/admin.tsx",
+      "source_location": "L8",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "app_admin",
+      "target": "queries_operator_invites_generateownerinvitelink"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "DASHBOARD/src/routes/_app/admin.tsx",
+      "source_location": "L8",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "app_admin",
+      "target": "queries_operator_invites_sendownerinviteemail"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "DASHBOARD/src/routes/api/operator/invite-owner.ts",
       "source_location": "L13",
       "weight": 1.0,
@@ -33343,9 +33500,9 @@
       "source_file": "DASHBOARD/src/routes/api/operator/invite-owner.ts",
       "source_location": "L26",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "operator_invite_owner",
-      "target": "operator_invite_owner_haslocalhostredirect",
-      "confidence_score": 1.0
+      "target": "operator_invite_owner_haslocalhostredirect"
     },
     {
       "relation": "contains",
@@ -33527,9 +33684,9 @@
       "source_file": "DASHBOARD/src/routes/api/operator/invite-owner.ts",
       "source_location": "L61",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "operator_invite_owner_generateinvitelink",
-      "target": "operator_invite_owner_haslocalhostredirect",
-      "confidence_score": 1.0
+      "target": "operator_invite_owner_haslocalhostredirect"
     },
     {
       "relation": "calls",
@@ -34487,163 +34644,6 @@
       "weight": 1.0,
       "source": "shell_ownershell_ownershell",
       "target": "lib_auth_useauth"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "DASHBOARD/src/routes/_app/admin.tsx",
-      "source_location": "L8",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "app_admin",
-      "target": "queries_operator_invites"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
-      "source_location": "L41",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "queries_operator_invites",
-      "target": "queries_operator_invites_generateownerinvitelink"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
-      "source_location": "L26",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "queries_operator_invites",
-      "target": "queries_operator_invites_operatorinviteerror"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
-      "source_location": "L15",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "queries_operator_invites",
-      "target": "queries_operator_invites_operatorinviteerrorcode"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
-      "source_location": "L7",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "queries_operator_invites",
-      "target": "queries_operator_invites_ownerinviteemailresult"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
-      "source_location": "L1",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "queries_operator_invites",
-      "target": "queries_operator_invites_ownerinvitelinkresult"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
-      "source_location": "L33",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "queries_operator_invites",
-      "target": "queries_operator_invites_parseinviteresponse"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
-      "source_location": "L74",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "queries_operator_invites",
-      "target": "queries_operator_invites_sendownerinviteemail"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "DASHBOARD/src/routes/_app/admin.tsx",
-      "source_location": "L7",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "app_admin",
-      "target": "queries_operator_invites_ownerinvitelinkresult"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "DASHBOARD/src/routes/_app/admin.tsx",
-      "source_location": "L8",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "app_admin",
-      "target": "queries_operator_invites_operatorinviteerror"
-    },
-    {
-      "relation": "method",
-      "confidence": "EXTRACTED",
-      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
-      "source_location": "L27",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "queries_operator_invites_operatorinviteerror",
-      "target": "queries_operator_invites_operatorinviteerror_constructor"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
-      "source_location": "L57",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "queries_operator_invites_generateownerinvitelink",
-      "target": "queries_operator_invites_parseinviteresponse"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "DASHBOARD/src/lib/queries/operator-invites.ts",
-      "source_location": "L91",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "queries_operator_invites_sendownerinviteemail",
-      "target": "queries_operator_invites_parseinviteresponse"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "DASHBOARD/src/routes/_app/admin.tsx",
-      "source_location": "L8",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "app_admin",
-      "target": "queries_operator_invites_generateownerinvitelink"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "DASHBOARD/src/routes/_app/admin.tsx",
-      "source_location": "L8",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "app_admin",
-      "target": "queries_operator_invites_sendownerinviteemail"
     },
     {
       "relation": "imports_from",
@@ -104263,5 +104263,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "a97eb0df08016748a1be4e1962ccaddd9a53b050"
+  "built_at_commit": "ea6cacade726465f607a769ac20d6add44cceb15"
 }

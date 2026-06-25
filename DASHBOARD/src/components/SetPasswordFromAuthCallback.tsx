@@ -66,24 +66,8 @@ export function SetPasswordFromAuthCallback({ i18n }: { i18n: SetPasswordI18nNam
     aborted.current = false
     void (async () => {
       const sb = getSupabase()
-      const fromInviteLink = hasAuthCallbackInUrl()
 
-      if (fromInviteLink) {
-        const hasCallback = hasAuthCallbackInUrl()
-        const { data: existing } = await sb.auth.getSession()
-
-        // Supabase may have already consumed the one-time code via detectSessionInUrl.
-        if (existing.session && !hasCallback) {
-          if (aborted.current) return
-          setAccountEmail(existing.session.user.email ?? null)
-          setPhase('set-password')
-          return
-        }
-
-        if (existing.session && hasCallback) {
-          await sb.auth.signOut()
-        }
-
+      if (hasAuthCallbackInUrl()) {
         const result = await establishSessionFromAuthCallback(sb)
         if (aborted.current) return
         if (!result.ok) {
@@ -155,9 +139,18 @@ export function SetPasswordFromAuthCallback({ i18n }: { i18n: SetPasswordI18nNam
       return
     }
     dispatch({ type: 'submitStart' })
-    const { error } = await getSupabase().auth.updateUser({ password: form.password })
+    const sb = getSupabase()
+    const { data: sessionData } = await sb.auth.getSession()
+    if (!sessionData.session) {
+      dispatch({ type: 'submitError', error: t(`${i18n}.errors.session_missing`) })
+      return
+    }
+    const { error } = await sb.auth.updateUser({ password: form.password })
     if (error) {
-      dispatch({ type: 'submitError', error: error.message })
+      dispatch({
+        type: 'submitError',
+        error: t(completeAuthCallbackErrorKey(error.message, i18n)),
+      })
       return
     }
     const { data } = await getSupabase().auth.getUser()

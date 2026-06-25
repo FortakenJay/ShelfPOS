@@ -71,6 +71,7 @@
     "passwordMismatch": "Las contraseñas no coinciden.",
     "errors": {
       "missing_callback": "Enlace de invitación inválido o incompleto. Solicite uno nuevo.",
+      "session_missing": "La sesión expiró. Abra el enlace de invitación de nuevo (no recargue esta página).",
       "expired": "El enlace expiró. Solicite una invitación nueva al operador.",
       "invalid": "No se pudo validar la invitación. Solicite un enlace nuevo."
     }
@@ -86,6 +87,7 @@
     "passwordMismatch": "Las contraseñas no coinciden.",
     "errors": {
       "missing_callback": "Enlace de restablecimiento inválido o incompleto. Solicite uno nuevo.",
+      "session_missing": "La sesión expiró. Abra el enlace de restablecimiento de nuevo (no recargue esta página).",
       "expired": "El enlace expiró. Solicite un restablecimiento nuevo al operador.",
       "invalid": "No se pudo validar el enlace. Solicite uno nuevo."
     }

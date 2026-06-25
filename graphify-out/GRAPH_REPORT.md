@@ -1,7 +1,7 @@
 # Graph Report - ShelfPOS  (2026-06-25)
 
 ## Corpus Check
-- 571 files · ~3,874,937 words
+- 571 files · ~3,874,961 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a97eb0df`
+- Built from commit: `ea6cacad`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -933,7 +933,7 @@ Cohesion: 0.29
 Nodes (6): ADR-004: Multi-Tenant RLS + Pairing Codes, Alternatives considered, Consequences, Context, Decision, Related
 
 ## Knowledge Gaps
-- **1222 isolated node(s):** `InviteBody`, `AuthCallbackRoute`, `AuthState`, `AuthSlice`, `AuthSliceAction` (+1217 more)
+- **1222 isolated node(s):** `OwnerInviteEmailResult`, `OperatorInviteErrorCode`, `InviteBody`, `AuthCallbackRoute`, `AuthState` (+1217 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **12 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -945,10 +945,10 @@ _Questions this graph is uniquely positioned to answer:_
 - **Why does `useSession()` connect `Community 13` to `Community 73`, `Community 15`?**
   _High betweenness centrality (0.017) - this node is a cross-community bridge._
 - **Why does `SetPasswordFromAuthCallback()` connect `Community 54` to `Community 66`, `Community 11`, `Community 12`?**
-  _High betweenness centrality (0.013) - this node is a cross-community bridge._
+  _High betweenness centrality (0.012) - this node is a cross-community bridge._
 - **Are the 190 inferred relationships involving `t()` (e.g. with `AdminCash()` and `AuditLog()`) actually correct?**
   _`t()` has 190 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `InviteBody`, `AuthCallbackRoute`, `AuthState` to the rest of the system?**
+- **What connects `OwnerInviteEmailResult`, `OperatorInviteErrorCode`, `InviteBody` to the rest of the system?**
   _1222 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
   _Cohesion score 0.06662770309760374 - nodes in this community are weakly interconnected._

@@ -71,6 +71,7 @@
     "passwordMismatch": "两次密码不一致。",
     "errors": {
       "missing_callback": "邀请链接无效或不完整，请重新索取。",
+      "session_missing": "会话已过期。请重新打开邀请链接（不要刷新此页面）。",
       "expired": "链接已过期，请联系运营者重新邀请。",
       "invalid": "无法验证邀请，请索取新链接。"
     }
@@ -86,6 +87,7 @@
     "passwordMismatch": "两次密码不一致。",
     "errors": {
       "missing_callback": "重置链接无效或不完整，请重新索取。",
+      "session_missing": "会话已过期。请重新打开重置链接（不要刷新此页面）。",
       "expired": "链接已过期，请联系运营者重新发送。",
       "invalid": "无法验证链接，请索取新链接。"
     }
