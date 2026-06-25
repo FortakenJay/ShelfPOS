@@ -20,7 +20,7 @@ function isLocalOrigin(value: string): boolean {
 }
 
 /** Real users receive these links by email — never localhost unless explicitly configured. */
-export const PRODUCTION_DASHBOARD_ORIGIN = 'https://shelfpos.net'
+export const PRODUCTION_DASHBOARD_ORIGIN = 'https://www.shelfpos.net'
 
 function getConfiguredDashboardOrigin(): string {
   const fromEnv =
@@ -28,7 +28,7 @@ function getConfiguredDashboardOrigin(): string {
     process.env.DASHBOARD_PUBLIC_URL?.trim() ||
     ''
   if (fromEnv) return normalizeOrigin(fromEnv)
-  return PRODUCTION_DASHBOARD_ORIGIN
+  return ''
 }
 
 function getForwardedOrigin(request: Request): string {
@@ -45,10 +45,16 @@ export function resolveDashboardRedirect(
   _clientOrigin: string | undefined,
   request: Request,
 ): string {
-  let base = getConfiguredDashboardOrigin()
-  if (isLocalOrigin(base)) {
-    base = getForwardedOrigin(request) || PRODUCTION_DASHBOARD_ORIGIN
+  const configured = getConfiguredDashboardOrigin()
+  const forwarded = getForwardedOrigin(request)
+
+  let base = configured
+  if (!base || isLocalOrigin(base)) {
+    base = forwarded
   }
-  if (!base || isLocalOrigin(base)) base = PRODUCTION_DASHBOARD_ORIGIN
+  if (!base || isLocalOrigin(base)) {
+    base = PRODUCTION_DASHBOARD_ORIGIN
+  }
+
   return `${normalizeOrigin(base)}${path}`
 }
