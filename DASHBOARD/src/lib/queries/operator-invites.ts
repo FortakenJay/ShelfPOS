@@ -20,6 +20,9 @@ export type OperatorInviteErrorCode =
   | 'owner_already_exists'
   | 'invite_failed'
   | 'invite_link_failed'
+  | 'redirect_not_allowed'
+  | 'secret_key_invalid'
+  | 'invite_email_failed'
   | 'secret_key_not_configured'
   | 'supabase_not_configured'
 

@@ -59,8 +59,8 @@ async function generateInviteLink(
     return { ok: false, error: 'invite_link_failed' }
   }
   if (hasLocalhostRedirect(actionLink)) {
-    console.error('[invite-owner] generated localhost redirect, refusing link')
-    return { ok: false, error: 'invite_link_failed' }
+    console.error('[invite-owner] generated localhost redirect, refusing link:', actionLink)
+    return { ok: false, error: 'redirect_not_allowed' }
   }
 
   return {
