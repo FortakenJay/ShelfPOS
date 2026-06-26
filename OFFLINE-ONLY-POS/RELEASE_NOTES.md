@@ -1,5 +1,24 @@
 # ShelfPOS release notes
 
+## 1.6.2
+
+### Corrección — TM-T81III (etiquetas y recibos)
+
+- **¢** en CP850 (`0xBD`, fila b × col d): ya no imprime **E** por `ESC E` (bold) a 2×/3×.
+- Etiquetas: cent y monto en comandos separados; cent a escala menor que el precio en T81III.
+- Recibos: negrita vía double-strike (`ESC G`) en lugar de emphasis (`ESC E`).
+- Refactor ESC/POS en `escPosRender.ts`; aviso si etiqueta excede 20 mm.
+
+### Despliegue
+
+| Componente | Versión | Acción |
+|------------|---------|--------|
+| POS Windows | 1.6.2 | `npm run release:win` → `ShelfPOS-1.6.2-win.zip` |
+| Sync service | 1.6.2 | Incluido en ZIP; sin cambios de protocolo |
+| Dashboard | 1.5.0 | Sin cambios en esta release |
+
+---
+
 ## 1.6.1
 
 ### Nuevo — impresión en lote (Productos)

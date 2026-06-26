@@ -105,7 +105,9 @@ SQLITE_PATH=C:\Users\<User>\AppData\Roaming\shelfpos\shelf.db
 
 **SQLite:** `settings.sync_store_id` set via `scripts/set-store-id.cjs`.
 
-**Windows service:** `ShelfPOSSync` — reads config via `SHELFPOS_SYNC_CONFIG` → `%APPDATA%\shelfpos\sync.env`.
+**Windows service:** `ShelfPOSSync` (display name) — SCM internal name **`shelfpossync.exe`**. Reads config via `SHELFPOS_SYNC_CONFIG` → `%APPDATA%\shelfpos\sync.env`. Registered by **node-windows** (WinSW wrapper around bundled `node.exe` + `dist/index.js`). See [[10-Sync-Service#winsw--node-windows-chain]].
+
+**After install:** If the installer ends with red text `status: StartPending`, wait 20s and run `sc.exe query shelfpossync.exe`. Often the service is already `RUNNING` — node-windows reports success before SCM settles. See [[19-Edge-Cases-And-Runbooks#startpending-right-after-install-shelfpos-often-a-false-alarm]].
 
 ### After install (before claim)
 
@@ -271,6 +273,7 @@ In **`app_metadata`**, not `user_metadata`. See [[04-Multi-Tenant-Security]].
 | POS shows linked, dashboard empty | Stale `sync_owner_claimed` after cloud wipe — re-pair via `/sync-setup`; see [[19-Edge-Cases-And-Runbooks]] |
 | Store already owned | Another user has `store_access` for that `store_id` |
 | Owner sees no stores | Claim not run, wrong account, or RLS / `SUPA.sql` not applied |
+| Install ends `StartPending` | Often transient — wait 20s, `sc.exe query shelfpossync.exe`; see [[19-Edge-Cases-And-Runbooks#startpending-right-after-install-shelfpos-often-a-false-alarm]] |
 | Sales local only | Service stopped, wrong `SQLITE_PATH`, or elevated install to wrong `%APPDATA%` |
 | Sync errors | Service logs under `Program Files\ShelfPOS\sync-service\logs\` **and** `sync.txt` under service account profile — see [[10-Sync-Service#where-logs-live-two-places]] |
 | Queue stuck / partial dashboard | `npm run queue:diagnose` in `sync-service`; `[GAVE_UP]` in `sync.txt` |

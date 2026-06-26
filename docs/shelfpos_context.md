@@ -396,6 +396,7 @@ lib/reports/        → PDF + Excel builders (report-grid-to-xlsx.ts)
 
 | Problem | Cause | Doc |
 |---------|-------|-----|
+| Install says `StartPending` / not running | node-windows `start` fires before SCM; `.ps1` checks after 2s | Wait 20s, `sc.exe query shelfpossync.exe` — often already `RUNNING` |
 | Sales on POS, not dashboard | Sync stopped, wrong `store_id`, claim never ran | `wiki/19-Edge-Cases-And-Runbooks.md` |
 | Stale `sync_owner_claimed` after cloud wipe | Local flag set, `store_access` gone | Sync startup clears + re-pair |
 | Barcode scans but no add | `scanner_burst_ms` too low, product missing, modal open | Raise to 50–100ms; check catalog |

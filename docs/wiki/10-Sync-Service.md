@@ -32,13 +32,29 @@ Tradeoff: **two-step install** (`Setup.exe` + `Install-ShelfPOS`). See [[15-Setu
 
 | Item | Path / name |
 |------|-------------|
-| Service name | `ShelfPOSSync` |
+| Display name (`services.msc`) | **ShelfPOSSync** |
+| Internal SCM name (`sc.exe`, `Get-Service`, POS restart) | **`shelfpossync.exe`** |
 | Binaries | `C:\Program Files\ShelfPOS\sync-service\` |
 | Entry point | `dist/index.js` (bundled `node.exe`) |
 | Installer | `OFFLINE-ONLY-POS/scripts/Install-ShelfPOS.ps1` → `install-windows-service.cjs` |
 | Service logs | `C:\Program Files\ShelfPOS\sync-service\logs\` |
 
 The service receives `SHELFPOS_SYNC_CONFIG=%APPDATA%\shelfpos\sync.env` at install time (`install-windows-service.cjs`).
+
+### WinSW / node-windows chain
+
+Registration uses **`node-windows`** (WinSW XML wrapper), not a raw `sc.exe create` on `dist/index.js`.
+
+```text
+SCM service shelfpossync.exe
+  → C:\Program Files\ShelfPOS\sync-service\node.exe
+  → node_modules\node-windows\lib\wrapper.js
+  → --file C:\Program Files\ShelfPOS\sync-service\dist\index.js
+```
+
+`install-windows-service.cjs` sets `workingDirectory` to the sync-service folder, `SHELFPOS_SYNC_CONFIG` to the cashier's `%APPDATA%\shelfpos\sync.env`, and `logpath` to `logs\`.
+
+**Install timing:** node-windows may log **"service is running"** before SCM shows `RUNNING`. `Install-ShelfPOS.ps1` checks status after only 2s — **`StartPending` is often transient**. Wait 15–30s and re-run `sc.exe query shelfpossync.exe` before treating install as failed. See [[19-Edge-Cases-And-Runbooks#startpending-right-after-install-shelfpos-often-a-false-alarm]].
 
 ### What the POS does vs the service
 

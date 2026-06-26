@@ -1,3 +1,5 @@
+import type { PrintLine } from '../../shared/types'
+
 /** Shelf etiqueta: 20 mm label height (half of 40 mm stock) at Epson 203 dpi. */
 export const SHELF_LABEL_HEIGHT_MM = 20
 export const SHELF_LABEL_DOTS_PER_MM = 8
@@ -88,4 +90,50 @@ export function shelfLabelTextDots(big: boolean, huge: boolean, mega = false): n
   if (mega) return TEXT_DOTS_MEGA
   if (big) return TEXT_DOTS_BIG
   return TEXT_DOTS_NORMAL
+}
+
+/** Vertical dot estimate from rendered shelf-label print lines. */
+export function estimateShelfLabelDotsFromLines(lines: PrintLine[]): number {
+  let hasBarcode = false
+  let hasCodeText = false
+  let nameLines = 0
+  let nameBig = false
+  let priceHuge = false
+  let priceMega = false
+
+  for (const line of lines) {
+    switch (line.t) {
+      case 'barcode':
+        hasBarcode = true
+        break
+      case 'text':
+        if (line.mega) priceMega = true
+        else if (line.huge) priceHuge = true
+        else if (line.big) {
+          nameLines++
+          nameBig = true
+        } else {
+          hasCodeText = true
+        }
+        break
+    }
+  }
+
+  return estimateShelfLabelDots({
+    hasBarcode,
+    hasCodeText,
+    nameLines,
+    nameBig: nameLines > 0 ? nameBig : undefined,
+    priceHuge,
+    priceMega
+  })
+}
+
+/** Warn when label content likely exceeds physical 20 mm stock (TM-T81III clips strictly). */
+export function warnIfShelfLabelOverflow(lines: PrintLine[]): void {
+  const estimated = estimateShelfLabelDotsFromLines(lines)
+  if (estimated <= SHELF_LABEL_HEIGHT_DOTS) return
+  console.warn(
+    `[printer] shelf label ~${estimated} dots exceeds ${SHELF_LABEL_HEIGHT_DOTS} dot (${SHELF_LABEL_HEIGHT_MM} mm) stock — bottom lines may clip on TM-T81III`
+  )
 }

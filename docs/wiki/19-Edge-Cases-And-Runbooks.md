@@ -91,6 +91,43 @@ Not fatal — verify `SUPABASE_URL` and secret key if unexpected.
 
 Plaintext keys work for dev. Corrupt/wrong-machine blob → service exits immediately on startup.
 
+### `StartPending` right after Install-ShelfPOS (often a false alarm)
+
+`install-windows-service.cjs` prints **`ShelfPOSSync service is running.`** when **node-windows** fires its `start` event. That is **not** the same as Windows SCM reporting `RUNNING`.
+
+`Install-ShelfPOS.ps1` then waits only **2 seconds** and calls `Get-Service`. On a slow PC the service can still be **`StartPending`** even though registration succeeded.
+
+| What you saw | Meaning |
+|--------------|---------|
+| `ShelfPOSSync service is running.` (from node-windows) | Wrapper accepted the start request — optimistic |
+| `Install finished but ShelfPOSSync is not running (status: StartPending)` (red, from `.ps1`) | SCM not settled yet — **often OK** |
+| `sc.exe query shelfpossync.exe` → `STATE: 4 RUNNING` after 15–30s | Install actually succeeded — ignore the red line |
+| Stays `StartPending` > 60s or flips to `Stopped` | Real failure — see below |
+
+**Verify (wait before panicking):**
+
+```powershell
+Start-Sleep -Seconds 20
+sc.exe query shelfpossync.exe
+Get-Service shelfpossync.exe
+```
+
+If `STATE: 4 RUNNING`, you are done. Optional: `Restart-Service shelfpossync.exe` once to confirm it survives a stop/start.
+
+**If it stops or never reaches RUNNING:**
+
+1. WinSW logs: `C:\Program Files\ShelfPOS\sync-service\logs\` (wrapper stdout/stderr)
+2. Foreground (shows the real Node error):
+
+```powershell
+$env:SHELFPOS_SYNC_CONFIG = "$env:APPDATA\shelfpos\sync.env"
+& "C:\Program Files\ShelfPOS\sync-service\node.exe" "C:\Program Files\ShelfPOS\sync-service\dist\index.js"
+```
+
+3. Common causes: missing `dist\index.js` (stale ZIP), missing `sync.env`, wrong `SQLITE_PATH`, DPAPI key from another machine, `sync.env` written under admin profile instead of cashier (see elevated installer above).
+
+See also [[10-Sync-Service#winsw--node-windows-chain]].
+
 ---
 
 ## Sync service

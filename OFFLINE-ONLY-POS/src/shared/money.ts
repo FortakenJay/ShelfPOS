@@ -22,11 +22,11 @@ export function formatColones(n: number): string {
   return `${sign}₡${amount}`
 }
 
-/** Thermal print: CP850 cent sign (¢), no thousands gaps. */
+/** Thermal print: CRC + digits (ISO 4217), no thousands gaps. */
 export function formatColonesPrint(n: number): string {
   const truncated = Math.trunc(n)
   const sign = truncated < 0 ? '-' : ''
-  return `${sign}¢${Math.abs(truncated)}`
+  return `${sign}CRC ${Math.abs(truncated)}`
 }
 
 const MAX_MONEY_INPUT = 999_999_999

@@ -1,12 +1,5 @@
 import { t } from './i18n'
 import { formatDate, formatMoney } from './format'
-import { formatSpacedBarcode, isPrintableCode128Barcode } from '../../shared/barcode'
-import {
-  SHELF_LABEL_BARCODE_HEIGHT,
-  SHELF_LABEL_BARCODE_WIDTH,
-  shelfLabelTextCols,
-  wrapShelfLabelText
-} from './labelLayout'
 import { localNow } from '../db/helpers'
 import type {
   AppSettings,
@@ -28,6 +21,8 @@ import type {
   TopProductRow,
   TransactionLogReport
 } from '../../shared/types'
+
+export { buildShelfLabelLines } from './shelfLabelLines'
 
 export function emisorFromSettings(s: AppSettings): EmisorInfo {
   return {
@@ -91,6 +86,94 @@ export interface ReceiptArgs {
   footer: string
   /** Provided only under régimen tradicional; omitted/empty under simplificado. */
   taxBreakdown?: TaxBreakdownRow[]
+}
+
+/** Sample catalog for printer diagnostics — same line layout as live sales. */
+const PRINTER_TEST_RECEIPT_CATALOG: readonly {
+  name: string
+  price: number
+  qty?: number
+  discount?: number
+}[] = [
+  { name: 'ARROZ EXTRA 1KG', price: 1450, qty: 2 },
+  { name: 'FRIJOLES NEGROS 800G', price: 980 },
+  { name: 'ATUN EN AGUA 170G', price: 1250, qty: 3 },
+  { name: 'LECHE ENTERA 1L', price: 890, qty: 2 },
+  { name: 'HUEVOS DOCENA', price: 3200 },
+  { name: 'PAN BLANCO BOLSA', price: 1750 },
+  { name: 'QUESO TURRIALBA 500G', price: 2890 },
+  { name: 'JAMON COCIDO 200G', price: 1650 },
+  { name: 'TOMATE KG', price: 1200, qty: 2 },
+  { name: 'CEBOLLA KG', price: 980 },
+  { name: 'PAPA KG', price: 850, qty: 3 },
+  { name: 'ZANAHORIA KG', price: 720 },
+  { name: 'PLATANO MADURO', price: 650, qty: 4 },
+  { name: 'MANZANA ROJA KG', price: 2100 },
+  { name: 'NARANJA KG', price: 890, qty: 2 },
+  { name: 'COCA COLA 2L', price: 2450 },
+  { name: 'JUGO NARANJA 1L', price: 1350, qty: 2 },
+  { name: 'AGUA PURA 600ML', price: 450, qty: 6 },
+  { name: 'GALLETAS MARIA 200G', price: 780 },
+  { name: 'CHOCOLATE TALCA 100G', price: 920, qty: 2 },
+  { name: 'DETERGENTE LIQUIDO 1L', price: 3200 },
+  { name: 'PAPEL HIGIENICO 4 ROLLOS', price: 1890 },
+  { name: 'JABON DE TOCADOR', price: 650, qty: 3 },
+  { name: 'SHAMPOO 400ML', price: 2750 },
+  { name: 'CREMA DENTAL 100G', price: 1450 },
+  { name: 'BATERIAS AA 4PK', price: 2100 },
+  { name: 'LIMPIADOR MULTIUSO', price: 1680 },
+  { name: 'BOLSA REUTILIZABLE', price: 350, qty: 2, discount: 100 }
+]
+
+function receiptItemsFromCatalog(
+  catalog: readonly { name: string; price: number; qty?: number; discount?: number }[]
+): ReceiptItemLine[] {
+  return catalog.map((row) => {
+    const qty = row.qty ?? 1
+    const discount = row.discount ?? 0
+    const gross = row.price * qty
+    return {
+      name: row.name,
+      quantity: qty,
+      unitPrice: row.price,
+      discount,
+      lineTotal: gross - discount
+    }
+  })
+}
+
+/** Multi-item diagnostic tiquete — identical template to checkout receipts. */
+export function buildPrinterTestReceiptLines(
+  emisor: EmisorInfo,
+  lang: Language,
+  footer: string
+): PrintLine[] {
+  const items = receiptItemsFromCatalog(PRINTER_TEST_RECEIPT_CATALOG)
+  const subtotal = items.reduce((acc, i) => acc + i.unitPrice * i.quantity, 0)
+  const discountTotal = items.reduce((acc, i) => acc + i.discount, 0)
+  const total = subtotal - discountTotal
+  const tendered = Math.ceil(total / 1000) * 1000
+  const change = tendered - total
+
+  return buildReceiptLines(
+    {
+      emisor,
+      consecutivo: '0000000000',
+      saleId: 0,
+      createdAt: localNow(),
+      cashier: 'PRUEBA',
+      items,
+      subtotal,
+      discountTotal,
+      total,
+      payments: [{ method: 'cash', amount: total, ref: null }],
+      tendered,
+      change,
+      customer: null,
+      footer
+    },
+    lang
+  )
 }
 
 const methodLabel = (lang: Language, m: PaymentMethod): string => t(lang, `pos.methods.${m}`)
@@ -227,7 +310,6 @@ export function buildReceiptLines(args: ReceiptArgs, lang: Language): PrintLine[
   }
 
   lines.push({ t: 'feed', n: 1 })
-  lines.push({ t: 'text', v: t(lang, 'print.receipt.centDisclaimer'), align: 'ct' })
   lines.push({ t: 'text', v: t(lang, 'print.receipt.thanks'), align: 'ct' })
   if (args.footer) {
     for (const fl of args.footer.split('\n')) {
@@ -757,52 +839,6 @@ export function buildItemizedSalesReportLines(
     lines.push({ t: 'row', l: t(lang, 'common.total'), r: money(sale.total), bold: true })
     lines.push({ t: 'hr' })
   }
-  return lines
-}
-
-/** Display-stand / shelf tag: 20 mm — centered barcode, spaced código, name, price. */
-export function buildShelfLabelLines(args: {
-  productName: string
-  price: number
-  barcode?: string
-}, lang: Language): PrintLine[] {
-  const name = args.productName.trim().toUpperCase()
-  const priceLine = formatMoney(Math.trunc(args.price), lang)
-  const barcode = args.barcode?.trim() ?? ''
-  const spacedCode = formatSpacedBarcode(barcode)
-  const printableBarcode = barcode.length > 0 && isPrintableCode128Barcode(barcode)
-
-  const nameBig = true
-  const nameCols = shelfLabelTextCols(nameBig)
-  const nameLines = wrapShelfLabelText(name, nameCols, 2)
-
-  const lines: PrintLine[] = []
-
-  if (barcode.length > 0 && printableBarcode) {
-    lines.push({
-      t: 'barcode',
-      v: barcode,
-      h: SHELF_LABEL_BARCODE_HEIGHT,
-      w: SHELF_LABEL_BARCODE_WIDTH,
-      align: 'ct'
-    })
-  }
-  if (spacedCode) {
-    lines.push({ t: 'text', v: spacedCode, align: 'ct' })
-  }
-
-  for (const line of nameLines) {
-    lines.push({ t: 'text', v: line, align: 'ct', bold: true, big: true })
-  }
-
-  lines.push({
-    t: 'text',
-    v: priceLine,
-    align: 'ct',
-    bold: true,
-    huge: true
-  })
-
   return lines
 }
 

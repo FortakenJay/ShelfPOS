@@ -5,12 +5,15 @@ import { tmpdir } from 'node:os'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import { app } from 'electron'
-import iconv from 'iconv-lite'
 import { AppError } from '../errors'
 import { getPrintJob, listPendingPrintJobIds, markPrintJob } from '../db/repos/printJobs'
 import type { Language, PrintLine, PrintPayload, PrintStatus, PrinterStatusInfo } from '../../shared/types'
-import { isPrintableCode128Barcode } from '../../shared/barcode'
 import { resolveLabelPrintLines } from './labelPrintLines'
+import { warnIfShelfLabelOverflow } from './labelLayout'
+import { getAppSettings, receiptLanguage } from '../db/repos/settings'
+import { buildShelfLabelLines } from './shelfLabelLines'
+import { buildPrinterTestReceiptLines, emisorFromSettings } from './printTemplates'
+import { drawerPulseBytes, toEscPos } from './escPosRender'
 
 const execFileAsync = promisify(execFile)
 
@@ -27,9 +30,6 @@ const KNOWN_RECEIPT_PRINTER_NAMES = [
   'EPSON TM-T20II Receipt',
   'EPSON TM-T20 Receipt'
 ] as const
-
-// 80mm Epson TM models render 48 columns in Font A. Override with SHELFPOS_LINE_WIDTH.
-const LINE_WIDTH = Number(process.env.SHELFPOS_LINE_WIDTH) || 48
 
 let resolvedPrinterName: string | null = null
 let printerReady = false
@@ -199,148 +199,7 @@ export async function flushPendingPrintJobs(): Promise<void> {
   await flushPrintJobAt(listPendingPrintJobIds(), 0)
 }
 
-/** Visual width: CJK characters take two columns on the printer. */
-function visualLen(s: string): number {
-  let len = 0
-  for (const ch of s) {
-    len += /[\u1100-\u115f\u2e80-\ua4cf\uac00-\ud7a3\uf900-\ufaff\ufe30-\ufe4f\uff00-\uff60\uffe0-\uffe6]/.test(
-      ch
-    )
-      ? 2
-      : 1
-  }
-  return len
-}
-
-
-function compactMoneyText(part: string): string {
-  return part.replace(/[₡¢]\s*([\d\s]+)/g, (_, digits: string) => `¢${digits.replace(/\s/g, '')}`)
-}
-
-function padRow(left: string, right: string, cols = LINE_WIDTH): string {
-  const l = compactMoneyText(left)
-  const r = compactMoneyText(right)
-  // ¢ prints as one column — must count it in width or amounts clip off the right.
-  const leftVis = visualLen(l)
-  const rightVis = visualLen(r)
-  const space = cols - leftVis - rightVis
-  if (space < 1) return `${l}\n${' '.repeat(Math.max(0, cols - rightVis))}${r}`
-  return `${l}${' '.repeat(space)}${r}`
-}
-
-// --- ESC/POS command bytes ---
-const ESC = 0x1b
-const GS = 0x1d
-const INIT = [ESC, 0x40] // ESC @ — reset
-const CODEPAGE_PC850 = [ESC, 0x74, 0x02] // ESC t 2
-const BARCODE_CODE128 = 0x49 // GS k 73 — CODE128 subset B via `{B` prefix
-const align = (a: 'lt' | 'ct' | 'rt'): number[] => [ESC, 0x61, a === 'ct' ? 1 : a === 'rt' ? 2 : 0]
-const bold = (on: boolean): number[] => [ESC, 0x45, on ? 1 : 0]
-const size = (big: boolean): number[] => [GS, 0x21, big ? 0x11 : 0x00] // double width+height
-/** 3× width and height (shelf label price). */
-const sizeHuge = (): number[] => [GS, 0x21, 0x22]
-/** 4× width and height (shelf label name — 2× the old `big` size). */
-const sizeMega = (): number[] => [GS, 0x21, 0x33]
-const FEED = (n: number): number[] => [ESC, 0x64, n] // ESC d n
-const PARTIAL_CUT = [GS, 0x56, 0x42, 0x00] // GS V 66 0 — feed + partial cut
-const OPEN_CASH_DRAWER = [ESC, 0x70, 0x00, 0x19, 0xfa] // ESC p 0 25 250
-const LF = 0x0a
-
-/** Unicode arrows/dashes that CP850 cannot render → ASCII. */
-function replacePrintArrows(s: string): string {
-  return s
-    .replace(/\u2192/g, '->')
-    .replace(/\u2190/g, '<-')
-    .replace(/\u21d2/g, '=>')
-    .replace(/[\u2013\u2014\u2212]/g, '-')
-}
-
-function normalizePrintSpaces(s: string): string {
-  return s.replace(/[\u00A0\u202F]/g, ' ')
-}
-
-/** CP850 cent (¢); legacy ₡ in templates is normalized before encode. */
-function encodePrintText(s: string): Buffer {
-  const normalized = replacePrintArrows(normalizePrintSpaces(s)).replace(/₡/g, '¢')
-  return iconv.encode(normalized, 'cp850')
-}
-
-function barcodeDataCode128(value: string): Buffer | null {
-  const cleaned = value.replace(/[^\x20-\x7e]/g, '').trim()
-  if (!cleaned) return null
-  const payload = `{B${cleaned}` // CODE128 subset B
-  const bytes = Buffer.from(payload, 'ascii')
-  if (bytes.length < 2 || bytes.length > 255) return null
-  return bytes
-}
-
-export { isPrintableCode128Barcode }
-
-/** Renders the abstract print lines into a raw ESC/POS byte stream (Spanish / CP850). */
-function toEscPos(
-  lines: PrintLine[],
-  options?: { openDrawer?: boolean; label?: boolean }
-): Buffer {
-  const isLabel = options?.label === true
-  const chunks: Buffer[] = []
-  const cmd = (...bytes: number[]): void => {
-    chunks.push(Buffer.from(bytes))
-  }
-
-  cmd(...INIT)
-  cmd(...CODEPAGE_PC850)
-
-  for (const line of lines) {
-    switch (line.t) {
-      case 'feed':
-        for (let i = 0; i < Math.max(1, line.n ?? 1); i++) cmd(LF)
-        break
-      case 'hr':
-        cmd(...align('lt'), ...bold(false), ...size(false))
-        chunks.push(encodePrintText('-'.repeat(LINE_WIDTH)))
-        cmd(LF)
-        break
-      case 'row': {
-        const big = !!line.big
-        const cols = big ? Math.floor(LINE_WIDTH / 2) : LINE_WIDTH
-        const padded = padRow(compactMoneyText(line.l), compactMoneyText(line.r), cols)
-        cmd(...align('lt'), ...bold(!!line.bold), ...size(big))
-        chunks.push(encodePrintText(padded))
-        cmd(LF, ...size(false), ...bold(false))
-        break
-      }
-      case 'text': {
-        const scaleCmd = line.mega ? sizeMega() : line.huge ? sizeHuge() : size(!!line.big)
-        cmd(...align(line.align ?? 'lt'), ...bold(!!line.bold), ...scaleCmd)
-        chunks.push(encodePrintText(line.v))
-        cmd(LF, ...size(false), ...bold(false))
-        break
-      }
-      case 'barcode': {
-        const data = barcodeDataCode128(line.v)
-        if (!data) break
-        const height = Math.max(24, Math.min(255, line.h ?? (isLabel ? 24 : 40)))
-        const width = Math.max(2, Math.min(6, line.w ?? 2))
-        cmd(...align(line.align ?? 'ct'))
-        cmd(GS, 0x48, line.hri ? 2 : 0) // HRI below when requested (standard retail barcode)
-        cmd(GS, 0x68, height)
-        cmd(GS, 0x77, width)
-        cmd(GS, 0x6b, BARCODE_CODE128, data.length)
-        chunks.push(data)
-        cmd(LF)
-        break
-      }
-    }
-  }
-
-  if (options?.openDrawer) {
-    cmd(...OPEN_CASH_DRAWER)
-  }
-  cmd(...align('lt'), ...FEED(isLabel ? 1 : 4), ...PARTIAL_CUT)
-  return Buffer.concat(chunks)
-}
-
-// PowerShell that sends a byte file to a Windows printer using the RAW datatype,
+// --- Windows RAW spooler (see escPosRender.ts for ESC/POS bytes) ---
 // so the Epson driver passes our ESC/POS bytes straight through (no GDI rendering).
 // When the queue is not a Receipt/RAW driver, bytes are written directly to the USB port.
 const RAW_PRINT_PS1 = `param(
@@ -478,6 +337,24 @@ async function sendRawToPrinter(data: Buffer, printerName: string): Promise<void
   })
 }
 
+function isT81EscPosQuirks(printerName: string): boolean {
+  const flag = process.env.SHELFPOS_T81_ESC_POS?.trim()
+  if (flag === '0') return false
+  if (flag === '1') return true
+  return /T81/i.test(printerName)
+}
+
+function toEscPosOptions(options?: { openDrawer?: boolean; label?: boolean }): {
+  openDrawer?: boolean
+  label?: boolean
+  t81Quirks: boolean
+} {
+  return {
+    ...options,
+    t81Quirks: isT81EscPosQuirks(getActivePrinterName())
+  }
+}
+
 export async function printLines(
   lines: PrintLine[],
   _lang?: Language,
@@ -485,15 +362,15 @@ export async function printLines(
 ): Promise<void> {
   const printerName = getActivePrinterName()
   await ensurePrinterExists(printerName)
-  await sendRawToPrinter(toEscPos(lines, options), printerName)
+  if (options?.label) warnIfShelfLabelOverflow(lines)
+  await sendRawToPrinter(toEscPos(lines, toEscPosOptions(options)), printerName)
 }
 
 /** Sends only the cash-drawer pulse (no receipt body, no cut). */
 export async function openCashDrawer(): Promise<void> {
   const printerName = getActivePrinterName()
   await ensurePrinterExists(printerName)
-  const pulse = Buffer.from([...(INIT as number[]), ...(OPEN_CASH_DRAWER as number[])])
-  await sendRawToPrinter(pulse, printerName)
+  await sendRawToPrinter(drawerPulseBytes(), printerName)
 }
 
 /** Best-effort drawer pulse — cash operations must not fail when the printer is offline. */
@@ -505,15 +382,28 @@ export async function tryOpenCashDrawer(): Promise<void> {
   }
 }
 
-/** Diagnostic receipt test (admin troubleshooting). */
+/** Diagnostic receipt test (admin troubleshooting) — same tiquete layout as live sales. */
 export async function printTestReceipt(): Promise<void> {
-  await printLines([
-    { t: 'text', v: 'PRUEBA IMPRESORA', align: 'ct', bold: true, big: true },
-    { t: 'hr' },
-    { t: 'text', v: '¢3 000', align: 'ct', bold: true, big: true },
-    { t: 'text', v: '¢475', align: 'ct' },
-    { t: 'row', l: 'TOTAL', r: '¢3 475', bold: true, big: true }
-  ])
+  const settings = getAppSettings()
+  const lang = receiptLanguage()
+  const footer = [settings.receiptFooter, 'PRUEBA DE IMPRESION'].filter(Boolean).join('\n')
+  await printLines(buildPrinterTestReceiptLines(emisorFromSettings(settings), lang, footer))
+}
+
+/** Diagnostic shelf label (admin troubleshooting) — same layout as production etiquetas. */
+export async function printTestLabel(): Promise<void> {
+  await printLines(
+    buildShelfLabelLines(
+      {
+        productName: 'PRODUCTO PRUEBA',
+        price: 3200,
+        barcode: '7501234567890'
+      },
+      'es'
+    ),
+    undefined,
+    { label: true }
+  )
 }
 
 /** Queue print without blocking checkout; status updated when the job finishes. */
@@ -565,3 +455,5 @@ export async function attemptPrintJob(jobId: number): Promise<PrintStatus> {
     return 'failed'
   }
 }
+
+export { isPrintableCode128Barcode } from './escPosRender'

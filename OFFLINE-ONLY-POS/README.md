@@ -27,7 +27,7 @@ npm run dist:dir   # unpacked build (faster, for smoke testing)
 
 The installer never touches `%APPDATA%\shelfpos` — user data survives updates and uninstall.
 
-Release notes: [`RELEASE_NOTES.md`](RELEASE_NOTES.md) (current: **1.6.1**).
+Release notes: [`RELEASE_NOTES.md`](RELEASE_NOTES.md) (current: **1.6.2**).
 
 ## Data & backups
 
@@ -41,7 +41,7 @@ Release notes: [`RELEASE_NOTES.md`](RELEASE_NOTES.md) (current: **1.6.1**).
 - Install the APD package (e.g. `APD_612_T81III_WM` for TM-T81III). ShelfPOS auto-detects the Windows print queue on startup.
 - Prefer the **Receipt** queue (e.g. `EPSON TM-T81III Receipt`). If only a generic `EPSON TM-T81III` queue exists, ShelfPOS writes ESC/POS directly to the USB port.
 - Override detection with env var `SHELFPOS_PRINTER_NAME` if the queue has a custom name.
-- Spanish receipts and labels print with code page **PC850**; amounts use the **¢** (cent) symbol on thermal output. On-screen UI still shows **₡**.
+- Spanish receipts and labels print amounts as **CRC** + digits on thermal output (e.g. `CRC 3200`). On-screen UI still shows **₡**.
 - Product labels: shelf etiquetas and barcode stickers from **Productos**; batch modals support up to 99 copies per product. See `docs/wiki/08-POS-Renderer.md`.
 
 ## First run

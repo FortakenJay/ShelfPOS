@@ -314,6 +314,30 @@ flowchart TB
 
 **Column parity:** `sync-service/src/db.ts` `LIVE_ROW_SQL` ↔ `DASHBOARD/SUPA.sql` ↔ `migrations.ts`
 
+### Windows service registration (production)
+
+```mermaid
+flowchart LR
+  PS1[Install-ShelfPOS.ps1]
+  CJS[install-windows-service.cjs]
+  NW[node-windows Service]
+  WINSW[WinSW wrapper.js]
+  NODE[node.exe]
+  IDX[dist/index.js]
+  SCM[shelfpossync.exe SCM]
+
+  PS1 --> CJS
+  CJS --> NW
+  NW --> SCM
+  SCM --> NODE
+  NODE --> WINSW
+  WINSW --> IDX
+```
+
+- **Display name:** `ShelfPOSSync` · **SCM name:** `shelfpossync.exe`
+- **Env at install:** `SHELFPOS_SYNC_CONFIG` → `%APPDATA%\shelfpos\sync.env`
+- **Ops pitfall:** node-windows logs "running" before SCM → installer may show `StartPending` for ~20s (see `wiki/19-Edge-Cases-And-Runbooks.md`)
+
 ---
 
 ## Level 6 — Dashboard layers

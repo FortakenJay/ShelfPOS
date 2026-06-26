@@ -78,6 +78,7 @@ There is **no root package.json** — each project installs independently.
 | Change Supabase schema | [[06-Supabase-Schema]] → `DASHBOARD/SUPA.sql` |
 | Onboard a new store owner | [[15-Setup-And-Deployment]] (production checklist) |
 | Troubleshoot missing cloud data / bad install | [[19-Edge-Cases-And-Runbooks]] |
+| Sync install shows `StartPending` | [[19-Edge-Cases-And-Runbooks#startpending-right-after-install-shelfpos-often-a-false-alarm]] → wait + `sc.exe query shelfpossync.exe` |
 | Remote POS password recovery | [[15-Setup-And-Deployment#POS operator recovery (SAKEN)]] |
 | Lint / Doctor before commit | [[18-Quality-And-Tooling]] |
 | Production link POS → dashboard | [[15-Setup-And-Deployment#Link POS to owner (production, per shop)]] |
@@ -94,6 +95,7 @@ There is **no root package.json** — each project installs independently.
 | Report Excel grids | `DASHBOARD/src/lib/reports/report-grid-to-xlsx.ts` |
 | Supabase production wipe | `DASHBOARD/scripts/wipe-supabase-mirror-data.sql` |
 | Sync enqueue | `OFFLINE-ONLY-POS/src/main/db/repos/syncQueue.ts` |
+| Windows sync install | `OFFLINE-ONLY-POS/scripts/Install-ShelfPOS.ps1`, `sync-service/scripts/install-windows-service.cjs` |
 | Supabase schema | `DASHBOARD/SUPA.sql` |
 | Dashboard auth | `DASHBOARD/src/lib/auth.tsx` |
 | Dashboard invite signup | `DASHBOARD/src/routes/create-account.tsx`, `lib/signup-invite.ts` |

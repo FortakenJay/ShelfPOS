@@ -80,6 +80,7 @@ cd DASHBOARD && npm run lint && npm run doctor
 | Task | Start here |
 |------|------------|
 | Sale logic | `main/ipc/sales.ts`, `repos/products.ts` |
+| Sync install / `StartPending` | `scripts/install-shelfpos.ps1`, `sync-service/scripts/install-windows-service.cjs`, [[19-Edge-Cases-And-Runbooks#startpending-right-after-install-shelfpos-often-a-false-alarm]] |
 | Sync failure | `sync-service/src/sync.ts`, `errorLog.ts` |
 | Dashboard KPI | `lib/queries/dashboard.ts`, `dashboard-inventory.ts` |
 | Tenancy | `SUPA.sql`, `link-pos.tsx`, `claimStoreIfNeeded` |

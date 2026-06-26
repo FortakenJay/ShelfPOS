@@ -44,4 +44,4 @@ Open this folder as an **Obsidian vault** (`File → Open folder as vault` → `
 | `16-Error-Handling.md` | AppError, i18n |
 | `17-Conventions-For-AI.md` | Agent checklist |
 | `18-Quality-And-Tooling.md` | Lint, React Doctor, Bugbot, pre-commit |
-| `19-Edge-Cases-And-Runbooks.md` | Install, sync, dashboard pitfalls + symptom → action |
+| `19-Edge-Cases-And-Runbooks.md` | Install, sync, dashboard pitfalls + symptom → action (incl. `StartPending` after install) |
