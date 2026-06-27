@@ -34,8 +34,8 @@ export function ProductsPageToolbar({
 
   return (
     <>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">{t('products.title')}</h1>
+      <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <h1 className="shrink-0 text-2xl font-bold">{t('products.title')}</h1>
         <div className="flex flex-wrap gap-2">
           <Button variant="ghost" onClick={onCsvHelp}>
             {t('products.csv.helpBtn')}

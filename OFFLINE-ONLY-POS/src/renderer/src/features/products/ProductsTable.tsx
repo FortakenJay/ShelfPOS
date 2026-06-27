@@ -29,11 +29,13 @@ export function ProductsTable({
 }): React.JSX.Element {
   const { t } = useTranslation()
 
+  const actionBtnClass = '!min-h-9 !px-2.5 !text-[13px]'
+
   return (
     <div
-      className={`overflow-hidden rounded-lg border-2 border-line bg-white ${loading ? 'opacity-60' : ''}`}
+      className={`overflow-x-auto rounded-lg border-2 border-line bg-white ${loading ? 'opacity-60' : ''}`}
     >
-      <table className="w-full">
+      <table className="w-full min-w-[48rem]">
         <thead>
           <tr>
             <Th>{t('products.barcode')}</Th>
@@ -85,27 +87,33 @@ export function ProductsTable({
                 <Td className="text-center text-slate-500">{p.stock_threshold ?? defaultThreshold}</Td>
                 <Td>{p.category ?? '—'}</Td>
                 <Td>{p.stock_provider ?? '—'}</Td>
-                <Td className="text-right whitespace-nowrap">
-                  <Button variant="ghost" onClick={() => onAdjust(p)} className="!min-h-9">
-                    {t('products.adjust.title')}
-                  </Button>
-                  <Button variant="ghost" onClick={() => onPrintLabel(p)} className="!min-h-9">
-                    {t('products.printLabel')}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    disabled={!printableBarcode}
-                    onClick={() => onPrintBarcode(p)}
-                    className="!min-h-9"
-                  >
-                    {t('products.printBarcode')}
-                  </Button>
-                  <Button variant="ghost" onClick={() => onEdit(p)} className="!min-h-9">
-                    {t('common.edit')}
-                  </Button>
-                  <Button variant="ghost" onClick={() => onDelete(p)} className="!min-h-9 text-danger">
-                    {t('common.delete')}
-                  </Button>
+                <Td className="text-right">
+                  <div className="flex flex-wrap justify-end gap-1">
+                    <Button variant="ghost" onClick={() => onAdjust(p)} className={actionBtnClass}>
+                      {t('products.adjust.title')}
+                    </Button>
+                    <Button variant="ghost" onClick={() => onPrintLabel(p)} className={actionBtnClass}>
+                      {t('products.printLabel')}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      disabled={!printableBarcode}
+                      onClick={() => onPrintBarcode(p)}
+                      className={actionBtnClass}
+                    >
+                      {t('products.printBarcode')}
+                    </Button>
+                    <Button variant="ghost" onClick={() => onEdit(p)} className={actionBtnClass}>
+                      {t('common.edit')}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => onDelete(p)}
+                      className={`${actionBtnClass} text-danger`}
+                    >
+                      {t('common.delete')}
+                    </Button>
+                  </div>
                 </Td>
               </tr>
             )

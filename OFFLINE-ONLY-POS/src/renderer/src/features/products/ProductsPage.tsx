@@ -102,7 +102,7 @@ function ProductManager({
   }
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <ProductsPageToolbar
         exportTemplatePending={pm.exportTemplate.isPending}
         exportProductsPending={pm.exportProducts.isPending}
