@@ -1,5 +1,22 @@
 # ShelfPOS release notes
 
+## 1.6.3
+
+### Corrección — Productos / inventario (pantallas pequeñas)
+
+- **Acciones por fila** (Ajustar stock, Imprimir etiqueta, Imprimir código de barras, Editar, Eliminar): ya no se recortan con etiquetas largas en español; la tabla usa scroll horizontal y los botones hacen wrap.
+- **Barra de herramientas**: título y botones se apilan en pantallas estrechas para que importación, lote y **Nuevo producto** sigan visibles.
+
+### Despliegue
+
+| Componente | Versión | Acción |
+|------------|---------|--------|
+| POS Windows | 1.6.3 | `npm run release:win` → `ShelfPOS-1.6.3-win.zip` |
+| Sync service | 1.6.3 | Incluido en ZIP; sin cambios de protocolo |
+| Dashboard | 1.5.0 | Sin cambios en esta release |
+
+---
+
 ## 1.6.2
 
 ### Corrección — TM-T81III (etiquetas y recibos)

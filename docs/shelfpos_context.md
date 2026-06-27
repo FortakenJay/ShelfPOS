@@ -10,7 +10,7 @@
 | Field | Value |
 |-------|--------|
 | **Name** | ShelfPOS |
-| **Version** | 1.6.1 (POS + sync); Dashboard 1.5.0 |
+| **Version** | 1.6.3 (POS + sync); Dashboard 1.5.0 |
 | **Purpose** | Offline-first retail POS for small shops (Costa Rica focus) with optional cloud owner dashboard |
 | **Repo layout** | `OFFLINE-ONLY-POS/` (Electron), `DASHBOARD/` (web), `sync-service/` (Windows background sync) |
 | **Not in repo** | Root `package.json` — each app installs independently |
@@ -160,6 +160,8 @@ Two thermal prints from **Productos** (not PDF):
 **Batch modal** (`BatchLabelPrintModal`): toolbar **Etiquetas en lote** / **Códigos de barras en lote** — POS-style search (scan, name, barcode, ID), per-row copies, queue. IPC payload: `{ items: { productId, copies? }[] }` (not bare id list). Copies **1–99** (`MAX_LABEL_COPIES` in `shared/printLimits.ts`). Max **200** distinct products per batch.
 
 IPC: `products:printLabel`, `products:printBarcode`, `products:printLabelBatch`, `products:printBarcodeBatch`. After create: `ProductLabelPrintPromptModal`. Settings shortcuts: shelf etiqueta (F6), product barcode (F11) when one product is filtered.
+
+**Layout (v1.6.3):** `ProductsTable` row actions wrap + horizontal scroll on narrow screens; toolbar stacks below `lg` so long Spanish button labels are not clipped.
 
 **Search:** `searchProducts` runs name/barcode `LIKE` first; numeric queries also prepend exact id match when not already in results.
 

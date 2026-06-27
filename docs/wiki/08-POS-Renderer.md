@@ -84,7 +84,9 @@ After **create product**, `ProductLabelPrintPromptModal` offers both prints (+ *
 
 Shelf etiqueta targets **20 mm** height (half of 40 mm stock). Override label width with `SHELFPOS_LABEL_WIDTH_MM` (default 58). Audit: `product_label_printed` / `product_barcode_printed`.
 
-**Code:** `features/products/` (`ProductsTable`, `BatchLabelPrintModal`, `ProductLabelPrintPromptModal`, `useProductManager`), `main/ipc/products.ts`, `main/services/printTemplates.ts`, `shared/barcode.ts`, `shared/printLimits.ts`, `shared/money.ts`.
+**Responsive layout (v1.6.3):** On narrow viewports (sidebar + small window), `ProductsTable` uses horizontal scroll and wraps row action buttons so long Spanish labels (e.g. **Imprimir código de barras**) are not clipped. `ProductsPageToolbar` stacks the title above the button row below `lg`.
+
+**Code:** `features/products/` (`ProductsTable`, `ProductsPageToolbar`, `BatchLabelPrintModal`, `ProductLabelPrintPromptModal`, `useProductManager`), `main/ipc/products.ts`, `main/services/printTemplates.ts`, `shared/barcode.ts`, `shared/printLimits.ts`, `shared/money.ts`.
 
 ## Locales
 

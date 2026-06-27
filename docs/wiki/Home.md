@@ -20,8 +20,8 @@ flowchart LR
 
 | Folder | App | Stack |
 |--------|-----|-------|
-| `OFFLINE-ONLY-POS/` | Cashier + admin on Windows (**v1.6.1**) | Electron 28+, React 19, better-sqlite3 |
-| `OFFLINE-ONLY-POS/sync-service/` | Background sync (**v1.6.1**) | Node 24+, better-sqlite3, REST → Supabase |
+| `OFFLINE-ONLY-POS/` | Cashier + admin on Windows (**v1.6.3**) | Electron 28+, React 19, better-sqlite3 |
+| `OFFLINE-ONLY-POS/sync-service/` | Background sync (**v1.6.3**) | Node 24+, better-sqlite3, REST → Supabase |
 | `DASHBOARD/` | Owner web panel (**v1.5.0**) | TanStack Start, React 19, Supabase JS |
 
 There is **no root package.json** — each project installs independently.
