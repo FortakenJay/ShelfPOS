@@ -52,7 +52,7 @@ Quick lookup when an LLM (or human) needs the right file.
 
 | Feature | Path |
 |---------|------|
-| Authentication / login | `features/auth/` |
+| Authentication / login | `features/auth/Login.tsx` (version badge on sign-in) |
 | First-run wizard | `features/auth/` (Bootstrap, first run) |
 | App shell / sidebar | `features/shell/Shell.tsx` |
 | POS terminal | `features/pos/` |
@@ -66,6 +66,7 @@ Quick lookup when an LLM (or human) needs the right file.
 | Local dashboard charts | `features/admin/dashboard/` |
 | Sync setup page | `features/sync-setup/SyncSetupPage.tsx` |
 | Router | `renderer/src/router.tsx` |
+| App version (build inject) | `electron.vite.config.ts` → `VITE_APP_VERSION` |
 
 ---
 

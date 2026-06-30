@@ -66,6 +66,12 @@ export function LoginPage(): React.JSX.Element {
           {t('auth.login')}
         </Button>
       </form>
+      <p
+        className="pointer-events-none absolute bottom-4 left-4 text-xs text-white/50 select-none"
+        aria-label={`ShelfPOS v${import.meta.env.VITE_APP_VERSION}`}
+      >
+        v{import.meta.env.VITE_APP_VERSION}
+      </p>
     </div>
   )
 }

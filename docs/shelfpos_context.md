@@ -10,7 +10,7 @@
 | Field | Value |
 |-------|--------|
 | **Name** | ShelfPOS |
-| **Version** | 1.6.3 (POS + sync); Dashboard 1.5.0 |
+| **Version** | 1.6.4 (POS + sync); Dashboard 1.5.1 |
 | **Purpose** | Offline-first retail POS for small shops (Costa Rica focus) with optional cloud owner dashboard |
 | **Repo layout** | `OFFLINE-ONLY-POS/` (Electron), `DASHBOARD/` (web), `sync-service/` (Windows background sync) |
 | **Not in repo** | Root `package.json` — each app installs independently |
@@ -95,7 +95,7 @@ flowchart TB
 
 | Module | POS | Dashboard | Description |
 |--------|-----|-----------|-------------|
-| Authentication | `features/auth/` | `lib/auth.tsx`, `/login` | Local POS users; Supabase Auth for owners |
+| Authentication | `features/auth/` | `lib/auth.tsx`, `/login` | Local POS users; Supabase Auth for owners. POS login shows **vX.Y.Z** bottom-left (build version) |
 | Products / catalog | `features/products/` | Reports inventory | Barcode, price, stock, optional `stock_provider` |
 | POS terminal | `features/pos/` | — | Cart, scan, payment, cart tabs |
 | Sales & returns | `main/ipc/sales.ts`, `returns.ts` | Reports | Checkout, devoluciones, factura PDF |

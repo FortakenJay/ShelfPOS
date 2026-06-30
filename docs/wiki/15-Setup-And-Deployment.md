@@ -183,10 +183,11 @@ Hidden local admin for **password recovery** on a shop PC. Not in UI lists, not 
 
 **Remote support workflow:**
 
-1. Create `%APPDATA%\shelfpos\operator.env` on their PC (or copy from your USB template).
-2. Restart ShelfPOS.
-3. Log in as `SAKEN` → **Users** → reset their admin password.
-4. Delete `operator.env` when done.
+1. Ask for the **`vX.Y.Z`** on the POS **login screen** (bottom-left) before troubleshooting — confirms installed build.
+2. Create `%APPDATA%\shelfpos\operator.env` on their PC (or copy from your USB template).
+3. Restart ShelfPOS.
+4. Log in as `SAKEN` → **Users** → reset their admin password.
+5. Delete `operator.env` when done.
 
 ```powershell
 $dir = Join-Path $env:APPDATA 'shelfpos'
@@ -234,7 +235,7 @@ In **`app_metadata`**, not `user_metadata`. See [[04-Multi-Tenant-Security]].
 
 **Typical version bump:** customer runs `Setup.exe`; you run `Install-ShelfPOS` from the new release ZIP only if `sync-service` changed.
 
-**Release notes:** `OFFLINE-ONLY-POS/RELEASE_NOTES.md` (current: **v1.6.3**).
+**Release notes:** `OFFLINE-ONLY-POS/RELEASE_NOTES.md` (current: **v1.6.4**).
 
 **Config only** (URL, key, pairing code): POS **Vincular con el panel** (`/sync-setup`) or edit `%APPDATA%\shelfpos\sync.env` → `Restart-Service ShelfPOSSync`.
 

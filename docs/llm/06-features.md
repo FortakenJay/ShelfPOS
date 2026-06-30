@@ -117,6 +117,17 @@ Each card: purpose, entry point, data, permissions, edge cases.
 
 ---
 
+## POS authentication
+
+| | |
+|--|--|
+| **Purpose** | Local username/password login (`pos_users` / `users` table) |
+| **Entry** | `features/auth/Login.tsx`, route `/login` |
+| **IPC** | `auth:login`, `auth:logout`, `auth:session` |
+| **Edge cases** | First-run wizard before first user; SAKEN recovery when `operator.env` present; **login screen** shows `vX.Y.Z` bottom-left for support (from `package.json` at build) |
+
+---
+
 ## Dashboard auth / store context
 
 | | |

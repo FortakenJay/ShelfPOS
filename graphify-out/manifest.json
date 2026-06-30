@@ -590,8 +590,8 @@
     "semantic_hash": ""
   },
   "DASHBOARD/src/lib/store-context.tsx": {
-    "mtime": 1782420557.911414,
-    "ast_hash": "7692941043dc315b8facefee19bdf386",
+    "mtime": 1782844724.0968983,
+    "ast_hash": "c73f71b34971ca13b2dfca6696cf31e7",
     "semantic_hash": ""
   },
   "DASHBOARD/src/lib/store-presence.ts": {
@@ -795,7 +795,7 @@
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/package.json": {
-    "mtime": 1782522251.7053535,
+    "mtime": 1782584885.508075,
     "ast_hash": "3a3c6292031cc48a3232699b62c7e82e",
     "semantic_hash": ""
   },
@@ -910,13 +910,13 @@
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/main/db/repos/audit.ts": {
-    "mtime": 1782180104.0463398,
-    "ast_hash": "b4c1f7c048478982ee07b6b14209cc44",
+    "mtime": 1782845131.9274197,
+    "ast_hash": "cc562f050e204a914f7053080e1b3400",
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/main/db/repos/cartTabs.ts": {
-    "mtime": 1782259268.8770115,
-    "ast_hash": "70a179684ac2a40f19f5fc0e7291aa02",
+    "mtime": 1782845136.7455173,
+    "ast_hash": "e6815d4d6c105f6ae254e094a412dd7e",
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/main/db/repos/cash.ts": {
@@ -940,8 +940,8 @@
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/main/db/repos/reports.ts": {
-    "mtime": 1782259268.867446,
-    "ast_hash": "df2a118233a6601a6b75833f9a1a225d",
+    "mtime": 1782844426.268307,
+    "ast_hash": "ae8a919d75740ee6a88e538ad1852758",
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/main/db/repos/salesReceipt.ts": {
@@ -1010,8 +1010,8 @@
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/main/ipc/cierre.ts": {
-    "mtime": 1782346979.3781943,
-    "ast_hash": "410ee7d007afe6c847566ffee8d9d521",
+    "mtime": 1782845146.5445497,
+    "ast_hash": "500a39aab64f8c50c08c975dcfcad3e3",
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/main/ipc/dashboard.ts": {
@@ -1060,8 +1060,8 @@
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/main/ipc/products.ts": {
-    "mtime": 1782360795.0190544,
-    "ast_hash": "ddc2d8cfb81c54287a08f7b7645b31e9",
+    "mtime": 1782843038.8295243,
+    "ast_hash": "90069ca281843c52c3f4d7a3f4aac02c",
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/main/ipc/reports.ts": {
@@ -1175,8 +1175,8 @@
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/main/services/printTemplates.ts": {
-    "mtime": 1782437317.8470218,
-    "ast_hash": "1bfb767ddc05832ebcbe151218a7f5ad",
+    "mtime": 1782844405.0304303,
+    "ast_hash": "12c4454ec39a9cd40ad932ccf71dc803",
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/main/services/printer.ts": {
@@ -1185,8 +1185,8 @@
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/main/services/productCsvImport.ts": {
-    "mtime": 1782316711.1396682,
-    "ast_hash": "c563073393d4831221cf66d1e910d3a5",
+    "mtime": 1782843040.4437675,
+    "ast_hash": "17bf3841b97fb723b34dfd42849ec8dc",
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/main/services/productEfacturaImport.ts": {
@@ -1285,8 +1285,8 @@
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/renderer/src/features/admin/CierrePage.tsx": {
-    "mtime": 1782278520.2716017,
-    "ast_hash": "480bee7a139c3925ebad07d59259abd5",
+    "mtime": 1782845395.8879206,
+    "ast_hash": "8dbefd07b8ce4476676c6fa77e04a5d2",
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/renderer/src/features/admin/ExportPage.tsx": {
@@ -1705,8 +1705,8 @@
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/renderer/src/features/pos/usePOSTerminal.ts": {
-    "mtime": 1782318033.2564173,
-    "ast_hash": "bbda57f9d4a1d93e4abaac135abe357c",
+    "mtime": 1782844932.498034,
+    "ast_hash": "2e68dc4a1bb7dd2d672959972805fe31",
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/renderer/src/features/pos/usePaymentKeyboard.ts": {
@@ -1730,8 +1730,8 @@
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/renderer/src/features/products/ProductCsvHelpModal.tsx": {
-    "mtime": 1781657159.4241593,
-    "ast_hash": "d529268a58bd13397cb31813363b0449",
+    "mtime": 1782843428.7725265,
+    "ast_hash": "e88dc22a406fa0bace61124419cf5e86",
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/renderer/src/features/products/ProductForm.tsx": {
@@ -1875,13 +1875,13 @@
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/shared/locales/es.json": {
-    "mtime": 1782430122.1097357,
-    "ast_hash": "f23fdef2b8dd44a5e308ef9eb8a606c4",
+    "mtime": 1782845160.782665,
+    "ast_hash": "d519cda82630914252d93e7dc37d5b78",
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/shared/locales/zh-CN.json": {
-    "mtime": 1782430133.3911948,
-    "ast_hash": "ced1c2dfe7ed59560df74ba2cf6fe919",
+    "mtime": 1782845164.3376262,
+    "ast_hash": "f28971cd73f3b30ced65d96d22b04042",
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/shared/miscItem.ts": {
@@ -1915,12 +1915,12 @@
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/src/shared/types.ts": {
-    "mtime": 1782360795.0090537,
-    "ast_hash": "54d1ebb9bb33e703c9d9259c7cfd9271",
+    "mtime": 1782845147.949218,
+    "ast_hash": "caf2955ff5531336e06a0f9f7dcd0a99",
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/sync-service/package.json": {
-    "mtime": 1782522252.221042,
+    "mtime": 1782584885.4632137,
     "ast_hash": "b781a1794df0b9c302ea5d4b20ec33df",
     "semantic_hash": ""
   },
@@ -2075,13 +2075,13 @@
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/README.md": {
-    "mtime": 1782522253.1119392,
-    "ast_hash": "d11e4bf1a071d501e61465e866daa6e0",
+    "mtime": 1782843425.8024976,
+    "ast_hash": "10419f3251d56a6754d6f8d864b3bb28",
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/RELEASE_NOTES.md": {
-    "mtime": 1782522255.620028,
-    "ast_hash": "63f9eddfaa9d1ece150830d22e867125",
+    "mtime": 1782845731.2413435,
+    "ast_hash": "3358ab2d4468c48d8ce747897bdedf8d",
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/docs/instalacion-remota.md": {
@@ -3322,6 +3322,21 @@
   "OFFLINE-ONLY-POS/.release-dist-20260626-190441/win-unpacked/resources/ShelfPOS.png": {
     "mtime": 1781649189.4466603,
     "ast_hash": "e17592a3e7e0285eaf717f54d37d41a3",
+    "semantic_hash": ""
+  },
+  "OFFLINE-ONLY-POS/src/main/services/csvSpreadsheet.ts": {
+    "mtime": 1782843011.6658034,
+    "ast_hash": "1bad7272048d75703ac24f6470c2aef7",
+    "semantic_hash": ""
+  },
+  "OFFLINE-ONLY-POS/src/main/services/csvStream.ts": {
+    "mtime": 1782843014.316529,
+    "ast_hash": "ea0a2e3ba4f7caf7785f3315b43202ab",
+    "semantic_hash": ""
+  },
+  "OFFLINE-ONLY-POS/src/main/services/productCsvExport.ts": {
+    "mtime": 1782843200.556593,
+    "ast_hash": "6d354e20b87d8e7a3fe62d73f5e1f12a",
     "semantic_hash": ""
   }
 }

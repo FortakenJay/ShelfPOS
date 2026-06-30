@@ -2,7 +2,18 @@
 
 Parent: [[Home]]
 
-Operational pitfalls for **installation**, **POS**, **sync service**, and **dashboard**. Several high-severity items were **fixed in code for v1.5.0** (see [Fixed in 1.5.0](#fixed-in-150) below).
+Operational pitfalls for **installation**, **POS**, **sync service**, and **dashboard**. High-severity fixes are grouped by release — [1.6.4](#fixed-in-164), [1.5.0](#fixed-in-150).
+
+---
+
+## Fixed in 1.6.4
+
+| Issue | Fix |
+|-------|-----|
+| Cart still full after cierre; sales blocked | `cierre:confirm` → `resetCartTabsForNewShift`; POS invalidates `cartTabs` |
+| Cierre didn’t warn about open POS carts | `cierre:preview` returns `heldCartTabs`; confirm UI shows warning |
+| Dashboard logout showed “no stores” | `StoreProvider` redirects to `/login` when `user` is null |
+| CSV export truncated catalog / Excel barcode notation | Full-catalog stream export; barcodes as `="…"` spreadsheet text |
 
 ---
 
@@ -278,6 +289,10 @@ After `signOut`, `StoreProvider` (`lib/store-context.tsx`) redirects to `/login`
 ---
 
 ## POS (offline app)
+
+### Installed version (support)
+
+Ask the cashier to open ShelfPOS to the **sign-in screen** (before login). Bottom-left shows **`vX.Y.Z`** — matches `package.json` at build time (`VITE_APP_VERSION`). Not shown after login or on admin screens. See [[08-POS-Renderer#Login version badge (v1.6.4+)]].
 
 ### Cart tabs
 

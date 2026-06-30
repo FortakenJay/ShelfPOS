@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+---
+
+## 1.6.4
+
 ### Corrección — carritos abiertos tras cierre de turno (POS)
 
 - Al confirmar **cierre**, los carritos con productos en caja se vacían automáticamente (`resetCartTabsForNewShift`).
@@ -20,6 +24,19 @@
 - **Código de barras** se exporta como texto (`="…"`) para que Excel/Sheets no conviertan códigos largos a notación científica.
 - Escritura atómica (`*.tmp` → renombrar): si falla la exportación, el archivo anterior no queda truncado.
 - Re-importación acepta el formato de texto de hoja de cálculo.
+
+### Mejora — versión visible en inicio de sesión (POS)
+
+- La pantalla de **login** muestra `vX.Y.Z` en la esquina inferior izquierda (solo ahí).
+- La versión sale de `package.json` en build (`VITE_APP_VERSION` en `electron.vite.config.ts`) — útil para soporte remoto (“¿qué versión tiene instalada?”).
+
+### Despliegue
+
+| Componente | Versión | Acción |
+|------------|---------|--------|
+| POS Windows | 1.6.4 | `npm run release:win` → `ShelfPOS-1.6.4-win.zip` |
+| Sync service | 1.6.4 | Incluido en ZIP; sin cambios de protocolo |
+| Dashboard | 1.5.1 | Deploy Vercel (`DASHBOARD/`) |
 
 ---
 

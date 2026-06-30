@@ -20,6 +20,10 @@ All main-process calls go through:
 | Feature | Routes / screens |
 |---------|------------------|
 | `auth/` | Login, first-run wizard, language |
+
+### Login version badge (v1.6.4+)
+
+`/login` shows `vX.Y.Z` fixed bottom-left (`features/auth/Login.tsx`). Value is injected at build from `package.json` via `electron.vite.config.ts` → `import.meta.env.VITE_APP_VERSION`. Not shown after sign-in or on other routes — for remote support (“which build is installed?”).
 | `shell/` | Sidebar, collapse, language switcher |
 | `pos/` | Terminal, payment, cart tabs, cash drawer, reprints |
 | `products/` | Catalog CRUD, CSV/eFactura import, labels |
