@@ -55,6 +55,8 @@ function Cierre(): React.JSX.Element {
   })
 
   const pending = preview?.pendingSales ?? 0
+  const heldCartTabs = preview?.heldCartTabs ?? []
+  const heldCartTotal = heldCartTabs.reduce((sum, row) => sum + row.total, 0)
   const expectedCash = preview?.cash?.expectedCash ?? 0
   const countedNum = parseColonesInput(countedCash)
   const difference =
@@ -87,6 +89,7 @@ function Cierre(): React.JSX.Element {
       void queryClient.invalidateQueries({ queryKey: ['cierreHistory'] })
       void queryClient.invalidateQueries({ queryKey: ['cierreDiscrepancyAlerts'] })
       void queryClient.invalidateQueries({ queryKey: ['cashStatus'] })
+      void queryClient.invalidateQueries({ queryKey: ['cartTabs'] })
       void queryClient.invalidateQueries({ queryKey: ['salesForReprint'] })
     },
     onError: (err) => {
@@ -176,6 +179,19 @@ function Cierre(): React.JSX.Element {
               {pending === 0 && (
                 <p className="mb-4 text-[15px] font-bold text-warning">{t('cierre.noPending')}</p>
               )}
+              {heldCartTabs.length > 0 && (
+                <div className="mb-4 rounded-md border-2 border-warning bg-amber-50 px-4 py-3 text-[15px] text-amber-950">
+                  <p className="font-semibold text-warning">{t('cierre.heldCartsTitle')}</p>
+                  <p className="mt-1">{t('cierre.heldCartsWarning', { count: heldCartTabs.length, total: formatMoney(heldCartTotal) })}</p>
+                  <ul className="mt-2 list-disc pl-5">
+                    {heldCartTabs.map((row) => (
+                      <li key={`${row.label}-${row.total}`}>
+                        {row.label} · {formatMoney(row.total)}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <Button
                 size="lg"
                 className="w-full"
@@ -193,6 +209,12 @@ function Cierre(): React.JSX.Element {
                 countedNum={countedNum}
                 difference={difference}
               />
+              {heldCartTabs.length > 0 && (
+                <div className="mb-4 rounded-md border-2 border-warning bg-amber-50 px-4 py-3 text-[15px] text-amber-950">
+                  <p className="font-semibold text-warning">{t('cierre.heldCartsTitle')}</p>
+                  <p className="mt-1">{t('cierre.heldCartsWarning', { count: heldCartTabs.length, total: formatMoney(heldCartTotal) })}</p>
+                </div>
+              )}
               {isOver && (
                 <p className="mb-4 rounded-md border-2 border-warning bg-amber-50 px-4 py-3 text-[15px] font-semibold text-warning">
                   {t('cierre.overNotice', {
@@ -553,7 +575,9 @@ function CierreDiscardedTabs({
                 <Td>
                   {row.authType === 'caja'
                     ? t('cierre.discardedTabAuthCaja')
-                    : t('cierre.discardedTabAuthManager')}
+                    : row.authType === 'manager'
+                      ? t('cierre.discardedTabAuthManager')
+                      : t('cierre.discardedTabAuthCierre')}
                 </Td>
               </tr>
             ))}

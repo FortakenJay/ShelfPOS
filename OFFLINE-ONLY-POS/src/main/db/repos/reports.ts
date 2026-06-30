@@ -597,11 +597,11 @@ export function cierreDiscardedTabs(filter: { fromTs?: string; toTs?: string }):
     cashier: string
     label: string
     total: number
-    authType: 'caja' | 'manager'
+    authType: 'caja' | 'manager' | 'cierre'
   }[]
 } {
   const conditions = [
-    `action IN ('cart_tab_discarded_caja', 'cart_tab_discarded_manager')`
+    `action IN ('cart_tab_discarded_caja', 'cart_tab_discarded_manager', 'cart_tab_discarded_cierre')`
   ]
   const params: Record<string, unknown> = {}
   if (filter.fromTs) {
@@ -640,9 +640,11 @@ export function cierreDiscardedTabs(filter: { fromTs?: string; toTs?: string }):
       cashier: row.username ?? '—',
       label,
       total,
-      authType: (row.action === 'cart_tab_discarded_caja' ? 'caja' : 'manager') as
-        | 'caja'
-        | 'manager'
+      authType: (row.action === 'cart_tab_discarded_caja'
+        ? 'caja'
+        : row.action === 'cart_tab_discarded_manager'
+          ? 'manager'
+          : 'cierre') as 'caja' | 'manager' | 'cierre'
     }
   })
 

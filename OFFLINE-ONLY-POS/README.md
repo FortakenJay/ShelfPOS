@@ -42,7 +42,7 @@ Release notes: [`RELEASE_NOTES.md`](RELEASE_NOTES.md) (current: **1.6.3**).
 - Prefer the **Receipt** queue (e.g. `EPSON TM-T81III Receipt`). If only a generic `EPSON TM-T81III` queue exists, ShelfPOS writes ESC/POS directly to the USB port.
 - Override detection with env var `SHELFPOS_PRINTER_NAME` if the queue has a custom name.
 - Spanish receipts and labels print amounts as **CRC** + digits on thermal output (e.g. `CRC 3200`). On-screen UI still shows **₡**.
-- Product labels: shelf etiquetas and barcode stickers from **Productos**; batch modals support up to 99 copies per product. See `docs/wiki/08-POS-Renderer.md`.
+- Product labels: shelf etiquetas and barcode stickers from **Productos**; batch modals support up to 99 copies per product. CSV export streams the full catalog (see `docs/wiki/07-POS-Main-Process.md#product-csv-export-catalog-backup`). See `docs/wiki/08-POS-Renderer.md`.
 
 ## First run
 

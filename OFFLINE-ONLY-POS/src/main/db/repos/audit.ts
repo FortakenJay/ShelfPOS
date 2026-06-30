@@ -38,7 +38,7 @@ function auditWhere(filter: AuditLogFilter): { where: string; params: Record<str
  * Records a per-user activity entry. Best-effort: failures are swallowed so the
  * underlying operation is never broken by audit-log problems.
  */
-export function writeAudit(action: string, meta: AuditMeta = {}): void {
+export function writeAudit(action: string, meta: AuditMeta = {}, createdAt?: string): void {
   try {
     const user = session.get()
     if (user && isHiddenOperatorUsername(user.username)) return
@@ -55,7 +55,7 @@ export function writeAudit(action: string, meta: AuditMeta = {}): void {
         meta.entity ?? null,
         meta.entityId != null ? String(meta.entityId) : null,
         meta.detail ?? null,
-        localNow()
+        createdAt ?? localNow()
       )
     enqueueSync('audit_log', Number(result.lastInsertRowid), 'insert', db)
   } catch (err) {

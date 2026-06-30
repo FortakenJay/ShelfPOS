@@ -93,6 +93,7 @@ Optional fields on sale header (name, cédula) — not a separate customers tabl
 - **Local only** — not synced; snapshot in `cart_tabs.cart_json`.
 - Switching tabs saves/restores cart state.
 - Closing empty tab: no PIN. Closing with items: **caja/manager PIN** → `audit_log` (synced) → appears on cierre print.
+- **Shift close:** `cierre:confirm` clears all held carts via `resetCartTabsForNewShift`; non-empty tabs → `cart_tab_discarded_cierre` in `audit_log` (same cierre ticket/PDF section as PIN discards). Preview shows `heldCartTabs` before confirm.
 
 ## Barcode scanner
 

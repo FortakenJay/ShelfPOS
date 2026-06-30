@@ -76,11 +76,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [authLoading, user, isSuperadmin, pathname, navigate])
 
+  useEffect(() => {
+    if (authLoading || user) return
+    void navigate({ to: '/login', replace: true })
+  }, [authLoading, user, navigate])
+
   const waitingForStores =
     Boolean(user) && isPending && stores.length === 0 && !isSuperadmin
 
   let body: ReactNode
   if (authLoading || waitingForStores) {
+    body = <FullScreenSpinner />
+  } else if (!user) {
     body = <FullScreenSpinner />
   } else if (!isSuperadmin && !allowWithoutStore && (isError || stores.length === 0)) {
     body = (

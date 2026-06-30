@@ -30,6 +30,11 @@ Quick lookup when an LLM (or human) needs the right file.
 | Printer / receipts | `OFFLINE-ONLY-POS/src/main/services/printer.ts` |
 | Factura PDF | `OFFLINE-ONLY-POS/src/main/services/facturaPdf.ts` |
 | Cierre print lines | `OFFLINE-ONLY-POS/src/main/services/printTemplates.ts` |
+| Product CSV export | `OFFLINE-ONLY-POS/src/main/services/productCsvExport.ts` |
+| Product CSV import | `OFFLINE-ONLY-POS/src/main/services/productCsvImport.ts` |
+| CSV stream I/O | `OFFLINE-ONLY-POS/src/main/services/csvStream.ts` |
+| Spreadsheet text (barcode) | `OFFLINE-ONLY-POS/src/main/services/csvSpreadsheet.ts` |
+| CSV parse/escape | `OFFLINE-ONLY-POS/src/main/services/csv.ts`, `csvColumns.ts` |
 | Operator recovery (SAKEN) | `OFFLINE-ONLY-POS/src/main/services/operatorConfig.ts` |
 | Sync service loop | `OFFLINE-ONLY-POS/sync-service/src/index.ts` |
 | Sync upsert logic | `OFFLINE-ONLY-POS/sync-service/src/sync.ts` |
@@ -75,6 +80,7 @@ Quick lookup when an LLM (or human) needs the right file.
 | Cierre | `ipc/cierre.ts` |
 | Cash | `ipc/cash.ts` |
 | Cart tabs | `ipc/cartTabs.ts` |
+| Cart tabs repo | `OFFLINE-ONLY-POS/src/main/db/repos/cartTabs.ts` (`resetCartTabsForNewShift`, `listHeldCartTabsForCierre`) |
 | Settings | `ipc/settings.ts` |
 | Users | `ipc/users.ts` |
 | Reports (local) | `ipc/reports.ts` |
@@ -96,6 +102,8 @@ Quick lookup when an LLM (or human) needs the right file.
 | Audit | `routes/_app/audit.tsx` |
 | Link POS | `routes/_app/link-pos.tsx` |
 | Superadmin | `routes/_app/admin.tsx` |
+
+**Lib:** `lib/store-context.tsx` (store selection, sign-out → `/login`), `lib/queries/*`, `lib/clear-dashboard-cache.ts`
 
 ---
 

@@ -204,6 +204,9 @@ flowchart TB
     backup[backup.ts]
     syncCfg[syncConfig.ts]
     csvImp[productCsvImport.ts]
+    csvExp[productCsvExport.ts]
+    csvStream[csvStream.ts]
+    csvSheet[csvSpreadsheet.ts]
   end
 
   DB[(SQLite)]
@@ -220,12 +223,17 @@ flowchart TB
   products_ts --> products_r
   products_ts --> syncQ_r
   products_ts --> csvImp
+  products_ts --> csvExp
+  csvExp --> csvStream
+  csvExp --> csvSheet
+  csvImp --> csvSheet
   products_ts --> printer_s
 
   cierre_ts --> reports_r
   cierre_ts --> cash_r
   cierre_ts --> syncQ_r
   cierre_ts --> printTpl
+  cierre_ts --> cartTabs_r
 
   returns_ts --> products_r
   returns_ts --> syncQ_r

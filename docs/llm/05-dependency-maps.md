@@ -84,7 +84,14 @@ products:* (ipc/products.ts)
 │   ├── list / byBarcode / CRUD
 │   ├── listStockProviders
 │   └── stock filter
+├── productCsvExport.ts
+│   ├── csvStream.ts (async file write)
+│   ├── csvSpreadsheet.ts (barcode text literals)
+│   └── csv.ts + csvColumns.ts
 ├── productCsvImport.ts
+│   └── csvSpreadsheet.ts (parse on re-import)
+├── cierre.ts
+│   └── resetCartTabsForNewShift (cartTabs repo)
 └── enqueueSync('products', ...)
 ```
 

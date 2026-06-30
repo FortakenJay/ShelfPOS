@@ -144,6 +144,28 @@ export function usePOSTerminal() {
     })()
   }, [tabsLoaded, tabs, queryClient, toasts])
 
+  useEffect(() => {
+    if (!tabsLoaded || !tabsReady || tabs.length === 0) return
+
+    const active = tabs.find((tab) => tab.id === activeTabId)
+    if (!active) {
+      const next = tabs[0]!
+      setActiveTabId(next.id)
+      const snap = parseCartTabSnapshot(next.cartJson)
+      setSale({
+        cart: snap.cart,
+        cartDiscount: snap.cartDiscount,
+        customer: snap.customer
+      })
+      setDiscountAuthPin(null)
+      setLineDiscountPin(null)
+      setQuery('')
+      setModals((m) => ({ ...m, payOpen: false }))
+      checkoutTabIdRef.current = null
+      tabSwitchingRef.current = false
+    }
+  }, [tabs, tabsLoaded, tabsReady, activeTabId])
+
   const activateTabAfterClose = (remaining: CartTabListItem[], preferredIndex: number): void => {
     const next = remaining[Math.min(preferredIndex, remaining.length - 1)]
     if (!next) return

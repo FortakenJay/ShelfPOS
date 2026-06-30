@@ -39,6 +39,7 @@ Layout: `routes/_app/route.tsx` — auth gate + `StoreProvider` + `Shell`.
 - Persists selection: `localStorage` key `shelfpos_dashboard_store`
 - `NoStoresPage` when zero stores (except on `/link-pos`); auto `ensure_store_pairing` on no-stores page only
 - Superadmin on `/link-pos` → redirect to `/admin`
+- **Sign-out:** when `user` is null, redirect to `/login` (spinner while redirecting). Prevents `NoStoresPage` from blocking `AuthedShell` after `signOut` + `queryClient.clear()`.
 
 ## Queries layer (`lib/queries/`)
 
@@ -91,6 +92,7 @@ Layout: `routes/_app/route.tsx` — auth gate + `StoreProvider` + `Shell`.
 | Sync OK, dashboard empty | Missing claim, wrong `store_id`, or stale `sync_owner_claimed` after wipe — [[19-Edge-Cases-And-Runbooks]] |
 | Invite link fails | Expired or already consumed; operator can resend or use reset-password |
 | Superadmin sees all stores | Expected; support view when a store is selected |
+| Logout shows “no stores” / pairing screen | Fixed: `StoreProvider` redirects unauthenticated users to `/login` |
 
 ## Related
 

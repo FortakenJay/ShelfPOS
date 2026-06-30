@@ -6,6 +6,7 @@ import { localNow } from '../db/helpers'
 import { applyStockDelta, getProduct, getProductByBarcode } from '../db/repos/products'
 import { writeAudit } from '../db/repos/audit'
 import { parseCsv } from './csv'
+import { parseSpreadsheetText } from './csvSpreadsheet'
 import { mapProductCsvHeaders, parseFacturaNegativo, type ProductCsvKey } from './csvColumns'
 import type {
   Product,
@@ -62,7 +63,7 @@ export function parseProductRow(
   row: string[],
   columns: Partial<Record<ProductCsvKey, number>>
 ): ProductInput {
-  const barcode = cell(row, columns.barcode)
+  const barcode = parseSpreadsheetText(cell(row, columns.barcode))
   const name = cell(row, columns.name)
   const priceRaw = cell(row, columns.price)
   const price = parseOptionalNumber(priceRaw)

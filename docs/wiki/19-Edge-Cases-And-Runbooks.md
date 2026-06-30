@@ -241,6 +241,10 @@ See `DASHBOARD/scripts/wipe-supabase-mirror-data.sql` (BEFORE/AFTER row counts, 
 | `NoStoresPage` | Auto `ensure_store_pairing` when zero stores (not on `/link-pos`) |
 | Superadmin | Redirected to `/admin` — cannot use link UI |
 
+### Sign-out redirect
+
+After `signOut`, `StoreProvider` (`lib/store-context.tsx`) redirects to `/login` when `user` is null. Avoids showing `NoStoresPage` while `AuthedShell` still mounts briefly after cache clear.
+
 ### Invite / password flows
 
 | Path | Notes |
@@ -257,6 +261,7 @@ See `DASHBOARD/scripts/wipe-supabase-mirror-data.sql` (BEFORE/AFTER row counts, 
 | **Cierres** | Hard fetch cap **500**; shows `500+` warning if more |
 | **Audit** | 25/50/100 paginated |
 | **Reports inventory** | Max **200** per page; export fetches all pages |
+| **POS product CSV export** | UI table paginated (50 default); **Exportar productos CSV** streams **all** active products (keyset batches, not `OFFSET`) |
 | **Query `.in()` chunks** | 500 ids per batch in reports/dashboard |
 
 ### Superadmin vs owner
@@ -277,6 +282,13 @@ See `DASHBOARD/scripts/wipe-supabase-mirror-data.sql` (BEFORE/AFTER row counts, 
 ### Cart tabs
 
 Local-only `cart_tabs` table — **not synced**. Open carts survive tab switch; discarded tabs may audit via `audit_log` (synced).
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| Cart still full after cierre; sales blocked | Pre-fix: cierre did not reset `cart_tabs` | Fixed: `cierre:confirm` calls `resetCartTabsForNewShift`; POS invalidates `cartTabs` and switches to new empty tab |
+| Cierre page didn’t warn about open carts | — | Fixed: `cierre:preview` returns `heldCartTabs` with warning UI |
+
+Held carts cleared at cierre are audited as `cart_tab_discarded_cierre` (not PIN discard — auth type **Cierre** on reports/print).
 
 ### Barcode scanner (scans but item not added)
 
@@ -309,6 +321,8 @@ No catalog row; `sale_items.product_id` is NULL. **Not returnable** by design. S
 ### Cierre (cashier)
 
 Cierre page shows **cash drawer summary** and count/confirm flow — not top-line sales totals (those live in reports/admin as needed).
+
+Warns when **held cart tabs** on POS still have items (`heldCartTabs`). On confirm, those carts are cleared and audited; cashier must **open float** for the new shift before selling again.
 
 ### `linked` status in POS
 

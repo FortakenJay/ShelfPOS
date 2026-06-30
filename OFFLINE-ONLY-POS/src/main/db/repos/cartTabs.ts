@@ -2,7 +2,7 @@ import { getDb } from '../index'
 import { localNow } from '../helpers'
 import { writeAudit } from './audit'
 import { AppError } from '../../errors'
-import { isCartTabSnapshotEmpty } from '../../../shared/cartTabSnapshot'
+import { isCartTabSnapshotEmpty, cartTabSnapshotTotal } from '../../../shared/cartTabSnapshot'
 
 const EMPTY_SNAPSHOT = JSON.stringify({ cart: [], cartDiscount: 0, customer: null })
 
@@ -104,4 +104,46 @@ export function discardCartTabAudited(
     deleteCartTabRow(id)
   })
   run()
+}
+
+/** Clears held carts when a shift closes; non-empty tabs are audited for cierre reporting. */
+export function resetCartTabsForNewShift(closedByUsername: string, closedAt?: string): void {
+  const auditAt = closedAt ?? localNow()
+  const db = getDb()
+  const now = localNow()
+  const run = db.transaction(() => {
+    const tabs = listCartTabs()
+    for (const tab of tabs) {
+      if (!isCartTabSnapshotEmpty(tab.cart_json)) {
+        const label = tab.label?.trim() || `Carrito ${tab.position}`
+        writeAudit(
+          'cart_tab_discarded_cierre',
+          {
+            entity: 'cart_tab',
+            detail: JSON.stringify({
+              label,
+              total: cartTabSnapshotTotal(tab.cart_json),
+              closedBy: closedByUsername
+            })
+          },
+          auditAt
+        )
+      }
+    }
+    db.prepare('DELETE FROM cart_tabs').run()
+    db.prepare(
+      `INSERT INTO cart_tabs (label, position, cart_json, created_at, updated_at)
+       VALUES (NULL, 1, ?, ?, ?)`
+    ).run(EMPTY_SNAPSHOT, now, now)
+  })
+  run()
+}
+
+export function listHeldCartTabsForCierre(): { label: string; total: number }[] {
+  return listCartTabs()
+    .filter((tab) => !isCartTabSnapshotEmpty(tab.cart_json))
+    .map((tab) => ({
+      label: tab.label?.trim() || `Carrito ${tab.position}`,
+      total: cartTabSnapshotTotal(tab.cart_json)
+    }))
 }

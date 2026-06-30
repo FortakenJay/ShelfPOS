@@ -18,7 +18,7 @@ const OPTIONAL_COLS = [
 ] as const
 
 const STEP_KEYS = ['step1', 'step2', 'step3', 'step4'] as const
-const TIP_KEYS = ['tip1', 'tip2', 'tip3', 'tip4'] as const
+const TIP_KEYS = ['tip1', 'tip2', 'tip3', 'tip4', 'tip5'] as const
 
 export function ProductCsvHelpModal({
   onClose,

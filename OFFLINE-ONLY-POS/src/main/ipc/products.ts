@@ -1,7 +1,6 @@
 import { handle } from './helpers'
 import { AppError } from '../errors'
 import { dialog } from 'electron'
-import { writeFileSync } from 'node:fs'
 import { getDb } from '../db'
 import { localNow } from '../db/helpers'
 import {
@@ -19,8 +18,7 @@ import {
 import { currentLanguage, receiptLanguage } from '../db/repos/settings'
 import { session } from '../services/session'
 import { writeAudit } from '../db/repos/audit'
-import { buildCsv } from '../services/csv'
-import { PRODUCT_CSV_KEYS, productCsvHeaders } from '../services/csvColumns'
+import { exportProductsToCsv } from '../services/productCsvExport'
 import { buildProductBarcodeLabelLines, buildShelfLabelLines } from '../services/printTemplates'
 import { labelPrintPayload } from '../services/labelPrintLines'
 import type { PrintLine } from '../../shared/types'
@@ -377,24 +375,7 @@ export function registerProductHandlers(): void {
         filters: [{ name: 'CSV', extensions: ['csv'] }]
       })
       if (result.canceled || !result.filePath) return { canceled: true }
-
-      const rows = template
-        ? []
-        : listProducts({}).items.map((p) => ({
-            barcode: p.barcode,
-            name: p.name,
-            price: p.price,
-            cost_price: p.cost_price ?? '',
-            category: p.category ?? '',
-            stock: p.stock,
-            stock_threshold: p.stock_threshold ?? '',
-            bulk_qty: p.bulk_qty ?? '',
-            bulk_price: p.bulk_price ?? '',
-            factura_negativo: p.factura_negativo ? '1' : '0'
-          }))
-
-      const csv = buildCsv(productCsvHeaders(lang), [...PRODUCT_CSV_KEYS], rows)
-      writeFileSync(result.filePath, csv, 'utf8')
+      await exportProductsToCsv(result.filePath, lang, Boolean(template))
       return { canceled: false, path: result.filePath }
     }
   )

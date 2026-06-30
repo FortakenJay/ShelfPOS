@@ -27,7 +27,7 @@ Preload whitelists channels — only listed channels can be invoked.
 | `auth.ts` | Login, logout, session |
 | `firstRun.ts` | Wizard, language |
 | `settings.ts` | Store config, PINs, language |
-| `products.ts` | CRUD, import, labels, stock, `stockProviders` |
+| `products.ts` | CRUD, CSV export/import, eFactura import, labels, stock, `stockProviders` |
 | `sales.ts` | Checkout, reprint, factura PDF export |
 | `returns.ts` | Returns + restock |
 | `reports.ts` | Local report generation |
@@ -54,7 +54,11 @@ Inspect `IPC_CHANNELS` for full list (~67 channels). Common:
 - `products:printLabel` — shelf **etiqueta** (`buildShelfLabelLines`): **20 mm** fixed height; price via `formatColonesPrint` (**¢**); optional `copies` **1–99** (`MAX_LABEL_COPIES`)
 - `products:printBarcode` — product sticker (`buildProductBarcodeLabelLines`): CODE128 + HRI; value from `barcodePrintValue` (barcode or product id); optional `copies` **1–99**
 - `products:printLabelBatch` / `products:printBarcodeBatch` — `{ items: { productId, copies? }[] }`, max **200** products, copies **1–99** each; batch handlers `probePrinter()` then print sequentially per product
-- `cierre:confirm` — shift close + thermal print (`buildCierreLines`, includes discarded tabs from `audit_log`)
+- `products:exportCsv` — `{ template?: boolean }`; save dialog → stream full active catalog (or headers-only template) via `productCsvExport.ts`; barcodes as spreadsheet text literals; writes `path.tmp` then renames atomically
+- `products:importCsvPreview` / `products:importCsvConfirm` — file picker + preview/apply (`productCsvImport.ts`); stock mode `add` \| `replace` on confirm
+- `products:importEfacturaPreview` / `products:importEfacturaConfirm` — eFactura `.xlsx` import (same preview/apply pipeline)
+- `cierre:preview` — shift totals + `heldCartTabs` (open POS carts that will be cleared on confirm)
+- `cierre:confirm` — shift close + thermal print; resets cart tabs via `resetCartTabsForNewShift`; `buildCierreLines` includes discarded tabs from `audit_log`
 - `cierre:print`, `cierre:exportPdf` — re-print / PDF for a past cierre (same line template)
 
 ## Sync side effect

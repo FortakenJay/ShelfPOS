@@ -65,7 +65,7 @@ Each card: purpose, entry point, data, permissions, edge cases.
 | **IPC** | `cartTabs:list`, `create`, `save`, `discardAudited`, `complete` |
 | **Tables** | `cart_tabs` (local), `audit_log` on PIN discard |
 | **Permissions** | Discard with items → caja/manager PIN |
-| **Edge cases** | Not synced; discard appears on cierre print/PDF |
+| **Edge cases** | Not synced; PIN discard appears on cierre print/PDF; **cierre confirm** clears all held carts (`cart_tab_discarded_cierre`) |
 
 ---
 
@@ -77,7 +77,7 @@ Each card: purpose, entry point, data, permissions, edge cases.
 | **Entry** | `CierrePage` → `cierre:confirm` |
 | **Tables** | `cierres`, `cash_movements`, `audit_log` |
 | **Output** | Thermal ticket + PDF via `buildCierreLines` |
-| **Edge cases** | Includes discarded cart tabs from audit; sales must link to `cierre_id` |
+| **Edge cases** | Includes discarded cart tabs from audit (PIN + cierre auto-clear); sales must link to `cierre_id`; preview warns `heldCartTabs` |
 
 ---
 
@@ -85,12 +85,12 @@ Each card: purpose, entry point, data, permissions, edge cases.
 
 | | |
 |--|--|
-| **Purpose** | CRUD, CSV/eFactura import, shelf + barcode label print |
-| **Entry** | `ProductsPage`, `ProductForm`, `BatchLabelPrintModal` |
-| **IPC** | `products:*`, `products:stockProviders`, `products:printLabel`, `products:printBarcode`, `products:printLabelBatch`, `products:printBarcodeBatch` |
+| **Purpose** | CRUD, CSV export/import, eFactura import, shelf + barcode label print |
+| **Entry** | `ProductsPage`, `ProductForm`, `BatchLabelPrintModal`, `ProductCsvHelpModal` |
+| **IPC** | `products:*`, `products:exportCsv`, `products:importCsv*`, `products:importEfactura*`, `products:stockProviders`, `products:printLabel`, `products:printBarcode`, `products:printLabelBatch`, `products:printBarcodeBatch` |
 | **Tables** | `products`, `stock_adjustments` |
 | **Permissions** | `product_manager` / `admin` |
-| **Edge cases** | Soft delete; `stock_provider` filter; barcode UNIQUE; thermal prints use **¢**; barcode sticker falls back to product id; batch copies 1–99 (`shared/printLimits.ts`); `searchProducts` merges exact id with name/barcode `LIKE` |
+| **Edge cases** | Soft delete; `stock_provider` filter; barcode UNIQUE; CSV export streams full catalog (keyset batches, not UI page size); barcodes exported as `="…"` for Excel; failed export leaves prior file intact (`*.tmp` + rename); thermal prints use **¢**; barcode sticker falls back to product id; batch copies 1–99 (`shared/printLimits.ts`); `searchProducts` merges exact id with name/barcode `LIKE` |
 
 ---
 
@@ -114,6 +114,17 @@ Each card: purpose, entry point, data, permissions, edge cases.
 | **Entry** | `features/admin/reports/` |
 | **IPC** | `reports:*` |
 | **Note** | Independent from dashboard cloud reports |
+
+---
+
+## Dashboard auth / store context
+
+| | |
+|--|--|
+| **Purpose** | Supabase session + selected store for RLS-scoped queries |
+| **Entry** | `lib/store-context.tsx`, `lib/auth-context.tsx` |
+| **Persistence** | `localStorage` `shelfpos_dashboard_store`; query cache cleared on sign-out |
+| **Edge cases** | Sign-out redirects to `/login` (not `NoStoresPage`); zero stores → pairing except on `/link-pos` |
 
 ---
 

@@ -640,7 +640,9 @@ function cierreDiscardedTabLines(
     const auth =
       row.authType === 'caja'
         ? t(lang, 'print.cierre.discardedTabAuthCaja')
-        : t(lang, 'print.cierre.discardedTabAuthManager')
+        : row.authType === 'manager'
+          ? t(lang, 'print.cierre.discardedTabAuthManager')
+          : t(lang, 'print.cierre.discardedTabAuthCierre')
     lines.push({
       t: 'row',
       l: label,

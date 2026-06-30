@@ -795,8 +795,8 @@
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/package.json": {
-    "mtime": 1782428944.4794652,
-    "ast_hash": "4fc564d67d824c8eb31542a3112a1311",
+    "mtime": 1782522251.7053535,
+    "ast_hash": "3a3c6292031cc48a3232699b62c7e82e",
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/scripts/build-release.ps1": {
@@ -1920,8 +1920,8 @@
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/sync-service/package.json": {
-    "mtime": 1782428944.4794652,
-    "ast_hash": "79c60989cb832333dd5bdbeada3d38f7",
+    "mtime": 1782522252.221042,
+    "ast_hash": "b781a1794df0b9c302ea5d4b20ec33df",
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/sync-service/src/config.ts": {
@@ -2075,13 +2075,13 @@
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/README.md": {
-    "mtime": 1782437317.849022,
-    "ast_hash": "e23ef6a8bbd2239bbb426c655c50bd74",
+    "mtime": 1782522253.1119392,
+    "ast_hash": "d11e4bf1a071d501e61465e866daa6e0",
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/RELEASE_NOTES.md": {
-    "mtime": 1782428947.0327241,
-    "ast_hash": "06d50f1cea1faec5f7f04cd70b56052c",
+    "mtime": 1782522255.620028,
+    "ast_hash": "63f9eddfaa9d1ece150830d22e867125",
     "semantic_hash": ""
   },
   "OFFLINE-ONLY-POS/docs/instalacion-remota.md": {
@@ -3214,11 +3214,6 @@
     "ast_hash": "07729a8707288693eab6861abf8ff863",
     "semantic_hash": ""
   },
-  "OFFLINE-ONLY-POS/.release-dist-20260625-175312/win-unpacked/vk_swiftshader_icd.json": {
-    "mtime": 1782431606.303535,
-    "ast_hash": "8642dd3a87e2de6e991fae08458e302b",
-    "semantic_hash": ""
-  },
   "OFFLINE-ONLY-POS/release/ShelfPOS-1.6.2-win/Install-ShelfPOS.ps1": {
     "mtime": 1782412636.2319472,
     "ast_hash": "c04ace169831b4d542da9b2ffe5f93a8",
@@ -3254,26 +3249,6 @@
     "ast_hash": "854252af8c70184a99619757e0f240fa",
     "semantic_hash": ""
   },
-  "OFFLINE-ONLY-POS/.release-dist-20260625-175312/builder-debug.yml": {
-    "mtime": 1782431664.1993563,
-    "ast_hash": "cff7d3d13e24985f160c5ff279d42d50",
-    "semantic_hash": ""
-  },
-  "OFFLINE-ONLY-POS/.release-dist-20260625-175312/builder-effective-config.yaml": {
-    "mtime": 1782431603.764252,
-    "ast_hash": "ec5b531d26aee0a8a9aa7a56a9b45cbb",
-    "semantic_hash": ""
-  },
-  "OFFLINE-ONLY-POS/.release-dist-20260625-175312/win-unpacked/LICENSE.electron.txt": {
-    "mtime": 1782431606.2004945,
-    "ast_hash": "4d42118d35941e0f664dddbd83f633c5",
-    "semantic_hash": ""
-  },
-  "OFFLINE-ONLY-POS/.release-dist-20260625-175312/win-unpacked/LICENSES.chromium.html": {
-    "mtime": 1782431606.1764934,
-    "ast_hash": "0f6417e60719dfacf3524b61cca87e8d",
-    "semantic_hash": ""
-  },
   "OFFLINE-ONLY-POS/release/ShelfPOS-1.6.2-win/BUILD_INFO.txt": {
     "mtime": 1782431674.6201847,
     "ast_hash": "350a5278e0949382282b2bbaa148fc74",
@@ -3289,7 +3264,62 @@
     "ast_hash": "06d50f1cea1faec5f7f04cd70b56052c",
     "semantic_hash": ""
   },
-  "OFFLINE-ONLY-POS/.release-dist-20260625-175312/win-unpacked/resources/ShelfPOS.png": {
+  "OFFLINE-ONLY-POS/.release-dist-20260626-190441/win-unpacked/vk_swiftshader_icd.json": {
+    "mtime": 1782522301.5029354,
+    "ast_hash": "8642dd3a87e2de6e991fae08458e302b",
+    "semantic_hash": ""
+  },
+  "OFFLINE-ONLY-POS/release/ShelfPOS-1.6.3-win/Install-ShelfPOS.ps1": {
+    "mtime": 1782412636.2319472,
+    "ast_hash": "c04ace169831b4d542da9b2ffe5f93a8",
+    "semantic_hash": ""
+  },
+  "OFFLINE-ONLY-POS/release/ShelfPOS-1.6.3-win/Uninstall-ShelfPOS.ps1": {
+    "mtime": 1782262686.731739,
+    "ast_hash": "6e94aeb58bbb83c5571f17bb29c9bc8d",
+    "semantic_hash": ""
+  },
+  "OFFLINE-ONLY-POS/release/ShelfPOS-1.6.3-win/sync-service/package.json": {
+    "mtime": 1782522252.221042,
+    "ast_hash": "b781a1794df0b9c302ea5d4b20ec33df",
+    "semantic_hash": ""
+  },
+  "OFFLINE-ONLY-POS/.release-dist-20260626-190441/builder-debug.yml": {
+    "mtime": 1782522367.4102664,
+    "ast_hash": "b0a36914fb46b3a3d3dd052bbd887acd",
+    "semantic_hash": ""
+  },
+  "OFFLINE-ONLY-POS/.release-dist-20260626-190441/builder-effective-config.yaml": {
+    "mtime": 1782522298.1663363,
+    "ast_hash": "e9513238e805b57982e799e2fba3966c",
+    "semantic_hash": ""
+  },
+  "OFFLINE-ONLY-POS/.release-dist-20260626-190441/win-unpacked/LICENSE.electron.txt": {
+    "mtime": 1782522301.3820364,
+    "ast_hash": "4d42118d35941e0f664dddbd83f633c5",
+    "semantic_hash": ""
+  },
+  "OFFLINE-ONLY-POS/.release-dist-20260626-190441/win-unpacked/LICENSES.chromium.html": {
+    "mtime": 1782522301.3540192,
+    "ast_hash": "0f6417e60719dfacf3524b61cca87e8d",
+    "semantic_hash": ""
+  },
+  "OFFLINE-ONLY-POS/release/ShelfPOS-1.6.3-win/BUILD_INFO.txt": {
+    "mtime": 1782522396.582496,
+    "ast_hash": "593213d9dde4b452a251edbee671eb48",
+    "semantic_hash": ""
+  },
+  "OFFLINE-ONLY-POS/release/ShelfPOS-1.6.3-win/LEEME.txt": {
+    "mtime": 1782522396.586172,
+    "ast_hash": "7f839a4a8237de52826d4b16fb34274d",
+    "semantic_hash": ""
+  },
+  "OFFLINE-ONLY-POS/release/ShelfPOS-1.6.3-win/RELEASE_NOTES.md": {
+    "mtime": 1782522255.620028,
+    "ast_hash": "63f9eddfaa9d1ece150830d22e867125",
+    "semantic_hash": ""
+  },
+  "OFFLINE-ONLY-POS/.release-dist-20260626-190441/win-unpacked/resources/ShelfPOS.png": {
     "mtime": 1781649189.4466603,
     "ast_hash": "e17592a3e7e0285eaf717f54d37d41a3",
     "semantic_hash": ""

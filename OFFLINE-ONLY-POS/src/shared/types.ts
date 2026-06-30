@@ -698,7 +698,7 @@ export interface CierreDiscardedTabRow {
   cashier: string
   label: string
   total: number
-  authType: 'caja' | 'manager'
+  authType: 'caja' | 'manager' | 'cierre'
 }
 
 export interface CierreDiscardedTabsReport {
@@ -719,6 +719,8 @@ export interface CierrePreview {
   discounts?: CierreDiscountReport
   /** Admin-only. */
   priceOverrides?: CierrePriceOverrideReport
+  /** Open held carts on POS that will be cleared when this cierre is confirmed. */
+  heldCartTabs?: { label: string; total: number }[]
   /** Admin-only. */
   discardedTabs?: CierreDiscardedTabsReport
 }
@@ -857,7 +859,7 @@ export interface CartTabReorderInput {
 }
 
 export interface CartTabDiscardResult {
-  authType: 'caja' | 'manager'
+  authType: 'caja' | 'manager' | 'cierre'
 }
 
 export interface PriceOverrideAuthorizeInput {

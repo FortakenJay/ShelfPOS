@@ -16,6 +16,7 @@ import {
   topProducts
 } from '../db/repos/reports'
 import { openCashSummary } from '../db/repos/cash'
+import { resetCartTabsForNewShift, listHeldCartTabsForCierre } from '../db/repos/cartTabs'
 import { insertPrintJob } from '../db/repos/printJobs'
 import { writeAudit } from '../db/repos/audit'
 import { enqueueSync } from '../db/repos/syncQueue'
@@ -122,7 +123,8 @@ export function registerCierreHandlers(backup: BackupService): void {
         openedAt,
         cash,
         totals: { sinpe: totals.sinpe },
-        discardedTabs: cierreDiscardedTabs({ fromTs: openedAt })
+        discardedTabs: cierreDiscardedTabs({ fromTs: openedAt }),
+        heldCartTabs: listHeldCartTabsForCierre()
       }
     }
     const openedAt = periodOpenedAt()
@@ -134,7 +136,8 @@ export function registerCierreHandlers(backup: BackupService): void {
       cash,
       discounts: cierreDiscounts({ cierrePending: true }),
       priceOverrides: cierrePriceOverrides({ cierrePending: true }),
-      discardedTabs: cierreDiscardedTabs({ fromTs: openedAt })
+      discardedTabs: cierreDiscardedTabs({ fromTs: openedAt }),
+      heldCartTabs: listHeldCartTabsForCierre()
     }
   })
 
@@ -153,22 +156,23 @@ export function registerCierreHandlers(backup: BackupService): void {
     const db = getDb()
     const lang = receiptLanguage()
     const storeName = getAppSettings().storeName
-    const now = localNow()
 
     const { cierreId, printJobId } = db.transaction(() => {
+      const closedAt = localNow()
       const openedAt = periodOpenedAt()
       const totals = paymentTotals({ cierrePending: true })
       const txCount = salesCount({ cierrePending: true })
       if (txCount === 0) throw new AppError('errors.noPendingSales')
       const returnsCount = returnsCountSince(openedAt)
-      const top = topProducts({ fromTs: openedAt, toTs: now })
+      const top = topProducts({ fromTs: openedAt, toTs: closedAt })
       const cash = openCashSummary()
       const discounts = cierreDiscounts({ cierrePending: true })
       const priceOverrides = cierrePriceOverrides({ cierrePending: true })
-      const discardedTabs = cierreDiscardedTabs({ fromTs: openedAt, toTs: now })
+      resetCartTabsForNewShift(user.username, closedAt)
+      const discardedTabs = cierreDiscardedTabs({ fromTs: openedAt, toTs: closedAt })
 
       const difference = round2(countedCash - cash.expectedCash)
-      const shiftLabel = input.shiftLabel?.trim() || formatDate(now, lang, true)
+      const shiftLabel = input.shiftLabel?.trim() || formatDate(closedAt, lang, true)
 
       const id = Number(
         db
@@ -181,7 +185,7 @@ export function registerCierreHandlers(backup: BackupService): void {
           )
           .run(
             openedAt,
-            now,
+            closedAt,
             user.id,
             user.username,
             shiftLabel,
@@ -218,7 +222,7 @@ export function registerCierreHandlers(backup: BackupService): void {
 
       const lines = buildCierreLines(
         {
-          rangeLabel: `${formatDate(openedAt, lang, true)} - ${formatDate(now, lang, true)}`,
+          rangeLabel: `${formatDate(openedAt, lang, true)} - ${formatDate(closedAt, lang, true)}`,
           shiftLabel,
           closedBy: user.username,
           totals,
@@ -247,13 +251,13 @@ export function registerCierreHandlers(backup: BackupService): void {
         detail:
           difference === 0
             ? `${shiftLabel} · cierre completo`
-            : formatCashDifferenceAuditDetail(difference, countedCash, cash.expectedCash, now)
+            : formatCashDifferenceAuditDetail(difference, countedCash, cash.expectedCash, closedAt)
       })
       if (difference !== 0) {
         writeAudit('cierre_cash_discrepancy', {
           entity: 'cierre',
           entityId: id,
-          detail: formatCashDifferenceAuditDetail(difference, countedCash, cash.expectedCash, now)
+          detail: formatCashDifferenceAuditDetail(difference, countedCash, cash.expectedCash, closedAt)
         })
       }
       return { cierreId: id, printJobId: insertPrintJob('cierre', null, { lang, lines }) }

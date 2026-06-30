@@ -141,10 +141,11 @@ Browser-style multi-cart on one register (`cart_tabs` table, **local only**, not
 
 - Snapshot JSON: `{ cart, cartDiscount, customer }`.
 - Discarding non-empty tab requires caja/manager PIN → `audit_log` (synced).
+- **Cierre:** `cierre:confirm` calls `resetCartTabsForNewShift` — all held carts cleared, non-empty tabs audited as `cart_tab_discarded_cierre` (on cierre ticket/PDF). Preview returns `heldCartTabs` for warning UI.
 
 ### Cierre
 
-Shift close — totals by payment method, cash count, discrepancy, discarded cart tabs in print/PDF.
+Shift close — totals by payment method, cash count, discrepancy, discarded cart tabs in print/PDF (PIN discards + auto-cleared held carts at confirm).
 
 ### Product label printing (inventory)
 
@@ -164,6 +165,14 @@ IPC: `products:printLabel`, `products:printBarcode`, `products:printLabelBatch`,
 **Layout (v1.6.3):** `ProductsTable` row actions wrap + horizontal scroll on narrow screens; toolbar stacks below `lg` so long Spanish button labels are not clipped.
 
 **Search:** `searchProducts` runs name/barcode `LIKE` first; numeric queries also prepend exact id match when not already in results.
+
+### Product CSV export / import
+
+**Export** (`products:exportCsv`): streams **all** active products via `productCsvExport.ts` — keyset batches (`id > ?`, 1000 rows), buffered disk writes, atomic `*.tmp` rename. UI table pagination (default 50) does **not** limit export. Barcodes written as spreadsheet text (`="…"`) via `csvSpreadsheet.ts` so Excel does not show scientific notation.
+
+**Import** (`products:importCsvPreview` / `importCsvConfirm`, eFactura XLSX variants): `productCsvImport.ts`; preview before apply; stock `add` or `replace`. Re-import accepts exported barcode text literals.
+
+**Code:** `main/services/productCsvExport.ts`, `productCsvImport.ts`, `csvStream.ts`, `csvSpreadsheet.ts`, `csvColumns.ts`.
 
 ### Return (devolución)
 
@@ -321,6 +330,7 @@ routes/_app/
  ├── link-pos.tsx    → pairing RPCs
  └── audit.tsx
 
+lib/store-context.tsx → fetchStores, localStorage store id; sign-out → redirect `/login`
 lib/queries/*.ts    → Supabase selects (explicit columns, no select *)
 lib/reports/        → PDF + Excel builders (report-grid-to-xlsx.ts)
 ```
@@ -335,8 +345,9 @@ lib/reports/        → PDF + Excel builders (report-grid-to-xlsx.ts)
 | **Barcode scan** | `usePOSTerminal.onEnter`, `useGlobalBarcodeScanner` | products | sales+ | `scanner_burst_ms`; stale Enter fixed via inputRef |
 | **Returns** | `ReturnModal` → `returns:create` | return_items, products | PIN | Misc not returnable |
 | **Stock adjust** | Products admin | stock_adjustments | product_manager+ | Synced |
+| **Product CSV export** | Products → Exportar productos CSV | — (read-only) | product_manager+ | Full catalog stream; barcodes as `="…"`; atomic file write |
 | **Product labels** | Products → Imprimir etiqueta / código / batch modals | print_jobs, audit_log | product_manager+ | Thermal ¢ not ₡; barcode fallback = product id; copies 1–99 |
-| **Cierre** | `CierrePage` → `cierre:confirm` | cierres, cash_movements | admin/caja PIN | Discarded tabs in audit |
+| **Cierre** | `CierrePage` → `cierre:confirm` | cierres, cash_movements, cart_tabs | admin/caja PIN | Resets held carts; `heldCartTabs` preview; audit `cart_tab_discarded_cierre` |
 | **Cart tab discard** | `cartTabs:discardAudited` | cart_tabs, audit_log | caja/manager PIN | Local cart only |
 | **Inventory report** | Dashboard `/reports` | products (mirror) | owner RLS | 200/page cap |
 | **Store pairing** | `/link-pos` + sync startup | store_pairings, store_access | owner | 24h single-use code |

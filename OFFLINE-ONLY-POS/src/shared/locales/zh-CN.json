@@ -380,6 +380,8 @@
         "tip2": "若条形码已存在于店内，将更新该商品信息。库存可在预览中按累加或覆盖方式处理。",
         "tip3": "表头须与应用当前语言一致（西班牙语或中文）。",
         "tip4": "项目 samples/ 文件夹中有空白模板（productos-plantilla.csv）和示例商品（productos-demo.csv）。",
+        "tip5": "导出时「导出商品 CSV…」会保存全部在售商品（不仅是当前页）。长条形码以文本格式导出，避免 Excel 科学计数法。",
+        "exportHint": "使用「导出商品 CSV…」可备份完整目录；屏幕上的表格可能分页显示。",
         "downloadTemplate": "下载空白模板"
       }
     },
@@ -671,6 +673,8 @@
     "successDiscrepancy": "日结已记录。现金有差额，已通知管理员。",
     "cajeroConfirmHint": "若实点金额与系统不符，将自动通知管理员。",
     "noPending": "没有待结算的销售",
+    "heldCartsTitle": "收银台未结购物车",
+    "heldCartsWarning": "有 {{count}} 个购物车仍有商品（{{total}}）。确认班次结算后将清空。",
     "history": "历史日结",
     "closedAt": "结算时间",
     "closedBy": "操作人",
@@ -701,6 +705,7 @@
     "noDiscardedTabs": "本期无丢弃的购物车",
     "discardedTabAuthCaja": "收银",
     "discardedTabAuthManager": "经理",
+    "discardedTabAuthCierre": "班次结算",
     "discrepancyAlertsTitle": "现金差额日结 ({{count}} 笔)",
     "discrepancyIncomplete": "{{date}} 的日结未平账（{{direction}} {{amount}}）。",
     "discrepancyOver": "多出",
@@ -783,6 +788,7 @@
       "cart_line_removed_manager": "已从购物车移除商品（经理 PIN）",
       "cart_tab_discarded_caja": "已丢弃购物车（收银 PIN）",
       "cart_tab_discarded_manager": "已丢弃购物车（经理 PIN）",
+      "cart_tab_discarded_cierre": "已丢弃购物车（班次结算）",
       "product_label_printed": "打印商品标签",
       "product_barcode_printed": "打印商品条形码",
       "pin_card_printed": "PIN 卡已打印",
@@ -1059,7 +1065,8 @@
       "discardedTabsTotal": "丢弃总额",
       "discardedTabUnnamed": "购物车",
       "discardedTabAuthCaja": "收银 PIN",
-      "discardedTabAuthManager": "经理 PIN"
+      "discardedTabAuthManager": "经理 PIN",
+      "discardedTabAuthCierre": "班次结算"
     }
   },
   "errors": {

@@ -32,6 +32,8 @@ Each feature exposes hooks (e.g. `usePOSTerminal`, `useProductManager`) containi
 
 **Cart tabs:** `usePOSTerminal` restores tabs from SQLite on mount; `CartTabsBar` switches carts. Snapshot = `{ cart, cartDiscount, customer }`. Closing a non-empty tab requires caja/manager PIN (`cartTabs:discardAudited`); rows appear in cierre **screen**, **thermal print**, and **PDF** via `audit_log` + `buildCierreLines`.
 
+**Cierre clears held carts:** confirming shift close runs `resetCartTabsForNewShift` — non-empty tabs are audited as `cart_tab_discarded_cierre`, then replaced with one empty tab. POS auto-syncs when `cartTabs` is invalidated; cashiers do not need to manually delete stuck carts. See [[07-POS-Main-Process#cierre-and-cart-tabs]].
+
 ## Barcode scanner (USB HID)
 
 Scanners emulate a keyboard: rapid digits + Enter. Detection lives in:
@@ -60,6 +62,18 @@ Scanners emulate a keyboard: rapid digits + Enter. Detection lives in:
 
 Optional **`stock_provider`** (v20) — free-text supplier label (e.g. Walmart). Filter on Products page; `products:stockProviders` returns distinct values. Synced to Supabase; CSV import leaves provider null on new rows.
 
+### CSV export / import
+
+Toolbar (`useProductManager`):
+
+| Action | IPC | Notes |
+|--------|-----|-------|
+| **Exportar productos CSV…** | `products:exportCsv` | Full active catalog — not limited to the current table page |
+| **Descargar plantilla CSV…** | `products:exportCsv({ template: true })` | Headers only |
+| **Importar CSV…** | `products:importCsvPreview` → `importCsvConfirm` | Preview before apply; stock add or replace |
+
+Export is implemented in main process (`productCsvExport.ts`): keyset DB batches + streamed file write for large inventories. **Código de barras** is emitted as `="…"` so Excel/Google Sheets keep long numeric codes as text. Re-import accepts that format via `parseSpreadsheetText`. Help modal: `ProductCsvHelpModal`.
+
 ### Product label printing (thermal)
 
 Two separate print actions on **Productos** (`product_manager` / `admin`). Both use the configured label printer via `print_jobs` + ESC/POS (`insertPrintJob('label', …)`). All thermal money uses **¢** (CP850); on-screen prices use **₡**.
@@ -86,7 +100,7 @@ Shelf etiqueta targets **20 mm** height (half of 40 mm stock). Override label wi
 
 **Responsive layout (v1.6.3):** On narrow viewports (sidebar + small window), `ProductsTable` uses horizontal scroll and wraps row action buttons so long Spanish labels (e.g. **Imprimir código de barras**) are not clipped. `ProductsPageToolbar` stacks the title above the button row below `lg`.
 
-**Code:** `features/products/` (`ProductsTable`, `ProductsPageToolbar`, `BatchLabelPrintModal`, `ProductLabelPrintPromptModal`, `useProductManager`), `main/ipc/products.ts`, `main/services/printTemplates.ts`, `shared/barcode.ts`, `shared/printLimits.ts`, `shared/money.ts`.
+**Code:** `features/products/` (`ProductsTable`, `ProductsPageToolbar`, `BatchLabelPrintModal`, `ProductLabelPrintPromptModal`, `ProductCsvHelpModal`, `useProductManager`), `main/ipc/products.ts`, `main/services/productCsvExport.ts`, `main/services/productCsvImport.ts`, `main/services/printTemplates.ts`, `shared/barcode.ts`, `shared/printLimits.ts`, `shared/money.ts`.
 
 ## Locales
 

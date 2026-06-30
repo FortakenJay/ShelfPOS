@@ -1,5 +1,28 @@
 # ShelfPOS release notes
 
+## Unreleased
+
+### Corrección — carritos abiertos tras cierre de turno (POS)
+
+- Al confirmar **cierre**, los carritos con productos en caja se vacían automáticamente (`resetCartTabsForNewShift`).
+- Cada carrito no vacío se audita como `cart_tab_discarded_cierre` y aparece en el ticket/PDF del cierre.
+- La pantalla de cierre avisa con **Carritos abiertos en caja** antes de confirmar (`heldCartTabs` en `cierre:preview`).
+- La cajera en POS recibe un carrito vacío nuevo sin tener que borrar/crear manualmente (`usePOSTerminal` sincroniza al invalidar `cartTabs`).
+
+### Corrección — cierre de sesión en Dashboard
+
+- Tras **cerrar sesión**, `StoreProvider` redirige a `/login` en lugar de mostrar la pantalla de “sin tiendas”.
+
+### Mejora — exportación CSV de productos (inventario grande)
+
+- **Exportar productos CSV** incluye todo el catálogo activo, no solo la página visible en la tabla.
+- Exportación por streaming (`productCsvExport.ts`): lotes por `id`, memoria estable para inventarios de 100k+ productos.
+- **Código de barras** se exporta como texto (`="…"`) para que Excel/Sheets no conviertan códigos largos a notación científica.
+- Escritura atómica (`*.tmp` → renombrar): si falla la exportación, el archivo anterior no queda truncado.
+- Re-importación acepta el formato de texto de hoja de cálculo.
+
+---
+
 ## 1.6.3
 
 ### Corrección — Productos / inventario (pantallas pequeñas)

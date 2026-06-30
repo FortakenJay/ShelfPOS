@@ -30,6 +30,11 @@ Parent: [[Home]]
 | `services/printer.ts` | Thermal receipt, drawer kick |
 | `services/facturaPdf.ts` | A4 landscape invoice PDF |
 | `services/backup.ts` | Scheduled + manual DB backup |
+| `services/productCsvExport.ts` | Streaming product catalog CSV export (large inventories) |
+| `services/productCsvImport.ts` | CSV import parse, preview, apply |
+| `services/csv.ts` | `csvEscape`, `buildCsv`, `parseCsv` |
+| `services/csvStream.ts` | Async UTF-8 file stream writer (backpressure-safe) |
+| `services/csvSpreadsheet.ts` | Barcode text literals (`="…"`) for Excel/Sheets |
 | `services/posHeartbeat.ts` | Updates `pos_last_seen_at` |
 
 ## Error model
@@ -41,6 +46,38 @@ Keys must exist in `src/shared/locales/es.json` and `zh-CN.json`.
 Renderer: `toastApiError(toasts, err)` for translated messages.
 
 See [[16-Error-Handling]].
+
+## Product CSV export (catalog backup)
+
+**IPC:** `products:exportCsv` (`template?: boolean`) — `product_manager` / `admin`.
+
+**Layers:** `ipc/products.ts` (save dialog only) → `services/productCsvExport.ts` → SQLite + `csvStream.ts`.
+
+| Concern | Implementation |
+|---------|----------------|
+| Full catalog | All active rows (`deleted_at IS NULL`), not UI pagination |
+| Scale (100k+) | Keyset batches (`id > ?`, 1000 rows/query); one prepared statement per export |
+| Memory | Stream to `*.tmp`, flush 256 lines per disk write; atomic `rename` on success |
+| Concurrency | Batched `.all()` — no long-lived `.iterate()` cursor blocking writes |
+| Barcodes | `asSpreadsheetText()` → `="1234567890123"` so Excel does not show scientific notation |
+| Re-import | `parseSpreadsheetText()` in `productCsvImport.ts` strips the literal on import |
+
+Template export (`template: true`) writes headers only (same columns as full export).
+
+## Cierre and cart tabs
+
+On **`cierre:confirm`**, before the cierre row is inserted:
+
+1. `resetCartTabsForNewShift(closedBy, closedAt)` in `db/repos/cartTabs.ts`
+2. Each non-empty held cart → `audit_log` action `cart_tab_discarded_cierre` (synced)
+3. All `cart_tabs` rows deleted; one empty tab inserted at position 1
+4. `cierreDiscardedTabs` queried **after** reset so held carts appear on the thermal ticket / PDF
+
+**Preview:** `cierre:preview` returns `heldCartTabs` (open POS carts with totals). `CierrePage` shows a warning before confirm.
+
+**Renderer:** `CierrePage` invalidates `cartTabs` on success; `usePOSTerminal` switches to the new tab when the active tab id disappears.
+
+**New shift:** opening float is still required (`cash:openFloat`) — normal after cierre locks prior `cash_movements`.
 
 ## Transactions
 
