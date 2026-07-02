@@ -1,4 +1,4 @@
-# ShelfPOS — Codebase Dependency Graph
+  # ShelfPOS — Codebase Dependency Graph
 
 Parent: [LLM Index](README.md)
 
