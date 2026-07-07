@@ -1,5 +1,4 @@
 import { useReducer } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
 import { formatMoney, parseColonesInput } from '@/lib/format'
@@ -7,6 +6,7 @@ import { formatMoneyInputFromNumber, roundColones } from '@shared/money'
 import { Button, Field, Input, Modal } from '@/components/ui'
 import { MoneyInput } from '@/components/MoneyInput'
 import { PinModal } from '@/components/PinModal'
+import { usePinAuthorize } from './usePinAuthorize'
 
 interface DiscountModalProps {
   title: string
@@ -61,7 +61,6 @@ export function DiscountModal({
   onClose
 }: DiscountModalProps): React.JSX.Element {
   const { t } = useTranslation()
-  const queryClient = useQueryClient()
   const [state, dispatch] = useReducer(discountReducer, {
     mode: 'amount',
     value: current > 0 ? formatMoneyInputFromNumber(current) : '',
@@ -81,7 +80,7 @@ export function DiscountModal({
     mode === 'percent' ? roundColones((base * num) / 100) : roundColones(num)
   const clamped = Math.min(Math.max(computed, 0), roundColones(base))
 
-  const authorizeMutation = useMutation({
+  const authorizeMutation = usePinAuthorize({
     mutationFn: (pin: string) =>
       api.discount.authorize({
         pin,
@@ -92,7 +91,6 @@ export function DiscountModal({
     onSuccess: (_data, pin) => {
       onApply(pendingAmount, pin)
       dispatch({ type: 'closePin' })
-      void queryClient.invalidateQueries({ queryKey: ['audit'] })
     },
     onError: (err) => {
       dispatch({

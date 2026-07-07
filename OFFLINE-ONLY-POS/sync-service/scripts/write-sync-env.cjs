@@ -16,40 +16,26 @@ if (!supabaseUrl || !secretKey || !sqlitePath) {
   process.exit(1)
 }
 
-function encryptDpapi(plain) {
-  const script = `
-$plain = [Console]::In.ReadToEnd()
-Add-Type -AssemblyName System.Security
-$bytes = [System.Text.Encoding]::UTF8.GetBytes($plain)
-$enc = [System.Security.Cryptography.ProtectedData]::Protect($bytes, $null, 'LocalMachine')
-Write-Output ([Convert]::ToBase64String($enc))
-`.trim()
-  const blob = execFileSync(
-    'powershell.exe',
-    ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script],
-    { encoding: 'utf8', windowsHide: true, input: plain },
-  ).trim()
-  return `dpapi:${blob}`
+const scriptDir = __dirname
+try {
+  execFileSync(process.execPath, [join(scriptDir, 'sync-vendor.mjs')], {
+    cwd: join(scriptDir, '..'),
+    stdio: 'inherit'
+  })
+} catch {
+  process.exit(1)
 }
 
-function parseEnvFile(filePath) {
-  const out = {}
-  if (!existsSync(filePath)) return out
-  for (const line of readFileSync(filePath, 'utf8').split('\n')) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith('#')) continue
-    const eq = trimmed.indexOf('=')
-    if (eq < 1) continue
-    out[trimmed.slice(0, eq).trim()] = trimmed.slice(eq + 1).trim()
-  }
-  return out
-}
+const { encryptDpapi } = require('./lib/dpapi-win.cjs')
+const { parseEnvFileContent } = require('./lib/parseEnv.cjs')
 
 const appData = process.env.APPDATA || join(homedir(), 'AppData', 'Roaming')
 const configPath = join(appData, 'shelfpos', 'sync.env')
 mkdirSync(dirname(configPath), { recursive: true })
 
-const existing = parseEnvFile(configPath)
+const existing = existsSync(configPath)
+  ? parseEnvFileContent(readFileSync(configPath, 'utf8'))
+  : {}
 const encKey = encryptDpapi(secretKey)
 
 const codeFromArg = pairingCode?.trim().toUpperCase() || ''

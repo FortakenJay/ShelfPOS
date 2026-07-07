@@ -4,9 +4,11 @@ import { ProductFormModal } from '../ProductForm'
 import { AdjustStockModal } from '../AdjustStockModal'
 import { ProductCsvHelpModal } from '../ProductCsvHelpModal'
 import { ProductImportPreviewModal } from '../ProductImportPreviewModal'
+import { ProductReceiveChoiceModal, type ProductReceiveChoice } from '../ProductReceiveChoiceModal'
+import { SupplierInvoicePreviewModal } from '../SupplierInvoicePreviewModal'
 import { BatchLabelPrintModal } from '../BatchLabelPrintModal'
 import { ProductLabelPrintPromptModal } from '../ProductLabelPrintPromptModal'
-import type { BatchPrintItem, ProductImportStockMode } from '@shared/types'
+import type { BatchPrintItem, ProductImportStockMode, SupplierInvoiceConfirmInput } from '@shared/types'
 import type { ProductManagerUiState } from '../hooks/useProductManager'
 
 interface ProductManagerModalsProps {
@@ -17,6 +19,7 @@ interface ProductManagerModalsProps {
   stockProviders: string[]
   exportTemplatePending: boolean
   importConfirmPending: boolean
+  supplierInvoiceConfirmPending: boolean
   deletePending: boolean
   batchLabelPrinting: boolean
   batchBarcodePrinting: boolean
@@ -25,6 +28,8 @@ interface ProductManagerModalsProps {
   onDeleteConfirm: (id: number) => void
   onExportTemplate: () => void
   onImportConfirm: (filePath: string, format: 'csv' | 'efactura', stockMode: ProductImportStockMode) => void
+  onReceiveChoice: (choice: ProductReceiveChoice) => void
+  onSupplierInvoiceConfirm: (input: SupplierInvoiceConfirmInput) => void
   onProductsSaved: () => void
   onBatchLabelPrint: (items: BatchPrintItem[]) => void
   onBatchBarcodePrint: (items: BatchPrintItem[]) => void
@@ -40,6 +45,7 @@ export function ProductManagerModals({
   stockProviders,
   exportTemplatePending,
   importConfirmPending,
+  supplierInvoiceConfirmPending,
   deletePending,
   batchLabelPrinting,
   batchBarcodePrinting,
@@ -48,6 +54,8 @@ export function ProductManagerModals({
   onDeleteConfirm,
   onExportTemplate,
   onImportConfirm,
+  onReceiveChoice,
+  onSupplierInvoiceConfirm,
   onProductsSaved,
   onBatchLabelPrint,
   onBatchBarcodePrint,
@@ -131,6 +139,15 @@ export function ProductManagerModals({
           onClose={() => setUi((u) => ({ ...u, csvHelpOpen: false }))}
         />
       )}
+      {ui.receiveChoiceOpen && (
+        <ProductReceiveChoiceModal
+          onChoose={(choice) => {
+            setUi((u) => ({ ...u, receiveChoiceOpen: false }))
+            onReceiveChoice(choice)
+          }}
+          onClose={() => setUi((u) => ({ ...u, receiveChoiceOpen: false }))}
+        />
+      )}
       {ui.importPreview && !ui.importPreview.canceled && ui.importPreview.filePath && (
         <ProductImportPreviewModal
           preview={ui.importPreview}
@@ -144,6 +161,15 @@ export function ProductManagerModals({
           onConfirm={(stockMode) =>
             onImportConfirm(ui.importPreview!.filePath as string, ui.importFormat, stockMode)
           }
+        />
+      )}
+      {ui.supplierInvoicePreview && !ui.supplierInvoicePreview.canceled && (
+        <SupplierInvoicePreviewModal
+          preview={ui.supplierInvoicePreview}
+          categories={categories}
+          loading={supplierInvoiceConfirmPending}
+          onClose={() => setUi((u) => ({ ...u, supplierInvoicePreview: null }))}
+          onConfirm={onSupplierInvoiceConfirm}
         />
       )}
       {ui.batchPrintOpen && (

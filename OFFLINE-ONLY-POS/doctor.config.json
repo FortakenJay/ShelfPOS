@@ -6,7 +6,9 @@
     "node_modules/**",
     "out/**",
     ".output/**",
-    "**/.output/**"
+    "**/.output/**",
+    "sync-service/src/vendor/**",
+    "sync-service/scripts/lib/**"
   ],
   "rules": {
     "react-doctor/async-await-in-loop": "off"

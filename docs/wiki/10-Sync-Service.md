@@ -4,6 +4,8 @@ Parent: [[Home]]
 
 **Package:** `OFFLINE-ONLY-POS/sync-service/` (`@shelfpos/sync-service`)
 
+**Build:** `npm run build` runs `scripts/sync-vendor.mjs` first — copies `../src/shared/node/{parseEnv,dpapi-win}.ts` into `src/vendor/` (gitignored) so main and sync-service share one implementation. ESLint and React Doctor ignore `src/vendor/**`.
+
 The sync service is a **separate Node.js process** that mirrors SQLite changes to Supabase. The Electron POS does **not** run the sync loop — it only writes the queue and heartbeat.
 
 ### Why a separate Windows Service?

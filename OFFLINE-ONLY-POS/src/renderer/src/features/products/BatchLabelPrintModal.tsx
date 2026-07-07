@@ -46,6 +46,180 @@ async function resolveProductLookup(query: string): Promise<Product | 'not_found
 
 type AddProductResult = 'added' | 'merged' | 'duplicate'
 
+function BatchLabelPrintQueueTable({
+  queue,
+  busy,
+  rowCopiesDraft,
+  setRowCopiesDraft,
+  setRowCopies,
+  removeItem
+}: {
+  queue: QueueItem[]
+  busy: boolean
+  rowCopiesDraft: Record<number, string>
+  setRowCopiesDraft: React.Dispatch<React.SetStateAction<Record<number, string>>>
+  setRowCopies: (productId: number, copies: number) => void
+  removeItem: (productId: number) => void
+}): React.JSX.Element {
+  const { t } = useTranslation()
+  const totalCopies = queue.reduce((sum, item) => sum + item.copies, 0)
+
+  return (
+    <section className="flex min-h-0 flex-1 flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-[15px] font-bold text-slate-700 md:text-[16px]">
+          {t('products.batchLabels.queueTitle')}
+        </h3>
+        {queue.length > 0 && (
+          <span className="text-[14px] text-slate-500">
+            {t('products.batchLabels.queueSummary', {
+              products: queue.length,
+              copies: totalCopies
+            })}
+          </span>
+        )}
+      </div>
+
+      <div className="min-h-[280px] flex-1 overflow-auto rounded-xl border-2 border-line bg-white md:min-h-[320px]">
+        <table className="w-full min-w-[640px]">
+          <thead className="sticky top-0 z-10">
+            <tr>
+              <Th className="px-4 py-3 text-[13px]">{t('products.barcode')}</Th>
+              <Th className="px-4 py-3 text-[13px]">{t('products.name')}</Th>
+              <Th className="px-4 py-3 text-right text-[13px]">{t('products.price')}</Th>
+              <Th className="w-28 px-4 py-3 text-center text-[13px]">
+                {t('products.batchLabels.copies')}
+              </Th>
+              <Th className="w-32 px-4 py-3 text-right text-[13px]">{t('common.actions')}</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {queue.length === 0 && (
+              <tr>
+                <Td colSpan={5} className="px-4 py-16 text-center text-[16px] text-slate-500">
+                  {t('products.batchLabels.empty')}
+                </Td>
+              </tr>
+            )}
+            {queue.map((item) => (
+              <tr key={item.product.id} className="hover:bg-slate-50">
+                <Td className="px-4 py-3.5 font-mono text-[14px] md:text-[15px]">
+                  {barcodePrintValue(item.product)}
+                </Td>
+                <Td className="max-w-[240px] px-4 py-3.5 text-[15px] font-semibold leading-snug md:max-w-none md:text-[16px]">
+                  {item.product.name}
+                </Td>
+                <Td className="px-4 py-3.5 text-right text-[15px] font-semibold md:text-[16px]">
+                  {formatMoney(item.product.price)}
+                </Td>
+                <Td className="px-4 py-3.5 text-center">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={MAX_LABEL_COPIES}
+                    inputMode="numeric"
+                    value={rowCopiesDraft[item.product.id] ?? String(item.copies)}
+                    disabled={busy}
+                    onChange={(event) => {
+                      const cleaned = copiesDigitsOnly(event.target.value)
+                      setRowCopiesDraft((draft) => ({ ...draft, [item.product.id]: cleaned }))
+                      if (cleaned !== '') {
+                        setRowCopies(item.product.id, clampCopies(parseInt(cleaned, 10)))
+                      }
+                    }}
+                    onBlur={(event) => {
+                      const cleaned = copiesDigitsOnly(event.currentTarget.value)
+                      setRowCopiesDraft((d) => {
+                        const next = { ...d }
+                        delete next[item.product.id]
+                        return next
+                      })
+                      if (cleaned === '') {
+                        setRowCopies(item.product.id, item.copies)
+                      }
+                    }}
+                    className="!min-h-[48px] mx-auto w-20 text-center text-[18px] font-semibold"
+                    aria-label={t('products.batchLabels.copies')}
+                  />
+                </Td>
+                <Td className="px-4 py-3.5 text-right">
+                  <Button
+                    variant="ghost"
+                    size="lg"
+                    className="!min-h-[48px] !px-4"
+                    disabled={busy}
+                    onClick={() => removeItem(item.product.id)}
+                  >
+                    {t('products.batchLabels.remove')}
+                  </Button>
+                </Td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  )
+}
+
+function BatchLabelPrintModalFooter({
+  barcodeMode,
+  busy,
+  queueLength,
+  totalCopies,
+  printingBarcodes,
+  printingLabels,
+  onClear,
+  onPrintBarcodes,
+  onPrintLabels
+}: {
+  barcodeMode: boolean
+  busy: boolean
+  queueLength: number
+  totalCopies: number
+  printingBarcodes: boolean
+  printingLabels: boolean
+  onClear: () => void
+  onPrintBarcodes: () => void
+  onPrintLabels: () => void
+}): React.JSX.Element {
+  const { t } = useTranslation()
+
+  return (
+    <div className="flex shrink-0 flex-col gap-3 border-t-2 border-line pt-5 sm:flex-row sm:flex-wrap sm:justify-end">
+      <Button
+        variant="outline"
+        size="lg"
+        className="w-full sm:w-auto"
+        disabled={busy || queueLength === 0}
+        onClick={onClear}
+      >
+        {t('products.batchLabels.clear')}
+      </Button>
+      <Button
+        variant={barcodeMode ? 'primary' : 'outline'}
+        size="lg"
+        className="w-full sm:min-w-[220px] sm:w-auto"
+        loading={printingBarcodes}
+        disabled={queueLength === 0 || busy}
+        onClick={onPrintBarcodes}
+      >
+        {t('products.batchLabels.printAllBarcodes', { count: totalCopies })}
+      </Button>
+      <Button
+        variant={barcodeMode ? 'outline' : 'primary'}
+        size="lg"
+        className="w-full sm:min-w-[220px] sm:w-auto"
+        loading={printingLabels}
+        disabled={queueLength === 0 || busy}
+        onClick={onPrintLabels}
+      >
+        {t('products.batchLabels.printAll', { count: totalCopies })}
+      </Button>
+    </div>
+  )
+}
+
 export function BatchLabelPrintModal({
   mode = 'labels',
   onClose,
@@ -268,135 +442,29 @@ export function BatchLabelPrintModal({
         </p>
       </section>
 
-      <section className="flex min-h-0 flex-1 flex-col gap-3">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-[15px] font-bold text-slate-700 md:text-[16px]">
-            {t('products.batchLabels.queueTitle')}
-          </h3>
-          {queue.length > 0 && (
-            <span className="text-[14px] text-slate-500">
-              {t('products.batchLabels.queueSummary', {
-                products: queue.length,
-                copies: totalCopies
-              })}
-            </span>
-          )}
-        </div>
+      <BatchLabelPrintQueueTable
+        queue={queue}
+        busy={busy}
+        rowCopiesDraft={rowCopiesDraft}
+        setRowCopiesDraft={setRowCopiesDraft}
+        setRowCopies={setRowCopies}
+        removeItem={removeItem}
+      />
 
-        <div className="min-h-[280px] flex-1 overflow-auto rounded-xl border-2 border-line bg-white md:min-h-[320px]">
-          <table className="w-full min-w-[640px]">
-            <thead className="sticky top-0 z-10">
-              <tr>
-                <Th className="px-4 py-3 text-[13px]">{t('products.barcode')}</Th>
-                <Th className="px-4 py-3 text-[13px]">{t('products.name')}</Th>
-                <Th className="px-4 py-3 text-right text-[13px]">{t('products.price')}</Th>
-                <Th className="w-28 px-4 py-3 text-center text-[13px]">
-                  {t('products.batchLabels.copies')}
-                </Th>
-                <Th className="w-32 px-4 py-3 text-right text-[13px]">{t('common.actions')}</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {queue.length === 0 && (
-                <tr>
-                  <Td colSpan={5} className="px-4 py-16 text-center text-[16px] text-slate-500">
-                    {t('products.batchLabels.empty')}
-                  </Td>
-                </tr>
-              )}
-              {queue.map((item) => (
-                <tr key={item.product.id} className="hover:bg-slate-50">
-                  <Td className="px-4 py-3.5 font-mono text-[14px] md:text-[15px]">
-                    {barcodePrintValue(item.product)}
-                  </Td>
-                  <Td className="max-w-[240px] px-4 py-3.5 text-[15px] font-semibold leading-snug md:max-w-none md:text-[16px]">
-                    {item.product.name}
-                  </Td>
-                  <Td className="px-4 py-3.5 text-right text-[15px] font-semibold md:text-[16px]">
-                    {formatMoney(item.product.price)}
-                  </Td>
-                  <Td className="px-4 py-3.5 text-center">
-                    <Input
-                      type="number"
-                      min={1}
-                      max={MAX_LABEL_COPIES}
-                      inputMode="numeric"
-                      value={rowCopiesDraft[item.product.id] ?? String(item.copies)}
-                      disabled={busy}
-                      onChange={(event) => {
-                        const cleaned = copiesDigitsOnly(event.target.value)
-                        setRowCopiesDraft((draft) => ({ ...draft, [item.product.id]: cleaned }))
-                        if (cleaned !== '') {
-                          setRowCopies(item.product.id, clampCopies(parseInt(cleaned, 10)))
-                        }
-                      }}
-                      onBlur={(event) => {
-                        const cleaned = copiesDigitsOnly(event.currentTarget.value)
-                        setRowCopiesDraft((d) => {
-                          const next = { ...d }
-                          delete next[item.product.id]
-                          return next
-                        })
-                        if (cleaned === '') {
-                          setRowCopies(item.product.id, item.copies)
-                        }
-                      }}
-                      className="!min-h-[48px] mx-auto w-20 text-center text-[18px] font-semibold"
-                      aria-label={t('products.batchLabels.copies')}
-                    />
-                  </Td>
-                  <Td className="px-4 py-3.5 text-right">
-                    <Button
-                      variant="ghost"
-                      size="lg"
-                      className="!min-h-[48px] !px-4"
-                      disabled={busy}
-                      onClick={() => removeItem(item.product.id)}
-                    >
-                      {t('products.batchLabels.remove')}
-                    </Button>
-                  </Td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <div className="flex shrink-0 flex-col gap-3 border-t-2 border-line pt-5 sm:flex-row sm:flex-wrap sm:justify-end">
-        <Button
-          variant="outline"
-          size="lg"
-          className="w-full sm:w-auto"
-          disabled={busy || queue.length === 0}
-          onClick={() => {
-            setRowCopiesDraft({})
-            setQueue([])
-          }}
-        >
-          {t('products.batchLabels.clear')}
-        </Button>
-        <Button
-          variant={barcodeMode ? 'primary' : 'outline'}
-          size="lg"
-          className="w-full sm:min-w-[220px] sm:w-auto"
-          loading={printingBarcodes}
-          disabled={queue.length === 0 || busy}
-          onClick={() => onPrintBarcodes(printItems)}
-        >
-          {t('products.batchLabels.printAllBarcodes', { count: totalCopies })}
-        </Button>
-        <Button
-          variant={barcodeMode ? 'outline' : 'primary'}
-          size="lg"
-          className="w-full sm:min-w-[220px] sm:w-auto"
-          loading={printingLabels}
-          disabled={queue.length === 0 || busy}
-          onClick={() => onPrintLabels(printItems)}
-        >
-          {t('products.batchLabels.printAll', { count: totalCopies })}
-        </Button>
-      </div>
+      <BatchLabelPrintModalFooter
+        barcodeMode={barcodeMode}
+        busy={busy}
+        queueLength={queue.length}
+        totalCopies={totalCopies}
+        printingBarcodes={printingBarcodes}
+        printingLabels={printingLabels}
+        onClear={() => {
+          setRowCopiesDraft({})
+          setQueue([])
+        }}
+        onPrintBarcodes={() => onPrintBarcodes(printItems)}
+        onPrintLabels={() => onPrintLabels(printItems)}
+      />
     </Modal>
   )
 }

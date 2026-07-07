@@ -1,5 +1,4 @@
 import { useReducer } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
 import { formatMoney, parseColonesInput } from '@/lib/format'
@@ -7,6 +6,7 @@ import { formatMoneyInputFromNumber } from '@shared/money'
 import { Button, Field, Modal } from '@/components/ui'
 import { MoneyInput } from '@/components/MoneyInput'
 import { PinModal } from '@/components/PinModal'
+import { usePinAuthorize } from './usePinAuthorize'
 
 interface PriceOverrideState {
   value: string
@@ -57,7 +57,6 @@ export function PriceOverrideModal({
   onClose: () => void
 }): React.JSX.Element {
   const { t } = useTranslation()
-  const queryClient = useQueryClient()
   const catalog = catalogUnitPrice
   const current = currentOverride ?? catalog
   const [state, dispatch] = useReducer(priceOverrideReducer, {
@@ -68,7 +67,7 @@ export function PriceOverrideModal({
   })
   const { value, pinOpen, pinError, pendingPrice } = state
 
-  const authorizeMutation = useMutation({
+  const authorizeMutation = usePinAuthorize({
     mutationFn: (pin: string) =>
       api.priceOverride.authorize({
         pin,
@@ -81,7 +80,6 @@ export function PriceOverrideModal({
     onSuccess: () => {
       onApply(pendingPrice)
       dispatch({ type: 'closePin' })
-      void queryClient.invalidateQueries({ queryKey: ['audit'] })
     },
     onError: (err) => {
       dispatch({

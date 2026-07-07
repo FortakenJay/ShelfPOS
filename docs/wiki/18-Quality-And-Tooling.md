@@ -34,8 +34,18 @@ Config: `doctor.config.json` in each app (`OFFLINE-ONLY-POS/`, `DASHBOARD/`).
 ### Interpreting scores
 
 - Treat findings as **hypotheses** — read the file before fixing or suppressing.
-- Prefer fixing **errors** and high-confidence bugs; many POS warnings are pre-existing (React Compiler, `useProductManager` invalidation patterns).
+- Prefer fixing **errors** and high-confidence bugs over blanket suppressions.
 - Full triage playbook: `curl https://www.react.doctor/prompts/react-doctor-agent.md` (see `.claude/skills/react-doctor/SKILL.md`).
+
+### v1.6.5 (POS — quality pass)
+
+| Check | Result |
+|-------|--------|
+| `npm run lint` | Clean |
+| React Doctor `--scope full` | **100 / 100** (POS renderer + main TS) |
+| jscpd | ~6.3% duplicate tokens (vendor copies + i18n; threshold 5%) |
+
+`doctor.config.json` ignores generated `sync-service/src/vendor/**` and `sync-service/scripts/lib/**`.
 
 ### v1.6.4 (POS + Dashboard)
 
@@ -76,7 +86,7 @@ Run lint + React Doctor before `release:win` and dashboard deploy.
 | Check | Result |
 |-------|--------|
 | `npm run lint` | Clean |
-| React Doctor `--scope changed` | **97 / 100** (1 acceptable `PinModal` perf warning) |
+| React Doctor `--scope changed` | **97 / 100** (1 acceptable `PinModal` perf warning; superseded by v1.6.5 full scan) |
 | Bugbot | Tab/pay race, post-sale tab cleanup, discard reorder, audit+delete transaction — fixed |
 | Cierre print/PDF | Discarded tabs section in `buildCierreLines` |
 
@@ -84,11 +94,30 @@ Release notes: `OFFLINE-ONLY-POS/RELEASE_NOTES.md`. **Supabase:** no `SUPA.sql` 
 
 ### Known POS hotspots (full scan)
 
-Remaining full-scan items are mostly main-process (`await` in print loops, `settings.ts`) — not React. Renderer fixes: printer status via `useQuery`, ref sync in effects, `openPayRef` for pay shortcuts.
-
 Label/batch printing in `products.ts` intentionally awaits sequentially (thermal printer); `doctor.config.json` disables `async-await-in-loop` for that file only.
 
 Dashboard full scan is usually clean (100/100 on changed files). Remove unused exports when Doctor flags `unused-export` (e.g. dead helpers in `signup-invite.ts`).
+
+---
+
+## Knowledge graph (graphify)
+
+AST-level codebase graph for AI assistants and cross-file navigation.
+
+| Location | When to update |
+|----------|----------------|
+| `OFFLINE-ONLY-POS/graphify-out/` | After POS/sync/main/renderer changes |
+| `graphify-out/` (repo root) | After wiki or multi-app changes |
+
+```bash
+# Requires: pip install graphifyy  (CLI command: graphify)
+cd OFFLINE-ONLY-POS && graphify update .
+cd .. && graphify update .          # whole monorepo
+```
+
+No API cost for code-only updates. Compare `GRAPH_REPORT.md` commit hash to `git rev-parse HEAD` to detect staleness.
+
+POS Cursor rule: `.cursor/rules/graphify.mdc` — agents should `graphify query` before broad grep/read exploration.
 
 ---
 

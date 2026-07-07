@@ -1,26 +1,28 @@
 import { existsSync, readFileSync, unlinkSync } from 'node:fs'
 import { join } from 'node:path'
 import { getSetting, setSetting, SETTING_KEYS } from '../db/repos/settings'
-
-const PENDING_FILE = 'pending_sync_store_id'
-const DEFAULT_SYNC_STORE_ID = 'store_a'
+import {
+  PENDING_SYNC_STORE_ID_FILE,
+  parsePendingStoreIdFileContent,
+  shouldApplyPendingStoreId
+} from '../../shared/pendingStoreId'
 
 /** Apply store_id written by Install-ShelfPOS before shelf.db existed. */
 export function applyPendingSyncStoreId(userDataDir: string): void {
-  const pendingPath = join(userDataDir, PENDING_FILE)
+  const pendingPath = join(userDataDir, PENDING_SYNC_STORE_ID_FILE)
   if (!existsSync(pendingPath)) return
 
-  const pending = readFileSync(pendingPath, 'utf8').trim()
+  const pending = parsePendingStoreIdFileContent(readFileSync(pendingPath, 'utf8'))
   try {
     unlinkSync(pendingPath)
   } catch {
     /* best effort */
   }
 
-  if (!/^store_[a-z0-9_]+$/.test(pending)) return
+  if (!pending) return
 
   const current = getSetting(SETTING_KEYS.syncStoreId)
-  if (!current || current === DEFAULT_SYNC_STORE_ID) {
+  if (shouldApplyPendingStoreId(current, pending)) {
     setSetting(SETTING_KEYS.syncStoreId, pending)
     console.log(`[startup] applied pending sync_store_id=${pending}`)
   }

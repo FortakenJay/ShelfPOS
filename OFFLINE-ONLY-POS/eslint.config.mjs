@@ -23,6 +23,7 @@ export default tseslint.config(
       'node_modules/**',
       'private/**',
       'sync-service/dist/**',
+      'sync-service/src/vendor/**',
       'sync-service/scripts/**',
       '.cache/**',
       'electron.vite.config.*.mjs',

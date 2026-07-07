@@ -4,13 +4,11 @@ import { Button } from '@/components/ui'
 interface ProductsPageToolbarProps {
   exportTemplatePending: boolean
   exportProductsPending: boolean
-  importCsvPending: boolean
-  importEfacturaPending: boolean
+  receivePending: boolean
   onCsvHelp: () => void
   onExportTemplate: () => void
   onExportProducts: () => void
-  onImportCsv: () => void
-  onImportEfactura: () => void
+  onReceive: () => void
   onNewProduct: () => void
   onBatchLabels: () => void
   onBatchBarcodes: () => void
@@ -19,13 +17,11 @@ interface ProductsPageToolbarProps {
 export function ProductsPageToolbar({
   exportTemplatePending,
   exportProductsPending,
-  importCsvPending,
-  importEfacturaPending,
+  receivePending,
   onCsvHelp,
   onExportTemplate,
   onExportProducts,
-  onImportCsv,
-  onImportEfactura,
+  onReceive,
   onNewProduct,
   onBatchLabels,
   onBatchBarcodes
@@ -46,11 +42,8 @@ export function ProductsPageToolbar({
           <Button variant="outline" loading={exportProductsPending} onClick={onExportProducts}>
             {t('products.csv.exportProducts')}
           </Button>
-          <Button variant="outline" loading={importCsvPending} onClick={onImportCsv}>
-            {t('products.csv.importCsv')}
-          </Button>
-          <Button variant="outline" loading={importEfacturaPending} onClick={onImportEfactura}>
-            {t('products.csv.importEfactura')}
+          <Button variant="outline" loading={receivePending} onClick={onReceive}>
+            {t('products.receive.button')}
           </Button>
           <Button variant="outline" onClick={onBatchLabels}>
             {t('products.batchLabels.button')}
@@ -63,7 +56,7 @@ export function ProductsPageToolbar({
       </div>
 
       <p className="mb-4 max-w-4xl text-[14px] text-slate-600">
-        {t('products.csv.hint')} {t('products.efactura.hint')}
+        {t('products.csv.hint')} {t('products.receive.pdfHint')}
       </p>
     </>
   )

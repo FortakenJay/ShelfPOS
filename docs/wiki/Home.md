@@ -52,6 +52,16 @@ There is **no root package.json** — each project installs independently.
 - [[12-Reports-And-Exports]]
 - [[13-Factura-PDF]]
 
+### Multi-store LAN hub (design)
+- [[20-Multi-Store-Hub-Architecture]] — WiFi hub + checkout clients + inventory workstations
+- [[21-Multi-Store-Hub-TODO]] — implementation checklist
+
+### Hacienda factura electrónica (design)
+- [[25-Regimenes-Tributarios-Bazaar]] — RTS vs tradicional vs REBU for bazaars / tiendas
+- [[22-Hacienda-Factura-Electronica-Architecture]] — v4.4 compliance + `disect-Hacienda` integration
+- [[23-Hacienda-Factura-Electronica-TODO]] — implementation checklist
+- [[26-CABYS]] — product/service catalog codes (13 digits) for electronic comprobantes
+
 ### Ops
 - [[14-Environment-Variables]]
 - [[15-Setup-And-Deployment]]
@@ -84,6 +94,11 @@ There is **no root package.json** — each project installs independently.
 | Production link POS → dashboard | [[15-Setup-And-Deployment#Link POS to owner (production, per shop)]] |
 | Multi-tenant / RLS | [[04-Multi-Tenant-Security]] |
 | Invoice PDF layout | [[13-Factura-PDF]] |
+| Multi-checkout / shared stock (design) | [[20-Multi-Store-Hub-Architecture]] → [[21-Multi-Store-Hub-TODO]] |
+| Electronic invoicing (Hacienda v4.4) | [[22-Hacienda-Factura-Electronica-Architecture]] → [[23-Hacienda-Factura-Electronica-TODO]] |
+| Tax compliance (IVA, régimen, reports) | [[24-Tax-Compliance]] |
+| Régimenes for bazaar / tienda | [[25-Regimenes-Tributarios-Bazaar]] |
+| CABYS product codes | [[26-CABYS]] |
 
 ## Canonical source files
 
@@ -108,6 +123,7 @@ See [[18-Quality-And-Tooling]] for full checklist.
 
 - **POS:** `npm run lint` (typecheck + eslint)
 - **Dashboard:** `npm run lint`
-- **React Doctor:** `npm run doctor` in each app (changed scope); use `--scope full` for baseline or docs-only commits
+- **React Doctor:** `npm run doctor` in each app (changed scope); use `--scope full` for baseline or docs-only commits — POS baseline **100/100** (see [[18-Quality-And-Tooling]])
+- **Graph:** `graphify update .` after code changes — [[18-Quality-And-Tooling#knowledge-graph-graphify]]
 - **Sync:** `npm run build` in `sync-service/`
 - **Branch review:** Bugbot on branch diff before PR

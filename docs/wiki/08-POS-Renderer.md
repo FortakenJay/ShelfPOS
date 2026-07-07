@@ -78,6 +78,18 @@ Toolbar (`useProductManager`):
 
 Export is implemented in main process (`productCsvExport.ts`): keyset DB batches + streamed file write for large inventories. **Código de barras** is emitted as `="…"` so Excel/Google Sheets keep long numeric codes as text. Re-import accepts that format via `parseSpreadsheetText`. Help modal: `ProductCsvHelpModal`.
 
+### Recibir mercadería (stock intake)
+
+Toolbar button **Recibir mercadería** opens `ProductReceiveChoiceModal` with three paths (no manual create — use **Nuevo producto** for that):
+
+| Choice | Flow | IPC |
+|--------|------|-----|
+| **Factura PDF** | File picker → parse supplier PDF → preview/confirm | `products:importSupplierInvoicePreview` → `importSupplierInvoiceConfirm` |
+| **CSV** | Same preview/confirm pipeline as toolbar import | `products:importCsvPreview` → `importCsvConfirm` |
+| **eFactura** | `.xlsx` preview/confirm | `products:importEfacturaPreview` → `importEfacturaConfirm` |
+
+**Supplier PDF:** main `productSupplierInvoicePdf.ts` (`pdf-parse`) extracts line items (barcode, qty, cost). `SupplierInvoicePreviewModal` lets the user match existing products, create new rows, or skip lines. Confirm applies stock with reason `received_shipment` via `applyStockDelta` / `insertProductRow` / `updateProductCostPrice` in `db/repos/products.ts`.
+
 ### Product label printing (thermal)
 
 Two separate print actions on **Productos** (`product_manager` / `admin`). Both use the configured label printer via `print_jobs` + ESC/POS (`insertPrintJob('label', …)`). All thermal money uses **¢** (CP850); on-screen prices use **₡**.
@@ -104,7 +116,7 @@ Shelf etiqueta targets **20 mm** height (half of 40 mm stock). Override label wi
 
 **Responsive layout (v1.6.3):** On narrow viewports (sidebar + small window), `ProductsTable` uses horizontal scroll and wraps row action buttons so long Spanish labels (e.g. **Imprimir código de barras**) are not clipped. `ProductsPageToolbar` stacks the title above the button row below `lg`.
 
-**Code:** `features/products/` (`ProductsTable`, `ProductsPageToolbar`, `BatchLabelPrintModal`, `ProductLabelPrintPromptModal`, `ProductCsvHelpModal`, `useProductManager`), `main/ipc/products.ts`, `main/services/productCsvExport.ts`, `main/services/productCsvImport.ts`, `main/services/printTemplates.ts`, `shared/barcode.ts`, `shared/printLimits.ts`, `shared/money.ts`.
+**Code:** `features/products/` (`ProductsTable`, `ProductsPageToolbar`, `ProductReceiveChoiceModal`, `SupplierInvoicePreviewModal`, `BatchLabelPrintModal`, `ProductLabelPrintPromptModal`, `ProductCsvHelpModal`, `useProductManager`), `main/ipc/products.ts`, `main/services/productCsvExport.ts`, `main/services/productCsvImport.ts`, `main/services/productSupplierInvoicePdf.ts`, `main/services/printTemplates.ts`, `shared/barcode.ts`, `shared/printLimits.ts`, `shared/money.ts`.
 
 ## Locales
 

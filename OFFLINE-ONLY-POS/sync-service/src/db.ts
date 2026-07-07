@@ -2,11 +2,14 @@ import Database from 'better-sqlite3'
 import { existsSync, readFileSync, unlinkSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { SyncConfig } from './config.js'
+import {
+  PENDING_SYNC_STORE_ID_FILE,
+  parsePendingStoreIdFileContent,
+  shouldApplyPendingStoreId
+} from './vendor/pendingStoreId.js'
 
 const SYNC_STORE_SETTING = 'sync_store_id'
 const SYNC_OWNER_CLAIMED_SETTING = 'sync_owner_claimed'
-const DEFAULT_SYNC_STORE_ID = 'store_a'
-const PENDING_STORE_ID_FILE = 'pending_sync_store_id'
 const STORE_NAME_SETTING = 'store_name'
 const POS_LAST_SEEN_SETTING = 'pos_last_seen_at'
 const STOCK_THRESHOLD_SETTING = 'stock_threshold_default'
@@ -43,10 +46,6 @@ export function readStockThresholdDefault(db: Database.Database): number {
   return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 5
 }
 
-export function readSyncOwnerClaimed(db: Database.Database): boolean {
-  return readSetting(db, SYNC_OWNER_CLAIMED_SETTING) === '1'
-}
-
 export function writeSyncOwnerClaimed(db: Database.Database): void {
   db.prepare(
     `INSERT INTO settings (key, value) VALUES (?, '1')
@@ -62,21 +61,21 @@ export function clearSyncOwnerClaimed(db: Database.Database): void {
 }
 
 /** Apply store_id from installer when shelf.db was created after Install-ShelfPOS. */
-export function applyPendingSyncStoreId(db: Database.Database, sqlitePath: string): void {
-  const pendingPath = join(dirname(sqlitePath), PENDING_STORE_ID_FILE)
+function applyPendingSyncStoreId(db: Database.Database, sqlitePath: string): void {
+  const pendingPath = join(dirname(sqlitePath), PENDING_SYNC_STORE_ID_FILE)
   if (!existsSync(pendingPath)) return
 
-  const pending = readFileSync(pendingPath, 'utf8').trim()
+  const pending = parsePendingStoreIdFileContent(readFileSync(pendingPath, 'utf8'))
   try {
     unlinkSync(pendingPath)
   } catch {
     /* best effort */
   }
 
-  if (!/^store_[a-z0-9_]+$/.test(pending)) return
+  if (!pending) return
 
   const current = readSetting(db, SYNC_STORE_SETTING)
-  if (!current || current === DEFAULT_SYNC_STORE_ID) {
+  if (shouldApplyPendingStoreId(current, pending)) {
     db.prepare(
       `INSERT INTO settings (key, value) VALUES (?, ?)
        ON CONFLICT(key) DO UPDATE SET value = excluded.value`,

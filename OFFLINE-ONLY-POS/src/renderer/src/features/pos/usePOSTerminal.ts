@@ -41,16 +41,34 @@ function findCartLine(cart: CartLine[], lineKey: string): CartLine | undefined {
   return cart.find((line) => cartLineKey(line) === lineKey)
 }
 
+type WorkspaceState = {
+  activeTabId: number | null
+  sale: SaleState
+  discountAuthPin: string | null
+  lineDiscountPin: LineDiscountPinRequest | null
+  query: string
+}
+
+function saleFromTab(tab: CartTabListItem): SaleState {
+  const snap = parseCartTabSnapshot(tab.cartJson)
+  return {
+    cart: snap.cart,
+    cartDiscount: snap.cartDiscount,
+    customer: snap.customer
+  }
+}
+
 export function usePOSTerminal() {
   const { t } = useTranslation()
   const toasts = useToasts()
   const queryClient = useQueryClient()
 
-  const [query, setQuery] = useState('')
-  const [sale, setSale] = useState<SaleState>({
-    cart: [],
-    cartDiscount: 0,
-    customer: null
+  const [workspace, setWorkspace] = useState<WorkspaceState>({
+    activeTabId: null,
+    sale: { cart: [], cartDiscount: 0, customer: null },
+    discountAuthPin: null,
+    lineDiscountPin: null,
+    query: ''
   })
   const [modals, setModals] = useState({
     payOpen: false,
@@ -61,22 +79,71 @@ export function usePOSTerminal() {
     removeTarget: null as string | null,
     customerOpen: false
   })
-  const [discountAuthPin, setDiscountAuthPin] = useState<string | null>(null)
-  const [lineDiscountPin, setLineDiscountPin] = useState<LineDiscountPinRequest | null>(null)
-  const [activeTabId, setActiveTabId] = useState<number | null>(null)
   const [tabsReady, setTabsReady] = useState(false)
   const [closeTabTarget, setCloseTabTarget] = useState<CloseTabTarget | null>(null)
   const [closeTabPinError, setCloseTabPinError] = useState<string | null>(null)
   const [closeTabLoading, setCloseTabLoading] = useState(false)
+  const [tabSwitching, setTabSwitching] = useState(false)
+  const [checkoutTabId, setCheckoutTabId] = useState<number | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const saleRef = useRef(sale)
+  const saleRef = useRef(workspace.sale)
   const tabsInitRef = useRef(false)
-  const tabSwitchingRef = useRef(false)
-  const checkoutTabIdRef = useRef<number | null>(null)
-  saleRef.current = sale
 
-  const { cart, cartDiscount, customer } = sale
+  const { activeTabId, sale, discountAuthPin, lineDiscountPin, query } = workspace
+  const setSale: React.Dispatch<React.SetStateAction<SaleState>> = (updater) => {
+    setWorkspace((w) => ({
+      ...w,
+      sale: typeof updater === 'function' ? updater(w.sale) : updater
+    }))
+  }
+  const setActiveTabId = (id: number | null): void => {
+    setWorkspace((w) => ({ ...w, activeTabId: id }))
+  }
+  const setQuery: React.Dispatch<React.SetStateAction<string>> = (updater) => {
+    setWorkspace((w) => ({
+      ...w,
+      query: typeof updater === 'function' ? updater(w.query) : updater
+    }))
+  }
+  const setDiscountAuthPin: React.Dispatch<React.SetStateAction<string | null>> = (updater) => {
+    setWorkspace((w) => ({
+      ...w,
+      discountAuthPin: typeof updater === 'function' ? updater(w.discountAuthPin) : updater
+    }))
+  }
+  const setLineDiscountPin: React.Dispatch<React.SetStateAction<LineDiscountPinRequest | null>> = (
+    updater
+  ) => {
+    setWorkspace((w) => ({
+      ...w,
+      lineDiscountPin: typeof updater === 'function' ? updater(w.lineDiscountPin) : updater
+    }))
+  }
+  const loadTab = (tab: CartTabListItem): void => {
+    setWorkspace((w) => ({
+      ...w,
+      activeTabId: tab.id,
+      sale: saleFromTab(tab),
+      discountAuthPin: null,
+      lineDiscountPin: null,
+      query: ''
+    }))
+  }
+  const recoverWorkspaceTab = (tab: CartTabListItem, opts?: { closePay?: boolean }): void => {
+    loadTab(tab)
+    if (opts?.closePay) {
+      setModals((m) => ({ ...m, payOpen: false }))
+      setCheckoutTabId(null)
+      setTabSwitching(false)
+    }
+  }
+
+  useEffect(() => {
+    saleRef.current = workspace.sale
+  }, [workspace.sale])
+
   const { payOpen, payInitialMethod, returnOpen, discountTarget, priceTarget, removeTarget, customerOpen } = modals
+  const { cart, cartDiscount, customer } = sale
   const setCart = (updater: CartLine[] | ((prev: CartLine[]) => CartLine[])): void =>
     setSale((s) => ({
       ...s,
@@ -90,6 +157,17 @@ export function usePOSTerminal() {
     queryFn: api.cartTabs.list,
     staleTime: 0
   })
+  const [trackedTabs, setTrackedTabs] = useState<CartTabListItem[] | null>(null)
+  if (tabsLoaded && tabsReady && tabs !== trackedTabs) {
+    setTrackedTabs(tabs)
+    if (
+      tabs.length > 0 &&
+      (activeTabId == null || !tabs.some((tab) => tab.id === activeTabId))
+    ) {
+      const first = tabs[0]!
+      recoverWorkspaceTab(first, { closePay: true })
+    }
+  }
   const cashBlocked = cashStatus != null && !cashStatus.floatOpened
   const scanner = useScannerDetector(settings?.scannerBurstMs ?? 30)
 
@@ -129,13 +207,7 @@ export function usePOSTerminal() {
           queryClient.setQueryData(['cartTabs'], tabList)
         }
         const first = tabList[0]!
-        setActiveTabId(first.id)
-        const snap = parseCartTabSnapshot(first.cartJson)
-        setSale({
-          cart: snap.cart,
-          cartDiscount: snap.cartDiscount,
-          customer: snap.customer
-        })
+        loadTab(first)
         setTabsReady(true)
       } catch (err) {
         tabsInitRef.current = false
@@ -144,87 +216,49 @@ export function usePOSTerminal() {
     })()
   }, [tabsLoaded, tabs, queryClient, toasts])
 
-  useEffect(() => {
-    if (!tabsLoaded || !tabsReady || tabs.length === 0) return
-
-    const active = tabs.find((tab) => tab.id === activeTabId)
-    if (!active) {
-      const next = tabs[0]!
-      setActiveTabId(next.id)
-      const snap = parseCartTabSnapshot(next.cartJson)
-      setSale({
-        cart: snap.cart,
-        cartDiscount: snap.cartDiscount,
-        customer: snap.customer
-      })
-      setDiscountAuthPin(null)
-      setLineDiscountPin(null)
-      setQuery('')
-      setModals((m) => ({ ...m, payOpen: false }))
-      checkoutTabIdRef.current = null
-      tabSwitchingRef.current = false
-    }
-  }, [tabs, tabsLoaded, tabsReady, activeTabId])
-
   const activateTabAfterClose = (remaining: CartTabListItem[], preferredIndex: number): void => {
     const next = remaining[Math.min(preferredIndex, remaining.length - 1)]
     if (!next) return
-    setActiveTabId(next.id)
-    const snap = parseCartTabSnapshot(next.cartJson)
-    setSale({
-      cart: snap.cart,
-      cartDiscount: snap.cartDiscount,
-      customer: snap.customer
-    })
-    setDiscountAuthPin(null)
-    setLineDiscountPin(null)
-    setQuery('')
+    loadTab(next)
     focusSearch()
   }
 
   const switchTab = async (id: number): Promise<void> => {
-    if (id === activeTabId || !tabsReady || payOpen || tabSwitchingRef.current) return
+    if (id === activeTabId || !tabsReady || payOpen || tabSwitching) return
     const tab = tabs.find((t) => t.id === id)
     if (!tab) return
-    tabSwitchingRef.current = true
+    setTabSwitching(true)
     try {
       await saveCurrentTab()
-      setActiveTabId(id)
-      const snap = parseCartTabSnapshot(tab.cartJson)
-      setSale({
-        cart: snap.cart,
-        cartDiscount: snap.cartDiscount,
-        customer: snap.customer
-      })
-      setDiscountAuthPin(null)
-      setLineDiscountPin(null)
-      setQuery('')
+      loadTab(tab)
       focusSearch()
+      setTabSwitching(false)
     } catch (err) {
+      setTabSwitching(false)
       toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
-    } finally {
-      tabSwitchingRef.current = false
     }
   }
 
   const newTab = async (): Promise<void> => {
-    if (!tabsReady || payOpen || tabSwitchingRef.current) return
-    tabSwitchingRef.current = true
+    if (!tabsReady || payOpen || tabSwitching) return
+    setTabSwitching(true)
     try {
       await saveCurrentTab()
-      const created = await api.cartTabs.create({ position: tabs.length + 1 })
-      await queryClient.invalidateQueries({ queryKey: ['cartTabs'] })
+      const [created] = await Promise.all([
+        api.cartTabs.create({ position: tabs.length + 1 }),
+        queryClient.invalidateQueries({ queryKey: ['cartTabs'] })
+      ])
       setActiveTabId(created.id)
       resetSale()
+      setTabSwitching(false)
     } catch (err) {
+      setTabSwitching(false)
       toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
-    } finally {
-      tabSwitchingRef.current = false
     }
   }
 
   const closeTab = async (id: number): Promise<void> => {
-    if (!tabsReady || tabs.length <= 1 || payOpen || tabSwitchingRef.current) return
+    if (!tabsReady || tabs.length <= 1 || payOpen || tabSwitching) return
     const tabIndex = tabs.findIndex((t) => t.id === id)
     const tab = tabs[tabIndex]
     if (!tab) return
@@ -304,6 +338,7 @@ export function usePOSTerminal() {
         void queryClient.invalidateQueries({ queryKey: ['cartTabs'] })
       }
       toasts.success('pos.cartTabs.discarded')
+      setCloseTabLoading(false)
     } catch (err) {
       const key = err instanceof ApiError ? err.key : 'errors.unknown'
       if (key === 'errors.invalidPin') {
@@ -312,7 +347,6 @@ export function usePOSTerminal() {
         setCloseTabTarget(null)
         toasts.error(key)
       }
-    } finally {
       setCloseTabLoading(false)
     }
   }
@@ -515,17 +549,17 @@ export function usePOSTerminal() {
     removeTarget == null &&
     !customerOpen &&
     closeTabTarget == null &&
-    !tabSwitchingRef.current
+    !tabSwitching
 
   const openPay = (method: PaymentMethod = 'cash'): void => {
-    if (!canOpenPay || tabSwitchingRef.current) return
-    checkoutTabIdRef.current = activeTabId
-    tabSwitchingRef.current = true
+    if (!canOpenPay || tabSwitching) return
+    setCheckoutTabId(activeTabId)
+    setTabSwitching(true)
     void saveCurrentTab()
       .then(() => setModals((m) => ({ ...m, payOpen: true, payInitialMethod: method })))
       .catch((err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown'))
       .finally(() => {
-        tabSwitchingRef.current = false
+        setTabSwitching(false)
       })
   }
 
@@ -598,8 +632,8 @@ export function usePOSTerminal() {
 
   const onSaleCompleted = (change: number | null): void => {
     void (async () => {
-      const tabId = checkoutTabIdRef.current ?? activeTabId
-      checkoutTabIdRef.current = null
+      const tabId = checkoutTabId ?? activeTabId
+      setCheckoutTabId(null)
       let tabCleanupFailed = false
 
       if (tabId != null && tabsReady) {
@@ -627,17 +661,7 @@ export function usePOSTerminal() {
         }
 
         if (freshTabs.length > 0) {
-          const next = freshTabs[0]!
-          setActiveTabId(next.id)
-          const snap = parseCartTabSnapshot(next.cartJson)
-          setSale({
-            cart: snap.cart,
-            cartDiscount: snap.cartDiscount,
-            customer: snap.customer
-          })
-          setDiscountAuthPin(null)
-          setLineDiscountPin(null)
-          setQuery('')
+          loadTab(freshTabs[0]!)
         } else {
           const created = await api.cartTabs.create({ position: 1 })
           setActiveTabId(created.id)

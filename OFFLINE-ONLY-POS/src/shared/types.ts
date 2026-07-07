@@ -179,6 +179,79 @@ export interface ProductImportResult {
   errors?: ProductImportError[]
 }
 
+export interface SupplierInvoiceLine {
+  row: number
+  barcode: string
+  name: string
+  qty: number
+  unitCost: number
+  unitPrice: number
+  discountPercent: number
+  lineTotal: number
+  categoryHint: string | null
+}
+
+export interface SupplierInvoiceRestockRow {
+  line: number
+  productId: number
+  barcode: string
+  name: string
+  qty: number
+  unitCost: number
+  currentStock: number
+  currentCost: number | null
+}
+
+export interface SupplierInvoiceNewRow {
+  line: number
+  barcode: string
+  name: string
+  qty: number
+  unitCost: number
+  category: string | null
+  price: number | null
+}
+
+export interface SupplierInvoicePreview {
+  canceled: boolean
+  filePath?: string
+  fileName?: string
+  invoiceNumber?: string | null
+  restock: SupplierInvoiceRestockRow[]
+  newItems: SupplierInvoiceNewRow[]
+  errors: ProductImportError[]
+}
+
+export interface SupplierInvoiceNewItemInput {
+  line: number
+  barcode: string
+  name: string
+  price: number
+  qty: number
+  unitCost: number | null
+  category: string | null
+}
+
+export interface SupplierInvoiceRestockInput {
+  line: number
+  productId: number
+  qty: number
+  unitCost: number | null
+}
+
+export interface SupplierInvoiceConfirmInput {
+  restock: SupplierInvoiceRestockInput[]
+  newItems: SupplierInvoiceNewItemInput[]
+  updateCostOnRestock: boolean
+}
+
+export interface SupplierInvoiceResult {
+  canceled: boolean
+  restocked?: number
+  created?: number
+  errors?: ProductImportError[]
+}
+
 export interface StockAlert {
   productId: number
   name: string
@@ -1059,6 +1132,8 @@ export const IPC_CHANNELS = [
   'products:importCsvConfirm',
   'products:importEfacturaPreview',
   'products:importEfacturaConfirm',
+  'products:importSupplierInvoicePreview',
+  'products:importSupplierInvoiceConfirm',
   'products:printLabel',
   'products:printBarcode',
   'products:printLabelBatch',

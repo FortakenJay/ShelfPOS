@@ -140,10 +140,13 @@ export function resetCartTabsForNewShift(closedByUsername: string, closedAt?: st
 }
 
 export function listHeldCartTabsForCierre(): { label: string; total: number }[] {
-  return listCartTabs()
-    .filter((tab) => !isCartTabSnapshotEmpty(tab.cart_json))
-    .map((tab) => ({
+  const held: { label: string; total: number }[] = []
+  for (const tab of listCartTabs()) {
+    if (isCartTabSnapshotEmpty(tab.cart_json)) continue
+    held.push({
       label: tab.label?.trim() || `Carrito ${tab.position}`,
       total: cartTabSnapshotTotal(tab.cart_json)
-    }))
+    })
+  }
+  return held
 }

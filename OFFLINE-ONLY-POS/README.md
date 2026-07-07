@@ -16,7 +16,11 @@ Fully offline, single-device Windows desktop POS system for small retail shops i
 npm install        # also rebuilds native modules for Electron (postinstall)
 npm run dev        # dev mode with HMR
 npm run typecheck  # typecheck main+preload and renderer
+npm run lint       # typecheck + ESLint
+npm run doctor     # React Doctor (--scope changed)
 ```
+
+Full React Doctor baseline: `npx react-doctor@latest --verbose --scope full`. See `docs/wiki/18-Quality-And-Tooling.md`.
 
 ## Packaging
 
@@ -27,7 +31,7 @@ npm run dist:dir   # unpacked build (faster, for smoke testing)
 
 The installer never touches `%APPDATA%\shelfpos` — user data survives updates and uninstall.
 
-Release notes: [`RELEASE_NOTES.md`](RELEASE_NOTES.md) (current: **1.6.4**).
+Release notes: [`RELEASE_NOTES.md`](RELEASE_NOTES.md) (current: **1.7.0**).
 
 ## Data & backups
 

@@ -4,6 +4,43 @@
 
 ---
 
+## 1.7.0
+
+### Mejora — importar factura de proveedor (PDF)
+
+- **Recibir mercadería** → **Factura PDF**: elige un PDF de factura de proveedor; el main extrae líneas con `pdf-parse` (`productSupplierInvoicePdf.ts`).
+- Vista previa en `SupplierInvoicePreviewModal`: emparejar por código de barras, crear productos nuevos o actualizar costo/stock existentes.
+- IPC: `products:importSupplierInvoicePreview` / `products:importSupplierInvoiceConfirm`.
+- Stock aplicado con motivo `received_shipment`; auditoría en la misma transacción.
+
+### Mejora — recibir mercadería (UI)
+
+- El modal **Recibir mercadería** ofrece solo **PDF**, **CSV** y **eFactura** — ya no duplica **Nuevo producto** del toolbar.
+- Creación manual de un producto: botón **Nuevo producto** en la barra de herramientas.
+
+### Refactor — código compartido y deduplicación
+
+- Módulos compartidos: `src/shared/node/parseEnv.ts`, `dpapi-win.ts`, `pendingStoreId.ts` (main + sync-service vía `sync-service/scripts/sync-vendor.mjs`).
+- Repos de productos: `insertProductRow`, `updateProductCatalogFields`, `updateProductCostPrice` — usados por CSV, eFactura y factura PDF.
+- IPC: helpers `runBatchPrint`, `openImportFilePath`, `confirmProductImport`; `authorizeWithDiscountPin` en `authorize.ts`.
+- Renderer: `usePinAuthorize`, `useSaleReceiptActions`, `notifyPrintFailure`, consolidación de pestañas en `usePOSTerminal`.
+
+### Calidad
+
+- React Doctor (POS): **100 / 100** en escaneo completo (`npx react-doctor@latest --verbose --scope full`).
+- `doctor.config.json` ignora copias generadas en `sync-service/src/vendor/**`.
+- Grafo de código actualizado (`graphify update .` en `OFFLINE-ONLY-POS/` y raíz del monorepo).
+
+### Despliegue
+
+| Componente | Versión | Acción |
+|------------|---------|--------|
+| POS Windows | 1.7.0 | `npm run release:win` → `ShelfPOS-1.7.0-win.zip` |
+| Sync service | 1.7.0 | Incluido en ZIP; sin cambios de protocolo |
+| Dashboard | 1.5.1 | Deploy Vercel (`DASHBOARD/`) |
+
+---
+
 ## 1.6.4
 
 ### Corrección — carritos abiertos tras cierre de turno (POS)

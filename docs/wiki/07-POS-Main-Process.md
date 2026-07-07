@@ -32,6 +32,7 @@ Parent: [[Home]]
 | `services/backup.ts` | Scheduled + manual DB backup |
 | `services/productCsvExport.ts` | Streaming product catalog CSV export (large inventories) |
 | `services/productCsvImport.ts` | CSV import parse, preview, apply |
+| `services/productSupplierInvoicePdf.ts` | Supplier PDF invoice parse, preview, apply |
 | `services/csv.ts` | `csvEscape`, `buildCsv`, `parseCsv` |
 | `services/csvStream.ts` | Async UTF-8 file stream writer (backpressure-safe) |
 | `services/csvSpreadsheet.ts` | Barcode text literals (`="…"`) for Excel/Sheets |
@@ -63,6 +64,25 @@ See [[16-Error-Handling]].
 | Re-import | `parseSpreadsheetText()` in `productCsvImport.ts` strips the literal on import |
 
 Template export (`template: true`) writes headers only (same columns as full export).
+
+## Shared Node modules (`src/shared/node/`)
+
+Copied into sync-service at build time (`sync-service/scripts/sync-vendor.mjs` → `src/vendor/`):
+
+| Module | Used by |
+|--------|---------|
+| `parseEnv.ts` | Main `operatorConfig`, sync `config.ts`, `write-sync-env.cjs` |
+| `dpapi-win.ts` | DPAPI encrypt/decrypt for `sync.env` on Windows |
+
+`src/shared/pendingStoreId.ts` — store-id claim helpers shared between main and sync-service.
+
+## Product catalog writes (`db/repos/products.ts`)
+
+Canonical SQL for catalog mutations used by IPC and import services:
+
+- `insertProductRow` — new product row + sync enqueue
+- `updateProductCatalogFields` — name, barcode, price, category, provider, etc.
+- `updateProductCostPrice` — cost-only update (supplier invoices)
 
 ## Cierre and cart tabs
 

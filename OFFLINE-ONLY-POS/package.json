@@ -1,6 +1,6 @@
 {
   "name": "shelfpos",
-  "version": "1.6.4",
+  "version": "1.7.0",
   "description": "Offline retail POS system (Electron) for small shops in Costa Rica",
   "main": "./out/main/index.js",
   "author": "ShelfPOS",
@@ -35,6 +35,7 @@
     "iconv-lite": "^0.7.2",
     "jsonwebtoken": "^9.0.3",
     "node-machine-id": "^1.1.12",
+    "pdf-parse": "^2.4.5",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-i18next": "^17.0.8",
@@ -47,6 +48,7 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.9.3",
+    "@types/pdf-parse": "^1.1.5",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@types/ws": "^8.18.1",

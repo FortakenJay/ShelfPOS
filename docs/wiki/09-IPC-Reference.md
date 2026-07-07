@@ -27,7 +27,7 @@ Preload whitelists channels — only listed channels can be invoked.
 | `auth.ts` | Login, logout, session |
 | `firstRun.ts` | Wizard, language |
 | `settings.ts` | Store config, PINs, language |
-| `products.ts` | CRUD, CSV export/import, eFactura import, labels, stock, `stockProviders` |
+| `products.ts` | CRUD, CSV/eFactura/supplier-PDF import, labels, stock, `stockProviders` |
 | `sales.ts` | Checkout, reprint, factura PDF export |
 | `returns.ts` | Returns + restock |
 | `reports.ts` | Local report generation |
@@ -57,6 +57,7 @@ Inspect `IPC_CHANNELS` for full list (~67 channels). Common:
 - `products:exportCsv` — `{ template?: boolean }`; save dialog → stream full active catalog (or headers-only template) via `productCsvExport.ts`; barcodes as spreadsheet text literals; writes `path.tmp` then renames atomically
 - `products:importCsvPreview` / `products:importCsvConfirm` — file picker + preview/apply (`productCsvImport.ts`); stock mode `add` \| `replace` on confirm
 - `products:importEfacturaPreview` / `products:importEfacturaConfirm` — eFactura `.xlsx` import (same preview/apply pipeline)
+- `products:importSupplierInvoicePreview` / `products:importSupplierInvoiceConfirm` — supplier **PDF** invoice (`productSupplierInvoicePdf.ts`); confirm payload maps lines to create/update/skip; stock reason `received_shipment`
 - `cierre:preview` — shift totals + `heldCartTabs` (open POS carts that will be cleared on confirm)
 - `cierre:confirm` — shift close + thermal print; resets cart tabs via `resetCartTabsForNewShift`; `buildCierreLines` includes discarded tabs from `audit_log`
 - `cierre:print`, `cierre:exportPdf` — re-print / PDF for a past cierre (same line template)

@@ -1,7 +1,7 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
 import { PinModal } from '@/components/PinModal'
+import { usePinAuthorize } from './usePinAuthorize'
 
 export interface LineDiscountPinRequest {
   lineKey: string
@@ -20,9 +20,8 @@ export function LineDiscountPinModal({
   onClose: () => void
 }): React.JSX.Element {
   const { t } = useTranslation()
-  const queryClient = useQueryClient()
 
-  const authorizeMutation = useMutation({
+  const authorizeMutation = usePinAuthorize({
     mutationFn: (pin: string) =>
       api.discount.authorize({
         pin,
@@ -32,7 +31,6 @@ export function LineDiscountPinModal({
       }),
     onSuccess: (_data, pin) => {
       onApplied(pin)
-      void queryClient.invalidateQueries({ queryKey: ['audit'] })
     }
   })
 

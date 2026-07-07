@@ -3,7 +3,7 @@ import { basename } from 'node:path'
 import { AppError } from '../errors'
 import { getDb } from '../db'
 import { localNow } from '../db/helpers'
-import { applyStockDelta, getProduct, getProductByBarcode } from '../db/repos/products'
+import { applyStockDelta, getProduct, getProductByBarcode, insertProductRow, updateProductCatalogFields } from '../db/repos/products'
 import { writeAudit } from '../db/repos/audit'
 import { parseCsv } from './csv'
 import { parseSpreadsheetText } from './csvSpreadsheet'
@@ -238,26 +238,7 @@ export function applyProductImport(
     try {
       db.transaction(() => {
         const now = localNow()
-        const insert = db
-          .prepare(
-            `INSERT INTO products (barcode, name, price, cost_price, category, stock, stock_threshold, tax_category, bulk_qty, bulk_price, factura_negativo, created_at, updated_at)
-             VALUES (?,?,?,?,?,0,?,?,?,?,?,?,?)`
-          )
-          .run(
-            input.barcode.trim(),
-            input.name.trim(),
-            input.price,
-            input.costPrice,
-            input.category,
-            input.stockThreshold,
-            input.taxCategory,
-            input.bulkQty,
-            input.bulkPrice,
-            input.facturaNegativo ? 1 : 0,
-            now,
-            now
-          )
-        const id = Number(insert.lastInsertRowid)
+        const id = insertProductRow(db, { ...input, stockProvider: input.stockProvider ?? null }, now)
         if (input.stock) applyStockDelta(id, input.stock, userId, 'csv_import')
         writeAudit('product_created', {
           entity: 'product',
@@ -276,25 +257,7 @@ export function applyProductImport(
   const updateRow = (existing: Product, input: ProductInput, row: number): void => {
     try {
       db.transaction(() => {
-        getDb()
-          .prepare(
-            `UPDATE products SET barcode = ?, name = ?, price = ?, cost_price = ?, category = ?, stock_threshold = ?, tax_category = ?, bulk_qty = ?, bulk_price = ?, factura_negativo = ?, updated_at = ?
-             WHERE id = ?`
-          )
-          .run(
-            input.barcode.trim(),
-            input.name.trim(),
-            input.price,
-            input.costPrice,
-            input.category,
-            input.stockThreshold,
-            input.taxCategory,
-            input.bulkQty,
-            input.bulkPrice,
-            input.facturaNegativo ? 1 : 0,
-            localNow(),
-            existing.id
-          )
+        updateProductCatalogFields(db, existing.id, input, { includeStockProvider: false })
         applyImportStock(existing.id, input.stock, stockMode, userId)
         writeAudit('product_updated', {
           entity: 'product',

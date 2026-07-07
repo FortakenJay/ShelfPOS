@@ -1,14 +1,41 @@
+import type Database from 'better-sqlite3'
 import { getDb } from '../index'
 import { PRODUCT_COLUMNS } from '../columns'
 import { localNow } from '../helpers'
 import { getSetting, SETTING_KEYS } from './settings'
 import { enqueueSync } from './syncQueue'
-import type { Product, ProductFilters, ProductListResult, StockAlert } from '../../../shared/types'
+import type { Product, ProductFilters, ProductInput, ProductListResult, StockAlert } from '../../../shared/types'
 
 const productSelect = `SELECT ${PRODUCT_COLUMNS} FROM products`
 
 /** Active catalog rows only — soft-deleted products are excluded from POS/inventory lists. */
 export const ACTIVE_PRODUCT_SQL = 'deleted_at IS NULL'
+
+/** Prefix for barcodes tombstoned on soft-delete so the real code can be reused. */
+export const DELETED_BARCODE_PREFIX = '@deleted:'
+
+export function isTombstoneBarcode(barcode: string): boolean {
+  return barcode.startsWith(DELETED_BARCODE_PREFIX)
+}
+
+export function tombstoneBarcodeValue(productId: number, barcode: string): string {
+  return `${DELETED_BARCODE_PREFIX}${productId}:${barcode}`
+}
+
+/** Frees a barcode held by a soft-deleted row so a new product can reuse it. */
+export function releaseBarcodeForReuse(db: Database.Database, barcode: string): void {
+  const trimmed = barcode.trim()
+  const row = db
+    .prepare(`SELECT id, barcode FROM products WHERE barcode = ? AND deleted_at IS NOT NULL`)
+    .get(trimmed) as { id: number; barcode: string } | undefined
+  if (!row || isTombstoneBarcode(row.barcode)) return
+  const now = localNow()
+  db.prepare('UPDATE products SET barcode = ?, updated_at = ? WHERE id = ?').run(
+    tombstoneBarcodeValue(row.id, row.barcode),
+    now,
+    row.id
+  )
+}
 
 const DEFAULT_PAGE_SIZE = 50
 const MAX_PAGE_SIZE = 200
@@ -150,6 +177,16 @@ export function applyStockDelta(productId: number, delta: number, userId: number
 export function softDeleteProduct(id: number): void {
   const db = getDb()
   const now = localNow()
+  const row = db.prepare('SELECT barcode FROM products WHERE id = ?').get(id) as
+    | { barcode: string }
+    | undefined
+  if (row && !isTombstoneBarcode(row.barcode)) {
+    db.prepare('UPDATE products SET barcode = ?, updated_at = ? WHERE id = ?').run(
+      tombstoneBarcodeValue(id, row.barcode),
+      now,
+      id
+    )
+  }
   db.prepare('UPDATE products SET deleted_at = ?, updated_at = ? WHERE id = ?').run(now, now, id)
   enqueueSync('products', id, 'update', db)
 }
@@ -185,4 +222,94 @@ export function enqueueProductSync(
   db = getDb()
 ): void {
   enqueueSync('products', productId, operation, db)
+}
+
+const PRODUCT_INSERT_SQL = `INSERT INTO products (barcode, name, price, cost_price, category, stock_provider, stock, stock_threshold, tax_category, bulk_qty, bulk_price, factura_negativo, created_at, updated_at)
+ VALUES (?,?,?,?,?,?,0,?,?,?,?,?,?,?)`
+
+/** Insert a product row. Must run inside a transaction. Returns new product id. */
+export function insertProductRow(db: Database.Database, input: ProductInput, now: string): number {
+  releaseBarcodeForReuse(db, input.barcode)
+  const result = db.prepare(PRODUCT_INSERT_SQL).run(
+    input.barcode.trim(),
+    input.name.trim(),
+    input.price,
+    input.costPrice ?? null,
+    input.category?.trim() || null,
+    input.stockProvider?.trim() || null,
+    input.stockThreshold ?? null,
+    input.taxCategory,
+    input.bulkQty ?? null,
+    input.bulkPrice ?? null,
+    input.facturaNegativo ? 1 : 0,
+    now,
+    now
+  )
+  return Number(result.lastInsertRowid)
+}
+
+export type UpdateProductCatalogOpts = {
+  includeStockProvider?: boolean
+}
+
+/** Update catalog fields on an existing product. Must run inside a transaction. */
+export function updateProductCatalogFields(
+  db: Database.Database,
+  productId: number,
+  input: ProductInput,
+  opts: UpdateProductCatalogOpts = {}
+): void {
+  releaseBarcodeForReuse(db, input.barcode)
+  const includeStockProvider = opts.includeStockProvider ?? true
+  if (includeStockProvider) {
+    db.prepare(
+      `UPDATE products SET barcode = ?, name = ?, price = ?, cost_price = ?, category = ?, stock_provider = ?, stock_threshold = ?, tax_category = ?, bulk_qty = ?, bulk_price = ?, factura_negativo = ?, updated_at = ?
+       WHERE id = ?`
+    ).run(
+      input.barcode.trim(),
+      input.name.trim(),
+      input.price,
+      input.costPrice ?? null,
+      input.category?.trim() || null,
+      input.stockProvider?.trim() || null,
+      input.stockThreshold ?? null,
+      input.taxCategory,
+      input.bulkQty ?? null,
+      input.bulkPrice ?? null,
+      input.facturaNegativo ? 1 : 0,
+      localNow(),
+      productId
+    )
+  } else {
+    db.prepare(
+      `UPDATE products SET barcode = ?, name = ?, price = ?, cost_price = ?, category = ?, stock_threshold = ?, tax_category = ?, bulk_qty = ?, bulk_price = ?, factura_negativo = ?, updated_at = ?
+       WHERE id = ?`
+    ).run(
+      input.barcode.trim(),
+      input.name.trim(),
+      input.price,
+      input.costPrice ?? null,
+      input.category?.trim() || null,
+      input.stockThreshold ?? null,
+      input.taxCategory,
+      input.bulkQty ?? null,
+      input.bulkPrice ?? null,
+      input.facturaNegativo ? 1 : 0,
+      localNow(),
+      productId
+    )
+  }
+}
+
+export function updateProductCostPrice(
+  db: Database.Database,
+  productId: number,
+  costPrice: number,
+  now = localNow()
+): void {
+  db.prepare('UPDATE products SET cost_price = ?, updated_at = ? WHERE id = ?').run(
+    costPrice,
+    now,
+    productId
+  )
 }

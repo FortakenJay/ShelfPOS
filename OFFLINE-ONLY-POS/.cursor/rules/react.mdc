@@ -307,3 +307,37 @@ test('MyButton alerts on click', () => {
   expect(window.alert).toHaveBeenCalledWith('Clicked!'); // Assuming alert is mocked
 });
 ```
+
+## 8. ShelfPOS Conventions
+
+These patterns match the POS renderer (`OFFLINE-ONLY-POS/src/renderer/`) and React Doctor baseline (100/100).
+
+### Feature hooks own data; components render
+
+- Put TanStack Query/mutations in `features/*/hooks/` (e.g. `useProductManager`, `usePOSTerminal`).
+- Page components wire toolbar + modals; avoid fetching inside presentational children.
+- Invalidate queries in mutation `onSuccess`, not scattered `setState` after IPC.
+
+### PIN authorization
+
+- Reuse `usePinAuthorize` (`features/pos/usePinAuthorize.ts`) for discount/price-override modals.
+- Shared shell: `PinAuthorizeModal` — do not duplicate PIN form + audit invalidation per modal.
+
+### Avoid derived state in `useEffect`
+
+- Prefer computing derived UI state during render (`useMemo`) or driving it from query data.
+- Do not `setState` inside `useEffect` when the value can be derived from props/query (React Doctor: `set-state-in-effect`).
+
+### Stable callbacks for hot paths
+
+- POS pay/scan shortcuts: store latest handler in a ref (`openPayRef`) updated in an effect, so keyboard listeners stay stable.
+- Printer status: `useQuery` polling — not manual `setInterval` + `useState` in page components.
+
+### Shared action hooks
+
+- Receipt reprint/export: `useSaleReceiptActions` — one place for sale receipt IPC + toasts.
+- Print failures: `notifyPrintFailure` in `lib/printToasts.ts`.
+
+### i18n errors
+
+- IPC throws `AppError` keys; renderer uses `toastApiError` — never hard-code Spanish/Chinese in components.

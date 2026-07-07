@@ -307,3 +307,23 @@ test('MyButton alerts on click', () => {
   expect(window.alert).toHaveBeenCalledWith('Clicked!'); // Assuming alert is mocked
 });
 ```
+
+## 8. Dashboard Conventions
+
+These patterns match the admin panel (`DASHBOARD/src/`) and React Doctor baseline.
+
+### Layered data access
+
+- **No Supabase in components** — `lib/queries/*.ts` for reads; route loaders where appropriate.
+- **No React in query modules** — keep TanStack Query in route components or thin hooks.
+- See `.cursor/rules/feature-crud-architecture.mdc` for feature-folder CRUD layout.
+
+### Query keys and invalidation
+
+- Use consistent keys (`['reports', storeId, range]`, etc.) so mutations invalidate the right cache.
+- Prefer `useQuery` over manual `useEffect` + `setState` for server data.
+
+### Reports and exports
+
+- Table-grid Excel: `lib/reports/report-grid-to-xlsx.ts` — do not duplicate XLSX builders per page.
+- PDF exports: reuse shared builders under `lib/reports/`.

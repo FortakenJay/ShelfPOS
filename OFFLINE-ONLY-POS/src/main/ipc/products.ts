@@ -9,11 +9,14 @@ import {
   enqueueProductSync,
   getProduct,
   getProductByBarcode,
+  insertProductRow,
   listCategories,
   listProducts,
   listStockProviders,
+  releaseBarcodeForReuse,
   searchProducts,
-  softDeleteProduct
+  softDeleteProduct,
+  updateProductCatalogFields
 } from '../db/repos/products'
 import { currentLanguage, receiptLanguage } from '../db/repos/settings'
 import { session } from '../services/session'
@@ -33,6 +36,10 @@ import {
   validateProductInput
 } from '../services/productCsvImport'
 import { readEfacturaXlsx } from '../services/productEfacturaImport'
+import {
+  applySupplierInvoiceImport,
+  buildSupplierInvoicePreview
+} from '../services/productSupplierInvoicePdf'
 import type {
   AdjustStockInput,
   Product,
@@ -40,9 +47,13 @@ import type {
   ProductListResult,
   ProductImportPreview,
   ProductImportResult,
+  ProductImportStockMode,
   ProductInput,
   PrintStatus,
-  StockAlert
+  StockAlert,
+  SupplierInvoiceConfirmInput,
+  SupplierInvoicePreview,
+  SupplierInvoiceResult
 } from '../../shared/types'
 
 const MANAGE: ('product_manager' | 'admin')[] = ['product_manager', 'admin']
@@ -75,6 +86,7 @@ function assignProductBarcode(productId: number, barcode: string): Product {
   const db = getDb()
   const now = localNow()
   try {
+    releaseBarcodeForReuse(db, barcode)
     db.prepare('UPDATE products SET barcode = ?, updated_at = ? WHERE id = ?').run(barcode, now, productId)
   } catch (err) {
     if (isUniqueViolation(err)) throw new AppError('errors.barcodeExists')
@@ -149,6 +161,76 @@ async function printLabelForProduct(
   return printProductLabel(productId, copies, lang, 'shelf')
 }
 
+type BatchPrintMode = 'label' | 'barcode'
+
+async function runBatchPrint(
+  items: { productId: number; copies?: number }[],
+  mode: BatchPrintMode
+): Promise<{ printStatus: PrintStatus; printed: number; failed: number; total: number }> {
+  const normalized = normalizeBatchPrintItems(items)
+  if (normalized.length === 0 || normalized.length > MAX_BATCH_LABEL_PRODUCTS) {
+    throw new AppError('errors.invalidInput')
+  }
+
+  await probePrinter()
+  const lang = receiptLanguage()
+  let printed = 0
+  let failed = 0
+
+  for (const { productId, copies } of normalized) {
+    try {
+      const result =
+        mode === 'label'
+          ? await printLabelForProduct(productId, copies, lang)
+          : await printProductLabel(productId, copies, lang, 'barcode')
+      if (result.printStatus === 'printed') printed++
+      else failed++
+    } catch {
+      failed++
+    }
+  }
+
+  return {
+    printStatus: failed === 0 ? 'printed' : 'failed',
+    printed,
+    failed,
+    total: normalized.length
+  }
+}
+
+const EMPTY_IMPORT_PREVIEW: ProductImportPreview = {
+  canceled: true,
+  toCreate: [],
+  toUpdate: [],
+  unchanged: [],
+  errors: []
+}
+
+async function openImportFilePath(
+  filters: { name: string; extensions: string[] }[]
+): Promise<string | null> {
+  const result = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters
+  })
+  if (result.canceled || !result.filePaths[0]) return null
+  return result.filePaths[0]
+}
+
+async function confirmProductImport(
+  filePath: string,
+  format: 'csv' | 'efactura',
+  stockMode: ProductImportStockMode,
+  userId: number
+): Promise<ProductImportResult> {
+  if (!filePath?.trim()) throw new AppError('errors.invalidInput')
+  const path = filePath.trim()
+  if (format === 'efactura') {
+    return applyProductImport(await readEfacturaXlsx(path), userId, stockMode)
+  }
+  return applyProductImport(path, userId, stockMode)
+}
+
 export function registerProductHandlers(): void {
   handle<ProductFilters, ProductListResult>('products:list', 'authed', (filters) =>
     listProducts(filters ?? {})
@@ -191,66 +273,12 @@ export function registerProductHandlers(): void {
   handle<
     { items: { productId: number; copies?: number }[] },
     { printStatus: PrintStatus; printed: number; failed: number; total: number }
-  >('products:printLabelBatch', MANAGE, async ({ items }) => {
-    const normalized = normalizeBatchPrintItems(items)
-    if (normalized.length === 0 || normalized.length > MAX_BATCH_LABEL_PRODUCTS) {
-      throw new AppError('errors.invalidInput')
-    }
-
-    await probePrinter()
-    const lang = receiptLanguage()
-    let printed = 0
-    let failed = 0
-
-    for (const { productId, copies } of normalized) {
-      try {
-        const result = await printLabelForProduct(productId, copies, lang)
-        if (result.printStatus === 'printed') printed++
-        else failed++
-      } catch {
-        failed++
-      }
-    }
-
-    return {
-      printStatus: failed === 0 ? 'printed' : 'failed',
-      printed,
-      failed,
-      total: normalized.length,
-    }
-  })
+  >('products:printLabelBatch', MANAGE, async ({ items }) => runBatchPrint(items, 'label'))
 
   handle<
     { items: { productId: number; copies?: number }[] },
     { printStatus: PrintStatus; printed: number; failed: number; total: number }
-  >('products:printBarcodeBatch', MANAGE, async ({ items }) => {
-    const normalized = normalizeBatchPrintItems(items)
-    if (normalized.length === 0 || normalized.length > MAX_BATCH_LABEL_PRODUCTS) {
-      throw new AppError('errors.invalidInput')
-    }
-
-    await probePrinter()
-    const lang = receiptLanguage()
-    let printed = 0
-    let failed = 0
-
-    for (const { productId, copies } of normalized) {
-      try {
-        const result = await printProductLabel(productId, copies, lang, 'barcode')
-        if (result.printStatus === 'printed') printed++
-        else failed++
-      } catch {
-        failed++
-      }
-    }
-
-    return {
-      printStatus: failed === 0 ? 'printed' : 'failed',
-      printed,
-      failed,
-      total: normalized.length,
-    }
-  })
+  >('products:printBarcodeBatch', MANAGE, async ({ items }) => runBatchPrint(items, 'barcode'))
 
   handle<ProductInput, Product>('products:create', MANAGE, (input) => {
     validateProductInput(input)
@@ -259,27 +287,7 @@ export function registerProductHandlers(): void {
     const now = localNow()
     try {
       return db.transaction(() => {
-        const result = db
-          .prepare(
-            `INSERT INTO products (barcode, name, price, cost_price, category, stock_provider, stock, stock_threshold, tax_category, bulk_qty, bulk_price, factura_negativo, created_at, updated_at)
-             VALUES (?,?,?,?,?,?,0,?,?,?,?,?,?,?)`
-          )
-          .run(
-            input.barcode.trim(),
-            input.name.trim(),
-            input.price,
-            input.costPrice ?? null,
-            input.category?.trim() || null,
-            input.stockProvider?.trim() || null,
-            input.stockThreshold ?? null,
-            'standard',
-            input.bulkQty ?? null,
-            input.bulkPrice ?? null,
-            input.facturaNegativo ? 1 : 0,
-            now,
-            now
-          )
-        const id = Number(result.lastInsertRowid)
+        const id = insertProductRow(db, input, now)
         if (input.stock) applyStockDelta(id, Math.floor(input.stock), user.id, 'initial_stock')
         else enqueueProductSync(id, 'insert', db)
         writeAudit('product_created', { entity: 'product', entityId: id, detail: input.name.trim() })
@@ -297,24 +305,7 @@ export function registerProductHandlers(): void {
     try {
       const db = getDb()
       db.transaction(() => {
-        db.prepare(
-          `UPDATE products SET barcode = ?, name = ?, price = ?, cost_price = ?, category = ?, stock_provider = ?, stock_threshold = ?, tax_category = ?, bulk_qty = ?, bulk_price = ?, factura_negativo = ?, updated_at = ?
-           WHERE id = ?`
-        ).run(
-          input.barcode.trim(),
-          input.name.trim(),
-          input.price,
-          input.costPrice ?? null,
-          input.category?.trim() || null,
-          input.stockProvider?.trim() || null,
-          input.stockThreshold ?? null,
-          'standard',
-          input.bulkQty ?? null,
-          input.bulkPrice ?? null,
-          input.facturaNegativo ? 1 : 0,
-          localNow(),
-          input.id
-        )
+        updateProductCatalogFields(db, input.id, input)
         enqueueProductSync(input.id, 'update', db)
       })()
     } catch (err) {
@@ -381,25 +372,15 @@ export function registerProductHandlers(): void {
   )
 
   handle<void, ProductImportPreview>('products:importCsvPreview', MANAGE, async () => {
-    const result = await dialog.showOpenDialog({
-      properties: ['openFile'],
-      filters: [{ name: 'CSV', extensions: ['csv'] }]
-    })
-    if (result.canceled || !result.filePaths[0]) {
-      return { canceled: true, toCreate: [], toUpdate: [], unchanged: [], errors: [] }
-    }
-    return buildProductImportPreview(readProductCsv(result.filePaths[0]))
+    const filePath = await openImportFilePath([{ name: 'CSV', extensions: ['csv'] }])
+    if (!filePath) return EMPTY_IMPORT_PREVIEW
+    return buildProductImportPreview(readProductCsv(filePath))
   })
 
   handle<void, ProductImportPreview>('products:importEfacturaPreview', MANAGE, async () => {
-    const result = await dialog.showOpenDialog({
-      properties: ['openFile'],
-      filters: [{ name: 'Excel (eFactura)', extensions: ['xlsx'] }]
-    })
-    if (result.canceled || !result.filePaths[0]) {
-      return { canceled: true, toCreate: [], toUpdate: [], unchanged: [], errors: [] }
-    }
-    return buildProductImportPreview(await readEfacturaXlsx(result.filePaths[0]))
+    const filePath = await openImportFilePath([{ name: 'Excel (eFactura)', extensions: ['xlsx'] }])
+    if (!filePath) return EMPTY_IMPORT_PREVIEW
+    return buildProductImportPreview(await readEfacturaXlsx(filePath))
   })
 
   handle<{ filePath: string; stockMode?: 'add' | 'replace' }, ProductImportResult>(
@@ -407,8 +388,7 @@ export function registerProductHandlers(): void {
     MANAGE,
     async ({ filePath, stockMode }) => {
       const user = session.require()
-      if (!filePath?.trim()) throw new AppError('errors.invalidInput')
-      return applyProductImport(await readEfacturaXlsx(filePath.trim()), user.id, stockMode ?? 'add')
+      return confirmProductImport(filePath, 'efactura', stockMode ?? 'add', user.id)
     }
   )
 
@@ -417,8 +397,24 @@ export function registerProductHandlers(): void {
     MANAGE,
     ({ filePath, stockMode }) => {
       const user = session.require()
-      if (!filePath?.trim()) throw new AppError('errors.invalidInput')
-      return applyProductImport(filePath.trim(), user.id, stockMode ?? 'add')
+      return confirmProductImport(filePath, 'csv', stockMode ?? 'add', user.id)
+    }
+  )
+
+  handle<void, SupplierInvoicePreview>('products:importSupplierInvoicePreview', MANAGE, async () => {
+    const filePath = await openImportFilePath([{ name: 'PDF', extensions: ['pdf'] }])
+    if (!filePath) {
+      return { canceled: true, restock: [], newItems: [], errors: [] }
+    }
+    return buildSupplierInvoicePreview(filePath)
+  })
+
+  handle<SupplierInvoiceConfirmInput, SupplierInvoiceResult>(
+    'products:importSupplierInvoiceConfirm',
+    MANAGE,
+    (input) => {
+      const user = session.require()
+      return applySupplierInvoiceImport(input, user.id)
     }
   )
 }

@@ -18,7 +18,8 @@ ShelfPOS/
 | `src/main/` | Electron main: DB, IPC, printing, license, backups |
 | `src/renderer/` | React UI (TanStack Router, code routes) |
 | `src/preload/` | `contextBridge` → `window.api.invoke` |
-| `src/shared/` | Types, Zod IPC schemas, locales (`es`, `zh-CN`) |
+| `src/shared/` | Types, Zod IPC schemas, locales (`es`, `zh-CN`); Node helpers in `shared/node/` |
+| `graphify-out/` | AST knowledge graph (`graphify update .` after code changes) |
 | `sync-service/` | Windows background service → Supabase |
 | `scripts/` | Installer, release build, license tools |
 | `samples/` | CSV import templates |
@@ -51,7 +52,7 @@ Separate Node process — **not** part of the Electron bundle at runtime. Window
 | `src/db.ts` | SQLite reads, queue helpers, `LIVE_ROW_SQL` |
 | `src/config.ts` | Loads `%APPDATA%\shelfpos\sync.env` |
 | `src/errorLog.ts` | Failures → `%APPDATA%\shelfpos\error\sync.txt` |
-| `scripts/` | backfill, diagnose-queue, Windows service install |
+| `scripts/` | backfill, diagnose-queue, Windows service install, `sync-vendor.mjs` (copies `src/shared/node/*` → `src/vendor/`) |
 
 Installed via `Install-ShelfPOS.ps1` → `node-windows` service. See [[10-Sync-Service]].
 

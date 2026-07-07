@@ -394,6 +394,45 @@
         "title": "预览 — eFactura 导入"
       }
     },
+    "receive": {
+      "button": "收货入库…",
+      "title": "如何添加商品？",
+      "pdf": "供应商发票 (PDF)",
+      "pdfHint": "读取采购发票，补货已有商品并创建新商品。",
+      "csv": "商品目录 CSV",
+      "csvHint": "批量导入或更新商品（文件中需含零售价）。",
+      "efactura": "eFactura 迁移 (XLSX)",
+      "efacturaHint": "从 eFactura 导出的商品文件。"
+    },
+    "supplierInvoice": {
+      "missingHeaders": "无法识别发票格式（缺少编码、明细、数量列）",
+      "noLines": "PDF 中未找到商品行",
+      "parseFailed": "无法读取 PDF",
+      "unparsedLine": "无法解析该商品行",
+      "preview": {
+        "title": "供应商发票",
+        "file": "文件",
+        "invoice": "发票号",
+        "summary": "{{restock}} 补货 · {{new}} 新建 · {{errors}} 错误",
+        "restockTitle": "补货 ({{count}})",
+        "restockHint": "将发票数量加到当前库存。",
+        "newTitle": "新商品 ({{count}})",
+        "newHint": "请为每个新商品填写零售价 (₡)。进价来自发票。",
+        "sellPrice": "零售价",
+        "cost": "进价",
+        "addQty": "+数量",
+        "updateCostToggle": "补货时更新进价",
+        "updateCostHint": "将发票单位成本保存到已有商品。",
+        "errorsTitle": "错误 ({{count}})",
+        "missingPrices": "{{count}} 个新商品缺少零售价。",
+        "nothingToApply": "没有可应用的补货或新商品。",
+        "confirm": "确认收货"
+      },
+      "done": "补货 {{restocked}} 个，新建 {{created}} 个",
+      "doneRestock": "已补货 {{count}} 个商品",
+      "doneCreate": "已创建 {{count}} 个商品",
+      "partial": "成功 {{ok}}，失败 {{failed}}"
+    },
     "adjust": {
       "title": "调整库存",
       "current": "当前库存",

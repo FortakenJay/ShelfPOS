@@ -394,6 +394,45 @@
         "title": "Vista previa — importación eFactura"
       }
     },
+    "receive": {
+      "button": "Recibir mercadería…",
+      "title": "¿Cómo desea cargar productos?",
+      "pdf": "Factura de proveedor (PDF)",
+      "pdfHint": "Lea una factura de compra, reabastezca existentes y cree productos nuevos.",
+      "csv": "Catálogo CSV",
+      "csvHint": "Importe o actualice muchos productos con precio de venta en el archivo.",
+      "efactura": "Migración eFactura (XLSX)",
+      "efacturaHint": "Archivo productos exportado desde eFactura."
+    },
+    "supplierInvoice": {
+      "missingHeaders": "No se reconoce el formato de factura (faltan columnas Código, Detalle, Cant.)",
+      "noLines": "No se encontraron líneas de producto en el PDF",
+      "parseFailed": "No se pudo leer el PDF",
+      "unparsedLine": "No se pudo interpretar la línea del producto",
+      "preview": {
+        "title": "Factura de proveedor",
+        "file": "Archivo",
+        "invoice": "Factura",
+        "summary": "{{restock}} reabastecer · {{new}} nuevos · {{errors}} con error",
+        "restockTitle": "Reabastecer ({{count}})",
+        "restockHint": "Se sumará la cantidad de la factura al stock actual.",
+        "newTitle": "Productos nuevos ({{count}})",
+        "newHint": "Ingrese el precio de venta (₡) para cada producto nuevo. El costo viene de la factura.",
+        "sellPrice": "Precio venta",
+        "cost": "Costo",
+        "addQty": "+Cant.",
+        "updateCostToggle": "Actualizar costo en reabastecimiento",
+        "updateCostHint": "Guarda el costo unitario de la factura en productos existentes.",
+        "errorsTitle": "Errores ({{count}})",
+        "missingPrices": "Falta precio de venta en {{count}} producto(s) nuevo(s).",
+        "nothingToApply": "No hay reabastecimientos ni productos nuevos listos para aplicar.",
+        "confirm": "Aplicar recepción"
+      },
+      "done": "{{restocked}} reabastecido(s), {{created}} creado(s)",
+      "doneRestock": "{{count}} producto(s) reabastecido(s)",
+      "doneCreate": "{{count}} producto(s) creado(s)",
+      "partial": "{{ok}} aplicado(s), {{failed}} con error"
+    },
     "adjust": {
       "title": "Ajustar stock",
       "current": "Stock actual",

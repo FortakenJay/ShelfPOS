@@ -1,0 +1,201 @@
+/**
+ * @dojocoding/hacienda-sdk
+ *
+ * Core SDK for Costa Rica electronic invoicing (Hacienda API v4.4).
+ * Provides auth, XML generation, digital signing, and API client.
+ */
+
+export const PACKAGE_NAME = "@dojocoding/hacienda-sdk" as const;
+
+// ---------------------------------------------------------------------------
+// Client — primary entry point
+// ---------------------------------------------------------------------------
+
+export { HaciendaClient, HaciendaClientOptionsSchema } from "./client.js";
+export type { HaciendaClientOptions } from "./client.js";
+
+// ---------------------------------------------------------------------------
+// Bootstrap — convenience auth helper for CLI / MCP consumers
+// ---------------------------------------------------------------------------
+
+export { bootstrapClient } from "./bootstrap.js";
+export type { BootstrapResult, BootstrapOptions } from "./bootstrap.js";
+
+// ---------------------------------------------------------------------------
+// SDK error hierarchy
+// ---------------------------------------------------------------------------
+
+export {
+  HaciendaError,
+  HaciendaErrorCode,
+  ValidationError,
+  ApiError,
+  AuthenticationError,
+  SigningError,
+} from "./errors.js";
+
+// ---------------------------------------------------------------------------
+// Auth module
+// ---------------------------------------------------------------------------
+
+export {
+  AuthError,
+  AuthErrorCode,
+  buildUsername,
+  CredentialInputSchema,
+  Environment,
+  getEnvironmentConfig,
+  IdType,
+  loadCredentials,
+  TokenManager,
+  TokenResponseSchema,
+} from "./auth/index.js";
+export type {
+  AuthCredentials,
+  CredentialInput,
+  EnvironmentConfig,
+  TokenManagerOptions,
+  TokenResponse,
+  TokenState,
+} from "./auth/index.js";
+
+// ---------------------------------------------------------------------------
+// Clave numerica — 50-digit key generation and parsing
+// ---------------------------------------------------------------------------
+
+export {
+  buildClave,
+  ClaveInputSchema,
+  parseClave,
+  COUNTRY_CODE,
+  DocumentType,
+  Situation,
+  type ClaveInput,
+  type ClaveParsed,
+} from "./clave/index.js";
+
+// ---------------------------------------------------------------------------
+// Config — configuration file management and sequence persistence
+// ---------------------------------------------------------------------------
+
+export {
+  // Config manager
+  getConfigDir,
+  getConfigPath,
+  ensureConfigDir,
+  loadConfig,
+  saveConfig,
+  listProfiles,
+  deleteProfile,
+  // Sequence store
+  buildSequenceKey,
+  getSequencesPath,
+  getNextSequence,
+  getCurrentSequence,
+  resetSequence,
+  SequenceOverflowError,
+  // Schemas and constants
+  EnvironmentSchema,
+  CedulaTypeSchema,
+  ProfileSchema,
+  ConfigFileSchema,
+  SequenceFileSchema,
+  MAX_SEQUENCE,
+  DEFAULT_BRANCH,
+  DEFAULT_POS,
+  // Types
+  type Environment as ConfigEnvironment,
+  type CedulaType,
+  type Profile,
+  type ConfigFile,
+  type ResolvedConfig,
+  type SequenceFile,
+  type ConfigManagerOptions,
+  type SequenceStoreOptions,
+} from "./config/index.js";
+
+// XML module — XML generation and validation
+export {
+  buildXml,
+  getNamespaceUri,
+  getSchemaFragment,
+  validateFacturaInput,
+  type BuildXmlOptions,
+  type FacturaValidationError,
+  type FacturaValidationResult,
+} from "./xml/index.js";
+
+// Tax calculation module
+export {
+  round5,
+  calculateLineItemTotals,
+  calculateInvoiceSummary,
+  type LineItemTaxInput,
+  type LineItemInput,
+  type CalculatedLineItem,
+  type InvoiceSummary,
+} from "./tax/index.js";
+
+// Document builders
+export {
+  buildFacturaXml,
+  buildTiqueteXml,
+  buildNotaCreditoXml,
+  buildNotaDebitoXml,
+  buildFacturaCompraXml,
+  buildFacturaExportacionXml,
+  buildReciboPagoXml,
+  buildMensajeReceptorXml,
+} from "./documents/index.js";
+
+// ---------------------------------------------------------------------------
+// Logging module — structured logging
+// ---------------------------------------------------------------------------
+
+export { Logger, LogLevel, noopLogger } from "./logging/index.js";
+export type { LoggerOptions, LogFormat, LogWriter, LogEntry } from "./logging/index.js";
+
+// ---------------------------------------------------------------------------
+// Signing module — XAdES-EPES digital signature
+// ---------------------------------------------------------------------------
+
+export { loadP12, signXml, signAndEncode } from "./signing/index.js";
+export type { P12Credentials, SignXmlOptions, XadesPolicyConfig } from "./signing/index.js";
+
+// ---------------------------------------------------------------------------
+// API module — HTTP client, submission, polling, orchestrator
+// ---------------------------------------------------------------------------
+
+export {
+  HttpClient,
+  RateLimiter,
+  submitDocument,
+  getStatus,
+  isTerminalStatus,
+  extractRejectionReason,
+  submitAndWait,
+  withRetry,
+  listComprobantes,
+  getComprobante,
+  lookupTaxpayer,
+} from "./api/index.js";
+export type {
+  HttpClientOptions,
+  RequestOptions,
+  HttpResponse,
+  RateLimiterOptions,
+  ParsedStatusResponse,
+  SubmitAndWaitOptions,
+  SubmitAndWaitResult,
+  RetryOptions,
+  TaxpayerInfo,
+  LookupTaxpayerOptions,
+} from "./api/index.js";
+export {
+  HaciendaRejectionCode,
+  REJECTION_CODE_DESCRIPTIONS,
+  HTTP_STATUS_DESCRIPTIONS,
+  getRejectionDescription,
+  getHttpStatusDescription,
+  isRetryableStatus,
+} from "./api/index.js";

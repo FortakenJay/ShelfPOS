@@ -47,6 +47,9 @@ import type {
   ProductImportPreview,
   ProductImportResult,
   ProductImportStockMode,
+  SupplierInvoiceConfirmInput,
+  SupplierInvoicePreview,
+  SupplierInvoiceResult,
   ProductInput,
   ReportData,
   ReportType,
@@ -140,6 +143,10 @@ export const api = {
       call<ProductImportResult>('products:importCsvConfirm', { filePath, stockMode }),
     importEfacturaConfirm: (filePath: string, stockMode: ProductImportStockMode = 'add') =>
       call<ProductImportResult>('products:importEfacturaConfirm', { filePath, stockMode }),
+    importSupplierInvoicePreview: () =>
+      call<SupplierInvoicePreview>('products:importSupplierInvoicePreview'),
+    importSupplierInvoiceConfirm: (input: SupplierInvoiceConfirmInput) =>
+      call<SupplierInvoiceResult>('products:importSupplierInvoiceConfirm', input),
     printLabel: (productId: number, copies = 1) =>
       call<{ printStatus: PrintStatus }>('products:printLabel', { productId, copies }),
     printBarcode: (productId: number, copies = 1) =>

@@ -90,6 +90,8 @@ cd DASHBOARD && npm run lint && npm run doctor
 
 When you add a feature that changes architecture or schema, update the relevant `docs/wiki/*.md` page and link from [[Home]].
 
+After code changes, run `graphify update .` in the affected app folder (and repo root if wiki changed). See [[18-Quality-And-Tooling#knowledge-graph-graphify]].
+
 ## Related
 
 - [[02-Architecture]]

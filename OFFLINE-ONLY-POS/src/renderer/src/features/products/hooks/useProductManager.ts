@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, ApiError } from '@/lib/api'
 import { useToasts } from '@/lib/toast'
 import { useDebouncedValue } from '@/lib/useScanner'
-import type { BatchPrintItem, Product, ProductImportError, ProductImportPreview, ProductImportStockMode, StockStatus } from '@shared/types'
+import type { BatchPrintItem, Product, ProductImportError, ProductImportPreview, ProductImportStockMode, StockStatus, SupplierInvoiceConfirmInput, SupplierInvoicePreview } from '@shared/types'
 
 export type ProductManagerUiState = {
   formProduct: Product | null | 'new'
@@ -13,6 +13,8 @@ export type ProductManagerUiState = {
   csvHelpOpen: boolean
   importPreview: ProductImportPreview | null
   importFormat: 'csv' | 'efactura'
+  receiveChoiceOpen: boolean
+  supplierInvoicePreview: SupplierInvoicePreview | null
   batchPrintOpen: 'labels' | 'barcodes' | null
   printPromptProduct: Product | null
 }
@@ -45,6 +47,8 @@ export function useProductManager(options?: {
     csvHelpOpen: false,
     importPreview: null,
     importFormat: 'csv',
+    receiveChoiceOpen: false,
+    supplierInvoicePreview: null,
     batchPrintOpen: null,
     printPromptProduct: null
   })
@@ -142,6 +146,45 @@ export function useProductManager(options?: {
       if (result.canceled) return
       setUi((u) => ({ ...u, importPreview: result, importFormat: 'efactura' }))
       void queryClient.invalidateQueries({ queryKey: ['products'] })
+    },
+    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+  })
+
+  const importSupplierInvoicePreviewMutation = useMutation({
+    mutationFn: api.products.importSupplierInvoicePreview,
+    onSuccess: (result) => {
+      if (result.canceled) return
+      setUi((u) => ({ ...u, supplierInvoicePreview: result }))
+      void queryClient.invalidateQueries({ queryKey: ['products'] })
+    },
+    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+  })
+
+  const importSupplierInvoiceConfirmMutation = useMutation({
+    mutationFn: (input: SupplierInvoiceConfirmInput) =>
+      api.products.importSupplierInvoiceConfirm(input),
+    onSuccess: (result) => {
+      if (result.canceled) return
+      const restocked = result.restocked ?? 0
+      const created = result.created ?? 0
+      const failed = result.errors?.length ?? 0
+      setUi((u) => ({ ...u, supplierInvoicePreview: null }))
+      if (restocked > 0 || created > 0) void queryClient.invalidateQueries({ queryKey: ['products'] })
+      if (failed > 0) {
+        setUi((u) => ({ ...u, importErrors: result.errors ?? [] }))
+        if (restocked > 0 || created > 0) {
+          toasts.success('products.supplierInvoice.partial', {
+            ok: restocked + created,
+            failed
+          })
+        }
+      } else if (restocked > 0 && created > 0) {
+        toasts.success('products.supplierInvoice.done', { restocked, created })
+      } else if (restocked > 0) {
+        toasts.success('products.supplierInvoice.doneRestock', { count: restocked })
+      } else if (created > 0) {
+        toasts.success('products.supplierInvoice.doneCreate', { count: created })
+      }
     },
     onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
   })
@@ -273,6 +316,8 @@ export function useProductManager(options?: {
     printBarcodeBatch,
     importPreviewMutation,
     importEfacturaPreviewMutation,
+    importSupplierInvoicePreviewMutation,
+    importSupplierInvoiceConfirmMutation,
     importConfirmMutation,
     invalidateProducts
   }

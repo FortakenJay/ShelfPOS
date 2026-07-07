@@ -43,5 +43,5 @@ Open this folder as an **Obsidian vault** (`File → Open folder as vault` → `
 | `15-Setup-And-Deployment.md` | Production + dev onboarding, claim flow, release updates |
 | `16-Error-Handling.md` | AppError, i18n |
 | `17-Conventions-For-AI.md` | Agent checklist |
-| `18-Quality-And-Tooling.md` | Lint, React Doctor, Bugbot, pre-commit |
+| `18-Quality-And-Tooling.md` | Lint, React Doctor, graphify, Bugbot, pre-commit |
 | `19-Edge-Cases-And-Runbooks.md` | Install, sync, dashboard pitfalls + symptom → action (incl. `StartPending` after install) |

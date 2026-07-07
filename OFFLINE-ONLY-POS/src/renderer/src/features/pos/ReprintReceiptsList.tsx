@@ -4,29 +4,10 @@ import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
 import { formatDate, formatMoney } from '@/lib/format'
 import { toastApiError } from '@/lib/errors'
+import { notifyPrintFailure } from '@/lib/printToasts'
 import { useToasts } from '@/lib/toast'
 import { Button, Td, Th } from '@/components/ui'
 import type { PrintStatus } from '@shared/types'
-
-function notifyPrintFailure(
-  toasts: ReturnType<typeof useToasts>,
-  printJobId: number
-): void {
-  toasts.push({
-    kind: 'error',
-    key: 'pos.printFailed',
-    persistent: true,
-    action: {
-      labelKey: 'common.retry',
-      onClick: () => {
-        void api.printQueue.retry(printJobId).then(({ printStatus: st }) => {
-          if (st === 'printed') toasts.success('printQueue.retrySuccess')
-          else toasts.error('printQueue.retryFailed')
-        })
-      }
-    }
-  })
-}
 
 export function ReprintReceiptsList(): React.JSX.Element {
   const { t } = useTranslation()

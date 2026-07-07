@@ -282,6 +282,29 @@ export const IPC_SCHEMAS = {
     filePath: filePathSchema,
     stockMode: z.enum(['add', 'replace']).optional()
   }),
+  'products:importSupplierInvoicePreview': voidInput,
+  'products:importSupplierInvoiceConfirm': z.strictObject({
+    restock: z.array(
+      z.strictObject({
+        line: z.number().int().min(1),
+        productId: positiveIdSchema,
+        qty: z.number().int().min(0).max(MAX_PRODUCT_STOCK),
+        unitCost: moneySchema.nullable()
+      })
+    ),
+    newItems: z.array(
+      z.strictObject({
+        line: z.number().int().min(1),
+        barcode: barcodeSchema,
+        name: shortTextSchema,
+        price: moneySchema,
+        qty: z.number().int().min(0).max(MAX_PRODUCT_STOCK),
+        unitCost: moneySchema.nullable(),
+        category: z.string().trim().max(100).nullable()
+      })
+    ),
+    updateCostOnRestock: z.boolean()
+  }),
   'products:printLabel': z.strictObject({
     productId: positiveIdSchema,
     copies: z.number().int().min(1).max(MAX_LABEL_COPIES).optional()

@@ -64,7 +64,15 @@ export function KpiOverview({ kpis }: { kpis: DashboardOverview['kpis'] }): Reac
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-8">
       {cards.map((card) => (
-        <KpiCard key={card.label} {...card} />
+        <KpiCard
+          key={card.label}
+          label={card.label}
+          trend={card.trend}
+          money={'money' in card ? card.money : undefined}
+          invertTrend={'invertTrend' in card ? card.invertTrend : undefined}
+          linkTo={card.linkTo}
+          search={'search' in card ? card.search : undefined}
+        />
       ))}
     </div>
   )

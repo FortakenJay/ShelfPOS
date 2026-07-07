@@ -11,6 +11,7 @@ import { ProductsPageToolbar } from './components/ProductsPageToolbar'
 import { ProductsPageFilters } from './components/ProductsPageFilters'
 import { ProductManagerModals } from './components/ProductManagerModals'
 import { useProductManager } from './hooks/useProductManager'
+import type { ProductReceiveChoice } from './ProductReceiveChoiceModal'
 
 export function ProductsPage(): React.JSX.Element {
   const { stock, q } = useSearch({ strict: false }) as {
@@ -45,7 +46,7 @@ function ProductManager({
     const labelShortcut = pm.settingsData?.shortcutPrintLabel
     const barcodeShortcut = pm.settingsData?.shortcutPrintBarcode
     if (!labelShortcut && !barcodeShortcut) return
-    if (pm.ui.formProduct || pm.ui.adjustProduct || pm.ui.deleteProduct || pm.ui.importPreview || pm.ui.batchPrintOpen || pm.ui.printPromptProduct) return
+    if (pm.ui.formProduct || pm.ui.adjustProduct || pm.ui.deleteProduct || pm.ui.importPreview || pm.ui.receiveChoiceOpen || pm.ui.supplierInvoicePreview || pm.ui.batchPrintOpen || pm.ui.printPromptProduct) return
 
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.defaultPrevented) return
@@ -87,6 +88,8 @@ function ProductManager({
     pm.ui.deleteProduct,
     pm.ui.formProduct,
     pm.ui.importPreview,
+    pm.ui.receiveChoiceOpen,
+    pm.ui.supplierInvoicePreview,
     pm.ui.batchPrintOpen,
     pm.ui.printPromptProduct,
     toasts
@@ -101,20 +104,37 @@ function ProductManager({
     if (printed > 0) pm.setUi((u) => ({ ...u, batchPrintOpen: null }))
   }
 
+  const receivePending =
+    pm.importPreviewMutation.isPending ||
+    pm.importEfacturaPreviewMutation.isPending ||
+    pm.importSupplierInvoicePreviewMutation.isPending ||
+    pm.importConfirmMutation.isPending ||
+    pm.importSupplierInvoiceConfirmMutation.isPending
+
+  const handleReceiveChoice = (choice: ProductReceiveChoice): void => {
+    switch (choice) {
+      case 'pdf':
+        pm.importSupplierInvoicePreviewMutation.mutate()
+        break
+      case 'csv':
+        pm.importPreviewMutation.mutate()
+        break
+      case 'efactura':
+        pm.importEfacturaPreviewMutation.mutate()
+        break
+    }
+  }
+
   return (
     <div className="p-4 sm:p-6">
       <ProductsPageToolbar
         exportTemplatePending={pm.exportTemplate.isPending}
         exportProductsPending={pm.exportProducts.isPending}
-        importCsvPending={pm.importPreviewMutation.isPending || pm.importConfirmMutation.isPending}
-        importEfacturaPending={
-          pm.importEfacturaPreviewMutation.isPending || pm.importConfirmMutation.isPending
-        }
+        receivePending={receivePending}
         onCsvHelp={() => pm.setUi((u) => ({ ...u, csvHelpOpen: true }))}
         onExportTemplate={() => pm.exportTemplate.mutate()}
         onExportProducts={() => pm.exportProducts.mutate()}
-        onImportCsv={() => pm.importPreviewMutation.mutate()}
-        onImportEfactura={() => pm.importEfacturaPreviewMutation.mutate()}
+        onReceive={() => pm.setUi((u) => ({ ...u, receiveChoiceOpen: true }))}
         onNewProduct={() => pm.setUi((u) => ({ ...u, formProduct: 'new' }))}
         onBatchLabels={() => pm.setUi((u) => ({ ...u, batchPrintOpen: 'labels' }))}
         onBatchBarcodes={() => pm.setUi((u) => ({ ...u, batchPrintOpen: 'barcodes' }))}
@@ -160,11 +180,16 @@ function ProductManager({
         stockProviders={pm.stockProviderRows ?? []}
         exportTemplatePending={pm.exportTemplate.isPending}
         importConfirmPending={pm.importConfirmMutation.isPending}
+        supplierInvoiceConfirmPending={pm.importSupplierInvoiceConfirmMutation.isPending}
         deletePending={pm.deleteMutation.isPending}
         onDeleteConfirm={(id) => pm.deleteMutation.mutate(id)}
         onExportTemplate={() => pm.exportTemplate.mutate()}
         onImportConfirm={(filePath, format, stockMode) =>
           pm.importConfirmMutation.mutate({ filePath, format, stockMode })
+        }
+        onReceiveChoice={handleReceiveChoice}
+        onSupplierInvoiceConfirm={(input) =>
+          pm.importSupplierInvoiceConfirmMutation.mutate(input)
         }
         onProductsSaved={pm.invalidateProducts}
         batchLabelPrinting={pm.printLabelBatch.isPending}

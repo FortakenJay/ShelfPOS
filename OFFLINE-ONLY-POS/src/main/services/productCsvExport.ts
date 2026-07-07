@@ -63,6 +63,21 @@ async function flushLines(stream: ReturnType<typeof openUtf8CsvWriteStream>, lin
   lines.length = 0
 }
 
+async function writeProductCsvTemplate(filePath: string, lang: Language): Promise<void> {
+  const tempPath = `${filePath}.tmp`
+  const stream = openUtf8CsvWriteStream(tempPath)
+  try {
+    await writeToStream(stream, '\uFEFF')
+    await writeToStream(stream, `${productCsvHeaders(lang).map(csvEscape).join(',')}`)
+    await closeWriteStream(stream)
+    await rename(tempPath, filePath)
+  } catch (err) {
+    stream.destroy()
+    await unlink(tempPath).catch(() => undefined)
+    throw err
+  }
+}
+
 /**
  * Streams the full active catalog to a UTF-8 CSV file.
  * Keyset pagination + buffered writes keep memory flat for large inventories.
@@ -72,21 +87,17 @@ export async function exportProductsToCsv(
   lang: Language,
   template = false
 ): Promise<void> {
+  if (template) {
+    return writeProductCsvTemplate(filePath, lang)
+  }
+
   const tempPath = `${filePath}.tmp`
   const stream = openUtf8CsvWriteStream(tempPath)
   const lineBuffer: string[] = []
 
   try {
-    await writeToStream(stream, '\uFEFF')
-    await writeToStream(stream, `${productCsvHeaders(lang).map(csvEscape).join(',')}`)
-
-    if (template) {
-      await closeWriteStream(stream)
-      await rename(tempPath, filePath)
-      return
-    }
-
-    await writeToStream(stream, '\r\n')
+    const headerLine = `\uFEFF${productCsvHeaders(lang).map(csvEscape).join(',')}\r\n`
+    await writeToStream(stream, headerLine)
 
     const listBatch = createExportBatchStatement()
     let lastId = 0

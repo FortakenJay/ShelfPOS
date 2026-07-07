@@ -2,7 +2,7 @@ import type Database from 'better-sqlite3'
 import { HIDDEN_OPERATOR_USERNAME } from '../../shared/operator-account'
 import { OPERATOR_PLACEHOLDER_PASSWORD_HASH } from '../services/operatorConfig'
 
-export const SCHEMA_VERSION = 20
+export const SCHEMA_VERSION = 21
 
 type Migration = (db: Database.Database) => void
 
@@ -461,6 +461,19 @@ const migrations: Record<number, Migration> = {
       ALTER TABLE products ADD COLUMN stock_provider TEXT;
       CREATE INDEX IF NOT EXISTS idx_products_stock_provider ON products(stock_provider);
     `)
+  },
+
+  // v21 — tombstone barcodes on soft-deleted products so codes can be reused in catalog.
+  21: (db) => {
+    const rows = db
+      .prepare(
+        `SELECT id, barcode FROM products WHERE deleted_at IS NOT NULL AND barcode NOT LIKE '@deleted:%'`
+      )
+      .all() as { id: number; barcode: string }[]
+    const update = db.prepare('UPDATE products SET barcode = ? WHERE id = ?')
+    for (const row of rows) {
+      update.run(`@deleted:${row.id}:${row.barcode}`, row.id)
+    }
   },
 }
 

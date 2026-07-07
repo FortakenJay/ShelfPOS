@@ -172,7 +172,7 @@ export async function syncStoreRegistry(
   }
 }
 
-export async function storeHasDashboardAccess(
+async function storeHasDashboardAccess(
   config: SyncConfig,
   storeId: string,
 ): Promise<boolean> {
