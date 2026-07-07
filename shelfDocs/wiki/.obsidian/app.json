@@ -1,0 +1,5 @@
+{
+  "version": "1.0",
+  "readme": "Open Home.md as the vault entry point. Wikilinks use [[Page-Name]] without .md extension.",
+  "alwaysUpdateLinks": true
+}

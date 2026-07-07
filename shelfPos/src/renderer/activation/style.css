@@ -1,0 +1,126 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  color: #e2e8f0;
+}
+
+.card {
+  width: 360px;
+  padding: 24px;
+}
+
+.logo {
+  display: block;
+  margin: 0 auto 12px;
+  height: 64px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.brand {
+  margin: 0 0 4px;
+  font-size: 28px;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: -0.02em;
+}
+
+.brand-shelf {
+  color: #ffffff;
+}
+
+.brand-pos {
+  color: #94a3b8;
+}
+
+.subtitle {
+  margin: 0 0 20px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  margin-bottom: 14px;
+  border: 2px solid #334155;
+  border-radius: 8px;
+  background: #1e293b;
+  color: #f8fafc;
+  font-size: 13px;
+  padding: 10px 12px;
+}
+
+.input.readonly {
+  color: #94a3b8;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 88px;
+  font-family: ui-monospace, monospace;
+  line-height: 1.35;
+}
+
+.textarea:focus,
+.input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.button {
+  width: 100%;
+  margin-top: 4px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: #1d4ed8;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.feedback {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.feedback.error {
+  color: #fca5a5;
+}
+
+.feedback.success {
+  color: #86efac;
+}

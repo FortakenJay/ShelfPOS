@@ -1,0 +1,12 @@
+node_modules/
+dist/
+src/vendor/
+scripts/lib/
+
+.env
+sync.env
+!.env.example
+!sync.env.example
+
+*.log
+.DS_Store

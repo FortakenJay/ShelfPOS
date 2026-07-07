@@ -1,0 +1,21 @@
+
+> shelfpos@1.7.0 lint
+> npm run typecheck && npm run lint:eslint
+
+
+> shelfpos@1.7.0 typecheck
+> npm run typecheck:node && npm run typecheck:web
+
+
+> shelfpos@1.7.0 typecheck:node
+> tsc --noEmit -p tsconfig.node.json
+
+
+> shelfpos@1.7.0 typecheck:web
+> tsc --noEmit -p tsconfig.web.json
+
+
+> shelfpos@1.7.0 lint:eslint
+> eslint .
+
+EXIT: 0

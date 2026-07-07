@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "mode": "full",
+  "reactDetected": true,
+  "version": "0.7.1",
+  "ok": true,
+  "directory": "C:\\Users\\PC\\Documents\\GitHub\\ShelfPOS\\ShelfPOS\\shelfPos",
+  "diff": null,
+  "projects": [
+    {
+      "directory": "C:\\Users\\PC\\Documents\\GitHub\\ShelfPOS\\ShelfPOS\\shelfPos",
+      "project": {
+        "rootDirectory": "C:\\Users\\PC\\Documents\\GitHub\\ShelfPOS\\ShelfPOS\\shelfPos",
+        "projectName": "shelfpos",
+        "reactVersion": "^19.2.7",
+        "reactMajorVersion": 19,
+        "tailwindVersion": "^4.3.0",
+        "zodVersion": "^4.4.3",
+        "zodMajorVersion": 4,
+        "framework": "vite",
+        "hasTypeScript": true,
+        "hasReactCompiler": true,
+        "hasTanStackQuery": true,
+        "preactVersion": null,
+        "preactMajorVersion": null,
+        "hasReactNativeWorkspace": false,
+        "nextjsVersion": null,
+        "nextjsMajorVersion": null,
+        "expoVersion": null,
+        "shopifyFlashListVersion": null,
+        "shopifyFlashListMajorVersion": null,
+        "hasReanimated": false,
+        "isPreES2023Target": false,
+        "sourceFileCount": 245
+      },
+      "diagnostics": [],
+      "score": {
+        "score": 100,
+        "label": "Great",
+        "rules": {}
+      },
+      "skippedChecks": [],
+      "scannedFileCount": 245,
+      "elapsedMilliseconds": 12958.864
+    }
+  ],
+  "diagnostics": [],
+  "summary": {
+    "errorCount": 0,
+    "warningCount": 0,
+    "affectedFileCount": 0,
+    "totalDiagnosticCount": 0,
+    "score": 100,
+    "scoreLabel": "Great"
+  },
+  "elapsedMilliseconds": 12979.3256,
+  "error": null
+}

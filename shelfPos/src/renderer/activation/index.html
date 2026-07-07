@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
+    />
+    <title>ShelfPOS — Activación</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="card">
+      <img src="./appSHELFPOS.png" alt="" class="logo" />
+      <h1 class="brand" aria-label="ShelfPOS">
+        <span class="brand-shelf">Shelf</span><span class="brand-pos">POS</span>
+      </h1>
+      <p class="subtitle">Activación de licencia</p>
+      <label class="label" for="machine-id">ID de equipo</label>
+      <input id="machine-id" class="input readonly" type="text" readonly />
+      <label class="label" for="license-key">Clave de licencia</label>
+      <textarea
+        id="license-key"
+        class="textarea"
+        rows="4"
+        spellcheck="false"
+        placeholder="Pegue la clave JWT aquí"
+      ></textarea>
+      <p id="feedback" class="feedback" hidden></p>
+      <button id="activate" type="button" class="button">Activar</button>
+    </div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
