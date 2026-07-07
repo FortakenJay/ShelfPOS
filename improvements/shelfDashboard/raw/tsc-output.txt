@@ -1,0 +1,52 @@
+src/components/NoStoresPage.tsx(83,44): error TS2554: Expected 1-2 arguments, but got 0.
+src/components/NotFoundPage.tsx(13,10): error TS2741: Property 'search' is missing in type '{ children: Element; to: "/dashboard"; }' but required in type 'MakeRequiredSearchParams<RouterCore<Route<Register, any, "/", "/", string, "__root__", undefined, {}, {}, AnyContext, AnyContext, {}, undefined, RootRouteChildren, FileRouteTypes, unknown, unknown, undefined>, "never", false, RouterHistory, Record<...>>, string, "/dashboard">'.
+src/components/operator/OperatorStoresTable.tsx(75,9): error TS2322: Type 'string | null' is not assignable to type 'BillingInterval | null | undefined'.
+  Type 'string' is not assignable to type 'BillingInterval | null | undefined'.
+src/components/operator/OperatorStoresTable.tsx(99,9): error TS2322: Type 'string | null' is not assignable to type 'BillingInterval | null | undefined'.
+  Type 'string' is not assignable to type 'BillingInterval | null | undefined'.
+src/lib/auth.tsx(36,3): error TS6133: 'state' is declared but its value is never read.
+src/lib/queries/audit.ts(44,6): error TS2550: Property 'toSorted' does not exist on type '{ id: number; username: string; }[]'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2023' or later.
+src/lib/queries/audit.ts(44,16): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/lib/queries/audit.ts(44,19): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/lib/queries/audit.ts(62,23): error TS2550: Property 'toSorted' does not exist on type 'string[]'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2023' or later.
+src/lib/queries/dashboard.ts(224,6): error TS2550: Property 'toSorted' does not exist on type '[number, { transactions: number; revenue: number; }][]'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2023' or later.
+src/lib/queries/dashboard.ts(224,17): error TS7031: Binding element 'a' implicitly has an 'any' type.
+src/lib/queries/dashboard.ts(224,22): error TS7031: Binding element 'b' implicitly has an 'any' type.
+src/lib/queries/dashboard.ts(225,12): error TS7031: Binding element 'hour' implicitly has an 'any' type.
+src/lib/queries/dashboard.ts(225,18): error TS7031: Binding element 'v' implicitly has an 'any' type.
+src/lib/queries/dashboard.ts(290,22): error TS2550: Property 'toSorted' does not exist on type 'ProductPerformanceRow[]'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2023' or later.
+src/lib/queries/dashboard.ts(290,32): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/lib/queries/dashboard.ts(290,35): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/lib/queries/dashboard.ts(293,8): error TS2550: Property 'toSorted' does not exist on type 'ProductPerformanceRow[]'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2023' or later.
+src/lib/queries/dashboard.ts(293,18): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/lib/queries/dashboard.ts(293,21): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/lib/queries/dashboard.ts(295,23): error TS2550: Property 'toSorted' does not exist on type 'ProductPerformanceRow[]'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2023' or later.
+src/lib/queries/dashboard.ts(295,33): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/lib/queries/dashboard.ts(295,36): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/lib/queries/reports.ts(665,12): error TS2339: Property 'rows' does not exist on type 'SalesSummaryReport | PaymentMethodReport | InventoryReport | TaxBreakdownReport | TransactionLogReport | ItemizedSalesReport | TopProductRow[]'.
+  Property 'rows' does not exist on type 'SalesSummaryReport'.
+src/lib/queries/reports.ts(665,32): error TS2339: Property 'total' does not exist on type 'SalesSummaryReport | PaymentMethodReport | InventoryReport | TaxBreakdownReport | TransactionLogReport | ItemizedSalesReport | TopProductRow[]'.
+  Property 'total' does not exist on type 'SalesSummaryReport'.
+src/lib/queries/reports.ts(669,28): error TS2339: Property 'rows' does not exist on type 'SalesSummaryReport | PaymentMethodReport | InventoryReport | TaxBreakdownReport | TransactionLogReport | ItemizedSalesReport | TopProductRow[]'.
+  Property 'rows' does not exist on type 'SalesSummaryReport'.
+src/lib/queries/reports.ts(670,37): error TS2339: Property 'total' does not exist on type 'SalesSummaryReport | PaymentMethodReport | InventoryReport | TaxBreakdownReport | TransactionLogReport | ItemizedSalesReport | TopProductRow[]'.
+  Property 'total' does not exist on type 'SalesSummaryReport'.
+src/lib/queries/reports.ts(692,21): error TS2339: Property 'rows' does not exist on type 'SalesSummaryReport | PaymentMethodReport | InventoryReport | TaxBreakdownReport | TransactionLogReport | ItemizedSalesReport | TopProductRow[]'.
+  Property 'rows' does not exist on type 'SalesSummaryReport'.
+src/lib/queries/reports.ts(693,33): error TS2339: Property 'rows' does not exist on type 'SalesSummaryReport | PaymentMethodReport | InventoryReport | TaxBreakdownReport | TransactionLogReport | ItemizedSalesReport | TopProductRow[]'.
+  Property 'rows' does not exist on type 'SalesSummaryReport'.
+src/lib/queries/reports.ts(695,32): error TS2339: Property 'total' does not exist on type 'SalesSummaryReport | PaymentMethodReport | InventoryReport | TaxBreakdownReport | TransactionLogReport | ItemizedSalesReport | TopProductRow[]'.
+  Property 'total' does not exist on type 'SalesSummaryReport'.
+src/lib/queries/reports.ts(698,3): error TS2322: Type '{ type: "inventory"; data: { rows: any[]; page: number; pageSize: number; totalRevenue: number; txCount: number; itemsSold: number; returnsCount: number; avgTicket: number; totalDiscount: number; grossProfit: number; cash: PeriodCashTotals; days?: SalesSummaryDayRow[]; } | ... 5 more ... | { ...; }; }' is not assignable to type 'ReportData'.
+  Types of property 'data' are incompatible.
+    Type '{ rows: any[]; page: number; pageSize: number; totalRevenue: number; txCount: number; itemsSold: number; returnsCount: number; avgTicket: number; totalDiscount: number; grossProfit: number; cash: PeriodCashTotals; days?: SalesSummaryDayRow[] | undefined; } | ... 5 more ... | { ...; }' is not assignable to type 'InventoryReport'.
+      Type '{ rows: any[]; page: number; pageSize: number; totalRevenue: number; txCount: number; itemsSold: number; returnsCount: number; avgTicket: number; totalDiscount: number; grossProfit: number; cash: PeriodCashTotals; days?: SalesSummaryDayRow[] | undefined; }' is missing the following properties from type 'InventoryReport': total, totalValue
+src/routes/_app/admin.tsx(128,21): error TS2345: Argument of type '{ to: "/dashboard"; replace: true; }' is not assignable to parameter of type 'NavigateOptions<RouterCore<Route<Register, any, "/", "/", string, "__root__", undefined, {}, {}, AnyContext, AnyContext, {}, undefined, RootRouteChildren, FileRouteTypes, unknown, unknown, undefined>, "never", false, RouterHistory, Record<...>>, string, "/dashboard", string, "">'.
+  Property 'search' is missing in type '{ to: "/dashboard"; replace: true; }' but required in type 'MakeRequiredSearchParams<RouterCore<Route<Register, any, "/", "/", string, "__root__", undefined, {}, {}, AnyContext, AnyContext, {}, undefined, RootRouteChildren, FileRouteTypes, unknown, unknown, undefined>, "never", false, RouterHistory, Record<...>>, string, "/dashboard">'.
+src/routes/_app/link-pos.tsx(61,12): error TS2741: Property 'search' is missing in type '{ children: string; to: "/dashboard"; className: string; onClick: () => void; }' but required in type 'MakeRequiredSearchParams<RouterCore<Route<Register, any, "/", "/", string, "__root__", undefined, {}, {}, AnyContext, AnyContext, {}, undefined, RootRouteChildren, FileRouteTypes, unknown, unknown, undefined>, "never", false, RouterHistory, Record<...>>, string, "/dashboard">'.
+src/routes/api/operator/invite-owner.ts(69,32): error TS2339: Property 'expires_at' does not exist on type 'GenerateLinkProperties'.
+src/routes/create-account.tsx(74,21): error TS2345: Argument of type '{ to: "/dashboard"; replace: true; }' is not assignable to parameter of type 'NavigateOptions<RouterCore<Route<Register, any, "/", "/", string, "__root__", undefined, {}, {}, AnyContext, AnyContext, {}, undefined, RootRouteChildren, FileRouteTypes, unknown, unknown, undefined>, "never", false, RouterHistory, Record<...>>, string, "/dashboard", string, "">'.
+  Property 'search' is missing in type '{ to: "/dashboard"; replace: true; }' but required in type 'MakeRequiredSearchParams<RouterCore<Route<Register, any, "/", "/", string, "__root__", undefined, {}, {}, AnyContext, AnyContext, {}, undefined, RootRouteChildren, FileRouteTypes, unknown, unknown, undefined>, "never", false, RouterHistory, Record<...>>, string, "/dashboard">'.
+src/routes/index.tsx(19,19): error TS2345: Argument of type '{ to: "/dashboard"; replace: true; }' is not assignable to parameter of type 'NavigateOptions<RouterCore<Route<Register, any, "/", "/", string, "__root__", undefined, {}, {}, AnyContext, AnyContext, {}, undefined, RootRouteChildren, FileRouteTypes, unknown, unknown, undefined>, "never", false, RouterHistory, Record<...>>, string, "/dashboard", string, "">'.
+  Property 'search' is missing in type '{ to: "/dashboard"; replace: true; }' but required in type 'MakeRequiredSearchParams<RouterCore<Route<Register, any, "/", "/", string, "__root__", undefined, {}, {}, AnyContext, AnyContext, {}, undefined, RootRouteChildren, FileRouteTypes, unknown, unknown, undefined>, "never", false, RouterHistory, Record<...>>, string, "/dashboard">'.
+TSC EXIT: 2
