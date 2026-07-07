@@ -47,8 +47,3 @@ coverage/
 
 # Graphify (https://graphify.net/) — commit graphify-out/; keep local cost log out
 graphify-out/cost.json
-
-# Split-out repos: each is its own independent git repository, not tracked here
-shelfPos/
-shelfDashboard/
-shelfDocs/
