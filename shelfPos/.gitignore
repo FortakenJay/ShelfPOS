@@ -47,3 +47,11 @@ coverage/
 
 # Graphify (https://graphify.net/) — commit graphify-out/; keep local cost log out
 graphify-out/cost.json
+
+# Release build (npm run release:win)
+.cache/
+.release-dist-*/
+release/
+
+# Sync-service isolated build scratch
+sync-service/.release-build-*/

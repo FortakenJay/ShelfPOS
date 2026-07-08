@@ -47,3 +47,12 @@ coverage/
 
 # Graphify (https://graphify.net/) — commit graphify-out/; keep local cost log out
 graphify-out/cost.json
+
+# Scratch copy at repo root (canonical POS app is shelfPos/)
+OFFLINE-ONLY-POS/
+
+# shelfPos release pipeline (npm run release:win)
+shelfPos/.cache/
+shelfPos/.release-dist-*/
+shelfPos/release/
+shelfPos/sync-service/.release-build-*/

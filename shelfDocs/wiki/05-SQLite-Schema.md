@@ -2,8 +2,8 @@
 
 Parent: [[Home]]
 
-**Source of truth:** `OFFLINE-ONLY-POS/src/main/db/migrations.ts`  
-**Current version:** `SCHEMA_VERSION = 20`
+**Source of truth:** `shelfPos/src/main/db/migrations.ts`  
+**Current version:** `SCHEMA_VERSION = 21`
 
 Migrations are **forward-only**, keyed by version number. `user_version` pragma updated after run. Pre-migration backup in `main/index.ts`.
 
@@ -76,6 +76,19 @@ Hidden recovery user **`SAKEN`** (v15+): local admin, never listed in UI, never 
 | v15–v18 | Hidden `SAKEN` recovery user; env-gated login |
 | v19 | `cart_tabs` — multi-cart tabs per register (not synced; discard audited to `audit_log`) |
 | v20 | `products.stock_provider` — optional supplier (nullable; synced to Supabase) |
+| v21 | Barcode tombstone on soft-delete — `@deleted:{id}:{barcode}` frees UNIQUE slot for reuse (local only; no Supabase schema change) |
+
+## Barcode reuse (v21)
+
+Soft-deleted products stay in SQLite for sales history but are hidden from POS/inventory (`deleted_at IS NULL`). Before v21, their real `barcode` still counted toward `UNIQUE`, causing “not found” vs “already exists” conflicts.
+
+| Event | Behavior |
+|-------|----------|
+| Soft delete | Barcode renamed to `@deleted:{id}:{original}` |
+| Create / update / assign barcode | `releaseBarcodeForReuse()` tombstones any deleted row still holding the code |
+| Migration v21 | One-time rewrite for existing soft-deleted rows |
+
+**Code:** `db/repos/products.ts` — `DELETED_BARCODE_PREFIX`, `releaseBarcodeForReuse`, `softDeleteProduct`.
 
 ## Related
 

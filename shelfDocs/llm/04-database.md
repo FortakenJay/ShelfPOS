@@ -3,7 +3,7 @@
 Parent: [LLM Index](README.md)
 
 **Canonical sources:**
-- SQLite: `OFFLINE-ONLY-POS/src/main/db/migrations.ts` (`SCHEMA_VERSION = 20`)
+- SQLite: `shelfPos/src/main/db/migrations.ts` (`SCHEMA_VERSION = 21`)
 - Supabase: `DASHBOARD/SUPA.sql`
 - Sync column maps: `OFFLINE-ONLY-POS/sync-service/src/db.ts` → `LIVE_ROW_SQL`
 
@@ -51,7 +51,7 @@ Parent: [LLM Index](README.md)
 | Column | Notes |
 |--------|-------|
 | `id` | INTEGER PK |
-| `barcode` | UNIQUE — POS scan lookup |
+| `barcode` | UNIQUE — POS scan lookup; soft-deleted rows tombstoned as `@deleted:{id}:{barcode}` (v21) so codes can be reused |
 | `name`, `price`, `cost_price` | Catalog |
 | `category` | Optional grouping |
 | `stock`, `stock_threshold` | Inventory |

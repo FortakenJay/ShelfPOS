@@ -24,7 +24,7 @@ LLMs need business context before code. These rules are **product decisions** �
 
 - One barcode = one product row. **No variants** (no size/color matrix).
 - `stock_provider` (optional) labels supplier (e.g. Walmart) — filter only, not inventory logic.
-- Soft delete: `deleted_at` set instead of hard delete when product has history.
+- Soft delete: `deleted_at` set instead of hard delete when product has history. Barcode is tombstoned (`@deleted:{id}:{barcode}`, v21) so the real code can be reused — deleted rows stay invisible in catalog/search/scan.
 - Bulk pricing: `bulk_qty` + `bulk_price` when quantity threshold met.
 
 ## Misc items (`PRECIO*`)

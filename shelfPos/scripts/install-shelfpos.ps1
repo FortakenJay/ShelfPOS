@@ -334,6 +334,11 @@ New-Item -ItemType Directory -Path $installScriptsDir -Force | Out-Null
 foreach ($scriptName in @('set-store-id.cjs', 'write-sync-env.cjs', 'install-windows-service.cjs', 'uninstall-windows-service.cjs')) {
   Copy-Item -Force (Resolve-SyncScript $scriptName) (Join-Path $installScriptsDir $scriptName)
 }
+$libSource = Join-Path $SyncSource 'scripts\lib'
+if (-not (Test-Path $libSource)) {
+  throw "Missing scripts\lib in sync bundle (dpapi-win.cjs). Re-run: npm run release:win"
+}
+Copy-Item -Recurse -Force $libSource (Join-Path $installScriptsDir 'lib')
 
 $NodeExe = Join-Path $InstallDir 'node.exe'
 

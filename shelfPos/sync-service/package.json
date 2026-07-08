@@ -1,6 +1,6 @@
 {
   "name": "@shelfpos/sync-service",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "Background OS service: SQLite sync_queue → Supabase mirror",
   "private": true,
   "type": "module",

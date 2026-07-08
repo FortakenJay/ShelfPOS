@@ -90,7 +90,7 @@ Each card: purpose, entry point, data, permissions, edge cases.
 | **IPC** | `products:*`, `products:exportCsv`, `products:importCsv*`, `products:importEfactura*`, `products:stockProviders`, `products:printLabel`, `products:printBarcode`, `products:printLabelBatch`, `products:printBarcodeBatch` |
 | **Tables** | `products`, `stock_adjustments` |
 | **Permissions** | `product_manager` / `admin` |
-| **Edge cases** | Soft delete; `stock_provider` filter; barcode UNIQUE; CSV export streams full catalog (keyset batches, not UI page size); barcodes exported as `="…"` for Excel; failed export leaves prior file intact (`*.tmp` + rename); thermal prints use **¢**; barcode sticker falls back to product id; batch copies 1–99 (`shared/printLimits.ts`); `searchProducts` merges exact id with name/barcode `LIKE` |
+| **Edge cases** | Soft delete + barcode tombstone (v21); `stock_provider` filter; barcode UNIQUE on active rows only after tombstone; CSV export streams full catalog (keyset batches, not UI page size); barcodes exported as `="…"` for Excel; failed export leaves prior file intact (`*.tmp` + rename); thermal prints use **¢**; barcode sticker falls back to product id; batch copies 1–99 (`shared/printLimits.ts`); `searchProducts` merges exact id with name/barcode `LIKE` |
 
 ---
 

@@ -19,7 +19,7 @@ All business tables include `store_id TEXT NOT NULL` and PK `(id, store_id)`.
 
 | Table | Notes |
 |-------|-------|
-| `products` | `deleted_at` soft delete; nullable `stock_provider` (v20, synced; index `idx_products_stock_provider`) |
+| `products` | `deleted_at` soft delete; nullable `stock_provider` (v20, synced; index `idx_products_stock_provider`). Barcode tombstone on delete (v21) is **local SQLite only** — no `SUPA.sql` change; mirror has no global `barcode` UNIQUE |
 | `sales` | No `payment_method` — use `sale_payments` |
 | `sale_items` | Snapshots: `product_name_snapshot`, `barcode_snapshot` |
 | `sale_payments` | `method`: cash \| card \| sinpe |

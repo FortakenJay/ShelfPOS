@@ -31,7 +31,7 @@ npm run dist:dir   # unpacked build (faster, for smoke testing)
 
 The installer never touches `%APPDATA%\shelfpos` — user data survives updates and uninstall.
 
-Release notes: [`RELEASE_NOTES.md`](RELEASE_NOTES.md) (current: **1.7.0**).
+Release notes: [`RELEASE_NOTES.md`](RELEASE_NOTES.md) (current: **1.7.1**).
 
 ## Data & backups
 

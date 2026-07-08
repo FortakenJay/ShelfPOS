@@ -83,6 +83,7 @@ Canonical SQL for catalog mutations used by IPC and import services:
 - `insertProductRow` — new product row + sync enqueue
 - `updateProductCatalogFields` — name, barcode, price, category, provider, etc.
 - `updateProductCostPrice` — cost-only update (supplier invoices)
+- `releaseBarcodeForReuse` / `softDeleteProduct` — tombstone barcodes on soft-delete (`@deleted:{id}:{barcode}`, v21) so UNIQUE does not block reuse of codes on deleted rows
 
 ## Cierre and cart tabs
 

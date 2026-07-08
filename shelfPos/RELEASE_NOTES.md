@@ -4,6 +4,26 @@
 
 ---
 
+## 1.7.1
+
+### Corrección — código de barras bloqueado en producto eliminado
+
+- **Síntoma:** búsqueda/escaneo → “producto no encontrado”; al crear o importar el mismo código → “Ya existe un producto con ese código de barras”.
+- **Causa:** productos con **soft-delete** (`deleted_at`) no aparecen en catálogo, pero SQLite mantiene `barcode UNIQUE` en todas las filas.
+- **Fix (SQLite v21):** al eliminar, el código se renombra a `@deleted:{id}:{barcode}` para liberar el código real; migración v21 aplica lo mismo a filas ya eliminadas.
+- **Helpers:** `releaseBarcodeForReuse`, `tombstoneBarcodeValue` en `db/repos/products.ts`; llamados en `insertProductRow`, `updateProductCatalogFields`, `softDeleteProduct`, `assignProductBarcode`.
+- **Supabase:** sin cambios — el mirror no tiene UNIQUE global en `barcode`; el dashboard ya filtra `deleted_at IS NULL`.
+
+### Despliegue
+
+| Componente | Versión | Acción |
+|------------|---------|--------|
+| POS Windows | 1.7.1 | `npm run release:win` → `ShelfPOS-1.7.1-win.zip` |
+| Sync service | 1.7.1 | Incluido en ZIP; sin cambios de protocolo |
+| Dashboard | 1.5.1 | Sin cambios en esta release |
+
+---
+
 ## 1.7.0
 
 ### Mejora — importar factura de proveedor (PDF)

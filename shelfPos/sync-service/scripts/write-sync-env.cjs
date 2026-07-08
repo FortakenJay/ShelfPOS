@@ -17,13 +17,17 @@ if (!supabaseUrl || !secretKey || !sqlitePath) {
 }
 
 const scriptDir = __dirname
-try {
-  execFileSync(process.execPath, [join(scriptDir, 'sync-vendor.mjs')], {
-    cwd: join(scriptDir, '..'),
-    stdio: 'inherit'
-  })
-} catch {
-  process.exit(1)
+const libDpapi = join(scriptDir, 'lib', 'dpapi-win.cjs')
+const libParseEnv = join(scriptDir, 'lib', 'parseEnv.cjs')
+if (!existsSync(libDpapi) || !existsSync(libParseEnv)) {
+  try {
+    execFileSync(process.execPath, [join(scriptDir, 'sync-vendor.mjs')], {
+      cwd: join(scriptDir, '..'),
+      stdio: 'inherit'
+    })
+  } catch {
+    process.exit(1)
+  }
 }
 
 const { encryptDpapi } = require('./lib/dpapi-win.cjs')

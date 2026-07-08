@@ -2,7 +2,19 @@
 
 Parent: [[Home]]
 
-Operational pitfalls for **installation**, **POS**, **sync service**, and **dashboard**. High-severity fixes are grouped by release — [1.6.4](#fixed-in-164), [1.5.0](#fixed-in-150).
+Operational pitfalls for **installation**, **POS**, **sync service**, and **dashboard**. High-severity fixes are grouped by release — [1.7.1](#fixed-in-171), [1.6.4](#fixed-in-164), [1.5.0](#fixed-in-150).
+
+---
+
+## Fixed in 1.7.1
+
+| Issue | Fix |
+|-------|-----|
+| Barcode “not found” but create/import says “already exists” | Soft-deleted products hid from catalog but still held `barcode UNIQUE`. v21 tombstones deleted barcodes as `@deleted:{id}:{barcode}`; `releaseBarcodeForReuse` on create/update/assign. **No Supabase change.** Restart POS once so migration v21 runs. |
+
+**Symptom detail:** Search, scan, and supplier PDF preview treat the SKU as new; save fails with `errors.barcodeExists`. Common when a product was imported then deleted, or deleted during testing — invisible in Productos but still in SQLite.
+
+**Still fails after 1.7.1?** Barcode is held by an **active** product (typo, filter, or different spacing). Search the full catalog for a substring of the code.
 
 ---
 
@@ -310,7 +322,7 @@ Held carts cleared at cierre are audited as `cart_tab_discarded_cierre` (not PIN
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
 | Barcode appears in search box, nothing added | Burst timing failed (`scanner_burst_ms` too low) or product missing from catalog | Raise threshold to **50–100 ms** (Admin → Settings); verify barcode in Products |
-| “Producto no encontrado” toast | `byBarcode` miss — code not in DB or inactive/deleted | Fix catalog row |
+| “Producto no encontrado” toast | `byBarcode` miss — code not in DB, inactive, or soft-deleted | Fix catalog row; if create then says “already exists”, upgrade to **1.7.1+** (v21 barcode tombstone) |
 | Stock toast, no line added | `addToCart` blocked | Restock or reduce qty |
 | Nothing happens, search empty | Modal open (pay, PIN, customer) or cash float blocked | Close modal / open float |
 | Works on second scan, not first | Pre-fix: stale React state on Enter; ensure app is current | Restart POS after update |

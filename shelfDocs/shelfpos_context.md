@@ -206,7 +206,7 @@ flowchart TD
 
 ## Database tables (SQLite — source of truth)
 
-**Schema version:** `SCHEMA_VERSION = 20` in `migrations.ts`.
+**Schema version:** `SCHEMA_VERSION = 21` in `migrations.ts`.
 
 ### Synced to Supabase (`SYNC_TABLES`)
 
@@ -223,7 +223,7 @@ flowchart TD
 | Column | Notes |
 |--------|-------|
 | `id` | INTEGER PK |
-| `barcode` | UNIQUE, used at POS scan |
+| `barcode` | UNIQUE, used at POS scan; tombstoned on soft-delete (v21) as `@deleted:{id}:{barcode}` |
 | `name`, `price`, `cost_price`, `category` | Catalog |
 | `stock`, `stock_threshold` | Inventory |
 | `stock_provider` | Optional supplier (v20, synced) |

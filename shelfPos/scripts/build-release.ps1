@@ -182,12 +182,22 @@ function Build-SyncServiceBundle([string]$SourceDir, [string]$WorkDir) {
   Copy-Item (Join-Path $SourceDir 'package-lock.json') $WorkDir
   Copy-Item (Join-Path $SourceDir 'tsconfig.json') $WorkDir
   Copy-Item -Recurse (Join-Path $SourceDir 'src') (Join-Path $WorkDir 'src')
+  Copy-Item -Recurse (Join-Path $SourceDir 'scripts') (Join-Path $WorkDir 'scripts')
+
+  # sync-vendor.mjs reads ../src/shared/node relative to workdir — mirror into .cache when workdir is under .cache
+  $SharedMirrorRoot = Join-Path $Root '.cache\src\shared'
+  $SharedSource = Join-Path $Root 'src\shared'
+  New-Item -ItemType Directory -Path (Join-Path $SharedMirrorRoot 'node') -Force | Out-Null
+  Copy-Item (Join-Path $SharedSource 'node\*') (Join-Path $SharedMirrorRoot 'node') -Force
+  Copy-Item (Join-Path $SharedSource 'pendingStoreId.ts') $SharedMirrorRoot -Force
 
   Push-Location $WorkDir
   try {
-    Invoke-Npm @('ci', '--omit=dev')
+    # sync-vendor.mjs needs devDependencies (esbuild via tsx)
+    Invoke-Npm @('ci')
     Invoke-Npm @('run', 'build')
     Invoke-Npm @('rebuild', 'better-sqlite3')
+    Invoke-Npm @('prune', '--omit=dev')
     $syncModules = Join-Path $WorkDir 'node_modules'
     foreach ($pkg in @('node-windows', 'better-sqlite3')) {
       if (-not (Test-Path (Join-Path $syncModules $pkg))) {
@@ -269,6 +279,12 @@ Copy-Item (Join-Path $SyncSourceDir 'scripts\set-store-id.cjs') (Join-Path $Sync
 Copy-Item (Join-Path $SyncSourceDir 'scripts\write-sync-env.cjs') (Join-Path $SyncStage 'scripts\write-sync-env.cjs')
 Copy-Item (Join-Path $SyncSourceDir 'scripts\install-windows-service.cjs') (Join-Path $SyncStage 'scripts\install-windows-service.cjs')
 Copy-Item (Join-Path $SyncSourceDir 'scripts\uninstall-windows-service.cjs') (Join-Path $SyncStage 'scripts\uninstall-windows-service.cjs')
+$BuiltLib = Join-Path $SyncBuildDir 'scripts\lib'
+if (Test-Path $BuiltLib) {
+  Copy-Item -Recurse $BuiltLib (Join-Path $SyncStage 'scripts\lib')
+} else {
+  throw 'sync-service build missing scripts/lib (dpapi-win.cjs). Re-run npm run release:win.'
+}
 Copy-Item $NodeExe (Join-Path $SyncStage 'node.exe')
 Remove-NodeModulesJunk (Join-Path $SyncStage 'node_modules')
 foreach ($pkg in @('node-windows', 'better-sqlite3')) {
@@ -337,6 +353,8 @@ $requiredBundleFiles = @(
   (Join-Path $SyncStage 'node.exe'),
   (Join-Path $SyncStage 'node_modules\node-windows'),
   (Join-Path $SyncStage 'scripts\write-sync-env.cjs'),
+  (Join-Path $SyncStage 'scripts\lib\dpapi-win.cjs'),
+  (Join-Path $SyncStage 'scripts\lib\parseEnv.cjs'),
   (Join-Path $SyncStage 'scripts\install-windows-service.cjs'),
   (Join-Path $SyncStage 'scripts\uninstall-windows-service.cjs')
 )

@@ -3,6 +3,9 @@ dist/
 src/vendor/
 scripts/lib/
 
+# Isolated release build scratch (build-release.ps1)
+.release-build-*/
+
 .env
 sync.env
 !.env.example
