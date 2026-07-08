@@ -1,5 +1,0 @@
-
-> dashboard@1.5.1 lint
-> eslint .
-
-LINT EXIT: 0
