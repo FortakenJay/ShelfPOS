@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, ApiError } from '@/lib/api'
+import { api } from '@/lib/api'
+import { toastApiError } from '@/lib/errors'
 import { useToasts } from '@/lib/toast'
 import { useDebouncedValue } from '@/lib/useScanner'
 import type { BatchPrintItem, Product, ProductImportError, ProductImportPreview, ProductImportStockMode, StockStatus, SupplierInvoiceConfirmInput, SupplierInvoicePreview } from '@shared/types'
@@ -96,7 +97,7 @@ export function useProductManager(options?: {
       toasts.stockAlerts(result.stockAlerts)
       void queryClient.invalidateQueries({ queryKey: ['products'] })
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+    onError: (err) => toastApiError(toasts, err)
   })
 
   const deleteMutation = useMutation({
@@ -108,7 +109,7 @@ export function useProductManager(options?: {
     },
     onError: (err) => {
       setUi((u) => ({ ...u, deleteProduct: null }))
-      toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+      toastApiError(toasts, err)
     }
   })
 
@@ -118,7 +119,7 @@ export function useProductManager(options?: {
       if (!result.canceled && result.path) toasts.success('export.csvDone', { path: result.path })
       void queryClient.invalidateQueries({ queryKey: ['products'] })
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+    onError: (err) => toastApiError(toasts, err)
   })
 
   const exportProducts = useMutation({
@@ -127,7 +128,7 @@ export function useProductManager(options?: {
       if (!result.canceled && result.path) toasts.success('export.csvDone', { path: result.path })
       void queryClient.invalidateQueries({ queryKey: ['products'] })
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+    onError: (err) => toastApiError(toasts, err)
   })
 
   const importPreviewMutation = useMutation({
@@ -137,7 +138,7 @@ export function useProductManager(options?: {
       setUi((u) => ({ ...u, importPreview: result, importFormat: 'csv' }))
       void queryClient.invalidateQueries({ queryKey: ['products'] })
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+    onError: (err) => toastApiError(toasts, err)
   })
 
   const importEfacturaPreviewMutation = useMutation({
@@ -147,7 +148,7 @@ export function useProductManager(options?: {
       setUi((u) => ({ ...u, importPreview: result, importFormat: 'efactura' }))
       void queryClient.invalidateQueries({ queryKey: ['products'] })
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+    onError: (err) => toastApiError(toasts, err)
   })
 
   const importSupplierInvoicePreviewMutation = useMutation({
@@ -157,7 +158,7 @@ export function useProductManager(options?: {
       setUi((u) => ({ ...u, supplierInvoicePreview: result }))
       void queryClient.invalidateQueries({ queryKey: ['products'] })
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+    onError: (err) => toastApiError(toasts, err)
   })
 
   const importSupplierInvoiceConfirmMutation = useMutation({
@@ -186,7 +187,7 @@ export function useProductManager(options?: {
         toasts.success('products.supplierInvoice.doneCreate', { count: created })
       }
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+    onError: (err) => toastApiError(toasts, err)
   })
 
   const importConfirmMutation = useMutation({
@@ -225,7 +226,7 @@ export function useProductManager(options?: {
         toasts.success('products.csv.importUpdated', { count: updated })
       }
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+    onError: (err) => toastApiError(toasts, err)
   })
 
   const printLabel = useMutation({
@@ -236,7 +237,7 @@ export function useProductManager(options?: {
       else toasts.error('pos.printFailed')
       void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+    onError: (err) => toastApiError(toasts, err)
   })
 
   const printBarcode = useMutation({
@@ -247,7 +248,7 @@ export function useProductManager(options?: {
       else toasts.error('pos.printFailed')
       void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+    onError: (err) => toastApiError(toasts, err)
   })
 
   const printLabelBatch = useMutation({
@@ -262,7 +263,7 @@ export function useProductManager(options?: {
       }
       void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+    onError: (err) => toastApiError(toasts, err)
   })
 
   const printBarcodeBatch = useMutation({
@@ -277,7 +278,7 @@ export function useProductManager(options?: {
       }
       void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+    onError: (err) => toastApiError(toasts, err)
   })
 
   const defaultThreshold = settingsData?.stockThresholdDefault ?? 5

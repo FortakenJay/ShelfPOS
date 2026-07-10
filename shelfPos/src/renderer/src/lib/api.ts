@@ -60,6 +60,7 @@ import type {
   SettingsUpdateInput,
   SyncSetupSaveInput,
   SyncSetupStatus,
+  SyncQueueHealth,
   StockAlert,
   UserCreateInput,
   UserUpdateInput
@@ -105,6 +106,8 @@ export const api = {
     status: () => call<SyncSetupStatus>('syncSetup:status'),
     save: (input: SyncSetupSaveInput) => call<SyncSetupStatus>('syncSetup:save', input),
     restartService: () => call<null>('syncSetup:restartService'),
+    requeueFailed: () =>
+      call<{ requeued: number; queueHealth: SyncQueueHealth }>('syncSetup:requeueFailed'),
   },
   auth: {
     login: (username: string, password: string) =>

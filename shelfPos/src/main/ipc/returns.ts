@@ -45,20 +45,27 @@ export function registerReturnHandlers(): void {
           `SELECT id, product_id, quantity, line_total
            FROM sale_items WHERE id = ? AND sale_id = ?`
         )
-        const returnedStmt = db.prepare(
-          `SELECT COALESCE(SUM(quantity), 0) AS qty
-           FROM return_items
-           WHERE sale_id = ? AND sale_item_id = ?`
-        )
-        const legacyReturnedStmt = db.prepare(
-          `SELECT COALESCE(SUM(quantity), 0) AS qty
-           FROM return_items
-           WHERE sale_id = ? AND sale_item_id IS NULL AND product_id = ?`
-        )
         const insertReturn = db.prepare(
           `INSERT INTO return_items
              (sale_id, product_id, sale_item_id, quantity, line_total, restocked, created_at, processed_by)
-           VALUES (?,?,?,?,?,?,?,?)`
+           SELECT ?, ?, ?, ?, ?, ?, ?, ?
+           WHERE ? <= (
+             SELECT si.quantity - COALESCE((
+               SELECT SUM(ri.quantity)
+               FROM return_items ri
+               WHERE ri.sale_id = si.sale_id
+                 AND (
+                   ri.sale_item_id = si.id
+                   OR (
+                     ri.sale_item_id IS NULL
+                     AND si.product_id IS NOT NULL
+                     AND ri.product_id = si.product_id
+                   )
+                 )
+             ), 0)
+             FROM sale_items si
+             WHERE si.id = ? AND si.sale_id = ?
+           )`
         )
         const restock = db.prepare(
           'UPDATE products SET stock = stock + ?, updated_at = ? WHERE id = ?'
@@ -67,16 +74,7 @@ export function registerReturnHandlers(): void {
         for (const item of input.items) {
           const line = saleLineStmt.get(item.saleItemId, input.saleId) as SaleLineRow | undefined
           if (!line) throw new AppError('errors.invalidInput')
-
-          const returnedByItem = (
-            returnedStmt.get(input.saleId, item.saleItemId) as { qty: number }
-          ).qty
-          const returnedLegacy =
-            line.product_id != null
-              ? (legacyReturnedStmt.get(input.saleId, line.product_id) as { qty: number }).qty
-              : 0
-          const returned = Math.max(returnedByItem, returnedLegacy)
-          if (item.quantity > line.quantity - returned) throw new AppError('errors.returnQtyExceeds')
+          if (line.product_id == null) throw new AppError('errors.miscNotReturnable')
 
           const unitLineTotal = line.quantity > 0 ? line.line_total / line.quantity : 0
           const returnLineTotal = round2(unitLineTotal * item.quantity)
@@ -90,8 +88,13 @@ export function registerReturnHandlers(): void {
             returnLineTotal,
             shouldRestock ? 1 : 0,
             now,
-            user.id
+            user.id,
+            item.quantity,
+            item.saleItemId,
+            input.saleId
           )
+          if (returnResult.changes === 0) throw new AppError('errors.returnQtyExceeds')
+
           enqueueSync('return_items', Number(returnResult.lastInsertRowid), 'insert', db)
 
           if (shouldRestock && line.product_id != null) {

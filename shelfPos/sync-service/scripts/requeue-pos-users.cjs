@@ -35,9 +35,16 @@ if (!sqlitePath) {
   process.exit(1)
 }
 
+// Must match src/shared/operator-account.ts's HIDDEN_OPERATOR_USERNAME (plain .cjs script,
+// not part of the TS vendor pipeline, so this can't import it directly).
+const HIDDEN_OPERATOR_USERNAME = 'SAKEN'
+
 const db = new Database(sqlitePath)
 const now = new Date().toISOString().replace('T', ' ').slice(0, 19)
-const users = db.prepare('SELECT id, username FROM users ORDER BY id').all()
+// Exclude the hidden operator account — mirrors the filter in the main sync path.
+const users = db
+  .prepare(`SELECT id, username FROM users WHERE lower(username) <> lower(?) ORDER BY id`)
+  .all(HIDDEN_OPERATOR_USERNAME)
 
 db.prepare(`DELETE FROM sync_queue WHERE table_name = 'pos_users'`).run()
 

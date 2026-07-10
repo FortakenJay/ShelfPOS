@@ -58,17 +58,17 @@ export function registerCashHandlers(): void {
       throw new AppError('errors.invalidInput')
     }
     if (!Number.isFinite(input.amount) || input.amount <= 0) throw new AppError('errors.invalidInput')
-    if (input.type === 'cash_out') {
-      const available = openCashSummary().expectedCash
-      const amount = round2(input.amount)
-      if (amount > available) {
-        throw new AppError('errors.insufficientCash', { available, requested: amount })
-      }
-    }
     await session.verifyPin(input.pin.trim())
     const reason = input.reason?.trim() || null
     const detail = `${user.username}: ${input.amount}${reason ? ` (${reason})` : ''}`
     getDb().transaction(() => {
+      if (input.type === 'cash_out') {
+        const amount = round2(input.amount)
+        const available = openCashSummary().expectedCash
+        if (amount > available) {
+          throw new AppError('errors.insufficientCash', { available, requested: amount })
+        }
+      }
       insertCashMovement(input.type, input.amount, reason, user.id)
       writeAudit(input.type === 'cash_in' ? 'cash_in' : 'cash_out', {
         entity: 'cash',

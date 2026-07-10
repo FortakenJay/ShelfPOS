@@ -252,6 +252,7 @@ export const IPC_SCHEMAS = {
     pairingCode: z.string().trim().length(8).regex(/^[A-Z0-9]{8}$/i),
   }),
   'syncSetup:restartService': voidInput,
+  'syncSetup:requeueFailed': voidInput,
   'auth:login': z.strictObject({ username: usernameSchema, password: passwordSchema }),
   'auth:logout': voidInput,
   'auth:session': voidInput,

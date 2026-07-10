@@ -1,14 +1,16 @@
 import { handle } from './helpers'
 import { AppError } from '../errors'
+import bcrypt from 'bcryptjs'
+import { getDb } from '../db'
 import { session } from '../services/session'
 import { writeAudit } from '../db/repos/audit'
 import {
   countActiveAdmins,
-  deactivateAppUser,
+  deactivateAppUserRow,
   getAppUserById,
-  insertAppUser,
+  insertAppUserRow,
   listAppUsers,
-  patchAppUser,
+  patchAppUserRow,
   usernameTaken,
 } from '../db/repos/users'
 import { isHiddenOperatorUsername } from '../../shared/operator-account'
@@ -30,19 +32,23 @@ export function registerUserHandlers(): void {
 
   handle<UserCreateInput, AppUserRow>('users:create', ADMIN, async (input) => {
     if (!input.username?.trim() || !input.password) throw new AppError('errors.invalidInput')
-    if (isHiddenOperatorUsername(input.username)) throw new AppError('errors.duplicateUsername')
+    if (isHiddenOperatorUsername(input.username)) throw new AppError('errors.reservedUsername')
     if (usernameTaken(input.username)) throw new AppError('errors.duplicateUsername')
-    const user = await insertAppUser({
-      username: input.username,
-      password: input.password,
-      role: input.role
-    })
-    writeAudit('user_created', {
-      entity: 'user',
-      entityId: user.id,
-      detail: `${user.username} (${user.role})`
-    })
-    enqueueSync('pos_users', user.id, 'insert')
+    const hash = await bcrypt.hash(input.password, 10)
+    const db = getDb()
+    const user = db.transaction(() => {
+      const created = insertAppUserRow(db, {
+        username: input.username,
+        role: input.role,
+      }, hash)
+      writeAudit('user_created', {
+        entity: 'user',
+        entityId: created.id,
+        detail: `${created.username} (${created.role})`
+      })
+      enqueueSync('pos_users', created.id, 'insert', db)
+      return created
+    })()
     return user
   })
 
@@ -52,7 +58,7 @@ export function registerUserHandlers(): void {
     if (isHiddenOperatorUsername(existing.username)) throw new AppError('errors.notFound')
 
     const nextUsername = input.username?.trim() ?? existing.username
-    if (isHiddenOperatorUsername(nextUsername)) throw new AppError('errors.duplicateUsername')
+    if (isHiddenOperatorUsername(nextUsername)) throw new AppError('errors.reservedUsername')
     const nextRole = input.role ?? existing.role
     const nextActive = input.isActive ?? existing.isActive
 
@@ -62,19 +68,24 @@ export function registerUserHandlers(): void {
 
     assertNotLastAdmin(existing, nextActive, nextRole)
 
-    const user = await patchAppUser({
-      id: input.id,
-      username: input.username,
-      password: input.password || undefined,
-      role: input.role,
-      isActive: input.isActive
-    })
-    writeAudit('user_updated', {
-      entity: 'user',
-      entityId: user.id,
-      detail: user.username
-    })
-    enqueueSync('pos_users', user.id, 'update')
+    const passwordHash = input.password ? await bcrypt.hash(input.password, 10) : undefined
+    const db = getDb()
+    const user = db.transaction(() => {
+      const updated = patchAppUserRow(db, {
+        id: input.id,
+        username: input.username,
+        passwordHash,
+        role: input.role,
+        isActive: input.isActive,
+      })
+      writeAudit('user_updated', {
+        entity: 'user',
+        entityId: updated.id,
+        detail: updated.username
+      })
+      enqueueSync('pos_users', updated.id, 'update', db)
+      return updated
+    })()
     return user
   })
 
@@ -85,13 +96,16 @@ export function registerUserHandlers(): void {
     const me = session.require()
     if (existing.id === me.id) throw new AppError('errors.cannotDeleteSelf')
     assertNotLastAdmin(existing, false, existing.role)
-    deactivateAppUser(existing.id)
-    writeAudit('user_deactivated', {
-      entity: 'user',
-      entityId: existing.id,
-      detail: existing.username
-    })
-    enqueueSync('pos_users', existing.id, 'update')
+    const db = getDb()
+    db.transaction(() => {
+      deactivateAppUserRow(db, existing.id)
+      writeAudit('user_deactivated', {
+        entity: 'user',
+        entityId: existing.id,
+        detail: existing.username
+      })
+      enqueueSync('pos_users', existing.id, 'update', db)
+    })()
     return null
   })
 }

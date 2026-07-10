@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3'
 import { loadConfig } from './config.js'
 import type { SyncConfig } from './config.js'
-import { listPendingQueue, openDatabase, enqueueAllPosUsersBackfill, readPosLastSeenAt, readStockThresholdDefault, readStoreDisplayName, readStoreId } from './db.js'
+import { listPendingQueue, openDatabase, enqueueAllPosUsersBackfill, readIvaRateStandard, readPosLastSeenAt, readStockThresholdDefault, readStoreDisplayName, readStoreId } from './db.js'
 import { logSyncServiceError } from './errorLog.js'
 import {
   BATCH_SIZE,
@@ -29,6 +29,7 @@ async function runSyncCycle(
       readStoreDisplayName(db),
       readPosLastSeenAt(db),
       readStockThresholdDefault(db),
+      readIvaRateStandard(db),
     )
   } catch (err) {
     logSyncServiceError('store registry sync failed', err)
@@ -38,10 +39,14 @@ async function runSyncCycle(
   if (pending.length === 0) return POLL_INTERVAL_MS
 
   const ctx = { db, storeId, config }
+  let anySynced = false
   for (const entry of pending) {
-    await processEntry(ctx, entry)
+    if (await processEntry(ctx, entry)) anySynced = true
   }
-  return 0
+  // If nothing in the batch succeeded (e.g. every row is FK-blocked on a
+  // dead-lettered parent), an immediate re-poll would hot-loop against
+  // Supabase. Back off to the normal poll interval instead.
+  return anySynced ? 0 : POLL_INTERVAL_MS
 }
 
 async function main(): Promise<void> {
@@ -74,6 +79,7 @@ async function main(): Promise<void> {
         readStoreDisplayName(db),
         readPosLastSeenAt(db),
         readStockThresholdDefault(db),
+        readIvaRateStandard(db),
       )
     } catch (err) {
       logSyncServiceError('shutdown registry sync failed', err)

@@ -15,7 +15,7 @@ import {
   salesCount,
   topProducts
 } from '../db/repos/reports'
-import { openCashSummary } from '../db/repos/cash'
+import { openCashSummary, cashSummaryForCierre } from '../db/repos/cash'
 import { resetCartTabsForNewShift, listHeldCartTabsForCierre } from '../db/repos/cartTabs'
 import { insertPrintJob } from '../db/repos/printJobs'
 import { writeAudit } from '../db/repos/audit'
@@ -160,19 +160,12 @@ export function registerCierreHandlers(backup: BackupService): void {
     const { cierreId, printJobId } = db.transaction(() => {
       const closedAt = localNow()
       const openedAt = periodOpenedAt()
-      const totals = paymentTotals({ cierrePending: true })
       const txCount = salesCount({ cierrePending: true })
       if (txCount === 0) throw new AppError('errors.noPendingSales')
-      const returnsCount = returnsCountSince(openedAt)
-      const top = topProducts({ fromTs: openedAt, toTs: closedAt })
-      const cash = openCashSummary()
-      const discounts = cierreDiscounts({ cierrePending: true })
-      const priceOverrides = cierrePriceOverrides({ cierrePending: true })
+
+      const shiftLabel = input.shiftLabel?.trim() || formatDate(closedAt, lang, true)
       resetCartTabsForNewShift(user.username, closedAt)
       const discardedTabs = cierreDiscardedTabs({ fromTs: openedAt, toTs: closedAt })
-
-      const difference = round2(countedCash - cash.expectedCash)
-      const shiftLabel = input.shiftLabel?.trim() || formatDate(closedAt, lang, true)
 
       const id = Number(
         db
@@ -181,7 +174,7 @@ export function registerCierreHandlers(backup: BackupService): void {
                (opened_at, closed_at, closed_by_user_id, closed_by_username, shift_label, total_cash, total_card,
                 total_sinpe, total_sales, opening_float, cash_in, cash_out, expected_cash,
                 counted_cash, cash_difference, notes)
-             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+             VALUES (?,?,?,?,?,0,0,0,0,0,0,0,0,?,?,?)`
           )
           .run(
             openedAt,
@@ -189,23 +182,42 @@ export function registerCierreHandlers(backup: BackupService): void {
             user.id,
             user.username,
             shiftLabel,
-            totals.cash,
-            totals.card,
-            totals.sinpe,
-            totals.total,
-            cash.openingFloat,
-            cash.cashIn,
-            cash.cashOut,
-            cash.expectedCash,
             countedCash,
-            difference,
+            0,
             notes
           ).lastInsertRowid
       )
 
-      // Lock this period's sales and cash movements to the new cierre.
       db.prepare('UPDATE sales SET cierre_id = ? WHERE cierre_id IS NULL').run(id)
       db.prepare('UPDATE cash_movements SET cierre_id = ? WHERE cierre_id IS NULL').run(id)
+
+      const totals = paymentTotals({ cierreId: id })
+      const cash = cashSummaryForCierre(id)
+      const difference = round2(countedCash - cash.expectedCash)
+      const returnsCount = returnsCountBetween(openedAt, closedAt)
+      const top = topProducts({ cierreId: id })
+      const discounts = cierreDiscounts({ cierreId: id })
+      const priceOverrides = cierrePriceOverrides({ cierreId: id })
+
+      db.prepare(
+        `UPDATE cierres
+         SET total_cash = ?, total_card = ?, total_sinpe = ?, total_sales = ?,
+             opening_float = ?, cash_in = ?, cash_out = ?, expected_cash = ?,
+             cash_difference = ?
+         WHERE id = ?`
+      ).run(
+        totals.cash,
+        totals.card,
+        totals.sinpe,
+        totals.total,
+        cash.openingFloat,
+        cash.cashIn,
+        cash.cashOut,
+        cash.expectedCash,
+        difference,
+        id
+      )
+
       enqueueSync('cierres', id, 'insert', db)
       const linkedSales = db
         .prepare('SELECT id FROM sales WHERE cierre_id = ?')
@@ -267,9 +279,13 @@ export function registerCierreHandlers(backup: BackupService): void {
       await backup.onCierre()
     } catch (err) {
       console.error('[cierre] backup failed', err)
+      writeAudit('backup_failed', {
+        entity: 'backup',
+        detail: err instanceof Error ? err.message : 'unknown',
+      })
     }
 
-    const printStatus = schedulePrintJob(printJobId)
+    const printStatus = await schedulePrintJob(printJobId)
     return { cierreId, printStatus }
   })
 

@@ -1,5 +1,10 @@
-import type { Product } from '@shared/types'
-import { roundColones } from '@shared/money'
+import type { Product } from './types'
+import { roundColones } from './money'
+
+/**
+ * Canonical pricing math — shared by renderer (cart preview), main (sale
+ * authority) and cart-tab snapshots so totals can never diverge (audit P2-12).
+ */
 
 /** Catalog unit price: bulk tier when quantity qualifies. */
 export function catalogUnitPrice(product: Product, quantity: number): number {
@@ -16,11 +21,6 @@ export function lineUnitPrice(
   priceOverride?: number
 ): number {
   if (priceOverride != null) return priceOverride
-  return catalogUnitPrice(product, quantity)
-}
-
-/** @deprecated Use `catalogUnitPrice` or `lineUnitPrice`. */
-export function effectiveUnitPrice(product: Product, quantity: number): number {
   return catalogUnitPrice(product, quantity)
 }
 

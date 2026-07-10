@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { catalogUnitPrice } from '@/lib/pricing'
+import { catalogUnitPrice } from '@shared/pricing'
 import { cartLineDisplayName, cartLineKey } from '@/lib/cartLine'
 import { PaymentModal } from './PaymentModal'
 import { ReturnModal } from './ReturnModal'

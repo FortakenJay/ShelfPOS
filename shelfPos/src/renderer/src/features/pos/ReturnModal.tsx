@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
+import { toastApiError } from '@/lib/errors'
 import { formatDate, formatMoney, todayStr } from '@/lib/format'
 import { useToasts } from '@/lib/toast'
 import { Button, Field, Input, Modal, Toggle } from '@/components/ui'
@@ -52,7 +53,7 @@ export function ReturnModal({ onClose }: { onClose: () => void }): React.JSX.Ele
         searchState: { results: found, searching: false, sale: null }
       }))
     } catch (err) {
-      toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+      toastApiError(toasts, err)
       setState((s) => ({
         ...s,
         searchState: { results: [], searching: false, sale: null }

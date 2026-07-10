@@ -1,6 +1,19 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import { shouldIgnoreShortcutTarget } from './shortcuts'
 
+function isWedgeScan(
+  valueLength: number,
+  burstCount: number,
+  thresholdMs: number,
+  firstKeyAt: number,
+): boolean {
+  if (valueLength < 4) return false
+  if (burstCount >= valueLength - 1) return true
+  const elapsed = performance.now() - firstKeyAt
+  const maxElapsed = valueLength * thresholdMs * 2.5
+  return burstCount >= 2 && elapsed > 0 && elapsed <= maxElapsed
+}
+
 /**
  * Distinguishes USB HID barcode scanner input (rapid keystroke burst ending in
  * Enter) from manual typing. Attach `onKeyDown` to the input and call
@@ -12,19 +25,26 @@ export function useScannerDetector(thresholdMs: number): {
 } {
   const lastKeyAt = useRef(0)
   const burstCount = useRef(0)
+  const firstKeyAt = useRef(0)
 
   return {
     onKeyDown: (e: React.KeyboardEvent): void => {
       if (e.key.length !== 1) return
       const now = performance.now()
-      burstCount.current = now - lastKeyAt.current <= thresholdMs ? burstCount.current + 1 : 1
+      if (now - lastKeyAt.current > thresholdMs) {
+        burstCount.current = 1
+        firstKeyAt.current = now
+      } else {
+        burstCount.current += 1
+      }
       lastKeyAt.current = now
     },
     consumeIsScan: (valueLength: number): boolean => {
-      const isScan = valueLength >= 4 && burstCount.current >= valueLength - 1
+      const isScan = isWedgeScan(valueLength, burstCount.current, thresholdMs, firstKeyAt.current)
       burstCount.current = 0
+      firstKeyAt.current = 0
       return isScan
-    }
+    },
   }
 }
 
@@ -37,32 +57,42 @@ export function useGlobalBarcodeScanner({
   enabled,
   thresholdMs,
   searchInputRef,
-  onScan
+  onScan,
+  onIncompleteScan,
 }: {
   enabled: boolean
   thresholdMs: number
   searchInputRef: RefObject<HTMLInputElement | null>
   onScan: (barcode: string) => void | Promise<void>
+  onIncompleteScan?: () => void
 }): void {
   const bufferRef = useRef('')
   const lastKeyAt = useRef(0)
+  const firstKeyAt = useRef(0)
   const burstCount = useRef(0)
   const onScanRef = useRef(onScan)
+  const onIncompleteScanRef = useRef(onIncompleteScan)
 
   useEffect(() => {
     onScanRef.current = onScan
   })
 
   useEffect(() => {
+    onIncompleteScanRef.current = onIncompleteScan
+  })
+
+  useEffect(() => {
     if (!enabled) {
       bufferRef.current = ''
       burstCount.current = 0
+      firstKeyAt.current = 0
       return
     }
 
     const resetBuffer = (): void => {
       bufferRef.current = ''
       burstCount.current = 0
+      firstKeyAt.current = 0
     }
 
     const onKeyDown = (event: KeyboardEvent): void => {
@@ -71,13 +101,14 @@ export function useGlobalBarcodeScanner({
 
       if (event.key === 'Enter') {
         const value = bufferRef.current.trim()
-        const isScan = value.length >= 4 && burstCount.current >= value.length - 1
+        const isScan = isWedgeScan(value.length, burstCount.current, thresholdMs, firstKeyAt.current)
         const hadBufferedInput = value.length > 0
         resetBuffer()
         if (!value || !isScan) {
           if (hadBufferedInput) {
             event.preventDefault()
             event.stopPropagation()
+            onIncompleteScanRef.current?.()
           }
           return
         }
@@ -96,6 +127,9 @@ export function useGlobalBarcodeScanner({
 
       if (shouldSkipGlobalScanTarget(event.target, bufferRef.current.length, event.key)) return
 
+      if (bufferRef.current.length === 0) {
+        firstKeyAt.current = now
+      }
       lastKeyAt.current = now
       burstCount.current += 1
       bufferRef.current += event.key
@@ -114,7 +148,7 @@ export function useGlobalBarcodeScanner({
 function shouldSkipGlobalScanTarget(
   target: EventTarget | null,
   bufferLen: number,
-  key: string
+  key: string,
 ): boolean {
   if (bufferLen > 0) return false
   if (shouldIgnoreShortcutTarget(target)) return true

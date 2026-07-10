@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { api, ApiError } from '@/lib/api'
+import { api } from '@/lib/api'
+import { toastApiError } from '@/lib/errors'
 import { useToasts } from '@/lib/toast'
 import { Button, Field, Input, Select } from '@/components/ui'
 import type { SettingsDraft } from './settingsDraft'
@@ -236,7 +237,7 @@ export function SettingsShortcutsSection({
     void api.printer
       .test()
       .then(() => toasts.success('settings.printerTestSent'))
-      .catch((err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown'))
+      .catch((err) => toastApiError(toasts, err))
       .finally(() => {
         setPrinterTestPending(false)
         void refreshPrinterStatus()

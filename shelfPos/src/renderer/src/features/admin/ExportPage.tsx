@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { api, ApiError } from '@/lib/api'
+import { api } from '@/lib/api'
+import { toastApiError } from '@/lib/errors'
 import { useToasts } from '@/lib/toast'
 import { RequireRole } from '@/features/shell/Shell'
 import { Button, FullScreenSpinner } from '@/components/ui'
@@ -45,7 +46,7 @@ function ExportBackup(): React.JSX.Element {
         void queryClient.invalidateQueries({ queryKey: ['backupInfo'] })
       }
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+    onError: (err) => toastApiError(toasts, err)
   })
 
   const csvMutation = useMutation({
@@ -54,7 +55,7 @@ function ExportBackup(): React.JSX.Element {
       if (!result.canceled && result.path) toasts.success('export.csvDone', { path: result.path })
       void queryClient.invalidateQueries({ queryKey: ['backupInfo'] })
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+    onError: (err) => toastApiError(toasts, err)
   })
 
   if (isLoading) return <FullScreenSpinner />

@@ -172,7 +172,7 @@ export function registerReportHandlers(): void {
       const lines = buildReportPrintLines(report, range, lang, storeName)
 
       const jobId = insertPrintJob('report', null, { lang, lines })
-      return { printStatus: schedulePrintJob(jobId) }
+      return { printStatus: await schedulePrintJob(jobId) }
     }
   )
 

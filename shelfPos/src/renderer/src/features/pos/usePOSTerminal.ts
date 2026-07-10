@@ -13,7 +13,7 @@ import {
   cartLineKey,
   cartLineTotal
 } from '@/lib/cartLine'
-import { stockAllows } from '@/lib/errors'
+import { stockAllows, toastApiError } from '@/lib/errors'
 import { eventToShortcutKey, shouldIgnoreShortcutTarget } from '@/lib/shortcuts'
 import { useToasts } from '@/lib/toast'
 import { parseMiscPriceInput } from '@shared/miscItem'
@@ -196,6 +196,16 @@ export function usePOSTerminal() {
   }
 
   useEffect(() => {
+    if (!tabsReady || activeTabId == null) return
+    const handle = setTimeout(() => {
+      void saveCurrentTab().catch((err) => {
+        console.error('[cart] autosave failed', err)
+      })
+    }, 500)
+    return () => clearTimeout(handle)
+  }, [cart, cartDiscount, customer, tabsReady, activeTabId])
+
+  useEffect(() => {
     if (!tabsLoaded || tabsInitRef.current) return
     tabsInitRef.current = true
     void (async () => {
@@ -211,7 +221,7 @@ export function usePOSTerminal() {
         setTabsReady(true)
       } catch (err) {
         tabsInitRef.current = false
-        toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+        toastApiError(toasts, err)
       }
     })()
   }, [tabsLoaded, tabs, queryClient, toasts])
@@ -235,7 +245,7 @@ export function usePOSTerminal() {
       setTabSwitching(false)
     } catch (err) {
       setTabSwitching(false)
-      toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+      toastApiError(toasts, err)
     }
   }
 
@@ -253,7 +263,7 @@ export function usePOSTerminal() {
       setTabSwitching(false)
     } catch (err) {
       setTabSwitching(false)
-      toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+      toastApiError(toasts, err)
     }
   }
 
@@ -273,7 +283,7 @@ export function usePOSTerminal() {
       try {
         await saveCurrentTab()
       } catch (err) {
-        toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+        toastApiError(toasts, err)
         return
       }
     }
@@ -288,7 +298,7 @@ export function usePOSTerminal() {
           activateTabAfterClose(remaining, tabIndex)
         }
       } catch (err) {
-        toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+        toastApiError(toasts, err)
       }
       return
     }
@@ -321,7 +331,7 @@ export function usePOSTerminal() {
           await api.cartTabs.reorder({ ids: afterTabs.map((t) => t.id) })
           afterTabs = await api.cartTabs.list()
         } catch (err) {
-          toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+          toastApiError(toasts, err)
         }
       }
       queryClient.setQueryData(['cartTabs'], afterTabs)
@@ -361,15 +371,16 @@ export function usePOSTerminal() {
   }
 
   const addToCart = (product: Product): boolean => {
-    const existing = cart.find((l) => l.kind === 'product' && l.product.id === product.id)
-    const nextQty = (existing?.quantity ?? 0) + 1
-    const check = stockAllows(product, nextQty)
-    if (!check.ok) {
-      toasts.error(check.key, check.vars)
-      return false
-    }
+    let added = false
     setCart((prev) => {
       const line = prev.find((l) => l.kind === 'product' && l.product.id === product.id)
+      const nextQty = (line?.quantity ?? 0) + 1
+      const check = stockAllows(product, nextQty)
+      if (!check.ok) {
+        toasts.error(check.key, check.vars)
+        return prev
+      }
+      added = true
       if (line && line.kind === 'product') {
         return prev.map((l) =>
           l.kind === 'product' && l.product.id === product.id
@@ -379,7 +390,7 @@ export function usePOSTerminal() {
       }
       return [...prev, { kind: 'product', product, quantity: 1, discount: 0 }]
     })
-    return true
+    return added
   }
 
   const addMiscLine = (unitPrice: number): void => {
@@ -396,22 +407,22 @@ export function usePOSTerminal() {
   }
 
   const setQuantity = (lineKey: string, quantity: number): void => {
-    const line = findCartLine(cart, lineKey)
-    if (!line) return
     if (quantity < 1) {
       setModals((m) => ({ ...m, removeTarget: lineKey }))
       return
     }
-    if (line.kind === 'product' && quantity > line.quantity) {
-      const check = stockAllows(line.product, quantity)
-      if (!check.ok) {
-        toasts.error(check.key, check.vars)
-        return
+    setCart((prev) => {
+      const line = findCartLine(prev, lineKey)
+      if (!line) return prev
+      if (line.kind === 'product' && quantity > line.quantity) {
+        const check = stockAllows(line.product, quantity)
+        if (!check.ok) {
+          toasts.error(check.key, check.vars)
+          return prev
+        }
       }
-    }
-    setCart((prev) =>
-      prev.map((l) => (cartLineKey(l) === lineKey ? { ...l, quantity } : l))
-    )
+      return prev.map((l) => (cartLineKey(l) === lineKey ? { ...l, quantity } : l))
+    })
   }
 
   const setLineDiscount = (lineKey: string, discount: number, discountPercent?: number): void => {
@@ -557,7 +568,7 @@ export function usePOSTerminal() {
     setTabSwitching(true)
     void saveCurrentTab()
       .then(() => setModals((m) => ({ ...m, payOpen: true, payInitialMethod: method })))
-      .catch((err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown'))
+      .catch((err) => toastApiError(toasts, err))
       .finally(() => {
         setTabSwitching(false)
       })
@@ -592,7 +603,10 @@ export function usePOSTerminal() {
       } else {
         toasts.error('errors.productNotFound')
       }
-    }
+    },
+    onIncompleteScan: () => {
+      toasts.error('pos.scanIncomplete')
+    },
   })
 
   usePosEnterShortcut({
@@ -617,7 +631,7 @@ export function usePOSTerminal() {
       void api.printer
         .openDrawer()
         .then(() => toasts.success('cash.drawerOpenedToast'))
-        .catch((err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown'))
+        .catch((err) => toastApiError(toasts, err))
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
@@ -642,7 +656,7 @@ export function usePOSTerminal() {
             await api.cartTabs.complete(tabId)
             return true
           } catch (firstErr) {
-            toasts.error(firstErr instanceof ApiError ? firstErr.key : 'errors.unknown')
+            toastApiError(toasts, firstErr)
             try {
               await api.cartTabs.complete(tabId)
               return true

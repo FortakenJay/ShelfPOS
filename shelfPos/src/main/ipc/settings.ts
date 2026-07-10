@@ -43,8 +43,26 @@ const SHORTCUT_KEYS: (keyof Pick<
 ]
 
 export function registerSettingsHandlers(): void {
-  // Public: the renderer needs the language before any login (e.g. login screen).
-  handle<void, AppSettings>('settings:get', 'public', () => getAppSettings())
+  // Public: the renderer needs language/shortcuts before login. Business-identity
+  // fields (legal name, tax id, address, contact) are blanked until a session
+  // exists — the login screen has no use for them (audit P3).
+  handle<void, AppSettings>('settings:get', 'public', () => {
+    const settings = getAppSettings()
+    if (session.get()) return settings
+    return {
+      ...settings,
+      storeLegalName: '',
+      storeId: '',
+      storePhone: '',
+      storeEmail: '',
+      storeActivityCode: '',
+      storeProvince: '',
+      storeCanton: '',
+      storeDistrict: '',
+      storeAddress: '',
+      receiptFooter: ''
+    }
+  })
 
   handle<{ language: Language }, null>('settings:setLanguage', 'public', ({ language }) => {
     if (language !== 'es' && language !== 'zh-CN') throw new AppError('errors.invalidInput')

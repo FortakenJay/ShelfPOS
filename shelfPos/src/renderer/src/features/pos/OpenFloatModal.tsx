@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
+import { toastApiError } from '@/lib/errors'
 import { parseColonesInput } from '@/lib/format'
 import { eventToShortcutKey } from '@/lib/shortcuts'
 import { useToasts } from '@/lib/toast'
@@ -28,7 +29,7 @@ export function OpenFloatModal({ onOpened }: { onOpened: () => void }): React.JS
       void queryClient.invalidateQueries({ queryKey: ['cashStatus'] })
       onOpened()
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+    onError: (err) => toastApiError(toasts, err)
   })
 
   useEffect(() => {

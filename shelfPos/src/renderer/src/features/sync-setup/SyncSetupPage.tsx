@@ -2,7 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { api, ApiError } from '@/lib/api'
+import { api } from '@/lib/api'
+import { toastApiError } from '@/lib/errors'
 import { useToasts } from '@/lib/toast'
 import { Button, Field, Input } from '@/components/ui'
 
@@ -35,7 +36,7 @@ export function SyncSetupPage(): React.JSX.Element {
         toasts.success('syncSetup.codeSaved')
       }
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown'),
+    onError: (err) => toastApiError(toasts, err),
   })
 
   if (statusLoading) {

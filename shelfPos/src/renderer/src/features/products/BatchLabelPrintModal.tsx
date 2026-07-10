@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { api, ApiError } from '@/lib/api'
+import { api } from '@/lib/api'
+import { toastApiError } from '@/lib/errors'
 import { useToasts } from '@/lib/toast'
 import { useDebouncedValue, useGlobalBarcodeScanner, useScannerDetector } from '@/lib/useScanner'
 import { useVerticalDragResize } from '@/features/pos/useVerticalDragResize'
@@ -310,7 +311,7 @@ export function BatchLabelPrintModal({
       }
       pickProduct(resolved)
     } catch (err) {
-      toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+      toastApiError(toasts, err)
     }
   }
 

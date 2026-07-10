@@ -34,6 +34,29 @@ export function openCashSummary(): CashSummary {
   return { floatOpened, openingFloat, cashIn, cashOut, cashSales, expectedCash }
 }
 
+/** Cash drawer totals for a closed cierre (movements and sales already linked). */
+export function cashSummaryForCierre(cierreId: number): Omit<CashSummary, 'floatOpened'> {
+  const db = getDb()
+  const rows = db
+    .prepare(
+      `SELECT type, COALESCE(SUM(amount), 0) AS amount
+       FROM cash_movements WHERE cierre_id = ? GROUP BY type`
+    )
+    .all(cierreId) as { type: CashMovementType; amount: number }[]
+
+  let openingFloat = 0
+  let cashIn = 0
+  let cashOut = 0
+  for (const r of rows) {
+    if (r.type === 'opening_float') openingFloat = round2(r.amount)
+    else if (r.type === 'cash_in') cashIn = round2(r.amount)
+    else if (r.type === 'cash_out') cashOut = round2(r.amount)
+  }
+  const cashSales = paymentTotals({ cierreId }).cash
+  const expectedCash = round2(openingFloat + cashSales + cashIn - cashOut)
+  return { openingFloat, cashIn, cashOut, cashSales, expectedCash }
+}
+
 export function listCashMovements(filter: { fromTs: string; toTs: string }): CashMovementRow[] {
   return getDb()
     .prepare(

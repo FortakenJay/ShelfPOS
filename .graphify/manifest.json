@@ -1,0 +1,1106 @@
+{
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/electron.vite.config.ts": {
+    "mtime": 1783457849676.2815,
+    "hash": "fe02cf53b9e64f2ca3471ae8cd786eab"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/eslint.config.mjs": {
+    "mtime": 1783457849677.2803,
+    "hash": "ffc094298f5d82bbdaba5d0f67f3358b"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/scripts/build-release.ps1": {
+    "mtime": 1783464594896.3008,
+    "hash": "17d2c11b7a27d2e755befb0979816896"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/scripts/e2e-full.mjs": {
+    "mtime": 1783457849780.4312,
+    "hash": "2ee62a394bf4e8d963e5554fd45996fb"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/scripts/generate-keypair.js": {
+    "mtime": 1783457849780.4312,
+    "hash": "207cbed5b3808823c1d2a1cf924e126a"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/scripts/generate-license.ts": {
+    "mtime": 1783457849780.4312,
+    "hash": "11488b2188801eef68c3be935aa5bc5e"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/scripts/get-machine-id.ts": {
+    "mtime": 1783457849781.4302,
+    "hash": "618413fffd5d65c6b4bb3c5c29aeab24"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/scripts/install-shelfpos.ps1": {
+    "mtime": 1783464594896.3008,
+    "hash": "457ce92d17d2d9d53ea3b7a93a871866"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/scripts/print-colon-preprod.mjs": {
+    "mtime": 1783457849781.4302,
+    "hash": "bbd35257a8e8d92a1ec3e654e55657e1"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/scripts/print-colon-sp-32-32-port.mjs": {
+    "mtime": 1783457849781.4302,
+    "hash": "e1483f11f00160980586683e8475ccee"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/scripts/print-colon-sp-32-32.mjs": {
+    "mtime": 1783457849782.429,
+    "hash": "05fe1902f3760b6e638dc988b64e83d0"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/scripts/print-smoke-test.mjs": {
+    "mtime": 1783457849782.429,
+    "hash": "3b49cd9d49f6094624ef5034031aa9a8"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/scripts/print-test-big-receipt.ts": {
+    "mtime": 1783457849782.429,
+    "hash": "425ba343b5308fab276a7d319091072a"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/scripts/print-test-crc.ts": {
+    "mtime": 1783457849782.429,
+    "hash": "1d8727c201ff2d5231edccf052b8de44"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/scripts/raw-print.ps1": {
+    "mtime": 1783457849783.4304,
+    "hash": "d6495269231ad94995d60da7ecad4c6b"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/scripts/screenshot.mjs": {
+    "mtime": 1783457849783.4304,
+    "hash": "19c8a1f46faafd289263520b8019a054"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/scripts/support/1-diagnose-epson-printer.ps1": {
+    "mtime": 1783457849783.4304,
+    "hash": "e09e524819f0df1c7478ede49006d34f"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/scripts/support/2-test-epson-raw-print.ps1": {
+    "mtime": 1783457849783.4304,
+    "hash": "437596667cb4898e26e26b0ff0550954"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/scripts/support/3-test-all-epson-queues.ps1": {
+    "mtime": 1783457849784.4302,
+    "hash": "aefcf404c21018a6f48296ab4c894746"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/scripts/test-supplier-pdf.ts": {
+    "mtime": 1783457849785.4292,
+    "hash": "2b2d6247d53dd90be0c4276d00da759f"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/scripts/uninstall-shelfpos.ps1": {
+    "mtime": 1783457849785.4292,
+    "hash": "6e94aeb58bbb83c5571f17bb29c9bc8d"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/activationWindow.ts": {
+    "mtime": 1783457849786.4304,
+    "hash": "bbd7791760c40584029ab497d9e5d1a0"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/appIcon.ts": {
+    "mtime": 1783457849786.4304,
+    "hash": "b97e9e74e49ccfba8a6f46fa4ae86bc9"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/db/columns.ts": {
+    "mtime": 1783631793069.8289,
+    "hash": "ebe6061e5dc2b34219369995c2ff28e9"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/db/helpers.ts": {
+    "mtime": 1783457849787.4292,
+    "hash": "2c4dd83d0a5dd75812fc63d8aebe8c16"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/db/index.ts": {
+    "mtime": 1783457849787.4292,
+    "hash": "c42bdd1f8e8d4ad7ec7089ed53ba44f5"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/db/migrations.ts": {
+    "mtime": 1783636164064.5327,
+    "hash": "f5812e00665f73c9f75668c4331023cd"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/db/repos/audit.ts": {
+    "mtime": 1783457849789.4302,
+    "hash": "cc562f050e204a914f7053080e1b3400"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/db/repos/cartTabs.ts": {
+    "mtime": 1783457849790.4285,
+    "hash": "639d3fda9117dd142327c101f2c415c6"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/db/repos/cash.ts": {
+    "mtime": 1783631771609.6245,
+    "hash": "07b4ad9214789718b3c4c710ba5c1fa3"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/db/repos/cashMovementTotals.ts": {
+    "mtime": 1783457849792.4304,
+    "hash": "cb192691021359d0620d0c3f556cb8a8"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/db/repos/dashboard.ts": {
+    "mtime": 1783457849792.4304,
+    "hash": "5aef067be8d770bf7f53532c7e4132c5"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/db/repos/printJobs.ts": {
+    "mtime": 1783634391860.6963,
+    "hash": "886fedd5fa53a8e9cf06e522ae7fa54b"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/db/repos/products.ts": {
+    "mtime": 1783636164064.5327,
+    "hash": "264144c37c81ad5d5937084bae26711f"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/db/repos/reports.ts": {
+    "mtime": 1783457849795.4314,
+    "hash": "6102a9ad0cfa314a3b071e1bb981d371"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/db/repos/salesReceipt.ts": {
+    "mtime": 1783457849795.4314,
+    "hash": "cade8e676f2398ed8ec1c1dd48619d5f"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/db/repos/settings.ts": {
+    "mtime": 1783457849795.4314,
+    "hash": "244ec771fa0f7ebee7c0f318d6b569da"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/db/repos/stock.ts": {
+    "mtime": 1783457849796.4294,
+    "hash": "854b8180ece5efc20806995125ff6371"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/db/repos/syncQueue.ts": {
+    "mtime": 1783636164062.0254,
+    "hash": "9f7c3e58cfc77c0164baa2516c166456"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/db/repos/users.ts": {
+    "mtime": 1783631917591.3809,
+    "hash": "6404726e9f7a218caddcbd0838df9a8f"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/errors.ts": {
+    "mtime": 1783457849796.4294,
+    "hash": "8f37513661824138880f6a73e65264b7"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/index.ts": {
+    "mtime": 1783634447176.1565,
+    "hash": "290f042f3b18696b896dafc0693230f2"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/audit.ts": {
+    "mtime": 1783457849797.4302,
+    "hash": "a0fb786f4ea5afa74bad1c8d217daf5e"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/auth.ts": {
+    "mtime": 1783457849797.4302,
+    "hash": "7a3e52fe5706c36e5a146c1abfab5978"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/authorize.ts": {
+    "mtime": 1783457849798.4285,
+    "hash": "433acd0b0b5c677d345a63882fce4489"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/backup.ts": {
+    "mtime": 1783636164064.5327,
+    "hash": "f5622b4c686daf220c807511cf1b852c"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/cart.ts": {
+    "mtime": 1783457849799.4275,
+    "hash": "444c4888b494855782520acebe8f90fa"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/cartTabs.ts": {
+    "mtime": 1783457849799.4275,
+    "hash": "256a7b0b156c8134f4aef2ef323ebe56"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/cash.ts": {
+    "mtime": 1783631842355.6338,
+    "hash": "3ed5b50bfad4b61ebb30ac095a11f1ca"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/cierre.ts": {
+    "mtime": 1783634449362.2527,
+    "hash": "51c152559d4a116e1cb6dc18ca222736"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/dashboard.ts": {
+    "mtime": 1783457849800.428,
+    "hash": "849465c872402a0d75c39e3ed546d64c"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/discount.ts": {
+    "mtime": 1783457849802.431,
+    "hash": "2bc027229c395b468e29d71d66051949"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/firstRun.ts": {
+    "mtime": 1783457849802.431,
+    "hash": "882139056bbb8b9f09b5b8e9bb4b907c"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/helpers.ts": {
+    "mtime": 1783457849802.431,
+    "hash": "46f1ed40dd1af0c0a078f292e85b702f"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/index.ts": {
+    "mtime": 1783457849802.431,
+    "hash": "163956edff1a00fa222750601c5e300e"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/license.ts": {
+    "mtime": 1783457849803.4282,
+    "hash": "bd7057391b85c9512201f6dd14986a4b"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/priceOverride.ts": {
+    "mtime": 1783457849803.4282,
+    "hash": "ac2176539df0808e36da1f8a5b70f2b4"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/printQueue.ts": {
+    "mtime": 1783457849804.4277,
+    "hash": "1ca2caa8b229fb773ff935a132ac6f40"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/printer.ts": {
+    "mtime": 1783636164061.0217,
+    "hash": "11c5f079561607f55ce84aec4d5f51c1"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/products.ts": {
+    "mtime": 1783631827765.0774,
+    "hash": "c42fadd85066278810e83c4df57f742c"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/reports.ts": {
+    "mtime": 1783634393041.8386,
+    "hash": "ee97d42c2d48d1c3d821fee53909947f"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/returns.ts": {
+    "mtime": 1783631765627.9128,
+    "hash": "8aa908bc7898009fb28071fa77ab07b9"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/sales.ts": {
+    "mtime": 1783636164064.5327,
+    "hash": "247148f644114027afea67ae793e2489"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/settings.ts": {
+    "mtime": 1783636164062.0254,
+    "hash": "74d4d33c4e7e3bbc7bf4d072ca144146"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/syncSetup.ts": {
+    "mtime": 1783636164063.5286,
+    "hash": "31e21192fb0b90568e12f33a5ecc282f"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/ipc/users.ts": {
+    "mtime": 1783636164064.5327,
+    "hash": "5a2d33e92d669143433ac2950cc15b37"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/lib/parseEnv.ts": {
+    "mtime": 1783457849813.4297,
+    "hash": "998322dcec341c110be72ad0bf2d3e41"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/license.ts": {
+    "mtime": 1783457849814.4287,
+    "hash": "0c7c0de97d3265a41820667899b721bd"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/backup.ts": {
+    "mtime": 1783457849814.4287,
+    "hash": "1e7272e28c54ce2e61a0c319797b9feb"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/csv.ts": {
+    "mtime": 1783457849814.4287,
+    "hash": "a2de261e4008d0e1fe6d690c4acd6027"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/csvColumns.ts": {
+    "mtime": 1783457849815.4277,
+    "hash": "1fc952cc49c0a7748be4e8d489b7d073"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/csvSpreadsheet.ts": {
+    "mtime": 1783457849815.4277,
+    "hash": "faccc55c5b932deccbd19fe063302ccf"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/csvStream.ts": {
+    "mtime": 1783457849816.4297,
+    "hash": "8ba0556b03c055869326bcf81df57c22"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/dataRetention.ts": {
+    "mtime": 1783457849816.4297,
+    "hash": "6f6607d0ac1203ee52a6aada6befd1aa"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/dpapi-win.ts": {
+    "mtime": 1783457849817.4307,
+    "hash": "042354331a18b48412c7ee4e9531d44e"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/escPosRender.ts": {
+    "mtime": 1783457849818.4307,
+    "hash": "15fdd3ddbba94a812e91debcfd4a9158"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/facturaPdf.ts": {
+    "mtime": 1783457849818.4307,
+    "hash": "34511a524004cc97525144ca08508c92"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/format.ts": {
+    "mtime": 1783457849818.4307,
+    "hash": "034b2c96d038eacaeb2a328968ae930e"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/i18n.ts": {
+    "mtime": 1783457849819.431,
+    "hash": "1fd9d8014e4c5228b2b6ff11fa5371b5"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/labelLayout.ts": {
+    "mtime": 1783457849819.431,
+    "hash": "873bab725c7e698bb7b828ecfb3c8c1c"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/labelPrintLines.ts": {
+    "mtime": 1783457849819.431,
+    "hash": "765b0a002fa13342260a984bda41c543"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/operatorConfig.ts": {
+    "mtime": 1783457849819.431,
+    "hash": "4e34b40e523da20ac444532a5fd61d4d"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/pendingStoreId.ts": {
+    "mtime": 1783457849821.4297,
+    "hash": "9d485105e57ce604dbf57c331f529d96"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/posHeartbeat.ts": {
+    "mtime": 1783457849821.4297,
+    "hash": "8810ff5cbfa666008f24da28e3837924"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/printPdf.ts": {
+    "mtime": 1783457849822.4302,
+    "hash": "dd98fbd5b25e9620c7242ed3400acd7f"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/printTemplates.ts": {
+    "mtime": 1783457849822.4302,
+    "hash": "ca187d2888eabd5744be90d214ff49e9"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/printer.ts": {
+    "mtime": 1783634389007.29,
+    "hash": "47941f59e5eb5200090815d2d1c18287"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/productCsvExport.ts": {
+    "mtime": 1783457849824.4316,
+    "hash": "35d2f7eb0ace61e1b2f6ac4bb1b42991"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/productCsvImport.ts": {
+    "mtime": 1783457849825.429,
+    "hash": "e6c9d8b5a4a89bad7f323a859e280ce2"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/productEfacturaImport.ts": {
+    "mtime": 1783457849826.4312,
+    "hash": "08ff79b78312ce5086ce510816500bfc"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/productSupplierInvoicePdf.ts": {
+    "mtime": 1783457849827.4304,
+    "hash": "63a8a688faccc96ed8f418edd511c421"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/session.ts": {
+    "mtime": 1783457849828.4302,
+    "hash": "946ee11bf01f5676f3abb93b8023ad9e"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/shelfLabelLines.ts": {
+    "mtime": 1783457849828.4302,
+    "hash": "a55b4cbec709a7655c6255c89997b7a3"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/services/syncConfig.ts": {
+    "mtime": 1783457849828.4302,
+    "hash": "9fe123617b33cc2acdb30a076f3905b5"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/main/window.ts": {
+    "mtime": 1783457849828.4302,
+    "hash": "18dec0190d3e7de680782b38b3ee570a"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/preload/index.d.ts": {
+    "mtime": 1783457849829.4294,
+    "hash": "3246b8522306338b50afeb6da1ee247e"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/preload/index.ts": {
+    "mtime": 1783457849829.4294,
+    "hash": "5e8865550f1c9bb4f3cb41f7c6953efb"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/activation/main.ts": {
+    "mtime": 1783457849831.4302,
+    "hash": "522b9094163b377f363d70c47f87c71f"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/components/AppLogo.tsx": {
+    "mtime": 1783457849835.4304,
+    "hash": "f9eb7d7c32565c87e38ebe8c436b5c6f"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/components/DateRangePicker.tsx": {
+    "mtime": 1783457849836.4304,
+    "hash": "5f5245705805589f8b17124edb0f5657"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/components/LanguageSwitcher.tsx": {
+    "mtime": 1783457849837.4304,
+    "hash": "27953c7562e4fdd9f5b5b3a4a4ba5353"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/components/MoneyInput.tsx": {
+    "mtime": 1783457849837.4304,
+    "hash": "95f8e97343329ba28d7219b61ae12c3a"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/components/NavIcon.tsx": {
+    "mtime": 1783457849838.431,
+    "hash": "818e58dad1d4ed7cac65f2bda975e356"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/components/NumPad.tsx": {
+    "mtime": 1783457849838.431,
+    "hash": "e4ea2d32c940bf7dac2e8bf4b929be4e"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/components/PinModal.tsx": {
+    "mtime": 1783457849839.432,
+    "hash": "ef708601db7f83ce89bfe39c88c9ddcc"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/components/dateRangePresets.ts": {
+    "mtime": 1783457849839.432,
+    "hash": "86fd46c2ae0e9c04f814f466a3c5ca24"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/components/ui.tsx": {
+    "mtime": 1783457849840.4338,
+    "hash": "03e97a7f19c469e77dc10b589d9795d7"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/AdminCashPage.tsx": {
+    "mtime": 1783457849840.4338,
+    "hash": "d3364e1597dde8be90ed95965645cd4b"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/AuditLogPage.tsx": {
+    "mtime": 1783457849841.4297,
+    "hash": "c4eaeab7c60d9ccb7c97c91037a18781"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/CierreDiscrepancyAlerts.tsx": {
+    "mtime": 1783457849841.4297,
+    "hash": "8fff52279f24407a4b0865a29045ceee"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/CierrePage.tsx": {
+    "mtime": 1783637149966.562,
+    "hash": "30ae9a6bee962cc8174916b59d3b5ce9"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/ExportPage.tsx": {
+    "mtime": 1783637213587.9272,
+    "hash": "6dc56afa9f698002b681f017c36decc9"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/PinCardPrintModal.tsx": {
+    "mtime": 1783457849842.4292,
+    "hash": "d81b89d9bd9dec74fb771f2c56af74c9"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/PrintQueuePage.tsx": {
+    "mtime": 1783637181378.6658,
+    "hash": "29632d7a79f2e563e111bfbfa2f99f29"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/ReportsPage.tsx": {
+    "mtime": 1783637210972.626,
+    "hash": "5f6403a5d68637356209101bedbcbb6e"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/SettingsCloudPanel.tsx": {
+    "mtime": 1783634496298.7805,
+    "hash": "f289e9b983c417862a2ca8b9daa29b8f"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/SettingsForm.tsx": {
+    "mtime": 1783637208440.8816,
+    "hash": "4dbd85019145cd613c2debb03ca6c830"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/SettingsPage.tsx": {
+    "mtime": 1783457849844.4304,
+    "hash": "65ca22e5619bd64c2c13f8ff7befde45"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/SettingsSections.tsx": {
+    "mtime": 1783637191576.5261,
+    "hash": "988cf2f7494540679f9f3c3913552703"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/UserFormModal.tsx": {
+    "mtime": 1783457849844.4304,
+    "hash": "cba4dc3d30cfa278336c64440b07b7dd"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/UsersInitialSetupModal.tsx": {
+    "mtime": 1783457849845.4316,
+    "hash": "bb3ae625e2fa258c0e4a34a12b4d67d3"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/UsersPage.tsx": {
+    "mtime": 1783637186480.6492,
+    "hash": "e477396b6aaa4b9a291ff853d69262a0"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/dashboard/DashboardPage.tsx": {
+    "mtime": 1783457849845.4316,
+    "hash": "c1416cdcfab64a0ce8c2838bfc561942"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/dashboard/components/DashboardChartFallback.tsx": {
+    "mtime": 1783457849846.4302,
+    "hash": "4e1f1a3a657d3e7cf885c9b1b963beb7"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/dashboard/components/DashboardCharts.tsx": {
+    "mtime": 1783457849847.43,
+    "hash": "a445156f4d83e13f9af16bb2006b208f"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/dashboard/components/DashboardHomeCharts.tsx": {
+    "mtime": 1783457849847.43,
+    "hash": "e964f8f2b0b248ee189b89e8fc682558"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/dashboard/components/DashboardOverview.tsx": {
+    "mtime": 1783457849848.4304,
+    "hash": "dce96c0fd0c7e94cb5a233a62d639a16"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/dashboard/components/DashboardPanelToolbar.tsx": {
+    "mtime": 1783457849848.4304,
+    "hash": "50a5476ac4c6e82d570b74e00f5f509d"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/dashboard/components/DashboardPrimitives.tsx": {
+    "mtime": 1783457849849.4314,
+    "hash": "c803ad57b5859b056cba67242e5d1bfc"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/dashboard/components/DashboardTabNav.tsx": {
+    "mtime": 1783457849849.4314,
+    "hash": "48c148b2f94283ce2d7e97fe465bdb7e"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/dashboard/components/DashboardTables.tsx": {
+    "mtime": 1783457849849.4314,
+    "hash": "fbf799dd7c8c2c8252956299b0191782"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/dashboard/components/NotificationsCenter.tsx": {
+    "mtime": 1783457849849.4314,
+    "hash": "d9a2f4f8ca11e910b9e2edcab6e97839"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/dashboard/components/PaymentMethodsPieChart.tsx": {
+    "mtime": 1783457849850.43,
+    "hash": "3e5702456473f7507d727b564cd922c8"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/dashboard/components/dashboardChartLazy.tsx": {
+    "mtime": 1783457849850.43,
+    "hash": "3ad435c205d92923ec84ec391da78f7e"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/dashboard/components/dashboardChartLoaders.ts": {
+    "mtime": 1783457849850.43,
+    "hash": "3f4d3a527af2ca142bcd73b6babd8433"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/dashboard/dashboardAlertSearch.ts": {
+    "mtime": 1783457849851.4312,
+    "hash": "849bd34d12ae550b5966875cf2c3469d"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/dashboard/dashboardAlertSeverity.ts": {
+    "mtime": 1783457849852.4297,
+    "hash": "f4f4ac2e4ce6db3d66de1ccce33cb034"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/dashboard/dashboardTabs.ts": {
+    "mtime": 1783457849852.4297,
+    "hash": "f35577296ae496f254169f90bc31b01b"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/dashboard/hooks/useRechartsModule.ts": {
+    "mtime": 1783457849852.4297,
+    "hash": "110a864ef7139831e500a82a316fd93c"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/dashboard/useDashboard.ts": {
+    "mtime": 1783457849853.432,
+    "hash": "266ed0211b37ec0c7b745cbe7410eeca"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/reports/ReportTable.tsx": {
+    "mtime": 1783457849853.432,
+    "hash": "48a8a8fa6e510401f958af0a93cd4e5e"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/reports/SaleReceiptActions.tsx": {
+    "mtime": 1783457849854.4302,
+    "hash": "e4601df289a40a93d65eca1cdfd6d6af"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/reports/tables/ByPaymentReportTable.tsx": {
+    "mtime": 1783457849855.4302,
+    "hash": "e258a12947f12321832c5ca04f27b758"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/reports/tables/InventoryReportTable.tsx": {
+    "mtime": 1783457849855.4302,
+    "hash": "da7f7001e2abda47a08f1403b9c5b787"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/reports/tables/ItemizedSalesReportTable.tsx": {
+    "mtime": 1783457849860.438,
+    "hash": "3165f3b406b21da267fdf9f0c1186525"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/reports/tables/SummaryReportTable.tsx": {
+    "mtime": 1783457849860.438,
+    "hash": "e12190ba0ddd847bae622a5552bb1cb0"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/reports/tables/TaxBreakdownReportTable.tsx": {
+    "mtime": 1783457849860.438,
+    "hash": "626707e2ab926f604b740a1dfec15a33"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/reports/tables/TopProductsReportTable.tsx": {
+    "mtime": 1783457849861.438,
+    "hash": "8113c4d80352ca3034217ebad60edd89"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/reports/tables/TransactionLogReportTable.tsx": {
+    "mtime": 1783457849861.438,
+    "hash": "4ce7a81acef91f5624ea24421bda3c32"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/reports/useSaleReceiptActions.ts": {
+    "mtime": 1783457849867.4363,
+    "hash": "416ce1e94b3c8166ec24626bce59ea3d"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/admin/settingsDraft.ts": {
+    "mtime": 1783457849868.438,
+    "hash": "b9d91460b999112af908dacefe690578"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/auth/AccountsStep.tsx": {
+    "mtime": 1783457849868.438,
+    "hash": "5e71aa9e4572c315635775999b83a8a2"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/auth/Bootstrap.tsx": {
+    "mtime": 1783457849869.4373,
+    "hash": "1fa36ff31500470c339e8952324ca5ce"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/auth/ChooseLanguagePage.tsx": {
+    "mtime": 1783457849869.4373,
+    "hash": "ee27c632a2d6817c28ff5e60ee97e55a"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/auth/FirstRun.tsx": {
+    "mtime": 1783457849869.4373,
+    "hash": "12e6d2911fdc1cc329d72a8f0d5c7f32"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/auth/LanguagePicker.tsx": {
+    "mtime": 1783457849870.4397,
+    "hash": "259ac51b25bed7c4f45c048ecf5d2e34"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/auth/Login.tsx": {
+    "mtime": 1783457849870.4397,
+    "hash": "5b9e012cd095e37b7d5722729991c57b"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/auth/components/AccountsPinFields.tsx": {
+    "mtime": 1783457849870.4397,
+    "hash": "a298086b12f96ef45da350c8520479ac"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/auth/components/AdminAccountFields.tsx": {
+    "mtime": 1783457849870.4397,
+    "hash": "1783f0a90e90f3b7ee5faf17ba4b6848"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/auth/firstRun.types.ts": {
+    "mtime": 1783457849871.4375,
+    "hash": "d8b93684f04072a988776f5836e6b171"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/auth/hooks/useAccountsStep.ts": {
+    "mtime": 1783457849871.4375,
+    "hash": "648d7bf717e26f52c937f105a54332db"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/CartLineDiscountInput.tsx": {
+    "mtime": 1783457849871.4375,
+    "hash": "fc81b223c78172ad1a3d86bdacd6a579"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/CartMiscNameInput.tsx": {
+    "mtime": 1783457849872.5742,
+    "hash": "aaf7e116895ef22b3dadd7abe9cd4351"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/CartTabsBar.tsx": {
+    "mtime": 1783457849872.5742,
+    "hash": "4694707dfc50ae2e6803e904963a872b"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/CashDrawerPage.tsx": {
+    "mtime": 1783457849872.5742,
+    "hash": "a574a33f306793ffe98d89494dad548e"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/CashDrawerSummary.tsx": {
+    "mtime": 1783457849872.5742,
+    "hash": "e1b48548a9675c8d9f35ccd86968a948"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/CashMovementsPanel.tsx": {
+    "mtime": 1783637302120.5508,
+    "hash": "aca83767827a602b34ab4ebaa920e1c1"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/CustomerModal.tsx": {
+    "mtime": 1783457849873.5793,
+    "hash": "1f23be0762e4ec4beeccb760f4302420"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/DiscountModal.tsx": {
+    "mtime": 1783457849874.5757,
+    "hash": "b777e72295f7fc67c68dc063b33e5a37"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/LineDiscountPinModal.tsx": {
+    "mtime": 1783457849875.5757,
+    "hash": "4d297dec62e6ad0f0fa7ea30d414b0b2"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/OpenFloatModal.tsx": {
+    "mtime": 1783637177961.6873,
+    "hash": "16520601af4f487f0bb777f9920ef488"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/POSCartPanel.tsx": {
+    "mtime": 1783457849876.5752,
+    "hash": "b3bf7737bda82f9f7ac6edb4c5749498"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/POSModals.tsx": {
+    "mtime": 1783636164064.5327,
+    "hash": "dbf8193fa24e2a56d712f41b1cd2ae1f"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/POSPage.tsx": {
+    "mtime": 1783457849876.5752,
+    "hash": "259d0b69aefa0421b98c63ca41d0ab49"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/POSSearchPanel.tsx": {
+    "mtime": 1783457849877.575,
+    "hash": "2f29f33c47d5b6001cebafd5cff611d8"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/POSSidebar.tsx": {
+    "mtime": 1783457849877.575,
+    "hash": "9683df433b41931c1e0911ed458ea695"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/POSTerminalView.tsx": {
+    "mtime": 1783457849877.575,
+    "hash": "59c94bdbd077d15a00849c622e2ce6da"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/PaymentCheckoutPad.tsx": {
+    "mtime": 1783457849877.575,
+    "hash": "04e1823878f05984178f6b0e9384391e"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/PaymentCheckoutPanel.tsx": {
+    "mtime": 1783457849878.5742,
+    "hash": "56e5d18f9c1fda7cc99477b9c992aae7"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/PaymentInvoiceCustomerSection.tsx": {
+    "mtime": 1783457849878.5742,
+    "hash": "e66418060b618d2b7ea33016402eec06"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/PaymentMethodButtons.tsx": {
+    "mtime": 1783457849878.5742,
+    "hash": "bd4bf12694c9aa892fcec10fea77216d"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/PaymentMethodSidebar.tsx": {
+    "mtime": 1783457849879.5747,
+    "hash": "32ed52ca8cd27a55cdcfb928d3f0f2d5"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/PaymentModal.tsx": {
+    "mtime": 1783457849879.5747,
+    "hash": "930c876705c72f5140391393f772b1e7"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/PaymentSplitSection.tsx": {
+    "mtime": 1783457849879.5747,
+    "hash": "eccaaf63a7081e479a569769b2ab9c4a"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/PriceOverrideModal.tsx": {
+    "mtime": 1783457849881.5757,
+    "hash": "e9386a1037f99b1d4feaf02e18f04d78"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/RemoveLineModal.tsx": {
+    "mtime": 1783457849881.5757,
+    "hash": "e3788dbaa586faee7ecc5f3af2783d5a"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/ReprintReceiptsList.tsx": {
+    "mtime": 1783457849882.5735,
+    "hash": "dbcc69032df2e063855b22797214bb16"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/ReprintReceiptsPage.tsx": {
+    "mtime": 1783457849883.5723,
+    "hash": "70278012758aedbb9511c990f25f1dbd"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/ReturnModal.tsx": {
+    "mtime": 1783637215942.3286,
+    "hash": "e6037a6fb70b5e7c7f47fb3d71b01fce"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/lineDiscount.ts": {
+    "mtime": 1783457849883.5723,
+    "hash": "3eaae6b2edbba117cd5109d61bc79f50"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/paymentCustomer.ts": {
+    "mtime": 1783457849884.575,
+    "hash": "ad2779df43cb864fd42ab6e8444c4052"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/paymentModalState.ts": {
+    "mtime": 1783457849884.575,
+    "hash": "fa737abadf1538db11cf88f0ff3ad260"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/posCartSale.ts": {
+    "mtime": 1783457849885.574,
+    "hash": "b6273ef3c18d9351d8b5533950105118"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/posKeyboard.ts": {
+    "mtime": 1783457849885.574,
+    "hash": "1f8a47abce6de2450b5e29ffdb2a4ab6"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/types.ts": {
+    "mtime": 1783457849886.5776,
+    "hash": "972ae00d52268f19b6f9b26e77714b4e"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/usePOSTerminal.ts": {
+    "mtime": 1783637266836.2644,
+    "hash": "f4508070710c556cccac30ad7d3bc143"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/usePaymentKeyboard.ts": {
+    "mtime": 1783457849888.5745,
+    "hash": "f09d6d3e5b87199292b1856b95983b73"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/usePinAuthorize.ts": {
+    "mtime": 1783457849889.5745,
+    "hash": "cf0142fc09cb649d43745530a046ac7b"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/pos/useVerticalDragResize.ts": {
+    "mtime": 1783457849889.5745,
+    "hash": "aafc0136020821b03a1402e3531b5127"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/products/AdjustStockModal.tsx": {
+    "mtime": 1783637183904.7488,
+    "hash": "ca30e99eca842e27bd7f24f939aa855f"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/products/BatchLabelPrintModal.tsx": {
+    "mtime": 1783637178983.3567,
+    "hash": "8821d060672212d3c7977ddc5ac7a438"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/products/ProductCsvHelpModal.tsx": {
+    "mtime": 1783457849897.5735,
+    "hash": "e88dc22a406fa0bace61124419cf5e86"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/products/ProductForm.tsx": {
+    "mtime": 1783457849898.5725,
+    "hash": "62b9514b7d0d98bf0ce6ac67de4c6ad6"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/products/ProductImportPreviewModal.tsx": {
+    "mtime": 1783457849898.5725,
+    "hash": "4e6153ce8459363ecc447b0af8bfdafe"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/products/ProductLabelPrintPromptModal.tsx": {
+    "mtime": 1783457849899.5723,
+    "hash": "a2e778e3e5346d2787c53d9ef0283a39"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/products/ProductReceiveChoiceModal.tsx": {
+    "mtime": 1783457849900.5725,
+    "hash": "1ee8e07afc361c3732980aa6095bde19"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/products/ProductsPage.tsx": {
+    "mtime": 1783457849902.5725,
+    "hash": "6db40811a20ac074a9cfe3bfb8295a68"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/products/ProductsPagination.tsx": {
+    "mtime": 1783457849903.5723,
+    "hash": "ab8d509d70db238032ec8bbd848c3917"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/products/ProductsTable.tsx": {
+    "mtime": 1783457849903.5723,
+    "hash": "ae836e2f0f7224e83c834afcc7266e5f"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/products/SupplierInvoicePreviewModal.tsx": {
+    "mtime": 1783457849904.573,
+    "hash": "ad71de8302ce8ef91c959c5261ac88fb"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/products/components/ProductManagerModals.tsx": {
+    "mtime": 1783457849913.576,
+    "hash": "300b5533154d89ae2f49f9adb85e6a42"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/products/components/ProductsPageFilters.tsx": {
+    "mtime": 1783457849913.576,
+    "hash": "9c3157225d0932a668038bb5b0135aad"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/products/components/ProductsPageToolbar.tsx": {
+    "mtime": 1783457849915.573,
+    "hash": "ab421ee97ab4b4f60651d111112ad002"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/products/hooks/useProductManager.ts": {
+    "mtime": 1783637133941.408,
+    "hash": "06dadd88fe1a6d30ab253d908e878cc7"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/shell/Shell.tsx": {
+    "mtime": 1783457849917.5742,
+    "hash": "ee4112a380e756c0b3be97668d8b7918"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/shell/useSidebarCollapsed.ts": {
+    "mtime": 1783457849917.5742,
+    "hash": "afd62906666b0c6f2b2129cf9baa26e2"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/features/sync-setup/SyncSetupPage.tsx": {
+    "mtime": 1783637189351.3474,
+    "hash": "099e92616334a3667cae69ca1411b83c"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/i18n/index.ts": {
+    "mtime": 1783457849919.5718,
+    "hash": "4c48b3170d0ff0f9591021679ef4f7c4"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/lib/api.ts": {
+    "mtime": 1783634431627.2783,
+    "hash": "6dcf42f4658339faae131ffd30ead950"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/lib/cartLine.ts": {
+    "mtime": 1783636164062.0254,
+    "hash": "a8db814df5fd4a54932ee1c93c6ff823"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/lib/cartTabSnapshot.ts": {
+    "mtime": 1783457849921.5723,
+    "hash": "bb7d61f8d5a7cd8bb3387f794f27c3ea"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/lib/errors.ts": {
+    "mtime": 1783457849921.5723,
+    "hash": "161d6c583916fc97b75f1dd466604b83"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/lib/format.ts": {
+    "mtime": 1783457849922.572,
+    "hash": "5b96b475e5690649dcf91e159fab0192"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/lib/printToasts.ts": {
+    "mtime": 1783457849924.5718,
+    "hash": "dd7d111dd035416d9db217b5487925af"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/lib/session.ts": {
+    "mtime": 1783457849924.5718,
+    "hash": "176fb78e32024426bc523207831ed318"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/lib/shortcuts.ts": {
+    "mtime": 1783457849924.5718,
+    "hash": "3cc83fcf666a093a04565ff71750677d"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/lib/toast.tsx": {
+    "mtime": 1783457849924.5718,
+    "hash": "2d9d45b387a6aa184352a6317398bbef"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/lib/useScanner.ts": {
+    "mtime": 1783634417620.0361,
+    "hash": "6dfc5a6e21bff9701dde2a08b646dbcc"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/main.tsx": {
+    "mtime": 1783457849926.5776,
+    "hash": "df448a2b1b07c999eaa26d4ad60961d8"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/router.tsx": {
+    "mtime": 1783457849926.5776,
+    "hash": "bcad72f0d90d632f4e2ed33e743794ba"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/vite-env.d.ts": {
+    "mtime": 1783457849927.583,
+    "hash": "cd7cfd328c7a1101bdcbc3ba70c9a216"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/shared/barcode.ts": {
+    "mtime": 1783457849927.583,
+    "hash": "65df1a460afa721486583dd875f713bc"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/shared/cartTabSnapshot.ts": {
+    "mtime": 1783636164064.5327,
+    "hash": "50b17c8a7cc00f659beea307f756c707"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/shared/miscItem.ts": {
+    "mtime": 1783457849953.9846,
+    "hash": "c85de2f091fb457c3e62b49282b33de3"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/shared/money.ts": {
+    "mtime": 1783457849953.9846,
+    "hash": "b5eb3a5f91a409d271180c67ba9d77f2"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/shared/node/dpapi-win.ts": {
+    "mtime": 1783457849955.9922,
+    "hash": "345c67df4c77a93770ff5569f12b06d2"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/shared/node/parseEnv.ts": {
+    "mtime": 1783457849957.0054,
+    "hash": "ef7421b461e3339ab83d772db3b70ee5"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/shared/operator-account.ts": {
+    "mtime": 1783457849957.0054,
+    "hash": "7f0fd84a58c5689a1a0dd47635b43de3"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/shared/pendingStoreId.ts": {
+    "mtime": 1783457849958.0022,
+    "hash": "f0685eaef0e356079ff8ecd28ee9f29c"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/shared/printLimits.ts": {
+    "mtime": 1783457849958.0022,
+    "hash": "aa584c84347ba019a49ddaf027d1f5f8"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/shared/schemas/ipc.ts": {
+    "mtime": 1783634408933.1995,
+    "hash": "9f898e23a5cd2b6c68cf44a2e496d47a"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/shared/schemas/primitives.ts": {
+    "mtime": 1783457849961.0051,
+    "hash": "ae6ed19e660235773624a07e84f485eb"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/shared/types.ts": {
+    "mtime": 1783634401670.475,
+    "hash": "c413d1550dad46c9b5c05abc463df41e"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/sync-service/scripts/sync-vendor.mjs": {
+    "mtime": 1783457849981.4165,
+    "hash": "b3aa2fce4080a1789d74d1189c7e3190"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/sync-service/src/config.ts": {
+    "mtime": 1783457849984.4255,
+    "hash": "4ba37a619b5ed0d8742dca1206ab5fd1"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/sync-service/src/db.ts": {
+    "mtime": 1783631768163.689,
+    "hash": "dc86399ab3c808747aeb9171be7bdb40"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/sync-service/src/dpapi-win.ts": {
+    "mtime": 1783457849986.4502,
+    "hash": "fff0f72b6d03ae250f17e27aff38aadb"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/sync-service/src/errorLog.ts": {
+    "mtime": 1783636164064.5327,
+    "hash": "44edc11456b72bb4770ae096e0a5ba10"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/sync-service/src/index.ts": {
+    "mtime": 1783636164064.5327,
+    "hash": "c5e01c227eef109c315d6c9077801f96"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/sync-service/src/parseEnv.ts": {
+    "mtime": 1783457849987.7131,
+    "hash": "2ec56a43129ce04c6b66de52faa4e9dd"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/sync-service/src/sync.ts": {
+    "mtime": 1783636164064.5327,
+    "hash": "2cda63214050ce6e0a83ced30c9c3072"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/.claude/skills/caveman/README.md": {
+    "mtime": 1783376004823.3975,
+    "hash": "c7a8a8fdab77e5bd25bf42b5c99c516c"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/.claude/skills/caveman/SKILL.md": {
+    "mtime": 1783376004825.0876,
+    "hash": "29958ba8f4a7c23450444f66aa9fab90"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/.agents/skills/react-doctor/SKILL.md": {
+    "mtime": 1783457849658.2507,
+    "hash": "fa746e055db67a811a2d7e7b547dbc75"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/.agents/skills/react-doctor/references/explain.md": {
+    "mtime": 1783457849658.2507,
+    "hash": "c1b423b365c61c99fcf53021d9f2cb13"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/.claude/skills/react-doctor/SKILL.md": {
+    "mtime": 1783457849659.2495,
+    "hash": "fa746e055db67a811a2d7e7b547dbc75"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/.claude/skills/react-doctor/references/explain.md": {
+    "mtime": 1783457849659.2495,
+    "hash": "c1b423b365c61c99fcf53021d9f2cb13"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/.github/workflows/react-doctor.yml": {
+    "mtime": 1783457849665.25,
+    "hash": "ceaf96270059b749f11a592e2708ee6d"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/README.md": {
+    "mtime": 1783458503307.8213,
+    "hash": "fd58449a443a31300539f96998c0a879"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/RELEASE_NOTES.md": {
+    "mtime": 1783458506147.7837,
+    "hash": "dbf74c410df65d369ab3b6f476caa18f"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/docs/instalacion-remota.md": {
+    "mtime": 1783457849674.2808,
+    "hash": "fc5d4450858b94a86e060423c329f99a"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/docs/instalacion-usb.md": {
+    "mtime": 1783457849675.2805,
+    "hash": "39bb0d99f9b0e1191ec62d5734adba05"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/docs/licencias.md": {
+    "mtime": 1783457849675.2805,
+    "hash": "8dd09ac135f3b70f712c59115ee982cc"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/electron-builder.yml": {
+    "mtime": 1783457849676.2815,
+    "hash": "273373ed9cb452c420165a074f43b892"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/graphify-out/GRAPH_REPORT.md": {
+    "mtime": 1783457849684.2793,
+    "hash": "937eb6e06f7eae39f2f37fc5df9a0673"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/graphify-out/graph.html": {
+    "mtime": 1783457849738.2815,
+    "hash": "037b3cd7c9924febd75ed19d716cb6b1"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/react-doctor-verbose.txt": {
+    "mtime": 1783457849769.2854,
+    "hash": "eee60a765acaddd29702cebc07dd4943"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/report/jscpd-report.html": {
+    "mtime": 1783457849777.4304,
+    "hash": "1f07ab7ce288668da5caacf05c17c00a"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/activation/index.html": {
+    "mtime": 1783457849831.4302,
+    "hash": "83486e853bd75267279d05549e03ba1c"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/index.html": {
+    "mtime": 1783457849833.4302,
+    "hash": "3c03ff9f5f16c37f366db64f2a28cc06"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/public/SHELFPOS.png": {
+    "mtime": 1783457849767.286,
+    "hash": "e17592a3e7e0285eaf717f54d37d41a3"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/public/appSHELFPOS.png": {
+    "mtime": 1783457849769.2854,
+    "hash": "709781a3c319c1443209d1b6c3b40672"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/public/colon.png": {
+    "mtime": 1783457849769.2854,
+    "hash": "a4636806cd2f6204eed354a5c9a4ab09"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/activation/appSHELFPOS.png": {
+    "mtime": 1783457849769.2854,
+    "hash": "709781a3c319c1443209d1b6c3b40672"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/activation/shelfpos-logo.png": {
+    "mtime": 1783457849832.4302,
+    "hash": "9eddcc1dd779a5314d9d6c12e3ded8c3"
+  },
+  "C:/Users/Jay/Desktop/ShelfPOS/shelfPos/src/renderer/src/assets/appSHELFPOS.png": {
+    "mtime": 1783457849834.4304,
+    "hash": "709781a3c319c1443209d1b6c3b40672"
+  }
+}

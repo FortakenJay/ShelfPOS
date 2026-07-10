@@ -2,7 +2,8 @@ import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { api, ApiError } from '@/lib/api'
+import { api } from '@/lib/api'
+import { toastApiError } from '@/lib/errors'
 import { useToasts } from '@/lib/toast'
 import { RequireRole } from '@/features/shell/Shell'
 import { Button } from '@/components/ui'
@@ -141,7 +142,7 @@ function Reports(): React.JSX.Element {
       else toasts.error('pos.printFailed')
       void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+    onError: (err) => toastApiError(toasts, err)
   })
 
   const pdfMutation = useMutation({
@@ -150,7 +151,7 @@ function Reports(): React.JSX.Element {
       if (!result.canceled && result.path) toasts.success('reports.pdfDone', { path: result.path })
       queryClient.setQueryData(['report', type, range], (current: unknown) => current)
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+    onError: (err) => toastApiError(toasts, err)
   })
 
   const exportBusy = printMutation.isPending || pdfMutation.isPending

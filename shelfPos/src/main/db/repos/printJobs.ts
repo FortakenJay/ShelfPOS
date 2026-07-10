@@ -98,3 +98,12 @@ export function listPendingPrintJobIds(): number[] {
     .all() as { id: number }[]
   return rows.map((r) => r.id)
 }
+
+export function listRetryablePrintJobIds(): number[] {
+  const rows = getDb()
+    .prepare(
+      "SELECT id FROM print_jobs WHERE status IN ('pending', 'failed') ORDER BY id ASC"
+    )
+    .all() as { id: number }[]
+  return rows.map((r) => r.id)
+}

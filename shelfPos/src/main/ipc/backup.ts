@@ -7,6 +7,7 @@ import { rangeBounds } from '../db/helpers'
 import { currentLanguage } from '../db/repos/settings'
 import { buildCsv } from '../services/csv'
 import { formatPaymentMethod, SALES_CSV_KEYS, salesCsvHeaders } from '../services/csvColumns'
+import { writeAudit } from '../db/repos/audit'
 import type { BackupService } from '../services/backup'
 import type { BackupInfo, DateRange } from '../../shared/types'
 
@@ -26,6 +27,7 @@ export function registerBackupHandlers(backup: BackupService): void {
       .slice(0, 19)
     const dest = join(result.filePaths[0], `shelfpos-manual-${stamp}.db`)
     await backup.backupTo(dest)
+    writeAudit('backup_manual', { entity: 'backup', detail: dest })
     return { canceled: false, path: dest }
   })
 
@@ -68,6 +70,10 @@ export function registerBackupHandlers(backup: BackupService): void {
         translated
       )
       writeFileSync(result.filePath, csv, 'utf8')
+      writeAudit('sales_csv_exported', {
+        entity: 'backup',
+        detail: `${range.from}..${range.to} → ${result.filePath}`
+      })
       return { canceled: false, path: result.filePath }
     }
   )

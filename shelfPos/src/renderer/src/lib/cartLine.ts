@@ -1,5 +1,5 @@
 import type { CartLine } from '@/features/pos/types'
-import { catalogUnitPrice, lineGross, lineTotal, lineUnitPrice } from '@/lib/pricing'
+import { catalogUnitPrice, lineGross, lineTotal, lineUnitPrice } from '@shared/pricing'
 import { roundColones } from '@shared/money'
 
 export function cartLineKey(line: CartLine): string {

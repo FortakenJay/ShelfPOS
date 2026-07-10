@@ -16,6 +16,7 @@ import { session } from '../services/session'
 import { schedulePrintJob } from '../services/printer'
 import { writeFacturaPdf } from '../services/facturaPdf'
 import { showSaveDialog } from '../window'
+import { catalogUnitPrice as sharedCatalogUnitPrice } from '../../shared/pricing'
 import { buildReceiptLines, emisorFromSettings } from '../services/printTemplates'
 import type { ReceiptPaymentLine } from '../services/printTemplates'
 import { t } from '../services/i18n'
@@ -43,22 +44,26 @@ const PAYMENT_METHODS = new Set<PaymentMethod>(['cash', 'card', 'sinpe'])
 /** Legacy NOT NULL column — sale_payments is the canonical payment source. */
 const DEPRECATED_SALE_PAYMENT_METHOD = 'cash'
 
-/** Effective unit price: bulk price when the line qualifies for the bulk tier. */
-function effectiveUnitPrice(product: Product, quantity: number): number {
-  if (product.bulk_qty != null && product.bulk_price != null && quantity >= product.bulk_qty) {
-    return product.bulk_price
-  }
-  return product.price
-}
-
-/** Builds the next consecutivo (CR structure: sucursal 3 + caja 5 + tipoDoc 2 + secuencia 10). */
+/**
+ * Builds the next consecutivo (CR structure: sucursal 3 + caja 5 + tipoDoc 2 + secuencia 10).
+ * Skips sequences already used in sales — self-heals a corrupted/reset counter instead of
+ * violating the unique index (migration v23) mid-checkout. Runs inside the sale transaction.
+ */
 function nextConsecutivo(): string {
   const branch = (getSetting(SETTING_KEYS.branchCode) ?? '001').padStart(3, '0').slice(-3)
   const terminal = (getSetting(SETTING_KEYS.terminalCode) ?? '00001').padStart(5, '0').slice(-5)
-  const seq = Number(getSetting(SETTING_KEYS.consecutivoNext) ?? '1')
-  setSetting(SETTING_KEYS.consecutivoNext, String(seq + 1))
   const tipoDoc = '04' // tiquete
-  return `${branch}${terminal}${tipoDoc}${String(seq).padStart(10, '0')}`
+  const taken = getDb().prepare('SELECT 1 FROM sales WHERE consecutivo = ?')
+  let seq = Number(getSetting(SETTING_KEYS.consecutivoNext) ?? '1')
+  let candidate = `${branch}${terminal}${tipoDoc}${String(seq).padStart(10, '0')}`
+  let guard = 0
+  while (taken.get(candidate)) {
+    if (++guard > 10_000) throw new AppError('errors.consecutivoConflict')
+    seq += 1
+    candidate = `${branch}${terminal}${tipoDoc}${String(seq).padStart(10, '0')}`
+  }
+  setSetting(SETTING_KEYS.consecutivoNext, String(seq + 1))
+  return candidate
 }
 
 function cleanText(v: string | undefined): string | null {
@@ -118,9 +123,10 @@ export function registerSalesHandlers(): void {
 
     const hasDiscount =
       (input.cartDiscount ?? 0) > 0 || input.items.some((item) => (item.discount ?? 0) > 0)
+    let discountAuthType: 'caja' | 'manager' | null = null
     if (hasDiscount) {
       if (!input.discountPin?.trim()) throw new AppError('errors.discountPinRequired')
-      await session.verifyDiscountPin(input.discountPin.trim())
+      discountAuthType = await session.verifyDiscountPin(input.discountPin.trim())
     }
 
     const db = getDb()
@@ -156,9 +162,8 @@ export function registerSalesHandlers(): void {
         const product = getProduct(item.productId)
         if (!product) throw new AppError('errors.productNotFound')
         assertSaleStock(product, item.quantity)
-        const unitPrice =
-          item.unitPrice != null ? round2(item.unitPrice) : effectiveUnitPrice(product, item.quantity)
-        const catalogUnitPrice = effectiveUnitPrice(product, item.quantity)
+        const catalogUnitPrice = sharedCatalogUnitPrice(product, item.quantity)
+        const unitPrice = item.unitPrice != null ? round2(item.unitPrice) : catalogUnitPrice
         const priceOverridden = Math.abs(unitPrice - catalogUnitPrice) >= 0.01
         const gross = round2(unitPrice * item.quantity)
         const lineDiscount = round2(Math.min(item.discount ?? 0, gross))
@@ -360,6 +365,18 @@ export function registerSalesHandlers(): void {
         })
       }
 
+      if (discountAuthType) {
+        const discountAmount = round2(discountTotal)
+        writeAudit(
+          discountAuthType === 'caja' ? 'discount_authorized_caja' : 'discount_authorized_manager',
+          {
+            entity: 'sale',
+            entityId: saleId,
+            detail: `checkout · ${discountAmount}`
+          }
+        )
+      }
+
       writeAudit('sale_created', {
         entity: 'sale',
         entityId: saleId,
@@ -387,7 +404,7 @@ export function registerSalesHandlers(): void {
     const printStatus =
       input.printReceipt === false || result.printJobId === 0
         ? 'printed'
-        : schedulePrintJob(result.printJobId)
+        : await schedulePrintJob(result.printJobId)
     return { ...result, printStatus }
   })
 

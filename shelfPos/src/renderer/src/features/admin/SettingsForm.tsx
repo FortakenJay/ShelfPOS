@@ -2,6 +2,7 @@ import { useReducer, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
+import { toastApiError } from '@/lib/errors'
 import { useToasts } from '@/lib/toast'
 import { useSession } from '@/lib/session'
 import { Button } from '@/components/ui'
@@ -164,7 +165,7 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
       })
       void queryClient.invalidateQueries({ queryKey: ['settings'] })
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+    onError: (err) => toastApiError(toasts, err)
   })
 
   const pinMutation = useMutation({
@@ -207,7 +208,7 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
       }
       void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+    onError: (err) => toastApiError(toasts, err)
   })
 
   return (

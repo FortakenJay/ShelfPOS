@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
+import { toastApiError } from '@/lib/errors'
 import { formatDate } from '@/lib/format'
 import { useToasts } from '@/lib/toast'
 import { RequireRole } from '@/features/shell/Shell'
@@ -45,7 +46,7 @@ function PrintQueue(): React.JSX.Element {
       else toasts.error('printQueue.retryFailed')
       void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+    onError: (err) => toastApiError(toasts, err)
   })
 
   const jobs = data?.items ?? []

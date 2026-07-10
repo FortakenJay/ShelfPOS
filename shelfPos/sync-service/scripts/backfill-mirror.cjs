@@ -103,7 +103,7 @@ const TABLE_SELECT = {
     SELECT id, type, amount, reason, user_id, created_at, cierre_id
     FROM cash_movements`,
   products: `
-    SELECT id, barcode, name, price, cost_price, category, stock, stock_threshold,
+    SELECT id, barcode, name, price, cost_price, category, stock_provider, stock, stock_threshold,
            tax_category, bulk_qty, bulk_price, factura_negativo, deleted_at, created_at, updated_at
     FROM products`,
   return_items: `
@@ -141,19 +141,23 @@ function readStoreId(db) {
   return value
 }
 
-function sanitizeMirrorRow(table, row) {
+/** Zeroes corrupt deltas locally too, matching sync-service's sync.ts (audit P2-9/R-N3) —
+ *  otherwise this script fixes the mirror but leaves SQLite still holding the bad value. */
+function sanitizeMirrorRow(table, row, db) {
   if (table === 'stock_adjustments') {
     const delta = Number(row.delta)
     if (!Number.isFinite(delta) || delta > 10_000_000 || delta < -10_000_000) {
+      db.prepare('UPDATE stock_adjustments SET delta = 0 WHERE id = ?').run(row.id)
+      console.warn(`stock_adjustments#${row.id}: bad delta ${row.delta} zeroed locally`)
       return { ...row, delta: 0 }
     }
   }
   return row
 }
 
-async function upsertChunk(table, rows, storeId) {
+async function upsertChunk(table, rows, storeId, db) {
   const payload = rows.map((row) => ({
-    ...sanitizeMirrorRow(table, row),
+    ...sanitizeMirrorRow(table, row, db),
     store_id: storeId,
   }))
   const res = await fetch(`${supabaseUrl}/rest/v1/${table}`, {
@@ -181,6 +185,8 @@ async function syncStoreRegistry(storeId, db) {
   const rawThreshold = Number(read('stock_threshold_default') ?? '5')
   const stockThresholdDefault =
     Number.isFinite(rawThreshold) && rawThreshold >= 0 ? Math.floor(rawThreshold) : 5
+  const rawIvaRate = Number(read('iva_rate_standard') ?? '13')
+  const ivaRateStandard = Number.isFinite(rawIvaRate) && rawIvaRate >= 0 ? rawIvaRate : 13
 
   const res = await fetch(`${supabaseUrl}/rest/v1/stores?on_conflict=store_id`, {
     method: 'POST',
@@ -195,6 +201,7 @@ async function syncStoreRegistry(storeId, db) {
       display_name: displayName,
       pos_last_seen_at: posLastSeenAt,
       stock_threshold_default: stockThresholdDefault,
+      iva_rate_standard: ivaRateStandard,
     }),
   })
   if (!res.ok) {
@@ -219,9 +226,9 @@ async function backfillTable(table, storeId, db) {
   let offset = 0
   let pushed = 0
   while (offset < total) {
-    const rows = db.prepare(`${sql} LIMIT ? OFFSET ?`).all(CHUNK, offset)
+    const rows = db.prepare(`${sql} ORDER BY id LIMIT ? OFFSET ?`).all(CHUNK, offset)
     if (rows.length === 0) break
-    await upsertChunk(table, rows, storeId)
+    await upsertChunk(table, rows, storeId, db)
     pushed += rows.length
     offset += CHUNK
     process.stdout.write(`\r${table}: ${pushed}/${total}`)

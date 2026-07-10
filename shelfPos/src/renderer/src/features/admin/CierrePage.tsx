@@ -1,7 +1,8 @@
 import { Fragment, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { api, ApiError } from '@/lib/api'
+import { api } from '@/lib/api'
+import { toastApiError } from '@/lib/errors'
 import { formatDate, formatMoney, parseColonesInput } from '@/lib/format'
 import { useSession } from '@/lib/session'
 import { useToasts } from '@/lib/toast'
@@ -82,8 +83,7 @@ function Cierre(): React.JSX.Element {
         const pdf = await api.cierre.exportPdf(cierreId)
         if (!pdf.canceled && pdf.path) toasts.success('cierre.pdfDone', { path: pdf.path })
       } catch (err) {
-        const key = err instanceof ApiError ? err.key : 'errors.unknown'
-        toasts.error(key)
+        toastApiError(toasts, err)
       }
       void queryClient.invalidateQueries({ queryKey: ['cierrePreview', 2] })
       void queryClient.invalidateQueries({ queryKey: ['cierreHistory'] })
@@ -92,10 +92,7 @@ function Cierre(): React.JSX.Element {
       void queryClient.invalidateQueries({ queryKey: ['cartTabs'] })
       void queryClient.invalidateQueries({ queryKey: ['salesForReprint'] })
     },
-    onError: (err) => {
-      const key = err instanceof ApiError ? err.key : 'errors.unknown'
-      toasts.error(key)
-    }
+    onError: (err) => toastApiError(toasts, err)
   })
 
   const continueToConfirm = (): void => {
@@ -601,7 +598,7 @@ function CierreHistory({ historyRows }: { historyRows: CierreRecord[] | undefine
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ['cierreHistory'] })
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+    onError: (err) => toastApiError(toasts, err)
   })
 
   const printMutation = useMutation({
@@ -611,7 +608,7 @@ function CierreHistory({ historyRows }: { historyRows: CierreRecord[] | undefine
       else toasts.error('pos.printFailed')
       void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
     },
-    onError: (err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown')
+    onError: (err) => toastApiError(toasts, err)
   })
 
   const exportBusy = exportPdfMutation.isPending

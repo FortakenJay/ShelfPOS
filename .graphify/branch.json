@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "branchName": "Separation",
+  "worktreePath": "C:\\Users\\Jay\\Desktop\\ShelfPOS",
+  "upstream": "origin/Separation",
+  "mergeBase": "e729c744b0fa01e3f1ddfc4db6e48a523591b055",
+  "firstSeenHead": "e729c744b0fa01e3f1ddfc4db6e48a523591b055",
+  "lastSeenHead": "e729c744b0fa01e3f1ddfc4db6e48a523591b055",
+  "lastAnalyzedHead": "e729c744b0fa01e3f1ddfc4db6e48a523591b055",
+  "stale": false,
+  "staleReason": null,
+  "staleSince": null,
+  "lifecycleEvent": null,
+  "createdAt": "2026-07-09T22:32:10.540Z",
+  "updatedAt": "2026-07-09T22:59:39.227Z"
+}

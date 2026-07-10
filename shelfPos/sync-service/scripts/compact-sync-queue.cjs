@@ -16,11 +16,17 @@ const before = db
   .prepare('SELECT COUNT(*) AS c FROM sync_queue WHERE status = ?')
   .get('pending').c
 
+// Never drop 'delete' rows: a newer update row would supersede the delete intent
+// and the row would resurrect in the mirror. Compaction only collapses
+// insert/update snapshots, which are idempotent.
 const result = db.prepare(`
   DELETE FROM sync_queue
   WHERE status = 'pending'
+    AND operation <> 'delete'
     AND id NOT IN (
-      SELECT MAX(id) FROM sync_queue WHERE status = 'pending' GROUP BY table_name, row_id
+      SELECT MAX(id) FROM sync_queue
+      WHERE status = 'pending' AND operation <> 'delete'
+      GROUP BY table_name, row_id
     )
 `).run()
 

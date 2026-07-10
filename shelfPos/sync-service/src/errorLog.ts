@@ -2,14 +2,17 @@ import { appendFileSync, mkdirSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 
-/** %APPDATA%\\shelfpos\\error\\sync.txt (Windows) */
+/**
+ * Windows: C:\ProgramData\ShelfPOS\logs\sync.txt — machine-wide so the log is
+ * findable when the service runs as LocalSystem (whose %APPDATA% is buried in
+ * systemprofile). Non-Windows dev fallback: ~/.config/shelfpos/error/sync.txt.
+ */
 function syncErrorLogFile(): string {
-  const roaming =
-    process.env.APPDATA ??
-    (process.platform === 'win32'
-      ? join(homedir(), 'AppData', 'Roaming')
-      : join(homedir(), '.config'))
-  return join(roaming, 'shelfpos', 'error', 'sync.txt')
+  if (process.platform === 'win32') {
+    const programData = process.env.PROGRAMDATA ?? 'C:\\ProgramData'
+    return join(programData, 'ShelfPOS', 'logs', 'sync.txt')
+  }
+  return join(homedir(), '.config', 'shelfpos', 'error', 'sync.txt')
 }
 
 function appendSyncErrorLog(line: string): void {

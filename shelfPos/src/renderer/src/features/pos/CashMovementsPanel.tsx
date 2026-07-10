@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
+import { toastApiError } from '@/lib/errors'
 import { formatDate, formatMoney, parseColonesInput } from '@/lib/format'
 import { eventToShortcutKey } from '@/lib/shortcuts'
 import { useToasts } from '@/lib/toast'
@@ -76,7 +77,7 @@ export function CashMovementsPanel({
         })
         return
       }
-      toasts.error(err instanceof ApiError ? err.key : 'errors.unknown', err instanceof ApiError ? err.vars : undefined)
+      toastApiError(toasts, err)
     }
   })
 
@@ -117,7 +118,7 @@ export function CashMovementsPanel({
         void api.printer
           .openDrawer()
           .then(() => toasts.success('cash.drawerOpenedToast'))
-          .catch((err) => toasts.error(err instanceof ApiError ? err.key : 'errors.unknown'))
+          .catch((err) => toastApiError(toasts, err))
         return
       }
       if (shortcut === cashInShortcut) {

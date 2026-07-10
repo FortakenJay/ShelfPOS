@@ -7,12 +7,14 @@ import {
   parsePendingStoreIdFileContent,
   shouldApplyPendingStoreId
 } from './vendor/pendingStoreId.js'
+import { HIDDEN_OPERATOR_USERNAME } from './vendor/operator-account.js'
 
 const SYNC_STORE_SETTING = 'sync_store_id'
 const SYNC_OWNER_CLAIMED_SETTING = 'sync_owner_claimed'
 const STORE_NAME_SETTING = 'store_name'
 const POS_LAST_SEEN_SETTING = 'pos_last_seen_at'
 const STOCK_THRESHOLD_SETTING = 'stock_threshold_default'
+const IVA_RATE_STANDARD_SETTING = 'iva_rate_standard'
 
 function readSetting(db: Database.Database, key: string): string | null {
   const row = db.prepare(`SELECT value FROM settings WHERE key = ?`).get(key) as
@@ -44,6 +46,14 @@ export function readStockThresholdDefault(db: Database.Database): number {
   const raw = readSetting(db, STOCK_THRESHOLD_SETTING)
   const n = Number(raw ?? '5')
   return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 5
+}
+
+/** IVA percentage (e.g. 13), mirrored to stores.iva_rate_standard so the dashboard
+ *  stays in sync if the owner ever changes it (audit P2-N3). */
+export function readIvaRateStandard(db: Database.Database): number {
+  const raw = readSetting(db, IVA_RATE_STANDARD_SETTING)
+  const n = Number(raw ?? '13')
+  return Number.isFinite(n) && n >= 0 ? n : 13
 }
 
 export function writeSyncOwnerClaimed(db: Database.Database): void {
@@ -175,10 +185,10 @@ export function listPendingQueue(
        WHERE status = 'pending' AND retry_count < ?
        ORDER BY
          CASE table_name
-           WHEN 'sales' THEN 0
-           WHEN 'sale_items' THEN 1
-           WHEN 'sale_payments' THEN 2
-           WHEN 'cierres' THEN 3
+           WHEN 'cierres' THEN 0
+           WHEN 'sales' THEN 1
+           WHEN 'sale_items' THEN 2
+           WHEN 'sale_payments' THEN 3
            WHEN 'cash_movements' THEN 4
            WHEN 'return_items' THEN 5
            WHEN 'products' THEN 6
@@ -199,12 +209,42 @@ export function markSynced(db: Database.Database, queueId: number): void {
   ).run(queueId)
 }
 
+/**
+ * Transient failures don't burn retry_count — they're expected to clear on
+ * their own (a blocked FK parent still syncing, a network blip, a rate limit).
+ * Only row-specific failures (schema/constraint violations, 4xx other than 429)
+ * count against the row's retry budget and can eventually dead-letter it.
+ */
+function isTransientSyncError(message: string, err?: unknown): boolean {
+  if (/foreign key|23503|violates foreign key/i.test(message)) return true
+
+  // Network-level fetch failures (DNS, connection reset, timeout) surface as
+  // TypeError/AbortError in Node's fetch, not as an HTTP response — these are
+  // exactly the flaky-LTE conditions the sync service must ride out (audit P1-N1).
+  if (err instanceof Error) {
+    if (err.name === 'AbortError' || err instanceof TypeError) return true
+  }
+  const status = err && typeof err === 'object' ? (err as { status?: unknown }).status : undefined
+  if (typeof status === 'number' && (status === 429 || status >= 500)) return true
+
+  return false
+}
+
 export function markError(
   db: Database.Database,
   queueId: number,
   error: string,
   maxRetries: number,
+  rawErr?: unknown,
 ): { gaveUp: boolean; retryCount: number } {
+  if (isTransientSyncError(error, rawErr)) {
+    db.prepare(`UPDATE sync_queue SET status = 'pending', error = ? WHERE id = ?`).run(error, queueId)
+    const row = db
+      .prepare(`SELECT retry_count FROM sync_queue WHERE id = ?`)
+      .get(queueId) as { retry_count: number }
+    return { gaveUp: false, retryCount: row.retry_count }
+  }
+
   db.prepare(
     `UPDATE sync_queue
      SET status = 'error', error = ?, retry_count = retry_count + 1
@@ -224,7 +264,7 @@ export function enqueueAllPosUsersBackfill(db: Database.Database): number {
   const rows = db
     .prepare(
       `SELECT u.id FROM users u
-       WHERE lower(u.username) <> lower('SAKEN')
+       WHERE lower(u.username) <> lower(?)
          AND NOT EXISTS (
          SELECT 1 FROM sync_queue sq
          WHERE sq.table_name = 'pos_users'
@@ -232,7 +272,7 @@ export function enqueueAllPosUsersBackfill(db: Database.Database): number {
            AND sq.status = 'synced'
        )`,
     )
-    .all() as { id: number }[]
+    .all(HIDDEN_OPERATOR_USERNAME) as { id: number }[]
 
   if (rows.length === 0) return 0
 

@@ -1,4 +1,5 @@
 import { handle } from './helpers'
+import { writeAudit } from '../db/repos/audit'
 import {
   getPrinterStatus,
   openCashDrawer,
@@ -12,6 +13,7 @@ const PRINTER_ACTION: ('sales' | 'admin')[] = ['sales', 'admin']
 export function registerPrinterHandlers(): void {
   handle<void, null>('printer:openDrawer', PRINTER_ACTION, async () => {
     await openCashDrawer()
+    writeAudit('drawer_opened_manual', { entity: 'printer' })
     return null
   })
 

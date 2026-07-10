@@ -2,7 +2,7 @@ import type Database from 'better-sqlite3'
 import { HIDDEN_OPERATOR_USERNAME } from '../../shared/operator-account'
 import { OPERATOR_PLACEHOLDER_PASSWORD_HASH } from '../services/operatorConfig'
 
-export const SCHEMA_VERSION = 21
+export const SCHEMA_VERSION = 23
 
 type Migration = (db: Database.Database) => void
 
@@ -474,6 +474,67 @@ const migrations: Record<number, Migration> = {
     for (const row of rows) {
       update.run(`@deleted:${row.id}:${row.barcode}`, row.id)
     }
+  },
+
+  // v22 — catalog returns may set both product_id and sale_item_id (audit P0-4).
+  22: (db) => {
+    db.exec(`
+      CREATE TABLE return_items_new (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        sale_id      INTEGER NOT NULL REFERENCES sales(id),
+        product_id   INTEGER REFERENCES products(id),
+        sale_item_id INTEGER REFERENCES sale_items(id),
+        quantity     INTEGER NOT NULL,
+        line_total   REAL NOT NULL DEFAULT 0,
+        restocked    INTEGER NOT NULL DEFAULT 0,
+        created_at   TEXT NOT NULL,
+        processed_by INTEGER REFERENCES users(id),
+        CHECK (
+          sale_item_id IS NOT NULL
+          OR (product_id IS NOT NULL AND sale_item_id IS NULL)
+        )
+      );
+
+      INSERT INTO return_items_new (
+        id, sale_id, product_id, sale_item_id, quantity, line_total, restocked, created_at, processed_by
+      )
+      SELECT
+        id, sale_id, product_id, sale_item_id, quantity, line_total, restocked, created_at, processed_by
+      FROM return_items;
+
+      DROP TABLE return_items;
+      ALTER TABLE return_items_new RENAME TO return_items;
+      CREATE INDEX IF NOT EXISTS idx_return_items_sale ON return_items(sale_id);
+      CREATE INDEX IF NOT EXISTS idx_return_items_created ON return_items(created_at);
+      CREATE INDEX IF NOT EXISTS idx_return_items_sale_item ON return_items(sale_item_id);
+    `)
+  },
+
+  // v23 — unique fiscal numbers (audit P2-13). Existing duplicates keep the oldest
+  // row's consecutivo; later duplicates get a "-DUPn" suffix so history stays
+  // traceable without inventing new fiscal sequences retroactively.
+  23: (db) => {
+    const dupes = db
+      .prepare(
+        `SELECT id, consecutivo FROM sales
+         WHERE consecutivo IS NOT NULL
+           AND id NOT IN (
+             SELECT MIN(id) FROM sales WHERE consecutivo IS NOT NULL GROUP BY consecutivo
+           )
+         ORDER BY id ASC`
+      )
+      .all() as { id: number; consecutivo: string }[]
+    const rename = db.prepare('UPDATE sales SET consecutivo = ? WHERE id = ?')
+    const suffixCount = new Map<string, number>()
+    for (const row of dupes) {
+      const n = (suffixCount.get(row.consecutivo) ?? 0) + 1
+      suffixCount.set(row.consecutivo, n)
+      rename.run(`${row.consecutivo}-DUP${n}`, row.id)
+    }
+    db.exec(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_sales_consecutivo
+       ON sales(consecutivo) WHERE consecutivo IS NOT NULL`
+    )
   },
 }
 

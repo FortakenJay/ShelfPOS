@@ -20,6 +20,11 @@ copyFileSync(
   join(vendorDir, 'pendingStoreId.ts')
 )
 
+copyFileSync(
+  join(root, '..', 'src', 'shared', 'operator-account.ts'),
+  join(vendorDir, 'operator-account.ts')
+)
+
 await esbuild.build({
   entryPoints: {
     'parseEnv': join(sharedDir, 'parseEnv.ts'),

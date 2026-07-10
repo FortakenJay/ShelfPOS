@@ -18,6 +18,8 @@ import { applyPendingSyncStoreId } from './services/pendingStoreId'
 
 import { enqueueAllPosUsersSync } from './db/repos/syncQueue'
 
+import { writeAudit } from './db/repos/audit'
+
 import { initPrinter, flushPendingPrintJobs } from './services/printer'
 
 import { startPosHeartbeat, stopPosHeartbeat } from './services/posHeartbeat'
@@ -173,6 +175,10 @@ async function initData(): Promise<BackupService> {
   } catch (err) {
 
     console.error('[startup] daily backup failed', err)
+    writeAudit('backup_failed', {
+      entity: 'backup',
+      detail: err instanceof Error ? err.message : 'unknown',
+    })
 
   }
 

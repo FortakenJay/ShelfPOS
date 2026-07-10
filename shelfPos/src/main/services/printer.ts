@@ -6,7 +6,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import { app } from 'electron'
 import { AppError } from '../errors'
-import { getPrintJob, listPendingPrintJobIds, markPrintJob } from '../db/repos/printJobs'
+import { getPrintJob, listRetryablePrintJobIds, markPrintJob } from '../db/repos/printJobs'
 import type { Language, PrintLine, PrintPayload, PrintStatus, PrinterStatusInfo } from '../../shared/types'
 import { resolveLabelPrintLines } from './labelPrintLines'
 import { warnIfShelfLabelOverflow } from './labelLayout'
@@ -186,17 +186,17 @@ export async function initPrinter(): Promise<void> {
   await probePrinter()
 }
 
-/** Prints pending jobs one at a time — a physical receipt printer cannot safely print in parallel. */
+/** Prints pending/failed jobs one at a time — a physical receipt printer cannot safely print in parallel. */
 async function flushPrintJobAt(ids: readonly number[], index: number): Promise<void> {
   if (index >= ids.length) return
   await attemptPrintJob(ids[index]!)
   await flushPrintJobAt(ids, index + 1)
 }
 
-/** Prints any jobs left pending while the printer was offline. */
+/** Prints jobs left pending or failed while the printer was offline. */
 export async function flushPendingPrintJobs(): Promise<void> {
   if (!printerReady) return
-  await flushPrintJobAt(listPendingPrintJobIds(), 0)
+  await flushPrintJobAt(listRetryablePrintJobIds(), 0)
 }
 
 // --- Windows RAW spooler (see escPosRender.ts for ESC/POS bytes) ---
@@ -329,7 +329,10 @@ async function sendRawToPrinter(data: Buffer, printerName: string): Promise<void
         .filter(Boolean)
         .join(' | ')
       console.error(`[printer] raw send failed (${printerName}):`, detail)
-      throw new AppError('errors.printerNotFound', { name: 'RawPrint' })
+      if (/OpenPrinter|printer.*not found|does not exist|unable to connect/i.test(detail)) {
+        throw new AppError('errors.printerNotFound', { name: 'RawPrint' })
+      }
+      throw new AppError('errors.printerRawFailed', { name: 'RawPrint' })
     } finally {
       await rm(dir, { recursive: true, force: true })
       await new Promise((resolve) => setTimeout(resolve, INTER_JOB_DELAY_MS))
@@ -406,18 +409,11 @@ export async function printTestLabel(): Promise<void> {
   )
 }
 
-/** Queue print without blocking checkout; status updated when the job finishes. */
-export function schedulePrintJob(jobId: number): PrintStatus {
+/** Await physical print so checkout/cierre/report get an accurate status for toasts. */
+export async function schedulePrintJob(jobId: number): Promise<PrintStatus> {
   const job = getPrintJob(jobId)
   if (!job) return 'failed'
-  if (!printerReady) {
-    void probePrinter().then((found) => {
-      if (found) void attemptPrintJob(jobId)
-    })
-    return 'failed'
-  }
-  void attemptPrintJob(jobId)
-  return 'printed'
+  return attemptPrintJob(jobId)
 }
 
 /** Attempts to print a stored job, updating its status. */
@@ -427,7 +423,7 @@ export async function attemptPrintJob(jobId: number): Promise<PrintStatus> {
   if (!printerReady) {
     const found = await probePrinter()
     if (!found) {
-      // Keep status pending so the job stays in the print queue for retry.
+      markPrintJob(jobId, 'failed')
       return 'failed'
     }
   }
@@ -449,6 +445,7 @@ export async function attemptPrintJob(jobId: number): Promise<PrintStatus> {
     if (err instanceof AppError && err.key === 'errors.printerNotFound') {
       printerReady = false
       resolvedPrinterName = null
+      markPrintJob(jobId, 'failed')
       return 'failed'
     }
     markPrintJob(jobId, 'failed')

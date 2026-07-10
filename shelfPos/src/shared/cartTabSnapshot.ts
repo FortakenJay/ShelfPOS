@@ -1,4 +1,5 @@
 import { roundColones } from './money'
+import { lineTotal } from './pricing'
 import type { CustomerInput, Product } from './types'
 
 export interface CartTabSnapshot {
@@ -7,27 +8,6 @@ export interface CartTabSnapshot {
   customer: CustomerInput | null
 }
 
-function catalogUnitPrice(product: Product, quantity: number): number {
-  if (product.bulk_qty != null && product.bulk_price != null && quantity >= product.bulk_qty) {
-    return product.bulk_price
-  }
-  return product.price
-}
-
-function lineUnitPrice(product: Product, quantity: number, priceOverride?: number): number {
-  if (priceOverride != null) return priceOverride
-  return catalogUnitPrice(product, quantity)
-}
-
-function lineTotalFromProduct(
-  product: Product,
-  quantity: number,
-  discount: number,
-  priceOverride?: number
-): number {
-  const gross = roundColones(lineUnitPrice(product, quantity, priceOverride) * quantity)
-  return roundColones(Math.max(0, gross - discount))
-}
 
 export function parseCartTabSnapshotJson(cartJson: string): CartTabSnapshot {
   try {
@@ -71,7 +51,7 @@ export function cartTabSnapshotTotal(cartJson: string): number {
         const discount = typeof entry.discount === 'number' ? entry.discount : 0
         const priceOverride =
           typeof entry.priceOverride === 'number' ? entry.priceOverride : undefined
-        return acc + lineTotalFromProduct(product, qty, discount, priceOverride)
+        return acc + lineTotal(product, qty, discount, priceOverride)
       }
       return acc
     }, 0)

@@ -137,6 +137,7 @@
     "confirmPayment": "确认收款",
     "saleCompleted": "销售已记录",
     "printFailed": "打印失败 — 是否重试？",
+    "scanIncomplete": "条码扫描不完整 — 请重新扫描",
     "printReceiptToggle": "打印收据",
     "invoiceCustomer": {
       "title": "添加姓名和身份证号（发票）",
@@ -929,6 +930,7 @@
     "errors": {
       "notConfigured": "请先安装 ShelfPOS Sync（Install-ShelfPOS）。URL 与 Supabase 密钥在安装时配置。",
       "invalidPairingCode": "绑定码须为 8 位字母或数字",
+      "invalidStoreName": "店铺名称无效",
       "serviceRestartFailed": "无法重启 ShelfPOS Sync。请以管理员身份运行 Install-ShelfPOS。",
       "serviceNotInstalled": "未安装 Windows 服务。开发环境请手动重启：cd sync-service && npm run dev"
     }
@@ -944,6 +946,12 @@
       "offline": "未绑定",
       "notConfigured": "未安装同步"
     },
+    "cloudSyncErrors": "{{count}} 条同步队列错误",
+    "cloudSyncDeadLetter": "{{count}} 条同步已放弃（重试次数用尽）",
+    "cloudSyncErrorsHint": "本地数据正常；管理面板可能不完整。请重新入队后重试。",
+    "cloudSyncRequeue": "重新入队同步",
+    "cloudSyncRequeued": "已重新入队 {{count}} 条",
+    "cloudSyncRequeueNone": "没有可重新入队的错误行",
     "language": "语言",
     "generalTitle": "门店与扫描枪",
     "storeName": "店铺名称",
@@ -1122,11 +1130,15 @@
     "insufficientStock": "库存不足：{{name}}（现有 {{stock}}，需要 {{qty}}）",
     "saleNotFound": "未找到销售记录",
     "returnQtyExceeds": "退货数量超过已售数量",
+    "stockAdjustNegative": "该调整会使库存变为负数",
+    "consecutivoConflict": "收据编号冲突 — 请重试",
+    "miscNotReturnable": "无编码商品行不可退货",
     "noPendingSales": "没有待结算的销售",
     "cierreNotFound": "未找到日结记录",
     "countedCashRequired": "日结前请输入实点现金金额",
     "discountPinRequired": "应用折扣需要 PIN 授权",
     "printerNotFound": "打印机未连接",
+    "printerRawFailed": "发送到打印机失败 — 请检查连接和纸张",
     "firstRunDone": "初始设置已完成",
     "paymentMismatch": "支付金额与合计不一致",
     "floatAlreadyOpen": "本期已开班",
@@ -1139,6 +1151,10 @@
     "licenseMissing": "未激活许可证",
     "notFound": "未找到",
     "duplicateUsername": "该用户名已存在",
+    "reservedUsername": "该用户名已保留",
+    "userInsertFailed": "无法创建用户",
+    "userUpdateFailed": "无法更新用户",
+    "dbOperationFailed": "无法保存到数据库",
     "cannotDeleteSelf": "不能停用自己的账户",
     "lastAdmin": "必须保留至少一名活跃管理员",
     "alreadyConfigured": "该设置已完成"

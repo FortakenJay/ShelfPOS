@@ -870,6 +870,13 @@ export interface FirstRunStatus {
   backupDir: string
 }
 
+export interface SyncQueueHealth {
+  pendingCount: number
+  errorCount: number
+  oldestErrorAt: string | null
+  hasDeadLetter: boolean
+}
+
 export interface SyncSetupStatus {
   configured: boolean
   linked: boolean
@@ -879,6 +886,7 @@ export interface SyncSetupStatus {
   serviceInstalled: boolean
   serviceRunning: boolean | null
   storeId: string
+  queueHealth: SyncQueueHealth
 }
 
 export interface SyncSetupSaveInput {
@@ -1111,6 +1119,7 @@ export const IPC_CHANNELS = [
   'syncSetup:status',
   'syncSetup:save',
   'syncSetup:restartService',
+  'syncSetup:requeueFailed',
   'auth:login',
   'auth:logout',
   'auth:session',

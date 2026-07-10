@@ -1,5 +1,7 @@
 import bcrypt from 'bcryptjs'
+import type Database from 'better-sqlite3'
 import { getDb } from '../index'
+import { AppError } from '../../errors'
 import { localNow } from '../helpers'
 import {
   HIDDEN_OPERATOR_USERNAME,
@@ -76,38 +78,49 @@ export function countActiveAdmins(excludeId?: number): number {
   return rows.filter((r) => r.id !== excludeId).length
 }
 
+export function insertAppUserRow(
+  db: Database.Database,
+  input: { username: string; role: Role },
+  passwordHash: string,
+): AppUserRow {
+  if (isHiddenOperatorUsername(input.username)) throw new AppError('errors.reservedUsername')
+  const now = localNow()
+  const result = db
+    .prepare(
+      `INSERT INTO users (username, password_hash, role, is_active, created_at)
+       VALUES (?, ?, ?, 1, ?)`
+    )
+    .run(input.username.trim(), passwordHash, input.role, now)
+  const created = getAppUserById(Number(result.lastInsertRowid))
+  if (!created) throw new AppError('errors.userInsertFailed')
+  return created
+}
+
 export async function insertAppUser(input: {
   username: string
   password: string
   role: Role
 }): Promise<AppUserRow> {
-  if (isHiddenOperatorUsername(input.username)) throw new Error('reserved username')
   const hash = await bcrypt.hash(input.password, 10)
-  const now = localNow()
-  const result = getDb()
-    .prepare(
-      `INSERT INTO users (username, password_hash, role, is_active, created_at)
-       VALUES (?, ?, ?, 1, ?)`
-    )
-    .run(input.username.trim(), hash, input.role, now)
-  const created = getAppUserById(Number(result.lastInsertRowid))
-  if (!created) throw new Error('user insert failed')
-  return created
+  return getDb().transaction(() => insertAppUserRow(getDb(), input, hash))()
 }
 
-export async function patchAppUser(input: {
-  id: number
-  username?: string
-  password?: string
-  role?: Role
-  isActive?: boolean
-}): Promise<AppUserRow> {
+export function patchAppUserRow(
+  db: Database.Database,
+  input: {
+    id: number
+    username?: string
+    passwordHash?: string
+    role?: Role
+    isActive?: boolean
+  },
+): AppUserRow {
   const existing = getAppUserById(input.id)
-  if (!existing) throw new Error('user not found')
-  if (isHiddenOperatorUsername(existing.username)) throw new Error('reserved user')
+  if (!existing) throw new AppError('errors.notFound')
+  if (isHiddenOperatorUsername(existing.username)) throw new AppError('errors.reservedUsername')
 
   const username = input.username?.trim() ?? existing.username
-  if (isHiddenOperatorUsername(username)) throw new Error('reserved username')
+  if (isHiddenOperatorUsername(username)) throw new AppError('errors.reservedUsername')
   const role = input.role ?? existing.role
   const isActive = input.isActive ?? existing.isActive
 
@@ -126,25 +139,48 @@ export async function patchAppUser(input: {
     sets.push('is_active = ?')
     params.push(isActive ? 1 : 0)
   }
-  if (input.password) {
+  if (input.passwordHash) {
     sets.push('password_hash = ?')
-    params.push(await bcrypt.hash(input.password, 10))
+    params.push(input.passwordHash)
   }
 
   if (sets.length > 0) {
     params.push(input.id)
-    getDb()
-      .prepare(`UPDATE users SET ${sets.join(', ')} WHERE id = ?`)
-      .run(...params)
+    db.prepare(`UPDATE users SET ${sets.join(', ')} WHERE id = ?`).run(...params)
   }
 
   const updated = getAppUserById(input.id)
-  if (!updated) throw new Error('user update failed')
+  if (!updated) throw new AppError('errors.userUpdateFailed')
   return updated
 }
 
-export function deactivateAppUser(id: number): void {
+export async function patchAppUser(input: {
+  id: number
+  username?: string
+  password?: string
+  role?: Role
+  isActive?: boolean
+}): Promise<AppUserRow> {
+  const passwordHash = input.password ? await bcrypt.hash(input.password, 10) : undefined
+  return getDb().transaction(() =>
+    patchAppUserRow(getDb(), {
+      id: input.id,
+      username: input.username,
+      passwordHash,
+      role: input.role,
+      isActive: input.isActive,
+    }),
+  )()
+}
+
+export function deactivateAppUserRow(db: Database.Database, id: number): void {
   const existing = getAppUserById(id)
-  if (existing && isHiddenOperatorUsername(existing.username)) throw new Error('reserved user')
-  getDb().prepare('UPDATE users SET is_active = 0 WHERE id = ?').run(id)
+  if (existing && isHiddenOperatorUsername(existing.username)) {
+    throw new AppError('errors.reservedUsername')
+  }
+  db.prepare('UPDATE users SET is_active = 0 WHERE id = ?').run(id)
+}
+
+export function deactivateAppUser(id: number): void {
+  getDb().transaction(() => deactivateAppUserRow(getDb(), id))()
 }

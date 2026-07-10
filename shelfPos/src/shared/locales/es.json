@@ -137,6 +137,7 @@
     "confirmPayment": "Confirmar pago",
     "saleCompleted": "Venta registrada",
     "printFailed": "Impresión fallida — ¿Reintentar?",
+    "scanIncomplete": "Lectura de código incompleta — escanee de nuevo",
     "printReceiptToggle": "Imprimir recibo",
     "invoiceCustomer": {
       "title": "Agregar nombre y cédula (factura)",
@@ -929,6 +930,7 @@
     "errors": {
       "notConfigured": "Instale ShelfPOS Sync primero (Install-ShelfPOS). La URL y la clave de Supabase se configuran en la instalación.",
       "invalidPairingCode": "El código debe tener 8 letras o números",
+      "invalidStoreName": "El nombre de la tienda no es válido",
       "serviceRestartFailed": "No se pudo reiniciar ShelfPOS Sync. Ejecute Install-ShelfPOS como administrador.",
       "serviceNotInstalled": "El servicio Windows no está instalado. En desarrollo, reinicie sync con: cd sync-service && npm run dev"
     }
@@ -944,6 +946,12 @@
       "offline": "Sin vincular",
       "notConfigured": "Sync no instalado"
     },
+    "cloudSyncErrors": "{{count}} filas de sincronización con error",
+    "cloudSyncDeadLetter": "{{count}} filas de sincronización abandonadas (reintentos agotados)",
+    "cloudSyncErrorsHint": "Los datos locales están bien; el panel web puede estar incompleto. Reencole para reintentar.",
+    "cloudSyncRequeue": "Reencolar sincronización",
+    "cloudSyncRequeued": "{{count}} filas reencoladas",
+    "cloudSyncRequeueNone": "No hay filas con error para reencolar",
     "language": "Idioma",
     "generalTitle": "Tienda y escáner",
     "storeName": "Nombre de la tienda",
@@ -1122,11 +1130,15 @@
     "insufficientStock": "Inventario insuficiente: {{name}} (hay {{stock}}, se pidieron {{qty}})",
     "saleNotFound": "Venta no encontrada",
     "returnQtyExceeds": "La cantidad a devolver supera lo vendido",
+    "stockAdjustNegative": "El ajuste dejaría el stock en negativo",
+    "consecutivoConflict": "Conflicto de numeración de recibos — intente de nuevo",
+    "miscNotReturnable": "Las líneas sin código no se pueden devolver",
     "noPendingSales": "No hay ventas pendientes de cierre",
     "cierreNotFound": "Cierre no encontrado",
     "countedCashRequired": "Ingrese el efectivo contado antes del cierre",
     "discountPinRequired": "Se requiere PIN para aplicar descuentos",
     "printerNotFound": "Impresora no conectada",
+    "printerRawFailed": "Error al enviar a la impresora — revise conexión y papel",
     "firstRunDone": "La configuración inicial ya fue completada",
     "paymentMismatch": "El monto de los pagos no coincide con el total",
     "floatAlreadyOpen": "La caja ya fue abierta en este periodo",
@@ -1139,6 +1151,10 @@
     "pdfExportFailed": "No se pudo guardar el PDF",
     "notFound": "No encontrado",
     "duplicateUsername": "Ese nombre de usuario ya existe",
+    "reservedUsername": "Ese nombre de usuario está reservado",
+    "userInsertFailed": "No se pudo crear el usuario",
+    "userUpdateFailed": "No se pudo actualizar el usuario",
+    "dbOperationFailed": "No se pudo guardar en la base de datos",
     "cannotDeleteSelf": "No puede desactivar su propia cuenta",
     "lastAdmin": "Debe quedar al menos un administrador activo",
     "alreadyConfigured": "Esta configuración ya fue completada"

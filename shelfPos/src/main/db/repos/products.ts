@@ -1,12 +1,16 @@
 import type Database from 'better-sqlite3'
 import { getDb } from '../index'
-import { PRODUCT_COLUMNS } from '../columns'
+import { AppError } from '../../errors'
+import { PRODUCT_COLUMNS, PRODUCT_POS_COLUMNS } from '../columns'
 import { localNow } from '../helpers'
 import { getSetting, SETTING_KEYS } from './settings'
 import { enqueueSync } from './syncQueue'
 import type { Product, ProductFilters, ProductInput, ProductListResult, StockAlert } from '../../../shared/types'
 
-const productSelect = `SELECT ${PRODUCT_COLUMNS} FROM products`
+function productSelect(includeCostPrice: boolean): string {
+  const cols = includeCostPrice ? PRODUCT_COLUMNS : PRODUCT_POS_COLUMNS
+  return `SELECT ${cols} FROM products`
+}
 
 /** Active catalog rows only — soft-deleted products are excluded from POS/inventory lists. */
 export const ACTIVE_PRODUCT_SQL = 'deleted_at IS NULL'
@@ -78,21 +82,25 @@ function buildProductListWhere(filters: ProductFilters): {
   }
 }
 
-export function getProduct(id: number, includeDeleted = false): Product | undefined {
+export function getProduct(id: number, includeDeleted = false, includeCostPrice = true): Product | undefined {
   const deletedClause = includeDeleted ? '' : ` AND ${ACTIVE_PRODUCT_SQL}`
   return getDb()
-    .prepare(`${productSelect} WHERE id = ?${deletedClause}`)
+    .prepare(`${productSelect(includeCostPrice)} WHERE id = ?${deletedClause}`)
     .get(id) as Product | undefined
 }
 
-export function getProductByBarcode(barcode: string, includeDeleted = false): Product | undefined {
+export function getProductByBarcode(
+  barcode: string,
+  includeDeleted = false,
+  includeCostPrice = true,
+): Product | undefined {
   const deletedClause = includeDeleted ? '' : ` AND ${ACTIVE_PRODUCT_SQL}`
   return getDb()
-    .prepare(`${productSelect} WHERE barcode = ?${deletedClause}`)
+    .prepare(`${productSelect(includeCostPrice)} WHERE barcode = ?${deletedClause}`)
     .get(barcode) as Product | undefined
 }
 
-export function listProducts(filters: ProductFilters): ProductListResult {
+export function listProducts(filters: ProductFilters, includeCostPrice = true): ProductListResult {
   const page = Math.max(1, Math.trunc(filters.page ?? 1))
   const pageSize = Math.min(
     Math.max(Math.trunc(filters.pageSize ?? DEFAULT_PAGE_SIZE), 1),
@@ -108,27 +116,27 @@ export function listProducts(filters: ProductFilters): ProductListResult {
 
   const items = db
     .prepare(
-      `${productSelect} ${whereSql} ORDER BY name COLLATE NOCASE LIMIT @limit OFFSET @offset`
+      `${productSelect(includeCostPrice)} ${whereSql} ORDER BY name COLLATE NOCASE LIMIT @limit OFFSET @offset`
     )
     .all({ ...params, limit: pageSize, offset }) as Product[]
 
   return { items, total, page, pageSize }
 }
 
-export function searchProducts(query: string, limit = 20): Product[] {
+export function searchProducts(query: string, limit = 20, includeCostPrice = true): Product[] {
   const trimmed = query.trim()
   const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 100)
 
   const likeResults = getDb()
     .prepare(
-      `${productSelect} WHERE ${ACTIVE_PRODUCT_SQL} AND (name LIKE ? OR barcode LIKE ?) ORDER BY name COLLATE NOCASE LIMIT ?`
+      `${productSelect(includeCostPrice)} WHERE ${ACTIVE_PRODUCT_SQL} AND (name LIKE ? OR barcode LIKE ?) ORDER BY name COLLATE NOCASE LIMIT ?`
     )
     .all(`%${trimmed}%`, `%${trimmed}%`, safeLimit) as Product[]
 
   if (/^\d+$/.test(trimmed)) {
     const id = Number(trimmed)
     if (Number.isSafeInteger(id) && id > 0) {
-      const exact = getProduct(id)
+      const exact = getProduct(id, false, includeCostPrice)
       if (exact && !likeResults.some((p) => p.id === exact.id)) {
         return [exact, ...likeResults].slice(0, safeLimit)
       }
@@ -156,15 +164,23 @@ export function listStockProviders(): string[] {
   return rows.map((r) => r.stock_provider)
 }
 
-/** Applies a stock delta and records the adjustment. Must run inside a transaction. */
+/**
+ * Applies a stock delta and records the adjustment. Must run inside a transaction.
+ * Negative results are rejected unless the product allows factura_negativo —
+ * conditional UPDATE keeps the check race-safe (same pattern as the sale path).
+ */
 export function applyStockDelta(productId: number, delta: number, userId: number, reason: string): void {
   const db = getDb()
   const now = localNow()
-  db.prepare('UPDATE products SET stock = stock + ?, updated_at = ? WHERE id = ?').run(
-    delta,
-    now,
-    productId
-  )
+  const updated = db
+    .prepare(
+      `UPDATE products SET stock = stock + ?, updated_at = ?
+       WHERE id = ? AND (stock + ? >= 0 OR factura_negativo = 1)`
+    )
+    .run(delta, now, productId, delta)
+  if (updated.changes === 0) {
+    throw new AppError('errors.stockAdjustNegative')
+  }
   enqueueSync('products', productId, 'update', db)
   const adj = db
     .prepare(

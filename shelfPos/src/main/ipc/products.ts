@@ -80,19 +80,32 @@ function isUniqueViolation(err: unknown): boolean {
   return err instanceof Error && err.message.includes('UNIQUE constraint failed')
 }
 
+function mapProductDbError(err: unknown): never {
+  if (isUniqueViolation(err)) throw new AppError('errors.barcodeExists')
+  if (err instanceof Error && err.message.includes('FOREIGN KEY constraint failed')) {
+    throw new AppError('errors.productInUse')
+  }
+  throw new AppError('errors.dbOperationFailed')
+}
+
+function productIncludesCost(): boolean {
+  return session.get()?.role !== 'sales'
+}
+
 type ProductPrintKind = 'shelf' | 'barcode'
 
 function assignProductBarcode(productId: number, barcode: string): Product {
   const db = getDb()
   const now = localNow()
   try {
-    releaseBarcodeForReuse(db, barcode)
-    db.prepare('UPDATE products SET barcode = ?, updated_at = ? WHERE id = ?').run(barcode, now, productId)
+    db.transaction(() => {
+      releaseBarcodeForReuse(db, barcode)
+      db.prepare('UPDATE products SET barcode = ?, updated_at = ? WHERE id = ?').run(barcode, now, productId)
+      enqueueProductSync(productId, 'update', db)
+    })()
   } catch (err) {
-    if (isUniqueViolation(err)) throw new AppError('errors.barcodeExists')
-    throw err
+    mapProductDbError(err)
   }
-  enqueueProductSync(productId, 'update', db)
   const product = getProduct(productId)
   if (!product) throw new AppError('errors.productNotFound')
   return product
@@ -233,7 +246,7 @@ async function confirmProductImport(
 
 export function registerProductHandlers(): void {
   handle<ProductFilters, ProductListResult>('products:list', 'authed', (filters) =>
-    listProducts(filters ?? {})
+    listProducts(filters ?? {}, productIncludesCost())
   )
 
   handle<void, string[]>('products:categories', 'authed', () => listCategories())
@@ -241,11 +254,11 @@ export function registerProductHandlers(): void {
   handle<void, string[]>('products:stockProviders', 'authed', () => listStockProviders())
 
   handle<{ barcode: string }, Product | null>('products:byBarcode', 'authed', ({ barcode }) =>
-    getProductByBarcode(barcode.trim()) ?? null
+    getProductByBarcode(barcode.trim(), false, productIncludesCost()) ?? null
   )
 
   handle<{ query: string }, Product[]>('products:search', 'authed', ({ query }) =>
-    query?.trim() ? searchProducts(query.trim()) : []
+    query?.trim() ? searchProducts(query.trim(), 20, productIncludesCost()) : []
   )
 
   handle<{ productId: number; copies?: number }, { printStatus: PrintStatus }>(
@@ -294,8 +307,7 @@ export function registerProductHandlers(): void {
         return getProduct(id) as Product
       })()
     } catch (err) {
-      if (isUniqueViolation(err)) throw new AppError('errors.barcodeExists')
-      throw err
+      mapProductDbError(err)
     }
   })
 
@@ -309,8 +321,7 @@ export function registerProductHandlers(): void {
         enqueueProductSync(input.id, 'update', db)
       })()
     } catch (err) {
-      if (isUniqueViolation(err)) throw new AppError('errors.barcodeExists')
-      throw err
+      mapProductDbError(err)
     }
     writeAudit('product_updated', { entity: 'product', entityId: input.id, detail: input.name.trim() })
     return getProduct(input.id) as Product
@@ -324,10 +335,7 @@ export function registerProductHandlers(): void {
         writeAudit('product_deleted', { entity: 'product', entityId: id })
       })()
     } catch (err) {
-      if (err instanceof Error && err.message.includes('FOREIGN KEY constraint failed')) {
-        throw new AppError('errors.productInUse')
-      }
-      throw err
+      mapProductDbError(err)
     }
     return null
   })
