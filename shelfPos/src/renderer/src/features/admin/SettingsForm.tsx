@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
 import { toastApiError } from '@/lib/errors'
+import { invalidatePrintQueue, queryKeys } from '@/lib/queryKeys'
 import { useToasts } from '@/lib/toast'
 import { useSession } from '@/lib/session'
 import { Button } from '@/components/ui'
@@ -156,24 +157,25 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
   const shortcutConflict = new Set(shortcutValues).size !== shortcutValues.length
 
   const updateMutation = useMutation({
-    mutationFn: api.settings.update,
-    onSuccess: (_data, input) => {
+    mutationFn: ({ input }: { input: SettingsUpdateInput; draft: SettingsDraft }) =>
+      api.settings.update(input),
+    onSuccess: (_data, { input, draft: savedDraftSnapshot }) => {
       toasts.success('settings.saved')
-      setDraft((current) => {
-        setSavedDraft((saved) => commitSavedDraft(saved, current, input))
-        return current
-      })
-      void queryClient.invalidateQueries({ queryKey: ['settings'] })
+      setSavedDraft((saved) => commitSavedDraft(saved, savedDraftSnapshot, input))
+      void queryClient.invalidateQueries({ queryKey: queryKeys.settings })
     },
     onError: (err) => toastApiError(toasts, err)
   })
+  const saveSettings = (input: SettingsUpdateInput): void => {
+    updateMutation.mutate({ input, draft })
+  }
 
   const pinMutation = useMutation({
     mutationFn: () => api.settings.changePin(pin.current, pin.next),
     onSuccess: () => {
       toasts.success('settings.pinChanged')
       dispatchPinForms({ type: 'resetPin' })
-      void queryClient.invalidateQueries({ queryKey: ['settings'] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.settings })
     },
     onError: (err) =>
       dispatchPinForms({
@@ -187,7 +189,7 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
     onSuccess: () => {
       toasts.success('settings.cajaPinChanged')
       dispatchPinForms({ type: 'resetCajaPin' })
-      void queryClient.invalidateQueries({ queryKey: ['settings'] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.settings })
     },
     onError: (err) =>
       dispatchPinForms({
@@ -206,7 +208,7 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
       } else {
         toasts.error('pos.printFailed')
       }
-      void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
+      invalidatePrintQueue(queryClient)
     },
     onError: (err) => toastApiError(toasts, err)
   })
@@ -220,7 +222,7 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
           saving={updateMutation.isPending}
           dirty={generalDraftDirty(draft, savedDraft)}
           onSave={() =>
-            updateMutation.mutate({
+            saveSettings({
               storeName: draft.storeName,
               stockThresholdDefault: Number(draft.threshold) || 5,
               scannerBurstMs: Number(draft.scannerMs) || 30
@@ -235,7 +237,7 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
           saving={updateMutation.isPending}
           dirty={taxDraftDirty(draft, savedDraft)}
           onSave={() =>
-            updateMutation.mutate({
+            saveSettings({
               branchCode: draft.branchCode,
               terminalCode: draft.terminalCode,
               ivaRateStandard: Number(draft.ivaStandard) || 0
@@ -252,7 +254,7 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
         hasConflict={shortcutConflict}
         onSave={() => {
           if (shortcutConflict) return
-          updateMutation.mutate({
+          saveSettings({
             shortcutOpenFloat: draft.shortcutOpenFloat,
             shortcutCashIn: draft.shortcutCashIn,
             shortcutCashOut: draft.shortcutCashOut,
@@ -272,7 +274,7 @@ export function SettingsForm({ settings }: { settings: AppSettings }): React.JSX
         saving={updateMutation.isPending}
         dirty={emisorDraftDirty(draft, savedDraft)}
         onSave={() =>
-          updateMutation.mutate({
+          saveSettings({
             storeLegalName: draft.legalName,
             storeIdType: draft.idType,
             storeId: draft.storeId,

@@ -34,6 +34,10 @@ const KNOWN_RECEIPT_PRINTER_NAMES = [
 let resolvedPrinterName: string | null = null
 let printerReady = false
 
+function isTestMode(): boolean {
+  return process.env.SHELFPOS_TEST === '1'
+}
+
 /** One physical printer — serialize all RAW jobs (receipt + label + drawer). */
 let printerQueue: Promise<void> = Promise.resolve()
 
@@ -134,6 +138,10 @@ function probeEnv(): NodeJS.ProcessEnv {
 
 /** Fast Windows printer probe — run once at startup (and on manual retry). */
 export async function probePrinter(): Promise<boolean> {
+  if (isTestMode()) {
+    printerReady = true
+    return true
+  }
   try {
     const { stdout } = await Promise.race([
       execFileAsync(
@@ -378,6 +386,7 @@ export async function openCashDrawer(): Promise<void> {
 
 /** Best-effort drawer pulse — cash operations must not fail when the printer is offline. */
 export async function tryOpenCashDrawer(): Promise<void> {
+  if (isTestMode()) return
   try {
     await openCashDrawer()
   } catch (err) {
@@ -420,6 +429,10 @@ export async function schedulePrintJob(jobId: number): Promise<PrintStatus> {
 export async function attemptPrintJob(jobId: number): Promise<PrintStatus> {
   const job = getPrintJob(jobId)
   if (!job) return 'failed'
+  if (isTestMode()) {
+    markPrintJob(jobId, 'printed')
+    return 'printed'
+  }
   if (!printerReady) {
     const found = await probePrinter()
     if (!found) {

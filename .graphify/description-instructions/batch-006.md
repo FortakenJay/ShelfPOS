@@ -1,4 +1,4 @@
-# Node Description Batch 7 of 42
+# Node Description Batch 7 of 43
 
 Graphify is running in assistant/skill mode (no API key). You are the host
 assistant (Claude Code / Codex / Gemini CLI). Read the prompt below and write
@@ -12,51 +12,58 @@ describing what it is or does. Use only the provided context.
 For a code symbol (kind=code-symbol — a function, class, or constant),
 describe what the function/symbol does based on its name, source location
 and neighbors — e.g. "Resolves the configured ontology profile from graphify.yaml.".
+For an entity node (any other kind — e.g. a person, place, event, object),
+describe what the entity is and its role, grounded in its type, its
+relations (neighbors) and the provided citations/evidence — e.g.
+"Lady Carfax, a wealthy heiress who disappears en route to Lausanne.".
+Ground entity descriptions in the citations/evidence when present; do not
+speculate beyond the context, so a node with no supporting context may be
+left out of the reply.
 Write every description in English (en). Do not switch languages.
 No marketing language.
 Respond ONLY with a JSON object mapping each node id (as a string) to its
 one-sentence description — no prose, no markdown fences.
 
-- "db_columns": "columns.ts" | kind=code-symbol | source=shelfPos/src/main/db/columns.ts:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, PRODUCT_COLUMNS, PRODUCT_POS_COLUMNS, printJobs.ts, products.ts]
+- "services_productsupplierinvoicepdf_parsesupplierinvoicetext": "parseSupplierInvoiceText()" | kind=code-symbol | source=shelfPos/src/main/services/productSupplierInvoicePdf.ts:L72 | neighbors=[test-supplier-pdf.ts, productSupplierInvoicePdf.ts, extractTrailingNumbers(), guessCategory(), normalizePdfText(), readSupplierInvoicePdf()]
+- "services_syncconfig_writepairingcodeonly": "writePairingCodeOnly()" | kind=code-symbol | source=shelfPos/src/main/services/syncConfig.ts:L113 | neighbors=[syncSetup.ts, syncConfig.ts, getSyncConfigPath(), parseEnvFile(), readSyncSecretKey(), writeSyncConfig()]
+- "shared_barcode_isprintablecode128barcode": "isPrintableCode128Barcode()" | kind=code-symbol | source=shelfPos/src/shared/barcode.ts:L2 | neighbors=[products.ts, escPosRender.ts, shelfLabelLines.ts, barcode.ts, barcodePrintValue(), canPrintProductBarcode()]
+- "shared_operator_account_ishiddenoperatorusername": "isHiddenOperatorUsername()" | kind=code-symbol | source=shelfPos/src/shared/operator-account.ts:L4 | neighbors=[firstRun.ts, users.ts, audit.ts, users.ts, session.ts, operator-account.ts]
+- "shared_pricing_moneyequals": "moneyEquals()" | kind=code-symbol | source=shelfPos/src/shared/pricing.ts:L16 | neighbors=[priceOverride.ts, sales.ts, printTemplates.ts, pricing.ts, isCustomPriceOverride(), SanctionedUnitPriceKind]
+- "shared_types_daterange": "DateRange" | kind=code-symbol | source=shelfPos/src/shared/types.ts:L410 | neighbors=[helpers.ts, backup.ts, cash.ts, reports.ts, dashboard.ts, types.ts]
+- "shared_types_paymentmethod": "PaymentMethod" | kind=code-symbol | source=shelfPos/src/shared/types.ts:L3 | neighbors=[sales.ts, reports.ts, salesReceipt.ts, csvColumns.ts, printTemplates.ts, types.ts]
+- "admin_exportpage": "ExportPage.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/ExportPage.tsx:L1 | neighbors=[ExportBackup(), ExportPage(), InfoRow(), 1bdbad7 Consolidate shelfPos, shelfDash…, af2caa3 updates updates updates. bug fi…]
+- "admin_settingscloudpanel": "SettingsCloudPanel.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/SettingsCloudPanel.tsx:L1 | neighbors=[cloudStatusKey(), SettingsCloudPanel(), SettingsPage.tsx, 1bdbad7 Consolidate shelfPos, shelfDash…, af2caa3 updates updates updates. bug fi…]
+- "admin_settingsdraft_sectiondirty": "sectionDirty()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/settingsDraft.ts:L90 | neighbors=[settingsDraft.ts, emisorDraftDirty(), generalDraftDirty(), shortcutsDraftDirty(), taxDraftDirty()]
+- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@233e386bf4c144c13cd9187ce67c384eaae3b034": "233e386 Merge branch 'dev' of https://github.com/SakenEtAlOrg/ShelfPOS into dev" | kind=Commit | source=git | neighbors=[Separation, dev, a97eb0d fix3.0, 841808d Update push, bcf4c2f fixed links.]
+- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@4274ea519ade680afc96ed822b5aa9106121ba47": "4274ea5 graphify" | kind=Commit | source=git | neighbors=[2659acf more fixes and added more featu…, Separation, dev, 5f4f7d2 document to push so deployment …, 660d33a fixed mail.]
+- "components_dashboardchartfallback_dashboardchartfallback": "DashboardChartFallback()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/dashboard/components/DashboardChartFallback.tsx:L1 | neighbors=[DashboardChartFallback.tsx, dashboardChartLazy.tsx, DashboardCharts.tsx, DashboardHomeCharts.tsx, PaymentMethodsPieChart.tsx]
+- "components_dashboardoverview": "DashboardOverview.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/dashboard/components/DashboardOverview.tsx:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, KpiOverview(), DashboardPrimitives.tsx, KpiCard(), DashboardPage.tsx]
+- "components_numpad": "NumPad.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/components/NumPad.tsx:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, NumPad(), NUMPAD_KEYS, NumPadProps, PinModal.tsx]
+- "dashboard_dashboardalertseverity": "dashboardAlertSeverity.ts" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/dashboard/dashboardAlertSeverity.ts:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, DashboardTables.tsx, NotificationsCenter.tsx, notificationAlertSeverityClass(), panelAlertSeverityClass()]
 - "db_helpers_todaylocal": "todayLocal()" | kind=code-symbol | source=shelfPos/src/main/db/helpers.ts:L12 | neighbors=[helpers.ts, localNow(), dashboard.ts, backup.ts, dataRetention.ts]
-- "ipc_products_printproductlabel": "printProductLabel()" | kind=code-symbol | source=shelfPos/src/main/ipc/products.ts:L135 | neighbors=[products.ts, printLabelForProduct(), labelLinesForProduct(), productForBarcodePrint(), runBatchPrint()]
-- "lib_api": "api.ts" | kind=code-symbol | source=shelfPos/src/renderer/src/lib/api.ts:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, api, ApiError, call(), session.ts]
+- "ipc_products_printproductlabel": "printProductLabel()" | kind=code-symbol | source=shelfPos/src/main/ipc/products.ts:L126 | neighbors=[products.ts, printLabelForProduct(), labelLinesForProduct(), productForBarcodePrint(), runBatchPrint()]
 - "main_window_showsavedialog": "showSaveDialog()" | kind=code-symbol | source=shelfPos/src/main/window.ts:L11 | neighbors=[cierre.ts, reports.ts, sales.ts, window.ts, appBrowserWindow()]
 - "node_parseenv": "parseEnv.ts" | kind=code-symbol | source=shelfPos/src/shared/node/parseEnv.ts:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, parseEnv.ts, applyEnvFile(), parseEnvFileContent(), parseEnvLine()]
 - "pos_cartmiscnameinput": "CartMiscNameInput.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/pos/CartMiscNameInput.tsx:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, CartMiscNameInput(), posKeyboard.ts, commitEditableOnEnter(), POSCartPanel.tsx]
+- "pos_cashmovementspanel": "CashMovementsPanel.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/pos/CashMovementsPanel.tsx:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, af2caa3 updates updates updates. bug fi…, CashDrawerPage.tsx, CashMovementsPanel(), PendingMovement]
 - "pos_paymentcheckoutpad": "PaymentCheckoutPad.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/pos/PaymentCheckoutPad.tsx:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, GRID_KEYS, PaymentCheckoutPad(), PaymentCheckoutPanel.tsx, PaymentModal.tsx]
 - "pos_paymentinvoicecustomersection": "PaymentInvoiceCustomerSection.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/pos/PaymentInvoiceCustomerSection.tsx:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, PaymentInvoiceCustomerSection(), posKeyboard.ts, commitEditableOnEnter(), PaymentModal.tsx]
 - "pos_paymentmethodsidebar": "PaymentMethodSidebar.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/pos/PaymentMethodSidebar.tsx:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, PaymentMethodButtons.tsx, PaymentMethodButtons(), PaymentMethodSidebar(), PaymentModal.tsx]
 - "pos_poscartsale": "posCartSale.ts" | kind=code-symbol | source=shelfPos/src/renderer/src/features/pos/posCartSale.ts:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, cartLineToSaleInput(), types.ts, CartLine, POSModals.tsx]
 - "pos_reprintreceiptspage": "ReprintReceiptsPage.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/pos/ReprintReceiptsPage.tsx:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, ReprintReceiptsList.tsx, ReprintReceiptsList(), ReprintReceipts(), ReprintReceiptsPage()]
-- "pos_returnmodal": "ReturnModal.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/pos/ReturnModal.tsx:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, POSModals.tsx, initialReturnState(), ReturnModal(), ReturnModalState]
 - "pos_usepinauthorize": "usePinAuthorize.ts" | kind=code-symbol | source=shelfPos/src/renderer/src/features/pos/usePinAuthorize.ts:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, DiscountModal.tsx, LineDiscountPinModal.tsx, PriceOverrideModal.tsx, usePinAuthorize()]
+- "products_adjuststockmodal": "AdjustStockModal.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/products/AdjustStockModal.tsx:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, af2caa3 updates updates updates. bug fi…, ProductManagerModals.tsx, AdjustStockModal(), REASONS]
 - "products_productform": "ProductForm.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/products/ProductForm.tsx:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, ProductManagerModals.tsx, ProductFormModal(), ProductFormModalProps, productFormState()]
 - "products_productspagination": "ProductsPagination.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/products/ProductsPagination.tsx:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, ProductsPage.tsx, PAGE_SIZE_OPTIONS, ProductsPagination(), ProductsPaginationProps]
 - "repos_audit_listauditpage": "listAuditPage()" | kind=code-symbol | source=shelfPos/src/main/db/repos/audit.ts:L74 | neighbors=[audit.ts, audit.ts, listAudit(), auditWhere(), countAudit()]
-- "repos_products_getproductbybarcode": "getProductByBarcode()" | kind=code-symbol | source=shelfPos/src/main/db/repos/products.ts:L92 | neighbors=[products.ts, products.ts, productSelect(), productCsvImport.ts, productSupplierInvoicePdf.ts]
-- "repos_products_insertproductrow": "insertProductRow()" | kind=code-symbol | source=shelfPos/src/main/db/repos/products.ts:L247 | neighbors=[products.ts, products.ts, releaseBarcodeForReuse(), productCsvImport.ts, productSupplierInvoicePdf.ts]
-- "repos_products_productselect": "productSelect()" | kind=code-symbol | source=shelfPos/src/main/db/repos/products.ts:L10 | neighbors=[products.ts, getProduct(), getProductByBarcode(), listProducts(), searchProducts()]
-- "repos_reports_transactionlog": "transactionLog()" | kind=code-symbol | source=shelfPos/src/main/db/repos/reports.ts:L691 | neighbors=[reports.ts, reports.ts, listSaleHeaders(), listSalePayments(), paymentsBySale()]
+- "repos_products_getproductbybarcode": "getProductByBarcode()" | kind=code-symbol | source=shelfPos/src/main/db/repos/products.ts:L99 | neighbors=[products.ts, products.ts, productSelect(), productCsvImport.ts, productSupplierInvoicePdf.ts]
+- "repos_products_productselect": "productSelect()" | kind=code-symbol | source=shelfPos/src/main/db/repos/products.ts:L17 | neighbors=[products.ts, getProduct(), getProductByBarcode(), listProducts(), searchProducts()]
+- "repos_products_updateproductcatalogfields": "updateProductCatalogFields()" | kind=code-symbol | source=shelfPos/src/main/db/repos/products.ts:L294 | neighbors=[products.ts, products.ts, productCatalogParams(), releaseBarcodeForReuse(), productCsvImport.ts]
+- "repos_reports_transactionlog": "transactionLog()" | kind=code-symbol | source=shelfPos/src/main/db/repos/reports.ts:L699 | neighbors=[reports.ts, reports.ts, listSaleHeaders(), listSalePayments(), paymentsBySale()]
 - "scripts_e2e_full_dumpstate": "dumpState()" | kind=code-symbol | source=shelfPos/scripts/e2e-full.mjs:L52 | neighbors=[e2e-full.mjs, evalJs(), log(), send(), waitFor()]
 - "scripts_e2e_full_evaljs": "evalJs()" | kind=code-symbol | source=shelfPos/scripts/e2e-full.mjs:L35 | neighbors=[e2e-full.mjs, dumpState(), send(), pinClicks(), waitFor()]
 - "scripts_generate_license": "generate-license.ts" | kind=code-symbol | source=shelfPos/scripts/generate-license.ts:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, Args, loadPrivateKey(), main(), parseArgs()]
 - "scripts_print_colon_preprod_align": "align()" | kind=code-symbol | source=shelfPos/scripts/print-colon-preprod.mjs:L53 | neighbors=[print-colon-preprod.mjs, appendColonTestStrip(), buildJob1(), buildJob2(), buildJob3()]
-- "scripts_print_colon_preprod_bold": "bold()" | kind=code-symbol | source=shelfPos/scripts/print-colon-preprod.mjs:L57 | neighbors=[print-colon-preprod.mjs, appendColonTestStrip(), buildJob1(), buildJob2(), buildJob3()]
-- "scripts_print_colon_preprod_feed": "feed()" | kind=code-symbol | source=shelfPos/scripts/print-colon-preprod.mjs:L63 | neighbors=[print-colon-preprod.mjs, appendColonTestStrip(), buildJob1(), buildJob2(), buildJob3()]
-- "scripts_screenshot": "screenshot.mjs" | kind=code-symbol | source=shelfPos/scripts/screenshot.mjs:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, page, pending, send(), ws]
-- "scripts_sync_vendor": "sync-vendor.mjs" | kind=code-symbol | source=shelfPos/sync-service/scripts/sync-vendor.mjs:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, libDir, root, sharedDir, vendorDir]
-- "services_csvspreadsheet": "csvSpreadsheet.ts" | kind=code-symbol | source=shelfPos/src/main/services/csvSpreadsheet.ts:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, asSpreadsheetText(), parseSpreadsheetText(), productCsvExport.ts, productCsvImport.ts]
-- "services_csvstream": "csvStream.ts" | kind=code-symbol | source=shelfPos/src/main/services/csvStream.ts:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, closeWriteStream(), openUtf8CsvWriteStream(), writeToStream(), productCsvExport.ts]
-- "services_escposrender_capescposscale": "capEscPosScale()" | kind=code-symbol | source=shelfPos/src/main/services/escPosRender.ts:L76 | neighbors=[escPosRender.ts, applyTextStyle(), pushMoneyAmount(), pushRowLine(), pushTextLine()]
-- "services_escposrender_parsemoneytext": "parseMoneyText()" | kind=code-symbol | source=shelfPos/src/main/services/escPosRender.ts:L183 | neighbors=[escPosRender.ts, compactMoneyText(), pushPlainText(), pushRowLine(), pushTextLine()]
-- "services_i18n_t": "t()" | kind=code-symbol | source=shelfPos/src/main/services/i18n.ts:L6 | neighbors=[sales.ts, settings.ts, csvColumns.ts, i18n.ts, printTemplates.ts]
-- "services_printer_getactiveprintername": "getActivePrinterName()" | kind=code-symbol | source=shelfPos/src/main/services/printer.ts:L68 | neighbors=[printer.ts, fallbackPrinterName(), openCashDrawer(), printLines(), toEscPosOptions()]
-- "services_printer_scheduleprintjob": "schedulePrintJob()" | kind=code-symbol | source=shelfPos/src/main/services/printer.ts:L413 | neighbors=[cierre.ts, reports.ts, sales.ts, printer.ts, attemptPrintJob()]
-- "services_printpdf_writeprintlinespdf": "writePrintLinesPdf()" | kind=code-symbol | source=shelfPos/src/main/services/printPdf.ts:L160 | neighbors=[cierre.ts, reports.ts, printPdf.ts, printLinesToHtml(), writeHtmlToPdf()]
-- "services_printtemplates_buildprintertestreceiptlines": "buildPrinterTestReceiptLines()" | kind=code-symbol | source=shelfPos/src/main/services/printTemplates.ts:L146 | neighbors=[print-test-big-receipt.ts, printer.ts, printTemplates.ts, buildReceiptLines(), receiptItemsFromCatalog()]
-- "services_printtemplates_paymentlines": "paymentLines()" | kind=code-symbol | source=shelfPos/src/main/services/printTemplates.ts:L337 | neighbors=[printTemplates.ts, buildCierreLines(), buildMultiDayPaymentReportLines(), buildPaymentReportLines(), methodLabel()]
-- "services_productcsvimport_parseproductrow": "parseProductRow()" | kind=code-symbol | source=shelfPos/src/main/services/productCsvImport.ts:L62 | neighbors=[productCsvImport.ts, applyProductImport(), buildProductImportPreview(), cell(), parseOptionalNumber()]
 
 ## Instructions
 

@@ -1,7 +1,7 @@
-import { handle } from './helpers'
+import { ADMIN_ACCESS, handle } from './helpers'
 import { dashboardOverview } from '../db/repos/dashboard'
 import type { DashboardOverview } from '../../shared/types'
 
 export function registerDashboardHandlers(): void {
-  handle<void, DashboardOverview>('dashboard:overview', ['admin'], () => dashboardOverview())
+  handle<void, DashboardOverview>('dashboard:overview', ADMIN_ACCESS, () => dashboardOverview())
 }

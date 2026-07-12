@@ -1,11 +1,13 @@
 import { app } from 'electron'
 import { join } from 'node:path'
-import { handle } from './helpers'
+import { handle, SALES_ACCESS, SALES_OR_ADMIN_ACCESS } from './helpers'
 import { AppError } from '../errors'
 import { getDb } from '../db'
 import { localNow, round2 } from '../db/helpers'
 import { alertsForProducts, enqueueProductSync, getProduct } from '../db/repos/products'
 import { enqueueSync } from '../db/repos/syncQueue'
+import { getCustomerById } from '../db/repos/customers'
+import { applyCustomerBalanceDelta } from '../db/repos/customerCredit'
 import { hasOpeningFloat } from '../db/repos/cash'
 import { assertSaleStock } from '../db/repos/stock'
 import { insertPrintJob } from '../db/repos/printJobs'
@@ -15,11 +17,22 @@ import { writeAudit } from '../db/repos/audit'
 import { session } from '../services/session'
 import { schedulePrintJob } from '../services/printer'
 import { writeFacturaPdf } from '../services/facturaPdf'
+import { distributeCartDiscount } from '../services/cartDiscountDistribution'
 import { showSaveDialog } from '../window'
-import { catalogUnitPrice as sharedCatalogUnitPrice } from '../../shared/pricing'
+import {
+  calculateCartTotals,
+  clampLineDiscount,
+  totalAfterLineDiscount
+} from '../../shared/cartTotals'
+import {
+  catalogUnitPrice as sharedCatalogUnitPrice,
+  isCustomPriceOverride,
+  moneyEquals
+} from '../../shared/pricing'
 import { buildReceiptLines, emisorFromSettings } from '../services/printTemplates'
 import type { ReceiptPaymentLine } from '../services/printTemplates'
 import { t } from '../services/i18n'
+import { PAYMENT_METHODS } from '../../shared/types'
 import type {
   CreateSaleInput,
   CreateSaleLineInput,
@@ -36,10 +49,8 @@ import type {
   TaxCategory
 } from '../../shared/types'
 
-const SELL: 'sales'[] = ['sales']
-const SALES_OR_ADMIN: ('sales' | 'admin')[] = ['sales', 'admin']
 const ID_TYPES: IdType[] = ['fisica', 'juridica', 'dimex', 'nite']
-const PAYMENT_METHODS = new Set<PaymentMethod>(['cash', 'card', 'sinpe'])
+const PAYMENT_METHOD_SET = new Set<PaymentMethod>(PAYMENT_METHODS)
 
 /** Legacy NOT NULL column — sale_payments is the canonical payment source. */
 const DEPRECATED_SALE_PAYMENT_METHOD = 'cash'
@@ -89,7 +100,7 @@ interface PricedSaleLine {
 }
 
 export function registerSalesHandlers(): void {
-  handle<CreateSaleInput, CreateSaleResult>('sales:create', SELL, async (input) => {
+  handle<CreateSaleInput, CreateSaleResult>('sales:create', SALES_ACCESS, async (input) => {
     const user = session.require()
     if (!hasOpeningFloat()) throw new AppError('errors.cashNotOpened')
     if (!input?.items?.length) throw new AppError('errors.invalidInput')
@@ -116,10 +127,18 @@ export function registerSalesHandlers(): void {
       }
     }
     for (const pay of input.payments) {
-      if (!PAYMENT_METHODS.has(pay.method)) throw new AppError('errors.invalidInput')
+      if (!PAYMENT_METHOD_SET.has(pay.method)) throw new AppError('errors.invalidInput')
       if (!Number.isFinite(pay.amount) || pay.amount <= 0) throw new AppError('errors.invalidInput')
     }
-    const condition = 'contado' as const
+    const creditAmount = round2(
+      input.payments
+        .filter((payment) => payment.method === 'credit')
+        .reduce((sum, payment) => sum + payment.amount, 0)
+    )
+    if (creditAmount > 0 && input.customerAccountId == null) {
+      throw new AppError('errors.customerRequired')
+    }
+    const condition = creditAmount > 0 ? ('credito' as const) : ('contado' as const)
 
     const hasDiscount =
       (input.cartDiscount ?? 0) > 0 || input.items.some((item) => (item.discount ?? 0) > 0)
@@ -141,10 +160,9 @@ export function registerSalesHandlers(): void {
         if (isMiscSaleLine(item)) {
           const unitPrice = round2(item.unitPrice)
           const catalogRaw = round2(item.catalogUnitPrice ?? unitPrice)
-          const catalogUnitPrice =
-            Math.abs(unitPrice - catalogRaw) >= 0.01 ? catalogRaw : null
+          const catalogUnitPrice = moneyEquals(unitPrice, catalogRaw) ? null : catalogRaw
           const gross = round2(unitPrice * item.quantity)
-          const lineDiscount = round2(Math.min(item.discount ?? 0, gross))
+          const lineDiscount = clampLineDiscount(gross, item.discount)
           return {
             product: null,
             displayName: cleanText(item.name) ?? miscItemName,
@@ -153,7 +171,7 @@ export function registerSalesHandlers(): void {
             catalogUnitPrice,
             gross,
             lineDiscount,
-            afterLineDiscount: round2(gross - lineDiscount),
+            afterLineDiscount: totalAfterLineDiscount(gross, lineDiscount),
             taxCategory: 'standard',
             isMisc: true
           }
@@ -164,9 +182,9 @@ export function registerSalesHandlers(): void {
         assertSaleStock(product, item.quantity)
         const catalogUnitPrice = sharedCatalogUnitPrice(product, item.quantity)
         const unitPrice = item.unitPrice != null ? round2(item.unitPrice) : catalogUnitPrice
-        const priceOverridden = Math.abs(unitPrice - catalogUnitPrice) >= 0.01
+        const priceOverridden = isCustomPriceOverride(product, catalogUnitPrice, unitPrice)
         const gross = round2(unitPrice * item.quantity)
-        const lineDiscount = round2(Math.min(item.discount ?? 0, gross))
+        const lineDiscount = clampLineDiscount(gross, item.discount)
         return {
           product,
           displayName: product.name,
@@ -175,40 +193,20 @@ export function registerSalesHandlers(): void {
           catalogUnitPrice: priceOverridden ? catalogUnitPrice : null,
           gross,
           lineDiscount,
-          afterLineDiscount: round2(gross - lineDiscount),
+          afterLineDiscount: totalAfterLineDiscount(gross, lineDiscount),
           taxCategory: product.tax_category as TaxCategory,
           isMisc: false
         }
       })
 
-      const subtotal = round2(lines.reduce((acc, l) => acc + l.gross, 0))
-      const afterLineDiscounts = round2(lines.reduce((acc, l) => acc + l.afterLineDiscount, 0))
+      const { subtotal, afterLineDiscounts, cartDiscount, total, discountTotal } =
+        calculateCartTotals(
+          lines.map((line) => ({ gross: line.gross, discount: line.lineDiscount })),
+          input.cartDiscount
+        )
 
-      // 2. Distribute the cart-level discount proportionally so per-line totals stay exact.
-      const cartDiscount = round2(Math.min(Math.max(input.cartDiscount ?? 0, 0), afterLineDiscounts))
-      let distributed = 0
-      const finalized = lines.map((l, idx) => {
-        let share: number
-        if (cartDiscount <= 0 || afterLineDiscounts <= 0) {
-          share = 0
-        } else if (idx === lines.length - 1) {
-          share = round2(cartDiscount - distributed)
-        } else {
-          share = round2((cartDiscount * l.afterLineDiscount) / afterLineDiscounts)
-          distributed = round2(distributed + share)
-        }
-        const lineTotal = round2(l.afterLineDiscount - share)
-        return {
-          ...l,
-          lineDiscount: l.lineDiscount,
-          discount: round2(l.gross - lineTotal),
-          lineTotal,
-          taxCategory: l.taxCategory
-        }
-      })
-
-      const total = round2(finalized.reduce((acc, l) => acc + l.lineTotal, 0))
-      const discountTotal = round2(subtotal - total)
+      // 2. Persist proportional cart-discount shares; the final line absorbs the remainder.
+      const finalized = distributeCartDiscount(lines, cartDiscount, afterLineDiscounts)
 
       // 3. Validate payments cover exactly the total.
       const paid = round2(input.payments.reduce((acc, p) => acc + p.amount, 0))
@@ -224,15 +222,20 @@ export function registerSalesHandlers(): void {
 
       // Legacy single-method column (deprecated): sale_payments holds authoritative tenders.
       const sinpeRef = input.payments.find((p) => p.method === 'sinpe' && p.ref?.trim())?.ref?.trim()
+      const account =
+        input.customerAccountId == null ? null : getCustomerById(input.customerAccountId, db)
+      if (creditAmount > 0 && !account?.isActive) {
+        throw new AppError('errors.customerNotFound')
+      }
 
       const customer: SaleCustomer = {
-        name: cleanText(input.customer?.name),
+        name: cleanText(input.customer?.name) ?? account?.name ?? null,
         idType:
           input.customer?.idType && ID_TYPES.includes(input.customer.idType)
             ? input.customer.idType
             : null,
-        id: cleanText(input.customer?.id),
-        phone: cleanText(input.customer?.phone),
+        id: cleanText(input.customer?.id) ?? account?.idNumber ?? null,
+        phone: cleanText(input.customer?.phone) ?? account?.phone ?? null,
         email: cleanText(input.customer?.email),
         activityCode: cleanText(input.customer?.activityCode)
       }
@@ -245,8 +248,8 @@ export function registerSalesHandlers(): void {
             `INSERT INTO sales
                (user_id, payment_method, subtotal, discount_total, cart_discount, total, sale_condition, consecutivo,
                 sinpe_ref, customer_name, customer_id_type, customer_id, customer_phone, customer_email,
-                customer_activity_code, created_at)
-             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+                customer_activity_code, customer_account_id, created_at)
+             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
           )
           .run(
             user.id,
@@ -264,6 +267,7 @@ export function registerSalesHandlers(): void {
             customer.phone,
             customer.email,
             customer.activityCode,
+            account?.id ?? null,
             now
           ).lastInsertRowid
       )
@@ -276,6 +280,8 @@ export function registerSalesHandlers(): void {
       const insertPayment = db.prepare(
         'INSERT INTO sale_payments (sale_id, method, amount, ref) VALUES (?,?,?,?)'
       )
+      // Deliberately sale-specific: the conditional write closes the preflight race and
+      // preserves sale stock errors. Sales are not manual stock_adjustments ledger entries.
       const decrementStock = db.prepare(
         'UPDATE products SET stock = stock - ?, updated_at = ? WHERE id = ? AND stock >= ?'
       )
@@ -315,6 +321,16 @@ export function registerSalesHandlers(): void {
       for (const pay of input.payments) {
         const payResult = insertPayment.run(saleId, pay.method, round2(pay.amount), cleanText(pay.ref))
         enqueueSync('sale_payments', Number(payResult.lastInsertRowid), 'insert', db)
+      }
+      if (account && creditAmount > 0) {
+        const balanceUpdated = applyCustomerBalanceDelta(
+          db,
+          account.id,
+          creditAmount,
+          now
+        )
+        if (!balanceUpdated) throw new AppError('errors.customerNotFound')
+        enqueueSync('customers', account.id, 'update', db)
       }
       enqueueSync('sales', saleId, 'insert', db)
 
@@ -410,7 +426,7 @@ export function registerSalesHandlers(): void {
 
   handle<{ saleId?: number; date?: string }, SaleDetail[]>(
     'sales:findForReturn',
-    SELL,
+    SALES_ACCESS,
     ({ saleId, date }) => {
       const db = getDb()
       interface SaleRow {
@@ -535,13 +551,13 @@ export function registerSalesHandlers(): void {
 
   handle<void, SaleReprintRow[]>(
     'sales:listForReprint',
-    SELL,
+    SALES_ACCESS,
     () => listPendingCierreSalesForReprint()
   )
 
   handle<{ saleId: number }, ReprintReceiptResult>(
     'sales:reprintReceipt',
-    SALES_OR_ADMIN,
+    SALES_OR_ADMIN_ACCESS,
     async ({ saleId }) => {
       if (session.get()?.role === 'sales') assertSaleInOpenShift(saleId)
       return reprintSaleReceipt(saleId)
@@ -550,7 +566,7 @@ export function registerSalesHandlers(): void {
 
   handle<{ saleId: number }, { canceled: boolean; path?: string }>(
     'sales:exportFacturaPdf',
-    SALES_OR_ADMIN,
+    SALES_OR_ADMIN_ACCESS,
     async ({ saleId }) => {
       if (session.get()?.role === 'sales') assertSaleInOpenShift(saleId)
       const result = await showSaveDialog({

@@ -1,6 +1,6 @@
 import { app, shell } from 'electron'
 import { join } from 'node:path'
-import { handle } from './helpers'
+import { ADMIN_ACCESS, handle } from './helpers'
 import { AppError } from '../errors'
 import { daysInRange, rangeBounds } from '../db/helpers'
 import {
@@ -156,14 +156,14 @@ export function registerReportHandlers(): void {
   handle<
     { type: ReportType; range: DateRange; page?: number; pageSize?: number },
     ReportData
-  >('reports:run', ['admin'], ({ type, range, page, pageSize }) => {
+  >('reports:run', ADMIN_ACCESS, ({ type, range, page, pageSize }) => {
     validateRange(range)
     return runReport(type, range, page, pageSize)
   })
 
   handle<{ type: ReportType; range: DateRange }, { printStatus: PrintStatus }>(
     'reports:print',
-    ['admin'],
+    ADMIN_ACCESS,
     async ({ type, range }) => {
       validateRange(range)
       const report = runReport(type, range)
@@ -178,7 +178,7 @@ export function registerReportHandlers(): void {
 
   handle<{ type: ReportType; range: DateRange }, { canceled: boolean; path?: string }>(
     'reports:exportPdf',
-    ['admin'],
+    ADMIN_ACCESS,
     async ({ type, range }) => {
       validateRange(range)
       const result = await showSaveDialog({

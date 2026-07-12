@@ -1,4 +1,4 @@
-import { handle } from './helpers'
+import { ADMIN_ACCESS, handle } from './helpers'
 import { AppError } from '../errors'
 import bcrypt from 'bcryptjs'
 import { getDb } from '../db'
@@ -17,8 +17,6 @@ import { isHiddenOperatorUsername } from '../../shared/operator-account'
 import { enqueueSync } from '../db/repos/syncQueue'
 import type { AppUserRow, UserCreateInput, UserUpdateInput } from '../../shared/types'
 
-const ADMIN: 'admin'[] = ['admin']
-
 function assertNotLastAdmin(user: AppUserRow, nextActive: boolean, nextRole: AppUserRow['role']): void {
   const wasActiveAdmin = user.isActive && user.role === 'admin'
   const willBeActiveAdmin = nextActive && nextRole === 'admin'
@@ -28,9 +26,9 @@ function assertNotLastAdmin(user: AppUserRow, nextActive: boolean, nextRole: App
 }
 
 export function registerUserHandlers(): void {
-  handle<void, AppUserRow[]>('users:list', ADMIN, () => listAppUsers())
+  handle<void, AppUserRow[]>('users:list', ADMIN_ACCESS, () => listAppUsers())
 
-  handle<UserCreateInput, AppUserRow>('users:create', ADMIN, async (input) => {
+  handle<UserCreateInput, AppUserRow>('users:create', ADMIN_ACCESS, async (input) => {
     if (!input.username?.trim() || !input.password) throw new AppError('errors.invalidInput')
     if (isHiddenOperatorUsername(input.username)) throw new AppError('errors.reservedUsername')
     if (usernameTaken(input.username)) throw new AppError('errors.duplicateUsername')
@@ -52,7 +50,7 @@ export function registerUserHandlers(): void {
     return user
   })
 
-  handle<UserUpdateInput, AppUserRow>('users:update', ADMIN, async (input) => {
+  handle<UserUpdateInput, AppUserRow>('users:update', ADMIN_ACCESS, async (input) => {
     const existing = getAppUserById(input.id)
     if (!existing) throw new AppError('errors.notFound')
     if (isHiddenOperatorUsername(existing.username)) throw new AppError('errors.notFound')
@@ -89,7 +87,7 @@ export function registerUserHandlers(): void {
     return user
   })
 
-  handle<{ id: number }, null>('users:delete', ADMIN, (input) => {
+  handle<{ id: number }, null>('users:delete', ADMIN_ACCESS, (input) => {
     const existing = getAppUserById(input.id)
     if (!existing) throw new AppError('errors.notFound')
     if (isHiddenOperatorUsername(existing.username)) throw new AppError('errors.notFound')

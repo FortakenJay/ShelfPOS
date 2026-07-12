@@ -184,8 +184,13 @@ function ProductManager({
         deletePending={pm.deleteMutation.isPending}
         onDeleteConfirm={(id) => pm.deleteMutation.mutate(id)}
         onExportTemplate={() => pm.exportTemplate.mutate()}
-        onImportConfirm={(filePath, format, stockMode) =>
-          pm.importConfirmMutation.mutate({ filePath, format, stockMode })
+        onImportConfirm={(filePath, sourceVersion, format, stockMode) =>
+          pm.importConfirmMutation.mutate({
+            filePath,
+            sourceVersion,
+            format,
+            stockMode
+          })
         }
         onReceiveChoice={handleReceiveChoice}
         onSupplierInvoiceConfirm={(input) =>

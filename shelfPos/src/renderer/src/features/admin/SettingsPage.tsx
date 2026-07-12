@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
+import { queryKeys } from '@/lib/queryKeys'
 import { RequireRole } from '@/features/shell/Shell'
 import { FullScreenSpinner } from '@/components/ui'
 import { SettingsForm } from './SettingsForm'
@@ -17,7 +18,7 @@ export function SettingsPage(): React.JSX.Element {
 function Settings(): React.JSX.Element {
   const { t } = useTranslation()
   const { data: settingsData, isLoading } = useQuery({
-    queryKey: ['settings'],
+    queryKey: queryKeys.settings,
     queryFn: api.settings.get
   })
 

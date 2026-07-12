@@ -1,7 +1,14 @@
 import type Database from 'better-sqlite3'
 import { getDb } from '../index'
 import { AppError } from '../../errors'
-import { PRODUCT_COLUMNS, PRODUCT_POS_COLUMNS } from '../columns'
+import {
+  PRODUCT_CATALOG_COLUMNS,
+  PRODUCT_CATALOG_WRITE_COLUMNS,
+  PRODUCT_CATALOG_WRITE_COLUMNS_WITHOUT_STOCK_PROVIDER,
+  PRODUCT_COLUMNS,
+  PRODUCT_POS_COLUMNS
+} from '../columns'
+import type { ProductCatalogWriteColumn } from '../columns'
 import { localNow } from '../helpers'
 import { getSetting, SETTING_KEYS } from './settings'
 import { enqueueSync } from './syncQueue'
@@ -240,24 +247,39 @@ export function enqueueProductSync(
   enqueueSync('products', productId, operation, db)
 }
 
-const PRODUCT_INSERT_SQL = `INSERT INTO products (barcode, name, price, cost_price, category, stock_provider, stock, stock_threshold, tax_category, bulk_qty, bulk_price, factura_negativo, created_at, updated_at)
- VALUES (?,?,?,?,?,?,0,?,?,?,?,?,?,?)`
+const PRODUCT_INSERT_SQL = `INSERT INTO products (${PRODUCT_CATALOG_COLUMNS.join(', ')}, created_at, updated_at)
+ VALUES (${PRODUCT_CATALOG_COLUMNS.map((column) => (column === 'stock' ? '0' : '?')).join(', ')}, ?, ?)`
+
+const PRODUCT_UPDATE_SQL = `UPDATE products SET ${PRODUCT_CATALOG_WRITE_COLUMNS.map((column) => `${column} = ?`).join(', ')}, updated_at = ?
+ WHERE id = ?`
+
+const PRODUCT_UPDATE_WITHOUT_STOCK_PROVIDER_SQL = `UPDATE products SET ${PRODUCT_CATALOG_WRITE_COLUMNS_WITHOUT_STOCK_PROVIDER.map((column) => `${column} = ?`).join(', ')}, updated_at = ?
+ WHERE id = ?`
+
+function productCatalogParams(input: ProductInput): Record<ProductCatalogWriteColumn, unknown> {
+  return {
+    barcode: input.barcode.trim(),
+    name: input.name.trim(),
+    price: input.price,
+    price2: input.price2 ?? null,
+    price3: input.price3 ?? null,
+    cost_price: input.costPrice ?? null,
+    category: input.category?.trim() || null,
+    stock_provider: input.stockProvider?.trim() || null,
+    stock_threshold: input.stockThreshold ?? null,
+    tax_category: input.taxCategory,
+    bulk_qty: input.bulkQty ?? null,
+    bulk_price: input.bulkPrice ?? null,
+    factura_negativo: input.facturaNegativo ? 1 : 0
+  }
+}
 
 /** Insert a product row. Must run inside a transaction. Returns new product id. */
 export function insertProductRow(db: Database.Database, input: ProductInput, now: string): number {
   releaseBarcodeForReuse(db, input.barcode)
+  const params = productCatalogParams(input)
   const result = db.prepare(PRODUCT_INSERT_SQL).run(
-    input.barcode.trim(),
-    input.name.trim(),
-    input.price,
-    input.costPrice ?? null,
-    input.category?.trim() || null,
-    input.stockProvider?.trim() || null,
-    input.stockThreshold ?? null,
-    input.taxCategory,
-    input.bulkQty ?? null,
-    input.bulkPrice ?? null,
-    input.facturaNegativo ? 1 : 0,
+    ...PRODUCT_CATALOG_WRITE_COLUMNS.map((column) => params[column]),
     now,
     now
   )
@@ -277,44 +299,16 @@ export function updateProductCatalogFields(
 ): void {
   releaseBarcodeForReuse(db, input.barcode)
   const includeStockProvider = opts.includeStockProvider ?? true
-  if (includeStockProvider) {
-    db.prepare(
-      `UPDATE products SET barcode = ?, name = ?, price = ?, cost_price = ?, category = ?, stock_provider = ?, stock_threshold = ?, tax_category = ?, bulk_qty = ?, bulk_price = ?, factura_negativo = ?, updated_at = ?
-       WHERE id = ?`
-    ).run(
-      input.barcode.trim(),
-      input.name.trim(),
-      input.price,
-      input.costPrice ?? null,
-      input.category?.trim() || null,
-      input.stockProvider?.trim() || null,
-      input.stockThreshold ?? null,
-      input.taxCategory,
-      input.bulkQty ?? null,
-      input.bulkPrice ?? null,
-      input.facturaNegativo ? 1 : 0,
-      localNow(),
-      productId
-    )
-  } else {
-    db.prepare(
-      `UPDATE products SET barcode = ?, name = ?, price = ?, cost_price = ?, category = ?, stock_threshold = ?, tax_category = ?, bulk_qty = ?, bulk_price = ?, factura_negativo = ?, updated_at = ?
-       WHERE id = ?`
-    ).run(
-      input.barcode.trim(),
-      input.name.trim(),
-      input.price,
-      input.costPrice ?? null,
-      input.category?.trim() || null,
-      input.stockThreshold ?? null,
-      input.taxCategory,
-      input.bulkQty ?? null,
-      input.bulkPrice ?? null,
-      input.facturaNegativo ? 1 : 0,
-      localNow(),
-      productId
-    )
-  }
+  const columns = includeStockProvider
+    ? PRODUCT_CATALOG_WRITE_COLUMNS
+    : PRODUCT_CATALOG_WRITE_COLUMNS_WITHOUT_STOCK_PROVIDER
+  const sql = includeStockProvider ? PRODUCT_UPDATE_SQL : PRODUCT_UPDATE_WITHOUT_STOCK_PROVIDER_SQL
+  const params = productCatalogParams(input)
+  db.prepare(sql).run(
+    ...columns.map((column) => params[column]),
+    localNow(),
+    productId
+  )
 }
 
 export function updateProductCostPrice(

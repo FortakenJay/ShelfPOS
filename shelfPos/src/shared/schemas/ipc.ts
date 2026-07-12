@@ -2,6 +2,11 @@ import { z } from 'zod'
 import type { IpcChannel } from '../types'
 import { MAX_LABEL_COPIES } from '../printLimits'
 import {
+  MAX_PRODUCT_BULK_QTY,
+  normalizeProductInput,
+  validateProductBusinessRules
+} from '../productValidation'
+import {
   actionShortcutKeySchema,
   barcodeSchema,
   dateRangeSchema,
@@ -35,20 +40,26 @@ const cajaPinChangeInputSchema = z.strictObject({
   newPin: pinSchema
 })
 
-const productInputSchema = z.strictObject({
+const productInputObjectSchema = z.strictObject({
   barcode: barcodeSchema,
   name: shortTextSchema,
   price: moneySchema,
+  price2: moneySchema.nullable().refine((value) => value == null || value > 0),
+  price3: moneySchema.nullable().refine((value) => value == null || value > 0),
   costPrice: moneySchema.nullable(),
   category: z.string().trim().max(100).nullable(),
   stockProvider: z.string().trim().max(100).nullable(),
   stock: z.number().int().min(0).max(MAX_PRODUCT_STOCK),
   stockThreshold: z.number().int().min(0).max(MAX_PRODUCT_STOCK).nullable(),
   taxCategory: taxCategorySchema,
-  bulkQty: z.number().int().min(2).max(10_000).nullable(),
+  bulkQty: z.number().int().min(2).max(MAX_PRODUCT_BULK_QTY).nullable(),
   bulkPrice: moneySchema.nullable(),
   facturaNegativo: z.boolean()
 })
+
+const productInputSchema = productInputObjectSchema
+  .transform(normalizeProductInput)
+  .refine(validateProductBusinessRules)
 
 const productFiltersSchema = z
   .strictObject({
@@ -102,12 +113,45 @@ const customerInputSchema = z.strictObject({
 
 export const createSaleInputSchema = z.strictObject({
   items: z.array(createSaleItemInputSchema).min(1).max(500),
-  payments: z.array(salePaymentInputSchema).min(1).max(3),
+  payments: z.array(salePaymentInputSchema).min(1).max(4),
   cartDiscount: moneySchema.optional(),
   customer: customerInputSchema.optional(),
+  customerAccountId: positiveIdSchema.optional(),
   tendered: moneySchema.optional(),
   discountPin: pinSchema.optional(),
   printReceipt: z.boolean().optional()
+})
+
+const customerListInputSchema = z
+  .strictObject({
+    search: z.string().trim().max(100).optional(),
+    includeInactive: z.boolean().optional()
+  })
+  .optional()
+
+const customerCreateInputSchema = z.strictObject({
+  name: shortTextSchema,
+  phone: z.string().trim().max(32).optional(),
+  idNumber: z.string().trim().max(32).optional(),
+  note: optionalTextSchema.optional()
+})
+
+const customerUpdateInputSchema = z.strictObject({
+  id: positiveIdSchema,
+  name: shortTextSchema,
+  phone: z.string().trim().max(32).optional(),
+  idNumber: z.string().trim().max(32).optional(),
+  note: optionalTextSchema.optional(),
+  isActive: z.boolean().optional()
+})
+
+const creditPaymentInputSchema = z.strictObject({
+  customerId: positiveIdSchema,
+  saleId: positiveIdSchema.optional(),
+  amount: moneySchema.refine((n) => n > 0, 'amount must be positive'),
+  method: z.enum(['cash', 'card', 'sinpe']),
+  ref: z.string().trim().max(64).optional(),
+  note: optionalTextSchema.optional()
 })
 
 const createReturnInputSchema = z.strictObject({
@@ -227,8 +271,10 @@ const licenseActivateInputSchema = z.strictObject({
 
 const productUpdateInputSchema = z.strictObject({
   id: positiveIdSchema,
-  ...productInputSchema.shape
+  ...productInputObjectSchema.shape
 })
+  .transform(({ id, ...input }) => ({ id, ...normalizeProductInput(input) }))
+  .refine(validateProductBusinessRules)
 
 /** Electron IPC may pass null for omitted payloads; page/pageSize may arrive as strings. */
 const printQueueListInputSchema = z.union([
@@ -348,6 +394,13 @@ export const IPC_SCHEMAS = {
   'sales:exportFacturaPdf': z.strictObject({
     saleId: z.coerce.number().int().positive().max(10_000_000)
   }),
+  'customers:list': customerListInputSchema,
+  'customers:pending': voidInput,
+  'customers:create': customerCreateInputSchema,
+  'customers:update': customerUpdateInputSchema,
+  'customers:deactivate': z.strictObject({ id: positiveIdSchema }),
+  'customers:detail': z.strictObject({ id: positiveIdSchema }),
+  'customers:recordPayment': creditPaymentInputSchema,
   'returns:create': createReturnInputSchema,
   'discount:authorize': discountAuthorizeInputSchema,
   'cart:removeAuthorize': z.strictObject({

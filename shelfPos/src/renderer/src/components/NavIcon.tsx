@@ -18,6 +18,7 @@ export type NavIconName =
   | 'panelExpand'
   | 'panelCollapse'
   | 'notifications'
+  | 'globe'
 
 const PATHS: Record<NavIconName, ReactNode> = {
   pos: (
@@ -114,6 +115,12 @@ const PATHS: Record<NavIconName, ReactNode> = {
     <>
       <path d="M12 4a5 5 0 0 1 5 5v4l2 2H5l2-2V9a5 5 0 0 1 5-5z" />
       <path d="M10 18a2 2 0 0 0 4 0" />
+    </>
+  ),
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3a14.5 14.5 0 0 1 0 18M12 3a14.5 14.5 0 0 0 0 18" />
     </>
   )
 }

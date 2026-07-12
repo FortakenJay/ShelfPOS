@@ -1,4 +1,4 @@
-import { handle } from './helpers'
+import { ADMIN_ACCESS, handle, SALES_ACCESS, SALES_OR_ADMIN_ACCESS } from './helpers'
 import { AppError } from '../errors'
 import { getDb } from '../db'
 import { rangeBounds } from '../db/helpers'
@@ -21,9 +21,6 @@ import type {
   OpenFloatInput
 } from '../../shared/types'
 
-const CASH: 'sales'[] = ['sales']
-const CASH_READ: ('sales' | 'admin')[] = ['sales', 'admin']
-
 function validateDateRange(range: DateRange): void {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(range?.from ?? '') || !/^\d{4}-\d{2}-\d{2}$/.test(range?.to ?? '')) {
     throw new AppError('errors.invalidInput')
@@ -31,15 +28,15 @@ function validateDateRange(range: DateRange): void {
 }
 
 export function registerCashHandlers(): void {
-  handle<void, CashDrawerStatus>('cash:status', CASH_READ, () => cashDrawerStatus())
+  handle<void, CashDrawerStatus>('cash:status', SALES_OR_ADMIN_ACCESS, () => cashDrawerStatus())
 
-  handle<DateRange, CashMovementRow[]>('cash:listMovements', ['admin'], (range) => {
+  handle<DateRange, CashMovementRow[]>('cash:listMovements', ADMIN_ACCESS, (range) => {
     validateDateRange(range)
     const [fromTs, toTs] = rangeBounds(range)
     return listCashMovements({ fromTs, toTs })
   })
 
-  handle<OpenFloatInput, CashDrawerStatus>('cash:openFloat', CASH, async (input) => {
+  handle<OpenFloatInput, CashDrawerStatus>('cash:openFloat', SALES_ACCESS, async (input) => {
     const user = session.require()
     if (!Number.isFinite(input?.amount) || input.amount < 0) throw new AppError('errors.invalidInput')
     if (hasOpeningFloat()) throw new AppError('errors.floatAlreadyOpen')
@@ -51,7 +48,7 @@ export function registerCashHandlers(): void {
     return cashDrawerStatus()
   })
 
-  handle<CashMovementInput, CashDrawerStatus>('cash:movement', CASH, async (input) => {
+  handle<CashMovementInput, CashDrawerStatus>('cash:movement', SALES_ACCESS, async (input) => {
     const user = session.require()
     if (!hasOpeningFloat()) throw new AppError('errors.cashNotOpened')
     if (input?.type !== 'cash_in' && input?.type !== 'cash_out') {

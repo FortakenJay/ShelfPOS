@@ -2,7 +2,7 @@ import type Database from 'better-sqlite3'
 import { HIDDEN_OPERATOR_USERNAME } from '../../shared/operator-account'
 import { OPERATOR_PLACEHOLDER_PASSWORD_HASH } from '../services/operatorConfig'
 
-export const SCHEMA_VERSION = 23
+export const SCHEMA_VERSION = 27
 
 type Migration = (db: Database.Database) => void
 
@@ -535,6 +535,77 @@ const migrations: Record<number, Migration> = {
       `CREATE UNIQUE INDEX IF NOT EXISTS idx_sales_consecutivo
        ON sales(consecutivo) WHERE consecutivo IS NOT NULL`
     )
+  },
+
+  // v24 — persisted customer accounts, credit tenders and later partial payments.
+  24: (db) => {
+    db.exec(`
+      CREATE TABLE customers (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        name       TEXT NOT NULL,
+        phone      TEXT,
+        id_number  TEXT,
+        note       TEXT,
+        balance    REAL NOT NULL DEFAULT 0 CHECK (balance >= 0),
+        is_active  INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        deleted_at TEXT
+      );
+      CREATE INDEX idx_customers_name ON customers(name COLLATE NOCASE);
+      CREATE INDEX idx_customers_phone ON customers(phone);
+
+      ALTER TABLE sales ADD COLUMN customer_account_id INTEGER REFERENCES customers(id);
+      CREATE INDEX idx_sales_customer_account ON sales(customer_account_id);
+
+      CREATE TABLE sale_payments_new (
+        id      INTEGER PRIMARY KEY AUTOINCREMENT,
+        sale_id INTEGER NOT NULL REFERENCES sales(id),
+        method  TEXT NOT NULL CHECK (method IN ('cash','card','sinpe','credit')),
+        amount  REAL NOT NULL,
+        ref     TEXT
+      );
+      INSERT INTO sale_payments_new (id, sale_id, method, amount, ref)
+        SELECT id, sale_id, method, amount, ref FROM sale_payments;
+      DROP TABLE sale_payments;
+      ALTER TABLE sale_payments_new RENAME TO sale_payments;
+      CREATE INDEX idx_sale_payments_sale ON sale_payments(sale_id);
+
+      ALTER TABLE cierres ADD COLUMN total_credit REAL NOT NULL DEFAULT 0;
+
+      CREATE TABLE credit_payments (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_id INTEGER NOT NULL REFERENCES customers(id),
+        amount      REAL NOT NULL CHECK (amount > 0),
+        method      TEXT NOT NULL CHECK (method IN ('cash','card','sinpe')),
+        ref         TEXT,
+        note        TEXT,
+        user_id     INTEGER NOT NULL REFERENCES users(id),
+        created_at  TEXT NOT NULL,
+        cierre_id   INTEGER REFERENCES cierres(id)
+      );
+      CREATE INDEX idx_credit_payments_customer ON credit_payments(customer_id);
+      CREATE INDEX idx_credit_payments_cierre ON credit_payments(cierre_id);
+      CREATE INDEX idx_credit_payments_created ON credit_payments(created_at);
+    `)
+  },
+
+  // v25 — optional sale target for paying an individual credit cart.
+  25: (db) => {
+    db.exec(`
+      ALTER TABLE credit_payments ADD COLUMN sale_id INTEGER REFERENCES sales(id);
+      CREATE INDEX idx_credit_payments_sale ON credit_payments(sale_id);
+    `)
+  },
+
+  // v26 — optional second catalog price for cashier quick selection.
+  26: (db) => {
+    db.exec('ALTER TABLE products ADD COLUMN price2 REAL')
+  },
+
+  // v27 — optional third catalog price for cashier quick selection.
+  27: (db) => {
+    db.exec('ALTER TABLE products ADD COLUMN price3 REAL')
   },
 }
 

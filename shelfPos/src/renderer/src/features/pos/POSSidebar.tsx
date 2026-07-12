@@ -9,7 +9,8 @@ export function POSSidebar({
   cartEmpty,
   onCustomerOpen,
   onPayOpen,
-  onReturnOpen
+  onReturnOpen,
+  onAbonoOpen
 }: {
   total: number
   customer: CustomerInput | null
@@ -17,6 +18,7 @@ export function POSSidebar({
   onCustomerOpen: () => void
   onPayOpen: () => void
   onReturnOpen: () => void
+  onAbonoOpen: () => void
 }): React.JSX.Element {
   const { t } = useTranslation()
 
@@ -49,6 +51,9 @@ export function POSSidebar({
         </Button>
         <Button variant="outline" size="lg" className="w-full" onClick={onReturnOpen}>
           {t('pos.return')}
+        </Button>
+        <Button variant="outline" size="lg" className="w-full" onClick={onAbonoOpen}>
+          {t('pos.recordAbono')}
         </Button>
       </div>
     </div>

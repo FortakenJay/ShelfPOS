@@ -12,10 +12,12 @@ export const SYNC_MAX_RETRIES = 10
 
 /** Tables replicated to Supabase by the background sync service. */
 export const SYNC_TABLES = [
+  'customers',
   'products',
   'sales',
   'sale_items',
   'sale_payments',
+  'credit_payments',
   'cierres',
   'cash_movements',
   'audit_log',

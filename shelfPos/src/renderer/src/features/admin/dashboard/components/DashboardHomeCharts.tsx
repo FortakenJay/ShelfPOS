@@ -27,7 +27,8 @@ export function DashboardHomeCharts({ data }: { data: DashboardOverview }): Reac
   const paymentSlices = [
     { name: t('pos.methods.cash'), value: data.paymentToday.cash },
     { name: t('pos.methods.card'), value: data.paymentToday.card },
-    { name: t('pos.methods.sinpe'), value: data.paymentToday.sinpe }
+    { name: t('pos.methods.sinpe'), value: data.paymentToday.sinpe },
+    { name: t('pos.methods.credit'), value: data.paymentToday.credit }
   ].filter((s) => s.value > 0)
 
   if (!recharts) {

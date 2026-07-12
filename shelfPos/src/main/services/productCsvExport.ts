@@ -13,15 +13,16 @@ const EXPORT_BATCH_SIZE = 1000
 /** Lines buffered per disk write — fewer syscalls without large memory spikes. */
 const WRITE_BUFFER_LINES = 256
 
-const PRODUCT_EXPORT_COLUMNS = `
-  id, barcode, name, price, cost_price, category, stock, stock_threshold, bulk_qty, bulk_price, factura_negativo
-`.trim()
+/** CSV intentionally omits internal catalog fields such as provider, tax category, and timestamps. */
+export const PRODUCT_EXPORT_COLUMNS = ['id', ...PRODUCT_CSV_KEYS].join(', ')
 
 export type ProductExportRow = {
   id: number
   barcode: string
   name: string
   price: number
+  price2: number | null
+  price3: number | null
   cost_price: number | null
   category: string | null
   stock: number
@@ -36,6 +37,8 @@ function formatProductExportLine(row: ProductExportRow): string {
     barcode: asSpreadsheetText(row.barcode ?? ''),
     name: row.name,
     price: row.price,
+    price2: row.price2 ?? '',
+    price3: row.price3 ?? '',
     cost_price: row.cost_price ?? '',
     category: row.category ?? '',
     stock: row.stock,

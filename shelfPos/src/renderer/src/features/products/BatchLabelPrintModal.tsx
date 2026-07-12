@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
 import { toastApiError } from '@/lib/errors'
+import { queryKeys } from '@/lib/queryKeys'
 import { useToasts } from '@/lib/toast'
 import { useDebouncedValue, useGlobalBarcodeScanner, useScannerDetector } from '@/lib/useScanner'
 import { useVerticalDragResize } from '@/features/pos/useVerticalDragResize'
@@ -249,7 +250,7 @@ export function BatchLabelPrintModal({
 
   const debouncedLookup = useDebouncedValue(lookup.trim(), 150)
   const { data: searchResults } = useQuery({
-    queryKey: ['products', 'batchSearch', debouncedLookup],
+    queryKey: queryKeys.products.batchSearch(debouncedLookup),
     queryFn: () => api.products.search(debouncedLookup),
     enabled: debouncedLookup.length > 0 && !busy
   })
@@ -270,11 +271,12 @@ export function BatchLabelPrintModal({
   })
 
   const addProduct = (product: Product, copies: number): AddProductResult => {
-    let result: AddProductResult = 'added'
+    const result: AddProductResult = queue.some((item) => item.product.id === product.id)
+      ? 'merged'
+      : 'added'
     setQueue((items) => {
       const existing = items.find((item) => item.product.id === product.id)
       if (existing) {
-        result = 'merged'
         return items.map((item) =>
           item.product.id === product.id
             ? { ...item, copies: clampCopies(item.copies + copies) }

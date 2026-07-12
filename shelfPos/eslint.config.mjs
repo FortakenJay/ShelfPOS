@@ -10,7 +10,11 @@ const nodeFiles = [
   'src/main/**/*.{js,ts}',
   'src/preload/**/*.{js,ts}',
   'electron.vite.config.ts',
+  'playwright.config.ts',
+  'vitest.config.ts',
+  'e2e/**/*.ts',
   'scripts/**/*.{js,ts,mjs}',
+  'sync-service/**/*.cjs',
   'eslint.config.mjs'
 ]
 
@@ -25,6 +29,7 @@ export default tseslint.config(
       'sync-service/dist/**',
       'sync-service/src/vendor/**',
       'sync-service/scripts/**',
+      'sync-service/.release-build-*/**',
       '.cache/**',
       'electron.vite.config.*.mjs',
       '**/*.d.ts'
@@ -33,7 +38,14 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['src/**/*.{js,ts,tsx}', 'electron.vite.config.ts', 'scripts/**/*.{js,ts,mjs}'],
+    files: [
+      'src/**/*.{js,ts,tsx}',
+      'electron.vite.config.ts',
+      'playwright.config.ts',
+      'vitest.config.ts',
+      'e2e/**/*.ts',
+      'scripts/**/*.{js,ts,mjs}'
+    ],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module'
@@ -43,6 +55,12 @@ export default tseslint.config(
     files: nodeFiles,
     languageOptions: {
       globals: globals.node
+    }
+  },
+  {
+    files: ['e2e/**/*.ts'],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.browser }
     }
   },
   {
@@ -85,7 +103,7 @@ export default tseslint.config(
     }
   },
   {
-    files: ['scripts/**/*.js'],
+    files: ['scripts/**/*.js', 'sync-service/**/*.cjs'],
     rules: {
       '@typescript-eslint/no-require-imports': 'off'
     }

@@ -2,9 +2,14 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { toastApiError } from '@/lib/errors'
+import {
+  invalidatePrintQueue,
+  invalidateProducts as invalidateProductsQuery,
+  queryKeys
+} from '@/lib/queryKeys'
 import { useToasts } from '@/lib/toast'
 import { useDebouncedValue } from '@/lib/useScanner'
-import type { BatchPrintItem, Product, ProductImportError, ProductImportPreview, ProductImportStockMode, StockStatus, SupplierInvoiceConfirmInput, SupplierInvoicePreview } from '@shared/types'
+import type { BatchPrintItem, Product, ProductImportError, ProductImportPreview, ProductImportResult, ProductImportStockMode, StockStatus, SupplierInvoiceConfirmInput, SupplierInvoicePreview, SupplierInvoiceResult } from '@shared/types'
 
 export type ProductManagerUiState = {
   formProduct: Product | null | 'new'
@@ -73,21 +78,86 @@ export function useProductManager(options?: {
   }
 
   const { data: productList, isFetching: productsLoading } = useQuery({
-    queryKey: ['products', queryFilters],
+    queryKey: queryKeys.products.list(queryFilters),
     queryFn: () => api.products.list(queryFilters)
   })
   const { data: categoryRows } = useQuery({
-    queryKey: ['products', 'categories'],
+    queryKey: queryKeys.products.categories,
     queryFn: api.products.categories
   })
   const { data: stockProviderRows } = useQuery({
-    queryKey: ['products', 'stockProviders'],
+    queryKey: queryKeys.products.stockProviders,
     queryFn: api.products.stockProviders
   })
-  const { data: settingsData } = useQuery({ queryKey: ['settings'], queryFn: api.settings.get })
+  const { data: settingsData } = useQuery({ queryKey: queryKeys.settings, queryFn: api.settings.get })
 
   const invalidateProducts = (): void => {
-    void queryClient.invalidateQueries({ queryKey: ['products'] })
+    invalidateProductsQuery(queryClient)
+  }
+
+  const handleCatalogImportPreview = (
+    result: ProductImportPreview,
+    format: ProductManagerUiState['importFormat']
+  ): void => {
+    if (result.canceled) return
+    setUi((u) => ({ ...u, importPreview: result, importFormat: format }))
+    invalidateProducts()
+  }
+
+  const finalizeImportResult = (
+    applied: number,
+    errors: ProductImportError[] | undefined
+  ): number => {
+    if (applied > 0) invalidateProducts()
+    const failed = errors?.length ?? 0
+    if (failed > 0) setUi((u) => ({ ...u, importErrors: errors ?? [] }))
+    return failed
+  }
+
+  const handleCatalogImportResult = (result: ProductImportResult): void => {
+    if (result.canceled) return
+    const created = result.created ?? 0
+    const updated = result.updated ?? 0
+    const failed = finalizeImportResult(created + updated, result.errors)
+    setUi((u) => ({ ...u, importPreview: null }))
+
+    if (failed > 0) {
+      if (created > 0 || updated > 0) {
+        toasts.success('products.csv.importPartial', {
+          created: created + updated,
+          failed
+        })
+      }
+    } else if (created > 0 && updated > 0) {
+      toasts.success('products.csv.importDoneBoth', { created, updated })
+    } else if (created > 0) {
+      toasts.success('products.csv.importDone', { count: created })
+    } else if (updated > 0) {
+      toasts.success('products.csv.importUpdated', { count: updated })
+    }
+  }
+
+  const handleSupplierInvoiceResult = (result: SupplierInvoiceResult): void => {
+    if (result.canceled) return
+    const restocked = result.restocked ?? 0
+    const created = result.created ?? 0
+    const failed = finalizeImportResult(restocked + created, result.errors)
+    setUi((u) => ({ ...u, supplierInvoicePreview: null }))
+
+    if (failed > 0) {
+      if (restocked > 0 || created > 0) {
+        toasts.success('products.supplierInvoice.partial', {
+          ok: restocked + created,
+          failed
+        })
+      }
+    } else if (restocked > 0 && created > 0) {
+      toasts.success('products.supplierInvoice.done', { restocked, created })
+    } else if (restocked > 0) {
+      toasts.success('products.supplierInvoice.doneRestock', { count: restocked })
+    } else if (created > 0) {
+      toasts.success('products.supplierInvoice.doneCreate', { count: created })
+    }
   }
 
   const quickAdjust = useMutation({
@@ -95,7 +165,7 @@ export function useProductManager(options?: {
       api.products.adjustStock({ ...input, reason: 'manual_correction' }),
     onSuccess: (result) => {
       toasts.stockAlerts(result.stockAlerts)
-      void queryClient.invalidateQueries({ queryKey: ['products'] })
+      invalidateProducts()
     },
     onError: (err) => toastApiError(toasts, err)
   })
@@ -105,7 +175,7 @@ export function useProductManager(options?: {
     onSuccess: () => {
       toasts.success('products.deleted')
       setUi((u) => ({ ...u, deleteProduct: null }))
-      void queryClient.invalidateQueries({ queryKey: ['products'] })
+      invalidateProducts()
     },
     onError: (err) => {
       setUi((u) => ({ ...u, deleteProduct: null }))
@@ -117,7 +187,7 @@ export function useProductManager(options?: {
     mutationFn: () => api.products.exportCsv(true),
     onSuccess: (result) => {
       if (!result.canceled && result.path) toasts.success('export.csvDone', { path: result.path })
-      void queryClient.invalidateQueries({ queryKey: ['products'] })
+      invalidateProducts()
     },
     onError: (err) => toastApiError(toasts, err)
   })
@@ -126,28 +196,20 @@ export function useProductManager(options?: {
     mutationFn: () => api.products.exportCsv(false),
     onSuccess: (result) => {
       if (!result.canceled && result.path) toasts.success('export.csvDone', { path: result.path })
-      void queryClient.invalidateQueries({ queryKey: ['products'] })
+      invalidateProducts()
     },
     onError: (err) => toastApiError(toasts, err)
   })
 
   const importPreviewMutation = useMutation({
     mutationFn: api.products.importPreview,
-    onSuccess: (result) => {
-      if (result.canceled) return
-      setUi((u) => ({ ...u, importPreview: result, importFormat: 'csv' }))
-      void queryClient.invalidateQueries({ queryKey: ['products'] })
-    },
+    onSuccess: (result) => handleCatalogImportPreview(result, 'csv'),
     onError: (err) => toastApiError(toasts, err)
   })
 
   const importEfacturaPreviewMutation = useMutation({
     mutationFn: api.products.importEfacturaPreview,
-    onSuccess: (result) => {
-      if (result.canceled) return
-      setUi((u) => ({ ...u, importPreview: result, importFormat: 'efactura' }))
-      void queryClient.invalidateQueries({ queryKey: ['products'] })
-    },
+    onSuccess: (result) => handleCatalogImportPreview(result, 'efactura'),
     onError: (err) => toastApiError(toasts, err)
   })
 
@@ -156,7 +218,7 @@ export function useProductManager(options?: {
     onSuccess: (result) => {
       if (result.canceled) return
       setUi((u) => ({ ...u, supplierInvoicePreview: result }))
-      void queryClient.invalidateQueries({ queryKey: ['products'] })
+      invalidateProducts()
     },
     onError: (err) => toastApiError(toasts, err)
   })
@@ -164,68 +226,26 @@ export function useProductManager(options?: {
   const importSupplierInvoiceConfirmMutation = useMutation({
     mutationFn: (input: SupplierInvoiceConfirmInput) =>
       api.products.importSupplierInvoiceConfirm(input),
-    onSuccess: (result) => {
-      if (result.canceled) return
-      const restocked = result.restocked ?? 0
-      const created = result.created ?? 0
-      const failed = result.errors?.length ?? 0
-      setUi((u) => ({ ...u, supplierInvoicePreview: null }))
-      if (restocked > 0 || created > 0) void queryClient.invalidateQueries({ queryKey: ['products'] })
-      if (failed > 0) {
-        setUi((u) => ({ ...u, importErrors: result.errors ?? [] }))
-        if (restocked > 0 || created > 0) {
-          toasts.success('products.supplierInvoice.partial', {
-            ok: restocked + created,
-            failed
-          })
-        }
-      } else if (restocked > 0 && created > 0) {
-        toasts.success('products.supplierInvoice.done', { restocked, created })
-      } else if (restocked > 0) {
-        toasts.success('products.supplierInvoice.doneRestock', { count: restocked })
-      } else if (created > 0) {
-        toasts.success('products.supplierInvoice.doneCreate', { count: created })
-      }
-    },
+    onSuccess: handleSupplierInvoiceResult,
     onError: (err) => toastApiError(toasts, err)
   })
 
   const importConfirmMutation = useMutation({
     mutationFn: ({
       filePath,
+      sourceVersion,
       format,
       stockMode
     }: {
       filePath: string
+      sourceVersion: string
       format: 'csv' | 'efactura'
       stockMode: ProductImportStockMode
     }) =>
       format === 'efactura'
-        ? api.products.importEfacturaConfirm(filePath, stockMode)
-        : api.products.importConfirm(filePath, stockMode),
-    onSuccess: (result) => {
-      if (result.canceled) return
-      const created = result.created ?? 0
-      const updated = result.updated ?? 0
-      const failed = result.errors?.length ?? 0
-      setUi((u) => ({ ...u, importPreview: null }))
-      if (created > 0 || updated > 0) void queryClient.invalidateQueries({ queryKey: ['products'] })
-      if (failed > 0) {
-        setUi((u) => ({ ...u, importErrors: result.errors ?? [] }))
-        if (created > 0 || updated > 0) {
-          toasts.success('products.csv.importPartial', {
-            created: created + updated,
-            failed
-          })
-        }
-      } else if (created > 0 && updated > 0) {
-        toasts.success('products.csv.importDoneBoth', { created, updated })
-      } else if (created > 0) {
-        toasts.success('products.csv.importDone', { count: created })
-      } else if (updated > 0) {
-        toasts.success('products.csv.importUpdated', { count: updated })
-      }
-    },
+        ? api.products.importEfacturaConfirm(filePath, sourceVersion, stockMode)
+        : api.products.importConfirm(filePath, sourceVersion, stockMode),
+    onSuccess: handleCatalogImportResult,
     onError: (err) => toastApiError(toasts, err)
   })
 
@@ -235,7 +255,7 @@ export function useProductManager(options?: {
     onSuccess: ({ printStatus }) => {
       if (printStatus === 'printed') toasts.success('products.labelPrinted')
       else toasts.error('pos.printFailed')
-      void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
+      invalidatePrintQueue(queryClient)
     },
     onError: (err) => toastApiError(toasts, err)
   })
@@ -246,7 +266,7 @@ export function useProductManager(options?: {
     onSuccess: ({ printStatus }) => {
       if (printStatus === 'printed') toasts.success('products.barcodePrinted')
       else toasts.error('pos.printFailed')
-      void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
+      invalidatePrintQueue(queryClient)
     },
     onError: (err) => toastApiError(toasts, err)
   })
@@ -261,7 +281,7 @@ export function useProductManager(options?: {
       } else {
         toasts.error('pos.printFailed')
       }
-      void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
+      invalidatePrintQueue(queryClient)
     },
     onError: (err) => toastApiError(toasts, err)
   })
@@ -276,7 +296,7 @@ export function useProductManager(options?: {
       } else {
         toasts.error('pos.printFailed')
       }
-      void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
+      invalidatePrintQueue(queryClient)
     },
     onError: (err) => toastApiError(toasts, err)
   })

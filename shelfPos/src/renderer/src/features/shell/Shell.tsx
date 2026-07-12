@@ -23,6 +23,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/pos', labelKey: 'nav.pos', icon: 'pos', roles: ['sales'] },
+  { to: '/credit', labelKey: 'nav.pendingCredit', icon: 'users', roles: ['sales', 'admin'] },
   { to: '/cash', labelKey: 'nav.cash', icon: 'cash', roles: ['sales'] },
   { to: '/reprints', labelKey: 'nav.reprints', icon: 'reprints', roles: ['sales'] },
   { to: '/admin/cierre', labelKey: 'nav.cierre', icon: 'cierre', roles: ['sales'] },
@@ -36,6 +37,7 @@ const ADMIN_ITEMS: NavItem[] = [
   { to: '/admin/cierre', labelKey: 'nav.cierre', icon: 'cierre', roles: ['admin'] },
   { to: '/products', labelKey: 'nav.products', icon: 'products', roles: ['admin'] },
   { to: '/admin/cash', labelKey: 'nav.cashMovements', icon: 'cashMovements', roles: ['admin'] },
+  { to: '/admin/customers', labelKey: 'nav.customers', icon: 'users', roles: ['admin'] },
   { to: '/admin/users', labelKey: 'nav.users', icon: 'users', roles: ['admin'] },
   { to: '/admin/audit', labelKey: 'nav.audit', icon: 'audit', roles: ['admin'] },
   { to: '/admin/print-queue', labelKey: 'nav.printQueue', icon: 'printQueue', roles: ['admin'] },
@@ -147,7 +149,7 @@ export function Shell(): React.JSX.Element {
               <div className="mb-3 text-[13px] text-slate-400">{t(`roles.${user.role}`)}</div>
             </>
           )}
-          <LanguageSwitcher className="mb-3" compact={collapsed} />
+          <LanguageSwitcher className="mb-3" compact={collapsed} menuPlacement="up" />
           <button
             type="button"
             onClick={() => void logout()}

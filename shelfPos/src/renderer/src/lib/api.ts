@@ -24,12 +24,19 @@ import type {
   CierreHistoryFilter,
   CierrePreview,
   CierreRecord,
+  CreditPaymentInput,
   CreateReturnInput,
   CreateReturnResult,
   CreateSaleInput,
   CreateSaleResult,
   DateRange,
   DashboardOverview,
+  CustomerCreateInput,
+  CustomerDetail,
+  CustomerListInput,
+  PendingCreditCustomerSummary,
+  CustomerRow,
+  CustomerUpdateInput,
   DiscountAuthorizeInput,
   FirstRunSetupInput,
   FirstRunStatus,
@@ -142,10 +149,26 @@ export const api = {
       call<{ canceled: boolean; path?: string }>('products:exportCsv', { template }),
     importPreview: () => call<ProductImportPreview>('products:importCsvPreview'),
     importEfacturaPreview: () => call<ProductImportPreview>('products:importEfacturaPreview'),
-    importConfirm: (filePath: string, stockMode: ProductImportStockMode = 'add') =>
-      call<ProductImportResult>('products:importCsvConfirm', { filePath, stockMode }),
-    importEfacturaConfirm: (filePath: string, stockMode: ProductImportStockMode = 'add') =>
-      call<ProductImportResult>('products:importEfacturaConfirm', { filePath, stockMode }),
+    importConfirm: (
+      filePath: string,
+      sourceVersion: string,
+      stockMode: ProductImportStockMode = 'add'
+    ) =>
+      call<ProductImportResult>('products:importCsvConfirm', {
+        filePath,
+        sourceVersion,
+        stockMode
+      }),
+    importEfacturaConfirm: (
+      filePath: string,
+      sourceVersion: string,
+      stockMode: ProductImportStockMode = 'add'
+    ) =>
+      call<ProductImportResult>('products:importEfacturaConfirm', {
+        filePath,
+        sourceVersion,
+        stockMode
+      }),
     importSupplierInvoicePreview: () =>
       call<SupplierInvoicePreview>('products:importSupplierInvoicePreview'),
     importSupplierInvoiceConfirm: (input: SupplierInvoiceConfirmInput) =>
@@ -174,6 +197,16 @@ export const api = {
       call<ReprintReceiptResult>('sales:reprintReceipt', { saleId }),
     exportFacturaPdf: (saleId: number) =>
       call<{ canceled: boolean; path?: string }>('sales:exportFacturaPdf', { saleId })
+  },
+  customers: {
+    list: (input?: CustomerListInput) => call<CustomerRow[]>('customers:list', input),
+    pending: () => call<PendingCreditCustomerSummary[]>('customers:pending'),
+    create: (input: CustomerCreateInput) => call<CustomerRow>('customers:create', input),
+    update: (input: CustomerUpdateInput) => call<CustomerRow>('customers:update', input),
+    deactivate: (id: number) => call<CustomerRow>('customers:deactivate', { id }),
+    detail: (id: number) => call<CustomerDetail>('customers:detail', { id }),
+    recordPayment: (input: CreditPaymentInput) =>
+      call<CustomerDetail>('customers:recordPayment', input)
   },
   returns: {
     create: (input: CreateReturnInput) => call<CreateReturnResult>('returns:create', input)

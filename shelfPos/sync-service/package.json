@@ -1,6 +1,6 @@
 {
   "name": "@shelfpos/sync-service",
-  "version": "1.7.3",
+  "version": "1.8.0",
   "description": "Background OS service: SQLite sync_queue → Supabase mirror",
   "private": true,
   "type": "module",
@@ -10,6 +10,7 @@
   "main": "./dist/index.js",
   "scripts": {
     "build": "node scripts/sync-vendor.mjs && tsc",
+    "test": "npm run build && node --test tests/*.test.cjs",
     "start": "node dist/index.js",
     "dev": "node scripts/sync-vendor.mjs && tsx src/index.ts",
     "backfill": "node scripts/backfill-mirror.cjs",

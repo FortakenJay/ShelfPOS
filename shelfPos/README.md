@@ -18,9 +18,12 @@ npm run dev        # dev mode with HMR
 npm run typecheck  # typecheck main+preload and renderer
 npm run lint       # typecheck + ESLint
 npm run doctor     # React Doctor (--scope changed)
+npm run test       # Vitest unit suite
+npm run test:e2e   # Playwright Electron smokes (build first)
+npm run test:qa    # unit + build + e2e
 ```
 
-Full React Doctor baseline: `npx react-doctor@latest --verbose --scope full`. See `docs/wiki/18-Quality-And-Tooling.md`.
+Full React Doctor baseline: `npx react-doctor@latest --verbose --scope full`. See wiki [[18-Quality-And-Tooling]]. QA details: [`docs/QA.md`](docs/QA.md). DRY cleanup status: [`docs/DRY_AUDIT.md`](docs/DRY_AUDIT.md).
 
 ## Packaging
 
@@ -31,7 +34,13 @@ npm run dist:dir   # unpacked build (faster, for smoke testing)
 
 The installer never touches `%APPDATA%\shelfpos` — user data survives updates and uninstall.
 
-Release notes: [`RELEASE_NOTES.md`](RELEASE_NOTES.md) (current: **1.7.1**).
+Release notes: [`RELEASE_NOTES.md`](RELEASE_NOTES.md) (current: **1.8.0**).
+
+ShelfPOS follows `X.Y.Z` semantic versioning:
+
+- `X`: major or incompatible update
+- `Y`: backward-compatible feature
+- `Z`: backward-compatible bug fix
 
 ## Data & backups
 

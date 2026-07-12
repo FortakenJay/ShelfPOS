@@ -4,7 +4,15 @@ import { session } from '../services/session'
 import { IPC_SCHEMAS } from '../../shared/schemas/ipc'
 import type { ApiResult, IpcChannel, Role } from '../../shared/types'
 
-type Access = Role[] | 'public' | 'authed'
+type Access = readonly Role[] | 'public' | 'authed'
+
+export const SALES_ACCESS = ['sales'] as const satisfies readonly Role[]
+export const ADMIN_ACCESS = ['admin'] as const satisfies readonly Role[]
+export const SALES_OR_ADMIN_ACCESS = ['sales', 'admin'] as const satisfies readonly Role[]
+export const PRODUCT_MANAGER_OR_ADMIN_ACCESS = [
+  'product_manager',
+  'admin'
+] as const satisfies readonly Role[]
 
 /**
  * Registers an IPC handler with server-side access control.

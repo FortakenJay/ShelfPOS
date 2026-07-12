@@ -3,7 +3,8 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
 import { toastApiError } from '@/lib/errors'
-import { parseColonesInput } from '@/lib/format'
+import { parseLocalizedMoneyInput } from '@/lib/format'
+import { invalidateAfterSale, queryKeys } from '@/lib/queryKeys'
 import { useToasts } from '@/lib/toast'
 import { roundColones, appendMoneyInputDigit, backspaceMoneyInput } from '@shared/money'
 import { Modal } from '@/components/ui'
@@ -16,6 +17,7 @@ import { PaymentSplitSection } from './PaymentSplitSection'
 import { PaymentInvoiceCustomerSection } from './PaymentInvoiceCustomerSection'
 import { buildPaymentCustomer } from './paymentCustomer'
 import { usePaymentKeyboard } from './usePaymentKeyboard'
+import { CustomerPicker } from '../customers/components/CustomerPicker'
 
 interface PaymentModalProps {
   items: CreateSaleLineInput[]
@@ -31,7 +33,7 @@ interface PaymentModalProps {
 const round2 = roundColones
 
 function entryAmount(raw: string): number {
-  return parseColonesInput(raw) ?? 0
+  return parseLocalizedMoneyInput(raw) ?? 0
 }
 
 export function PaymentModal({
@@ -47,24 +49,29 @@ export function PaymentModal({
   const { t } = useTranslation()
   const toasts = useToasts()
   const queryClient = useQueryClient()
-  const { data: settings } = useQuery({ queryKey: ['settings'], queryFn: api.settings.get })
+  const { data: settings } = useQuery({ queryKey: queryKeys.settings, queryFn: api.settings.get })
   const { state, dispatch } = usePaymentModalState(initialMethod, total)
   const [printReceipt, setPrintReceipt] = useState(true)
   const [invoiceName, setInvoiceName] = useState(customer?.name ?? '')
   const [invoiceCedula, setInvoiceCedula] = useState(customer?.id ?? '')
+  const [customerAccountId, setCustomerAccountId] = useState<number | null>(null)
+  const [customerCreateOpen, setCustomerCreateOpen] = useState(false)
   const { splitPayment, singleMethod, sinpeRef, entries, tendered } = state
+  const hasCredit = splitPayment
+    ? entries.some((entry) => entry.method === 'credit')
+    : singleMethod === 'credit'
 
   const splitPaid = round2(entries.reduce((acc, e) => acc + entryAmount(e.amount), 0))
   const remaining = round2(Math.max(0, total - splitPaid))
 
   const hasCashSingle = !splitPayment && singleMethod === 'cash'
 
-  const tenderedNum = parseColonesInput(tendered)
+  const tenderedNum = parseLocalizedMoneyInput(tendered)
   const change = hasCashSingle && tenderedNum != null ? round2(tenderedNum - total) : null
 
   const splitBalanced = Math.abs(remaining) < 0.01
   const splitAmountsValid = entries.every((e) => {
-    const n = parseColonesInput(e.amount)
+    const n = parseLocalizedMoneyInput(e.amount)
     return n != null && n > 0
   })
   const cashShort = hasCashSingle && tenderedNum != null && tenderedNum < total
@@ -73,7 +80,8 @@ export function PaymentModal({
     singleMethod === 'cash' ? tenderedNum != null && tenderedNum >= total : true
 
   const canConfirmSplit = splitBalanced && splitAmountsValid
-  const canConfirm = splitPayment ? canConfirmSplit : canConfirmSingle
+  const paymentValid = splitPayment ? canConfirmSplit : canConfirmSingle
+  const canConfirm = paymentValid && (!hasCredit || customerAccountId != null)
 
   const notifyPrint = (printStatus: PrintStatus, printJobId: number): void => {
     if (printStatus === 'failed') {
@@ -101,11 +109,8 @@ export function PaymentModal({
       if (variables.printReceipt !== false) {
         notifyPrint(result.printStatus, result.printJobId)
       }
-      void queryClient.invalidateQueries({ queryKey: ['posSearch'] })
-      void queryClient.invalidateQueries({ queryKey: ['products'] })
-      void queryClient.invalidateQueries({ queryKey: ['cashStatus'] })
-      void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
-      void queryClient.invalidateQueries({ queryKey: ['salesForReprint'] })
+      invalidateAfterSale(queryClient)
+      void queryClient.invalidateQueries({ queryKey: queryKeys.customers })
       onCompleted(result.change)
     },
     onError: (err) => toastApiError(toasts, err)
@@ -129,7 +134,7 @@ export function PaymentModal({
     const payments = splitPayment
       ? entries.map((e) => ({
           method: e.method,
-          amount: round2(parseColonesInput(e.amount) ?? 0),
+          amount: round2(parseLocalizedMoneyInput(e.amount) ?? 0),
           ref: e.method === 'sinpe' && e.ref.trim() ? e.ref.trim() : undefined
         }))
       : [
@@ -145,6 +150,7 @@ export function PaymentModal({
       payments,
       cartDiscount: cartDiscount > 0 ? cartDiscount : undefined,
       customer: buildPaymentCustomer(customer, invoiceName, invoiceCedula),
+      customerAccountId: hasCredit ? customerAccountId ?? undefined : undefined,
       tendered: cashSingle && tenderedNum != null ? tenderedNum : undefined,
       discountPin: hasDiscount ? discountPin ?? undefined : undefined,
       printReceipt
@@ -157,7 +163,7 @@ export function PaymentModal({
   }
 
   usePaymentKeyboard({
-    enabled: !isPending,
+    enabled: !isPending && !customerCreateOpen,
     canConfirm,
     splitPayment,
     hasCashSingle,
@@ -183,7 +189,10 @@ export function PaymentModal({
       size="xl"
       bodyClassName="flex flex-col overflow-hidden p-4"
     >
-      <div className="grid h-full min-h-0 grid-cols-[minmax(9rem,11rem)_minmax(0,1fr)] gap-4">
+      <div
+        data-testid="payment-modal"
+        className="grid h-full min-h-0 grid-cols-[minmax(9rem,11rem)_minmax(0,1fr)] gap-4"
+      >
         <PaymentMethodSidebar
           splitPayment={splitPayment}
           method={singleMethod}
@@ -205,6 +214,15 @@ export function PaymentModal({
             onNameChange={setInvoiceName}
             onCedulaChange={setInvoiceCedula}
           />
+          {hasCredit && (
+            <div className="mt-2 shrink-0">
+              <CustomerPicker
+                value={customerAccountId}
+                onChange={setCustomerAccountId}
+                onCreateOpenChange={setCustomerCreateOpen}
+              />
+            </div>
+          )}
 
           <div className="mt-2 flex min-h-0 flex-1 flex-col overflow-hidden">
             {splitPayment ? (

@@ -1,8 +1,9 @@
 import { useReducer } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
-import { formatMoney, parseColonesInput } from '@/lib/format'
+import { formatMoney, parseLocalizedMoneyInput } from '@/lib/format'
 import { formatMoneyInputFromNumber } from '@shared/money'
+import { moneyEquals, sanctionedUnitPriceKind } from '@shared/pricing'
 import { Button, Field, Modal } from '@/components/ui'
 import { MoneyInput } from '@/components/MoneyInput'
 import { PinModal } from '@/components/PinModal'
@@ -43,6 +44,9 @@ export function PriceOverrideModal({
   productName,
   productId,
   catalogUnitPrice,
+  baseUnitPrice,
+  price2,
+  price3,
   quantity,
   currentOverride,
   onApply,
@@ -51,6 +55,9 @@ export function PriceOverrideModal({
   productName: string
   productId: number
   catalogUnitPrice: number
+  baseUnitPrice: number
+  price2?: number | null
+  price3?: number | null
   quantity: number
   currentOverride?: number
   onApply: (unitPrice: number | undefined) => void
@@ -59,6 +66,12 @@ export function PriceOverrideModal({
   const { t } = useTranslation()
   const catalog = catalogUnitPrice
   const current = currentOverride ?? catalog
+  const effectiveUnit = currentOverride ?? catalog
+  const prices = { price: baseUnitPrice, price2: price2 ?? null, price3: price3 ?? null }
+  const effectiveKind = sanctionedUnitPriceKind(prices, effectiveUnit)
+  const overrideKind =
+    currentOverride == null ? null : sanctionedUnitPriceKind(prices, currentOverride)
+  const showQuickPrices = !moneyEquals(baseUnitPrice, catalog) || price2 != null || price3 != null
   const [state, dispatch] = useReducer(priceOverrideReducer, {
     value: formatMoneyInputFromNumber(current),
     pinOpen: false,
@@ -89,11 +102,28 @@ export function PriceOverrideModal({
     }
   })
 
+  const applyPrice1 = (): void => {
+    onApply(baseUnitPrice === catalog ? undefined : baseUnitPrice)
+  }
+
   const requestApply = (): void => {
-    const parsed = parseColonesInput(value)
+    const parsed = parseLocalizedMoneyInput(value)
     if (parsed == null || parsed <= 0) return
-    if (parsed === catalog) {
+    const priceKind = sanctionedUnitPriceKind(prices, parsed)
+    if (priceKind === 'price1') {
+      applyPrice1()
+      return
+    }
+    if (moneyEquals(parsed, catalog)) {
       onApply(undefined)
+      return
+    }
+    if (priceKind === 'price2' && price2 != null) {
+      onApply(price2)
+      return
+    }
+    if (priceKind === 'price3' && price3 != null) {
+      onApply(price3)
       return
     }
     dispatch({ type: 'openPin', price: parsed })
@@ -121,6 +151,48 @@ export function PriceOverrideModal({
         </span>
         <span className="text-xl font-extrabold">{formatMoney(catalog)}</span>
       </div>
+
+      {showQuickPrices && (
+        <div
+          className={`mb-4 grid gap-3 ${
+            1 + (price2 != null ? 1 : 0) + (price3 != null ? 1 : 0) >= 3
+              ? 'grid-cols-3'
+              : 'grid-cols-2'
+          }`}
+        >
+          <Button
+            variant={effectiveKind === 'price1' ? 'primary' : 'outline'}
+            size="lg"
+            className="h-auto flex-col py-3"
+            onClick={applyPrice1}
+          >
+            <span>{t('pos.priceOverride.price1')}</span>
+            <span className="text-xl">{formatMoney(baseUnitPrice)}</span>
+          </Button>
+          {price2 != null && (
+            <Button
+              variant={overrideKind === 'price2' ? 'primary' : 'outline'}
+              size="lg"
+              className="h-auto flex-col py-3"
+              onClick={() => onApply(price2)}
+            >
+              <span>{t('pos.priceOverride.price2')}</span>
+              <span className="text-xl">{formatMoney(price2)}</span>
+            </Button>
+          )}
+          {price3 != null && (
+            <Button
+              variant={overrideKind === 'price3' ? 'primary' : 'outline'}
+              size="lg"
+              className="h-auto flex-col py-3"
+              onClick={() => onApply(price3)}
+            >
+              <span>{t('pos.priceOverride.price3')}</span>
+              <span className="text-xl">{formatMoney(price3)}</span>
+            </Button>
+          )}
+        </div>
+      )}
 
       <Field label={t('pos.priceOverride.unitPrice')}>
         <MoneyInput

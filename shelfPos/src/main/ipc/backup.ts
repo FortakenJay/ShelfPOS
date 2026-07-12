@@ -1,7 +1,7 @@
 import { dialog } from 'electron'
 import { join } from 'node:path'
 import { writeFileSync } from 'node:fs'
-import { handle } from './helpers'
+import { ADMIN_ACCESS, handle } from './helpers'
 import { getDb, getDbPath } from '../db'
 import { rangeBounds } from '../db/helpers'
 import { currentLanguage } from '../db/repos/settings'
@@ -12,13 +12,13 @@ import type { BackupService } from '../services/backup'
 import type { BackupInfo, DateRange } from '../../shared/types'
 
 export function registerBackupHandlers(backup: BackupService): void {
-  handle<void, BackupInfo>('backup:info', ['admin'], () => ({
+  handle<void, BackupInfo>('backup:info', ADMIN_ACCESS, () => ({
     dbPath: getDbPath(),
     backupDir: backup.backupDir,
     backups: backup.listBackups()
   }))
 
-  handle<void, { canceled: boolean; path?: string }>('backup:runManual', ['admin'], async () => {
+  handle<void, { canceled: boolean; path?: string }>('backup:runManual', ADMIN_ACCESS, async () => {
     const result = await dialog.showOpenDialog({ properties: ['openDirectory'] })
     if (result.canceled || !result.filePaths[0]) return { canceled: true }
     const stamp = new Date()
@@ -33,7 +33,7 @@ export function registerBackupHandlers(backup: BackupService): void {
 
   handle<{ range: DateRange }, { canceled: boolean; path?: string }>(
     'backup:exportCsv',
-    ['admin'],
+    ADMIN_ACCESS,
     async ({ range }) => {
       const lang = currentLanguage()
       const result = await dialog.showSaveDialog({

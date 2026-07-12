@@ -1,4 +1,4 @@
-import { handle } from './helpers'
+import { ADMIN_ACCESS, handle, SALES_OR_ADMIN_ACCESS } from './helpers'
 import { writeAudit } from '../db/repos/audit'
 import {
   getPrinterStatus,
@@ -8,21 +8,19 @@ import {
 } from '../services/printer'
 import type { PrinterStatusInfo } from '../../shared/types'
 
-const PRINTER_ACTION: ('sales' | 'admin')[] = ['sales', 'admin']
-
 export function registerPrinterHandlers(): void {
-  handle<void, null>('printer:openDrawer', PRINTER_ACTION, async () => {
+  handle<void, null>('printer:openDrawer', SALES_OR_ADMIN_ACCESS, async () => {
     await openCashDrawer()
     writeAudit('drawer_opened_manual', { entity: 'printer' })
     return null
   })
 
-  handle<void, PrinterStatusInfo>('printer:status', ['admin'], async () => {
+  handle<void, PrinterStatusInfo>('printer:status', ADMIN_ACCESS, async () => {
     await probePrinter()
     return getPrinterStatus()
   })
 
-  handle<void, null>('printer:test', ['admin'], async () => {
+  handle<void, null>('printer:test', ADMIN_ACCESS, async () => {
     await printTestReceipt()
     return null
   })

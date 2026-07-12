@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
 import { toastApiError } from '@/lib/errors'
 import { formatDate, formatMoney, todayStr } from '@/lib/format'
+import { invalidateProducts, queryKeys } from '@/lib/queryKeys'
 import { useToasts } from '@/lib/toast'
 import { Button, Field, Input, Modal, Toggle } from '@/components/ui'
 import { PinModal } from '@/components/PinModal'
@@ -74,10 +75,10 @@ export function ReturnModal({ onClose }: { onClose: () => void }): React.JSX.Ele
     onSuccess: (result) => {
       toasts.stockAlerts(result.stockAlerts)
       toasts.success('returns.success')
-      void queryClient.invalidateQueries({ queryKey: ['products'] })
+      invalidateProducts(queryClient)
       void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       void queryClient.invalidateQueries({ queryKey: ['reports'] })
-      void queryClient.invalidateQueries({ queryKey: ['cashStatus'] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cashStatus })
       patch({ pin: { open: false, error: null } })
       onClose()
     },

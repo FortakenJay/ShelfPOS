@@ -166,6 +166,11 @@ async function initData(): Promise<BackupService> {
 
   }
 
+  if (process.env.SHELFPOS_TEST === '1') {
+    const { seedTestData } = await import('./services/testSeed')
+    seedTestData(db)
+  }
+
   applyPendingSyncStoreId(userData)
 
   try {

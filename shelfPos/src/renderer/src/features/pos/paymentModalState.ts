@@ -1,5 +1,6 @@
 import { useReducer, type Dispatch } from 'react'
 import { formatMoneyInputFromNumber, roundColones } from '@shared/money'
+import { PAYMENT_METHODS } from '@shared/types'
 import type { PaymentMethod } from '@shared/types'
 
 function defaultCashTendered(total: number): string {
@@ -16,8 +17,6 @@ export interface PaymentEntry {
 export function newPaymentEntry(method: PaymentMethod, ref = ''): PaymentEntry {
   return { id: crypto.randomUUID(), method, amount: '', ref }
 }
-
-const METHODS: PaymentMethod[] = ['cash', 'card', 'sinpe']
 
 export interface PaymentModalState {
   splitPayment: boolean
@@ -101,7 +100,7 @@ function paymentModalReducer(
       }
     case 'addEntry': {
       const used = new Set(state.entries.map((e) => e.method))
-      const next = METHODS.find((m) => !used.has(m)) ?? 'cash'
+      const next = PAYMENT_METHODS.find((m) => !used.has(m)) ?? 'cash'
       return { ...state, entries: [...state.entries, newPaymentEntry(next)] }
     }
     case 'removeEntry':

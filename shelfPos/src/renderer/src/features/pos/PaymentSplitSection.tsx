@@ -2,10 +2,9 @@ import { useTranslation } from 'react-i18next'
 import { formatMoney } from '@/lib/format'
 import { Button, Field, Input, Select } from '@/components/ui'
 import { MoneyInput } from '@/components/MoneyInput'
+import { PAYMENT_METHODS } from '@shared/types'
 import type { PaymentMethod } from '@shared/types'
 import { commitEditableOnEnter } from './posKeyboard'
-
-const METHODS: PaymentMethod[] = ['cash', 'card', 'sinpe']
 
 const MONEY_INPUT_CLASS =
   'w-full min-h-[56px] text-right text-3xl font-extrabold tabular-nums tracking-tight px-4'
@@ -42,7 +41,7 @@ export function PaymentSplitSection({
                     }
                     className="w-full"
                   >
-                    {METHODS.map((m) => (
+                    {PAYMENT_METHODS.map((m) => (
                       <option key={m} value={m}>
                         {t(`pos.methods.${m}`)}
                       </option>
@@ -86,7 +85,7 @@ export function PaymentSplitSection({
         ))}
       </div>
 
-      {entries.length < METHODS.length && (
+      {entries.length < PAYMENT_METHODS.length && (
         <Button variant="outline" className="mt-3" onClick={onAddEntry}>
           {t('pos.addPayment')}
         </Button>

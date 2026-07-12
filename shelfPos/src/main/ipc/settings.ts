@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import { handle } from './helpers'
+import { ADMIN_ACCESS, handle } from './helpers'
 import { AppError } from '../errors'
 import { getAppSettings, getSetting, receiptLanguage, setSetting, SETTING_KEYS } from '../db/repos/settings'
 import { writeAudit } from '../db/repos/audit'
@@ -70,7 +70,7 @@ export function registerSettingsHandlers(): void {
     return null
   })
 
-  handle<SettingsUpdateInput, AppSettings>('settings:update', ['admin'], (input) => {
+  handle<SettingsUpdateInput, AppSettings>('settings:update', ADMIN_ACCESS, (input) => {
     const current = getAppSettings()
     const shortcutValues: Record<(typeof SHORTCUT_KEYS)[number], ActionShortcutKey> = {
       shortcutOpenFloat: input.shortcutOpenFloat ?? current.shortcutOpenFloat,
@@ -160,7 +160,7 @@ export function registerSettingsHandlers(): void {
 
   handle<{ currentPin: string; newPin: string }, null>(
     'settings:changePin',
-    ['admin'],
+    ADMIN_ACCESS,
     async ({ currentPin, newPin }) => {
       if (!PIN_RE.test(newPin)) throw new AppError('firstRun.errors.pinFormat')
       await session.verifyPin(currentPin)
@@ -172,7 +172,7 @@ export function registerSettingsHandlers(): void {
 
   handle<{ currentPin: string; newPin: string }, null>(
     'settings:changeCajaPin',
-    ['admin'],
+    ADMIN_ACCESS,
     async ({ currentPin, newPin }) => {
       if (!PIN_RE.test(newPin)) throw new AppError('firstRun.errors.pinFormat')
       const existing = getSetting(SETTING_KEYS.cajaPinHash)
@@ -188,7 +188,7 @@ export function registerSettingsHandlers(): void {
 
   handle<{ managerPin: string; cajaPin: string }, { printStatus: PrintStatus }>(
     'settings:printPinCard',
-    ['admin'],
+    ADMIN_ACCESS,
     async ({ managerPin, cajaPin }) => {
       if (!PIN_RE.test(managerPin) || !PIN_RE.test(cajaPin)) {
         throw new AppError('firstRun.errors.pinFormat')

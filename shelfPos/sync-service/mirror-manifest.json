@@ -1,0 +1,173 @@
+[
+  {
+    "table": "customers",
+    "localTable": "customers",
+    "columns": [
+      "id",
+      "name",
+      "phone",
+      "id_number",
+      "note",
+      "balance",
+      "is_active",
+      "created_at",
+      "updated_at",
+      "deleted_at"
+    ]
+  },
+  {
+    "table": "cierres",
+    "localTable": "cierres",
+    "columns": [
+      "id",
+      "opened_at",
+      "closed_at",
+      "closed_by_user_id",
+      "closed_by_username",
+      "shift_label",
+      "total_cash",
+      "total_card",
+      "total_sinpe",
+      "total_credit",
+      "total_sales",
+      "opening_float",
+      "cash_in",
+      "cash_out",
+      "expected_cash",
+      "counted_cash",
+      "cash_difference",
+      "notes"
+    ]
+  },
+  {
+    "table": "sales",
+    "localTable": "sales",
+    "columns": [
+      "id",
+      "user_id",
+      "total",
+      "subtotal",
+      "discount_total",
+      "cart_discount",
+      "note",
+      "sale_condition",
+      "consecutivo",
+      "customer_name",
+      "customer_id_type",
+      "customer_id",
+      "customer_phone",
+      "customer_email",
+      "customer_activity_code",
+      "customer_account_id",
+      "cierre_id",
+      "created_at"
+    ]
+  },
+  {
+    "table": "sale_items",
+    "localTable": "sale_items",
+    "columns": [
+      "id",
+      "sale_id",
+      "product_id",
+      "product_name_snapshot",
+      "barcode_snapshot",
+      "quantity",
+      "unit_price",
+      "catalog_unit_price",
+      "line_total",
+      "line_discount",
+      "discount",
+      "tax_category"
+    ]
+  },
+  {
+    "table": "sale_payments",
+    "localTable": "sale_payments",
+    "columns": ["id", "sale_id", "method", "amount", "ref"]
+  },
+  {
+    "table": "credit_payments",
+    "localTable": "credit_payments",
+    "columns": [
+      "id",
+      "customer_id",
+      "amount",
+      "method",
+      "ref",
+      "note",
+      "user_id",
+      "created_at",
+      "cierre_id",
+      "sale_id"
+    ]
+  },
+  {
+    "table": "cash_movements",
+    "localTable": "cash_movements",
+    "columns": ["id", "type", "amount", "reason", "user_id", "created_at", "cierre_id"]
+  },
+  {
+    "table": "return_items",
+    "localTable": "return_items",
+    "columns": [
+      "id",
+      "sale_id",
+      "product_id",
+      "sale_item_id",
+      "quantity",
+      "line_total",
+      "restocked",
+      "created_at",
+      "processed_by"
+    ]
+  },
+  {
+    "table": "products",
+    "localTable": "products",
+    "columns": [
+      "id",
+      "barcode",
+      "name",
+      "price",
+      "price2",
+      "price3",
+      "cost_price",
+      "category",
+      "stock_provider",
+      "stock",
+      "stock_threshold",
+      "tax_category",
+      "bulk_qty",
+      "bulk_price",
+      "factura_negativo",
+      "deleted_at",
+      "created_at",
+      "updated_at"
+    ]
+  },
+  {
+    "table": "stock_adjustments",
+    "localTable": "stock_adjustments",
+    "columns": ["id", "product_id", "user_id", "delta", "reason", "created_at"]
+  },
+  {
+    "table": "audit_log",
+    "localTable": "audit_log",
+    "columns": [
+      "id",
+      "user_id",
+      "username",
+      "action",
+      "entity",
+      "entity_id",
+      "detail",
+      "created_at"
+    ]
+  },
+  {
+    "table": "pos_users",
+    "localTable": "users",
+    "columns": ["id", "username", "role", "is_active", "created_at", "last_login_at"]
+  }
+]

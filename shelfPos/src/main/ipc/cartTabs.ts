@@ -1,4 +1,4 @@
-import { handle } from './helpers'
+import { handle, SALES_ACCESS } from './helpers'
 import { AppError } from '../errors'
 import { session } from '../services/session'
 import {
@@ -23,8 +23,6 @@ import type {
   CartTabSaveInput
 } from '../../shared/types'
 
-const SELL: 'sales'[] = ['sales']
-
 function toListItem(row: {
   id: number
   label: string | null
@@ -40,11 +38,11 @@ function toListItem(row: {
 }
 
 export function registerCartTabHandlers(): void {
-  handle<void, CartTabListItem[]>('cartTabs:list', SELL, () =>
+  handle<void, CartTabListItem[]>('cartTabs:list', SALES_ACCESS, () =>
     listCartTabs().map(toListItem)
   )
 
-  handle<CartTabCreateInput, CartTabListItem>('cartTabs:create', SELL, (input) => {
+  handle<CartTabCreateInput, CartTabListItem>('cartTabs:create', SALES_ACCESS, (input) => {
     if (!Number.isInteger(input.position) || input.position < 1) {
       throw new AppError('errors.invalidInput')
     }
@@ -52,31 +50,31 @@ export function registerCartTabHandlers(): void {
     return toListItem(createCartTab(label, input.position))
   })
 
-  handle<CartTabSaveInput, null>('cartTabs:save', SELL, (input) => {
+  handle<CartTabSaveInput, null>('cartTabs:save', SALES_ACCESS, (input) => {
     if (!input.cartJson?.trim()) throw new AppError('errors.invalidInput')
     saveCartTab(input.id, input.cartJson)
     return null
   })
 
-  handle<CartTabRenameInput, null>('cartTabs:rename', SELL, (input) => {
+  handle<CartTabRenameInput, null>('cartTabs:rename', SALES_ACCESS, (input) => {
     const label = input.label?.trim() || null
     renameCartTab(input.id, label)
     return null
   })
 
-  handle<{ id: number }, null>('cartTabs:remove', SELL, (input) => {
+  handle<{ id: number }, null>('cartTabs:remove', SALES_ACCESS, (input) => {
     removeCartTab(input.id)
     return null
   })
 
-  handle<{ id: number }, null>('cartTabs:complete', SELL, (input) => {
+  handle<{ id: number }, null>('cartTabs:complete', SALES_ACCESS, (input) => {
     completeCartTab(input.id)
     return null
   })
 
   handle<CartTabDiscardAuditedInput, CartTabDiscardResult>(
     'cartTabs:discardAudited',
-    SELL,
+    SALES_ACCESS,
     async (input) => {
       if (!input.pin?.trim()) throw new AppError('errors.invalidPin')
       const label = input.label?.trim()
@@ -90,7 +88,7 @@ export function registerCartTabHandlers(): void {
     }
   )
 
-  handle<CartTabReorderInput, null>('cartTabs:reorder', SELL, (input) => {
+  handle<CartTabReorderInput, null>('cartTabs:reorder', SALES_ACCESS, (input) => {
     if (!Array.isArray(input.ids) || input.ids.length === 0) {
       throw new AppError('errors.invalidInput')
     }

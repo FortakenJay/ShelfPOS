@@ -8,7 +8,8 @@ export function ByPaymentReportTable({ data }: { data: PaymentMethodReport }): R
   const rows: [string, number, number][] = [
     [t('pos.methods.cash'), data.cash, data.countCash],
     [t('pos.methods.card'), data.card, data.countCard],
-    [t('pos.methods.sinpe'), data.sinpe, data.countSinpe]
+    [t('pos.methods.sinpe'), data.sinpe, data.countSinpe],
+    [t('pos.methods.credit'), data.credit, data.countCredit]
   ]
 
   return (
@@ -32,7 +33,7 @@ export function ByPaymentReportTable({ data }: { data: PaymentMethodReport }): R
           <Td className="font-extrabold">{t('common.total')}</Td>
           <Td className="text-right text-[17px] font-extrabold">{formatMoney(data.total)}</Td>
           <Td className="text-right font-extrabold">
-            {data.countCash + data.countCard + data.countSinpe}
+            {data.countCash + data.countCard + data.countSinpe + data.countCredit}
           </Td>
         </tr>
       </tbody>

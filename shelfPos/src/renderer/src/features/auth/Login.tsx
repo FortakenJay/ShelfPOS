@@ -34,7 +34,7 @@ export function LoginPage(): React.JSX.Element {
   return (
     <div className="relative flex h-full flex-col items-center justify-center bg-chrome p-6">
       <div className="absolute top-6 right-6">
-        <LanguageSwitcher className="!w-auto min-w-[140px]" />
+        <LanguageSwitcher className="!w-auto" />
       </div>
       <AppLogo className="mb-10" size="lg" />
       <form

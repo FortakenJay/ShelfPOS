@@ -11,7 +11,6 @@ const SEARCH_RESULTS_DEFAULT_HEIGHT = 320
 interface POSSearchPanelProps {
   inputRef: React.RefObject<HTMLInputElement | null>
   query: string
-  debouncedQuery: string
   searchResults: Product[] | undefined
   onQueryChange: (value: string) => void
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void
@@ -21,7 +20,6 @@ interface POSSearchPanelProps {
 export function POSSearchPanel({
   inputRef,
   query,
-  debouncedQuery,
   searchResults,
   onQueryChange,
   onKeyDown,
@@ -29,7 +27,8 @@ export function POSSearchPanel({
 }: POSSearchPanelProps): React.JSX.Element {
   const { t } = useTranslation()
   const panelRef = useRef<HTMLDivElement>(null)
-  const showResults = debouncedQuery.length > 0
+  const normalizedQuery = query.trim()
+  const showResults = normalizedQuery.length > 0 && !normalizedQuery.endsWith('*')
 
   const getMaxHeight = (): number => {
     const column = panelRef.current?.parentElement
@@ -54,6 +53,7 @@ export function POSSearchPanel({
       <div data-pos-search-input>
         <input
           ref={inputRef}
+          data-testid="pos-search"
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           onKeyDown={onKeyDown}

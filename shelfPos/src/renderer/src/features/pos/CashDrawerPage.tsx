@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
+import { queryKeys } from '@/lib/queryKeys'
 import { RequireRole } from '@/features/shell/Shell'
 import { CashDrawerSummary } from './CashDrawerSummary'
 import { CashMovementsPanel } from './CashMovementsPanel'
@@ -15,7 +16,7 @@ export function CashDrawerPage(): React.JSX.Element {
 
 function CashDrawer(): React.JSX.Element {
   const { t } = useTranslation()
-  const { data, isLoading } = useQuery({ queryKey: ['cashStatus'], queryFn: api.cash.status })
+  const { data, isLoading } = useQuery({ queryKey: queryKeys.cashStatus, queryFn: api.cash.status })
 
   return (
     <div className="p-6">

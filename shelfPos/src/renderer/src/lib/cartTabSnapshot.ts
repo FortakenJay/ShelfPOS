@@ -1,10 +1,11 @@
 import type { CartLine } from '@/features/pos/types'
-import { cartLineTotal } from '@/lib/cartLine'
+import { cartLineGross } from '@/lib/cartLine'
 import {
   isCartTabSnapshotEmpty as sharedIsEmpty,
   parseCartTabSnapshotJson,
   cartTabSnapshotTotal as sharedSnapshotTotal
 } from '@shared/cartTabSnapshot'
+import { calculateCartTotals } from '@shared/cartTotals'
 import type { CustomerInput } from '@shared/types'
 
 export interface CartTabSnapshot {
@@ -42,7 +43,8 @@ export function isEmptySnapshot(snapshot: CartTabSnapshot): boolean {
 
 /** Live cart total (avoids re-serialize when computing active tab). */
 export function liveSaleTotal(snapshot: CartTabSnapshot): number {
-  const afterLineDiscounts = snapshot.cart.reduce((acc, line) => acc + cartLineTotal(line), 0)
-  const cartDiscountClamped = Math.min(Math.max(snapshot.cartDiscount, 0), afterLineDiscounts)
-  return afterLineDiscounts - cartDiscountClamped
+  return calculateCartTotals(
+    snapshot.cart.map((line) => ({ gross: cartLineGross(line), discount: line.discount })),
+    snapshot.cartDiscount
+  ).total
 }

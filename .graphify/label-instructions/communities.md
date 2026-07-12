@@ -10,95 +10,91 @@ Write every name in English (en). Do not switch languages.
 
 ## Communities
 
-Community 0: 07768fd pagination and user tests, 07a5b84 more fixes, 0d0d88f Remove split-out repository entries from .gitignore, 0ef1588 stuff, 142aee3 mejorar el cierre y proprieratary data, 14a2364 Split monorepo into independent repos: shelfPos, she, 1b80d1c build fix, 1e257f4 added a versioning disaply and fixed 2 issues regard, 233e386 Merge branch 'dev' of https://github.com/SakenEtAlOr, 24e20c4 bug fixes and fully documented., 24f0fbb fixed more UIs, 2659acf more fixes and added more features
-Community 1: pushRowLine(, print-test-big-receipt.ts, __dirname, rawPrintScriptPath, probePrinter(, sendRaw(, t81Quirks(, printer, quirks, receiptLines, print-test-crc.ts, labelLines
-Community 2: round2(, cash.ts, openCashSummary(, cashSummaryForCierre(, listCashMovements(, listOpenCashMovements(, cashDrawerStatus(, insertCashMovement(, hasOpeningFloat(, cashMovementTotals.ts, cashMovementTotals(, reports.ts
-Community 3: printLimits.ts, ipc.ts, languagePayloadSchema, pinChangeSchema, cajaPinChangeInputSchema, productInputSchema, productFiltersSchema, adjustStockInputSchema, salePaymentInputSchema, createSaleProductItemSchema, createSaleMiscItemSchema, createSaleItemInputSchema
-Community 4: index.d.ts, Window, index.ts, channelSet, types.ts, StockStatus, PrintJobStatus, PrintJobType, ReportType, ReportPeriodPreset, BatchPrintItem, SupplierInvoiceRestockRow
-Community 5: i18n.ts, t(, printTemplates.ts, ReceiptItemLine, ReceiptArgs, PRINTER_TEST_RECEIPT_CATALOG, receiptItemsFromCatalog(, buildPrinterTestReceiptLines(, methodLabel(, idTypeLabel(, emisorLines(, customerLines(
-Community 6: config.ts, SyncConfig, defaultSyncConfigPath(, localSyncConfigPath(, loadEnvFile(, loadConfigFile(, readSecretKeyEnv(, resolveSecretKey(, loadConfig(, db.ts, readSetting(, readStoreId(
-Community 7: dashboardOverview(, dashboard.ts, kpiTrend(, monthRange(, grossProfit(, salesTrendLast30Days(, salesByHourToday(, stockStatus(, inventorySummary(, inventoryHealth(, inventoryProductRows(, productPerformance(
-Community 8: writeAudit(, AppError, handle(, session, getSyncQueueHealth(, requeueFailedSync(, errors.ts, .constructor(, auth.ts, registerAuthHandlers(, authorize.ts, PrivilegedAuthType
-Community 9: probePrinter(, printJobs.ts, getPrintJob(, markPrintJob(, listFailedPrintJobs(, listPrintJobsForPage(, listPendingPrintJobIds(, listRetryablePrintJobIds(, printQueue.ts, registerPrintQueueHandlers(, printer.ts, PRINTER_ACTION
-Community 10: activationWindow.ts, activationUrl(, createActivationWindow(, closeActivationWindow(, appIcon.ts, resolveAppIcon(, setDb(, index.ts, fatal(, initData(, createMainWindow(, startLicensedApp(
-Community 11: getDb(, getAppSettings(, index.ts, getDbPath(, insertPrintJob(, settings.ts, SETTING_KEYS, ACTION_SHORTCUT_KEYS, resolvePayShortcuts(, getSetting(, setSetting(, ivaRateFor(
-Community 12: localNow(, helpers.ts, pad(, todayLocal(, daysAgoLocal(, rangeBounds(, daysInRange(, cartTabs.ts, EMPTY_SNAPSHOT, CartTabDbRow, listCartTabs(, resetCartTabsForNewShift(
-Community 13: get-machine-id.ts, AppLogo.tsx, AppLogo(, MoneyInput.tsx, MoneyInputProps, MoneyInput(, ReportTable.tsx, SaleReceiptActions.tsx, SaleReceiptActions(, ByPaymentReportTable.tsx, ByPaymentReportTable(, InventoryReportTable.tsx
-Community 14: PinCardPrintModal.tsx, normalizePin(, PinCardPrintModal(, SettingsCloudPanel.tsx, cloudStatusKey(, SettingsCloudPanel(, SettingsForm.tsx, commitSavedDraft(, PinFields, PinFormsState, emptyPinFields(, PinFormsAction
-Community 15: DateRangePicker.tsx, withTimeDefaults(, presetWithTime(, DateRangePicker(, NumPad.tsx, NUMPAD_KEYS, NumPadProps, NumPad(, PinModal.tsx, normalizePin(, digitFromKey(, PinModalProps
-Community 16: salesReceipt.ts, SaleReceiptRow, ItemReceiptRow, FacturaItemRow, PaymentReceiptRow, listPendingCierreSalesForReprint(, loadSaleForReceipt(, assertSaleInOpenShift(, buildFacturaPdfData(, reprintSaleReceipt(, stock.ts, assertSaleStock(
-Community 17: print-colon-preprod.mjs, __dirname, INIT, CODEPAGE_PC850, CODEPAGE_PC437, PARTIAL_CUT, SELECT_USER_CHARS, CANCEL_USER_CHARS, COLON_SIGN_MATRIX, align(, bold(, size(
-Community 18: syncQueue.ts, SYNC_TABLES, SyncTableName, SyncOperation, SyncQueueHealth, enqueueAllPosUsersSync(, enqueueSync(, users.ts, UserDbRow, mapUser(, getHiddenOperatorUserId(, listAppUsers(
-Community 19: router.tsx, PRODUCT_STOCK_SEARCH, REPORT_TYPE_SEARCH, REPORT_PERIOD_SEARCH, rootRoute, indexRoute, firstRunRoute, syncSetupRoute, chooseLanguageRoute, loginRoute, shellRoute, posRoute
-Community 20: DashboardPage.tsx, DashboardPage(, Dashboard(, DashboardTabContent(, DashboardOverview.tsx, KpiOverview(, DashboardPanelToolbar.tsx, DashboardPanelToolbar(, DashboardPrimitives.tsx, DashboardCard(, DashboardEmpty(, SectionHeading(
-Community 21: api.ts, ApiError, .constructor(, call(, api, format.ts, formatMoney(, formatDate(, todayStr(, parseColonesInput(, session.ts, useSession(
-Community 22: columns.ts, PRODUCT_COLUMNS, PRODUCT_POS_COLUMNS, products.ts, productSelect(, isTombstoneBarcode(, tombstoneBarcodeValue(, releaseBarcodeForReuse(, buildProductListWhere(, getProduct(, getProductByBarcode(, listProducts(
-Community 23: CierreDiscrepancyAlerts.tsx, dismissedListeners, emitDismissedChange(, subscribeDismissed(, readDismissedIds(, dismissedSnapshot(, dismissCierreIds(, useDismissedCierreIds(, useCierreDiscrepancyAlerts(, alertMessage(, DismissButton(, CierreDiscrepancyBanner(
-Community 24: PaymentCheckoutPad.tsx, GRID_KEYS, PaymentCheckoutPad(, PaymentCheckoutPanel.tsx, CashAmountStrip(, PaymentCheckoutPanel(, PaymentInvoiceCustomerSection.tsx, PaymentInvoiceCustomerSection(, PaymentMethodButtons.tsx, METHODS, PaymentMethodButtons(, PaymentMethodSidebar.tsx
-Community 25: CartTabsBar.tsx, CartTabsBarProps, CartTabsBar(, OpenFloatModal.tsx, OpenFloatModal(, POSCartPanel(, POSModals(, POSPage.tsx, POSPage(, POSTerminal(, POSSearchPanel.tsx, POSSearchPanelProps
-Community 26: createCartTab(, saveCartTab(, renameCartTab(, getCartTabJson(, deleteCartTabRow(, removeCartTab(, completeCartTab(, reorderCartTabs(, discardCartTabAudited(, cartTabs.ts, SELL, toListItem(
-Community 28: test-supplier-pdf.ts, main(, applyStockDelta(, updateProductCostPrice(, productSupplierInvoicePdf.ts, normalizePdfText(, parseMoney(, guessCategory(, extractTrailingNumbers(, parseSupplierInvoiceText(, readSupplierInvoicePdf(, buildSupplierInvoicePreview(
-Community 29: csv.ts, csvEscape(, buildCsv(, parseCsv(, csvSpreadsheet.ts, asSpreadsheetText(, parseSpreadsheetText(, csvStream.ts, writeToStream(, closeWriteStream(, openUtf8CsvWriteStream(, productCsvExport.ts
-Community 27: DashboardChartFallback.tsx, DashboardChartFallback(, DashboardCharts.tsx, CHART_COLORS, moneyTick(, SalesAnalyticsSection(, ProductAnalyticsCharts(, StockMovementChart(, InventoryHealthChart(, DashboardHomeCharts.tsx, DashboardHomeCharts(, PaymentMethodsPieChart.tsx
-Community 30: products.ts, MANAGE, normalizeBatchPrintItems(, isUniqueViolation(, mapProductDbError(, productIncludesCost(, ProductPrintKind, assignProductBarcode(, productForBarcodePrint(, labelLinesForProduct(, printProductLabel(, printLabelForProduct(
-Community 32: facturaPdf.ts, FacturaPdfItem, FacturaPdfCustomer, FacturaPdfData, escapeHtml(, formatFacturaAmount(, formatFacturaQty(, lineDiscountPercent(, formatFacturaDateTime(, formatDocumentNumber(, itemCodeCell(, itemBarcodeCell(
-Community 31: CustomerModal.tsx, ID_TYPES, CustomerModalProps, customerFormState(, CustomerModal(, POSModals.tsx, POSModalsProps, RemoveLineModal.tsx, RemoveLineModalProps, RemoveLineModal(, ReturnModal.tsx, ReturnModalState
-Community 33: CartLineDiscountInput.tsx, CartLineDiscountInput(, CartMiscNameInput.tsx, CartMiscNameInput(, POSCartPanel.tsx, CartQtyInput(, PaymentSplitSection.tsx, METHODS, PaymentSplitSection(, lineDiscount.ts, cartLineDiscountPercentDisplay(, formatPercentDisplay(
-Community 34: cartTabSnapshot.ts, CartTabSnapshot, parseCartTabSnapshotJson(, isCartTabSnapshotEmpty(, cartTabSnapshotTotal(, money.ts, roundColones(, formatGroupedInteger(, formatColones(, digitsFromMoneyInput(, moneyInputIsEmpty(, formatMoneyInputFromNumber(
-Community 36: csvColumns.ts, SALES_CSV_KEYS, SalesCsvKey, PRODUCT_CSV_KEYS, LANGUAGES, salesCsvHeaders(, productCsvHeaders(, normalizeHeader(, headerAliases(, PRODUCT_HEADER_ALIASES, NORMALIZED_TO_PRODUCT_KEY, mapProductCsvHeaders(
-Community 35: DiscountModal.tsx, DiscountModalProps, DiscountState, DiscountAction, discountReducer(, DiscountModal(, LineDiscountPinModal.tsx, LineDiscountPinRequest, LineDiscountPinModal(, PriceOverrideModal.tsx, PriceOverrideState, PriceOverrideAction
-Community 38: migrations.ts, Migration, migrations, getDbVersion(, runMigrations(, parseEnv.ts, operatorConfig.ts, refreshOperatorPasswordHash(, loadOperatorEnv(, isOperatorLoginConfigured(, verifyOperatorPassword(, parseEnvLine(
-Community 39: ProductCsvKey, ParsedCsv, productEfacturaImport.ts, EFACTURA_HEADERS, normalizeCell(, cellToValue(, worksheetToMatrix(, findHeaderRow(, mapLetterColumns(, cell(, parseOptionalMoney(, parseEfacturaStock(
-Community 40: format.ts, formatMoney(, formatDate(, labelLayout.ts, shelfLabelPaperWidthDots(, shelfLabelBigCols(, shelfLabelTextCols(, wrapShelfLabelText(, estimateShelfLabelDots(, shelfLabelTextDots(, estimateShelfLabelDotsFromLines(, warnIfShelfLabelOverflow(
-Community 41: productCsvImport.ts, validateProductInput(, cell(, parseOptionalNumber(, parseProductRow(, productInputDiffers(, previewRow(, readProductCsv(, buildProductImportPreview(, applyImportStock(, applyProductImport(, ProductImportStockMode
-Community 37: AccountsStep.tsx, AccountsStep(, FirstRun.tsx, Step, FirstRunWizard(, LanguagePicker.tsx, LanguagePicker(, AccountsPinFields.tsx, AccountsPinFieldsProps, AccountsPinFields(, AdminAccountFields.tsx, AdminAccountFieldsProps
-Community 42: ProductsPage.tsx, ProductsPage(, singleFilteredProduct(, ProductManager(, ProductsPagination.tsx, PAGE_SIZE_OPTIONS, ProductsPaginationProps, ProductsPagination(, ProductsTable.tsx, ProductsTable(, ProductManagerModals(, ProductsPageToolbar.tsx
-Community 44: audit.ts, AuditMeta, auditWhere(, countAudit(, listAuditPage(, listAudit(, listAuditUsers(, listAuditActions(, registerAuditHandlers(, AuditLogFilter, AuditLogPage, AuditUser
-Community 43: UserFormModal.tsx, UserModalState, FormState, FormAction, formReducer(, initialFormState(, UserFormModal(, UsersInitialSetupModal.tsx, UsersInitialSetupModal(, UsersPage.tsx, UsersPage(, Users(
-Community 45: e2e-full.mjs, page, ws, pending, send(, evalJs(, sleep(, dumpState(, waitFor(, pinClicks(, log(, fail(
-Community 48: labelPrintLines.ts, LabelPrintKind, resolveLabelPrintLines(, labelPrintPayload(, buildProductBarcodeLabelLines(, barcode.ts, isPrintableCode128Barcode(, barcodePrintValue(, canPrintProductBarcode(, formatSpacedBarcode(, PrintPayload
-Community 46: dashboardChartLazy.tsx, LazySalesAnalyticsSection(, LazyProductAnalyticsCharts(, LazyStockMovementChart(, LazyInventoryHealthChart(, dashboardChartLoaders.ts, DashboardHomeChartsLazy, SalesAnalyticsSectionLazy, ProductAnalyticsChartsLazy, StockMovementChartLazy, InventoryHealthChartLazy
-Community 47: AdjustStockModal.tsx, REASONS, AdjustStockModal(, ProductLabelPrintPromptModal.tsx, ProductLabelPrintPromptModal(, ProductReceiveChoiceModal.tsx, ProductReceiveChoice, ProductReceiveChoiceModalProps, ProductReceiveChoiceModal(, ProductManagerModals.tsx, ProductManagerModalsProps
-Community 49: ReportsPage.tsx, REPORT_TYPES, PERIOD_PRESETS, ReportSearch, parseReportSearch(, reportSearchFromRange(, periodFromRange(, ReportsPage(, Reports(, ReportTable(
-Community 51: lineDiscountFromPercent(, usePosSearchFocus(, usePosEnterShortcut(, usePOSTerminal.ts, DiscountTarget, CloseTabTarget, SaleState, findCartLine(, WorkspaceState, saleFromTab(
-Community 52: paymentModalState.ts, defaultCashTendered(, PaymentEntry, newPaymentEntry(, METHODS, PaymentModalState, PaymentModalAction, createInitialPaymentState(, paymentModalReducer(, usePaymentModalState(
-Community 53: BatchLabelPrintModal.tsx, QueueItem, copiesDigitsOnly(, clampCopies(, copiesFromText(, resolveProductLookup(, AddProductResult, BatchLabelPrintQueueTable(, BatchLabelPrintModalFooter(, BatchLabelPrintModal(
-Community 50: cartLine.ts, cartLineKey(, miscLineUnitPrice(, cartLineUnitPrice(, cartLineGross(, cartLineTotal(, cartLineShowsBulk(, cartLineHasCustomPrice(, cartLineDisplayName(, cartLineBarcode(
-Community 57: print-colon-sp-32-32-port.mjs, __dirname, COLON_SIGN_MATRIX, matrixToUserDefinedChar(, buildBuffer(, getPrinterAndPort(, sendToPort(, { name, port }, data
-Community 58: print-colon-sp-32-32.mjs, __dirname, colonNvGraphicEscPos(, rawPrintScriptPath(, buildBuffer(, probePrinter(, sendRaw(, printer, data
-Community 54: NotificationsCenter.tsx, NotificationsCenterProps, positionDialogNearTrigger(, NotificationsCenter(, dashboardAlertSearch.ts, dashboardAlertProductSearch(, dashboardAlertSeverity.ts, notificationAlertSeverityClass(, panelAlertSeverityClass(
-Community 56: CashDrawerPage.tsx, CashDrawerPage(, CashDrawer(, CashDrawerSummary.tsx, StatBox(, CashDrawerSummary(, CashMovementsPanel.tsx, PendingMovement, CashMovementsPanel(
-Community 55: shortcuts.ts, eventToShortcutKey(, shouldIgnoreShortcutTarget(, useScanner.ts, isWedgeScan(, useScannerDetector(, useGlobalBarcodeScanner(, shouldSkipGlobalScanTarget(, useDebouncedValue(
-Community 65: BackupService, .constructor(, .backupTo(, .dailyPath(, .dailyBackup(, .onCierre(, .listBackups(, .cleanup(
-Community 64: dpapi-win.ts, PS_ENCRYPT, PS_DECRYPT, runPs(, encryptDpapi(, decryptDpapi(, isEncryptedSecret(
-Community 59: main.ts, ERROR_MESSAGES, machineInput, licenseInput, feedback, activateBtn, showFeedback(, loadStatus(
-Community 60: AuditLogPage.tsx, formatAuditDetail(, PAGE_SIZE_OPTIONS, AuditLogState, AuditLogAction, auditLogReducer(, AuditLogPage(, AuditLog(
-Community 62: DashboardTabNav.tsx, TAB_LABEL_KEYS, DashboardTabNav(, dashboardTabs.ts, DASHBOARD_TABS, DashboardTab, DASHBOARD_TAB_SEARCH, parseDashboardTab(
-Community 61: firstRun.types.ts, AccountDraft, EMPTY_ACCOUNT_DRAFT, PinFieldsState, EMPTY_PIN_FIELDS, ValidationState, EMPTY_VALIDATION, MANAGED_ROLES
-Community 66: Shell.tsx, NavItem, NAV_ITEMS, ADMIN_ITEMS, navLinkClass(, Shell(, AdminSidebarNotifications(, RequireRole(
-Community 63: cartTabSnapshot.ts, CartTabSnapshot, EMPTY_CART_TAB_SNAPSHOT, parseCartTabSnapshot(, serializeCartTabSnapshot(, snapshotTotal(, isEmptySnapshot(, liveSaleTotal(
-Community 68: electron.vite.config.ts, licensePub, appIcon, inAppLogo, copyBrandAssets(, copyBrandAssetsPlugin, closeBundle(
-Community 70: generate-keypair.js, { generateKeyPairSync }, { writeFileSync, mkdirSync, existsSync }, { homedir }, { join, dirname }, privateDir, { publicKey, privateKey }
-Community 69: ProductCsvHelpModal.tsx, ProductCsvHelpModalProps, REQUIRED_COLS, OPTIONAL_COLS, STEP_KEYS, TIP_KEYS, ProductCsvHelpModal(
-Community 67: ProductsPageFilters.tsx, ProductsPageFiltersProps, ProductsPageFilters(, useProductManager.ts, ProductManagerUiState, ProductFiltersState, useProductManager(
-Community 71: print-smoke-test.mjs, __dirname, data, printer, dir, binPath
-Community 75: generate-license.ts, Args, parseArgs(, loadPrivateKey(, main(
-Community 76: screenshot.mjs, page, ws, pending, send(
-Community 72: ReprintReceiptsList.tsx, ReprintReceiptsList(, ReprintReceiptsPage.tsx, ReprintReceiptsPage(, ReprintReceipts(
-Community 73: ProductImportPreviewModal.tsx, ProductImportPreviewModalProps, importHasStockChanges(, PreviewTable(, ProductImportPreviewModal(
-Community 74: SupplierInvoicePreviewModal.tsx, SupplierInvoicePreviewModalProps, NewItemDraft, initDrafts(, SupplierInvoicePreviewModal(
-Community 77: sync-vendor.mjs, root, vendorDir, sharedDir, libDir
-Community 79: LanguageSwitcher.tsx, LANGUAGES, languageShortLabel(, LanguageSwitcher(
-Community 80: NavIcon.tsx, NavIconName, PATHS, NavIcon(
-Community 78: ExportPage.tsx, ExportPage(, InfoRow(, ExportBackup(
-Community 82: ProductForm.tsx, productFormState(, ProductFormModalProps, ProductFormModal(
-Community 83: useSidebarCollapsed.ts, readCollapsed(, writeCollapsed(, useSidebarCollapsed(
-Community 81: errors.ts, Toasts, toastApiError(, stockAllows(
-Community 86: eslint.config.mjs, reactFiles, nodeFiles
-Community 84: AdminCashPage.tsx, AdminCashPage(, AdminCash(
-Community 85: PrintQueuePage.tsx, PrintQueuePage(, PrintQueue(
-Community 87: main.tsx, queryClient, bootstrap(
-Community 88: vite-env.d.ts, ImportMetaEnv, ImportMeta
+Community 0: Separation, dev, 07768fd pagination and user tests, 07a5b84 more fixes, 0d0d88f Remove split-out repository entries from .gitignore, 0ef1588 stuff, 142aee3 mejorar el cierre y proprieratary data, 14a2364 Split monorepo into independent repos: shelfPos, she, 1b80d1c build fix, 1e257f4 added a versioning disaply and fixed 2 issues regard, 233e386 Merge branch 'dev' of https://github.com/SakenEtAlOr, 24e20c4 bug fixes and fully documented.
+Community 1: index.ts, channelSet, index.d.ts, Window, types.ts, ApiResult, BackupInfo, BatchPrintItem, CartRemoveAuthorizeInput, CierreConfirmInput, CierreConfirmResult, CierreDiscardedTabRow
+Community 2: pushRowLine(, print-test-big-receipt.ts, __dirname, printer, probePrinter(, quirks, rawPrintScriptPath, receiptLines, sendRaw(, t81Quirks(, print-test-crc.ts, labelLines
+Community 3: round2(, cash.ts, CASH, CASH_READ, registerCashHandlers(, validateDateRange(, cashDrawerStatus(, cashSummaryForCierre(, hasOpeningFloat(, insertCashMovement(, listCashMovements(, listOpenCashMovements(
+Community 4: AdminCashPage.tsx, AdminCash(, AdminCashPage(, ExportPage.tsx, ExportBackup(, ExportPage(, InfoRow(, PrintQueuePage.tsx, PrintQueue(, PrintQueuePage(, Bootstrap.tsx, Bootstrap(
+Community 5: config.ts, defaultSyncConfigPath(, loadConfig(, loadConfigFile(, loadEnvFile(, localSyncConfigPath(, readSecretKeyEnv(, resolveSecretKey(, SyncConfig, db.ts, applyPendingSyncStoreId(, clearSyncOwnerClaimed(
+Community 6: i18n.ts, t(, printTemplates.ts, buildCierreLines(, buildInventoryReportLines(, buildItemizedSalesReportLines(, buildMultiDayPaymentReportLines(, buildMultiDaySummaryReportLines(, buildPaymentReportLines(, buildPinCardLines(, buildPrinterTestReceiptLines(, buildReceiptLines(
+Community 7: probePrinter(, printer.ts, PRINTER_ACTION, registerPrinterHandlers(, printQueue.ts, registerPrintQueueHandlers(, printJobs.ts, getPrintJob(, listFailedPrintJobs(, listPendingPrintJobIds(, listPrintJobsForPage(, listRetryablePrintJobIds(
+Community 8: getDb(, getAppSettings(, index.ts, getDbPath(, firstRun.ts, assertFirstRun(, settings.ts, ID_TYPES, registerSettingsHandlers(, SHORTCUT_KEYS, insertPrintJob(, ACTION_SHORTCUT_KEYS
+Community 9: handle(, AppError, writeAudit(, session, auth.ts, registerAuthHandlers(, authorize.ts, authorizeWithDiscountPin(, PrivilegedAuthType, registerBackupHandlers(, cart.ts, registerCartHandlers(
+Community 10: dashboardOverview(, dashboard.ts, registerDashboardHandlers(, buildAlerts(, categoryPerformance(, employeeOverview(, employeePerformance(, grossProfit(, inventoryHealth(, inventoryProductRows(, inventorySummary(, kpiTrend(
+Community 11: localNow(, af2caa3 updates updates updates. bug fixes with fable, helpers.ts, daysAgoLocal(, daysInRange(, pad(, rangeBounds(, todayLocal(, backup.ts, cierre.ts, CIERRE, CIERRE_ADMIN
+Community 12: setDb(, license.ts, OnLicenseActivated, registerLicenseHandlers(, activationWindow.ts, activationUrl(, closeActivationWindow(, createActivationWindow(, appIcon.ts, resolveAppIcon(, index.ts, createMainWindow(
+Community 13: PinCardPrintModal.tsx, normalizePin(, PinCardPrintModal(, SettingsCloudPanel.tsx, cloudStatusKey(, SettingsCloudPanel(, settingsDraft.ts, draftFromSettings(, EMISOR_KEYS, emisorDraftDirty(, GENERAL_KEYS, generalDraftDirty(
+Community 14: DateRangePicker.tsx, DateRangePicker(, presetWithTime(, withTimeDefaults(, dateRangePresets.ts, presetMonth(, presetToday(, presetWeek(, rangeForReportPeriod(, shiftDays(, NumPad.tsx, NumPad(
+Community 15: sales.ts, cleanText(, ID_TYPES, isMiscSaleLine(, nextConsecutivo(, PAYMENT_METHOD_SET, PAYMENT_METHODS, PricedSaleLine, SALES_OR_ADMIN, SELL, salesReceipt.ts, assertSaleInOpenShift(
+Community 16: LazyDashboardHomeCharts(, DashboardOverview.tsx, KpiOverview(, DashboardPanelToolbar.tsx, DashboardPanelToolbar(, DashboardPrimitives.tsx, DashboardCard(, DashboardEmpty(, FooterLink(, KpiCard(, SectionHeading(, TrendBadge(
+Community 17: ipc.ts, adjustStockInputSchema, auditLogFilterSchema, cajaPinChangeInputSchema, cashMovementInputSchema, cierreConfirmInputSchema, createReturnInputSchema, createSaleInputSchema, createSaleItemInputSchema, createSaleMiscItemSchema, createSaleProductItemSchema, creditPaymentInputSchema
+Community 18: format.ts, formatDate(, formatMoney(, cartTabSnapshot.ts, CartTabSnapshot, cartTabSnapshotTotal(, isCartTabSnapshotEmpty(, parseCartTabSnapshotJson(, money.ts, appendMoneyInputDigit(, backspaceMoneyInput(, digitsFromMoneyInput(
+Community 19: router.tsx, adminCashRoute, adminIndexRoute, auditRoute, cashRoute, chooseLanguageRoute, cierreRoute, creditRoute, customersRoute, dashboardRoute, exportRoute, firstRunRoute
+Community 20: columns.ts, PRODUCT_CATALOG_COLUMNS, PRODUCT_CATALOG_WRITE_COLUMNS, PRODUCT_CATALOG_WRITE_COLUMNS_WITHOUT_STOCK_PROVIDER, PRODUCT_COLUMNS, PRODUCT_POS_COLUMNS, ProductCatalogColumn, ProductCatalogWriteColumn, products.ts, alertsForProducts(, buildProductListWhere(, enqueueProductSync(
+Community 21: print-colon-preprod.mjs, align(, appendColonMark(, appendColonTestStrip(, bold(, buildJob1(, buildJob2(, buildJob3(, buildJob4(, CANCEL_USER_CHARS, CODEPAGE_PC437, CODEPAGE_PC850
+Community 22: users.ts, ADMIN, assertNotLastAdmin(, registerUserHandlers(, syncQueue.ts, enqueueAllPosUsersSync(, enqueueSync(, SYNC_TABLES, SyncOperation, SyncQueueHealth, SyncTableName, countActiveAdmins(
+Community 23: api.ts, api, ApiError, .constructor(, call(, format.ts, formatDate(, formatMoney(, parseColonesInput(, todayStr(, session.ts, homeAfterLogin(
+Community 24: CierreDiscrepancyAlerts.tsx, alertMessage(, CierreDiscrepancyAlerts(, CierreDiscrepancyBanner(, DismissButton(, dismissCierreIds(, dismissedListeners, dismissedSnapshot(, emitDismissedChange(, readDismissedIds(, subscribeDismissed(, useCierreDiscrepancyAlerts(
+Community 25: primitives.ts, actionShortcutKeySchema, barcodeSchema, dateRangeSchema, filePathSchema, idTypeSchema, languageSchema, localDateSchema, localTimeSchema, moneySchema, optionalLongTextSchema, optionalTextSchema
+Community 26: products.ts, assignProductBarcode(, BatchPrintMode, confirmProductImport(, EMPTY_IMPORT_PREVIEW, isUniqueViolation(, labelLinesForProduct(, MANAGE, mapProductDbError(, normalizeBatchPrintItems(, openImportFilePath(, printLabelForProduct(
+Community 27: PaymentCheckoutPad.tsx, GRID_KEYS, PaymentCheckoutPad(, PaymentCheckoutPanel.tsx, CashAmountStrip(, PaymentCheckoutPanel(, paymentCustomer.ts, buildPaymentCustomer(, PaymentInvoiceCustomerSection.tsx, PaymentInvoiceCustomerSection(, PaymentMethodButtons.tsx, METHODS
+Community 28: productCsvImport.ts, AnalyzedProductImport, analyzeProductImport(, applyImportStock(, applyProductImport(, assertProductImportSourceVersion(, buildProductImportPreview(, cell(, parseOptionalNumber(, parseProductRow(, preserveAlternatePricesWhenColumnsAreOmitted(, preservePrice2WhenColumnIsOmitted(
+Community 29: CartTabsBar.tsx, CartTabsBar(, CartTabsBarProps, OpenFloatModal.tsx, OpenFloatModal(, POSCartPanel(, POSModals(, POSPage.tsx, POSPage(, POSTerminal(, POSSearchPanel.tsx, POSSearchPanel(
+Community 30: cartTabs.ts, registerCartTabHandlers(, SELL, toListItem(, completeCartTab(, createCartTab(, deleteCartTabRow(, discardCartTabAudited(, getCartTabJson(, removeCartTab(, renameCartTab(, reorderCartTabs(
+Community 31: applyStockDelta(, updateProductCostPrice(, test-supplier-pdf.ts, main(, productSupplierInvoicePdf.ts, applySupplierInvoiceImport(, buildSupplierInvoicePreview(, extractTrailingNumbers(, guessCategory(, isUniqueViolation(, normalizePdfText(, parseMoney(
+Community 32: DashboardChartFallback.tsx, DashboardChartFallback(, DashboardCharts.tsx, CHART_COLORS, InventoryHealthChart(, moneyTick(, ProductAnalyticsCharts(, SalesAnalyticsSection(, StockMovementChart(, DashboardHomeCharts.tsx, DashboardHomeCharts(, PaymentMethodsPieChart.tsx
+Community 33: csv.ts, buildCsv(, csvEscape(, parseCsv(, csvSpreadsheet.ts, asSpreadsheetText(, parseSpreadsheetText(, csvStream.ts, closeWriteStream(, openUtf8CsvWriteStream(, writeToStream(, productCsvExport.ts
+Community 34: CustomerModal.tsx, customerFormState(, CustomerModal(, CustomerModalProps, ID_TYPES, posCartSale.ts, cartLineToSaleInput(, POSModals.tsx, POSModalsProps, RemoveLineModal.tsx, RemoveLineModal(, RemoveLineModalProps
+Community 35: facturaPdf.ts, buildFacturaHtml(, buildPage(, buildSummaryBlock(, buildTableRows(, escapeHtml(, FacturaPdfCustomer, FacturaPdfData, FacturaPdfItem, formatDocumentNumber(, formatFacturaAmount(, formatFacturaDateTime(
+Community 36: CartLineDiscountInput.tsx, CartLineDiscountInput(, CartMiscNameInput.tsx, CartMiscNameInput(, lineDiscount.ts, cartLineDiscountPercentDisplay(, formatPercentDisplay(, parseDiscountPercentInput(, PaymentSplitSection.tsx, METHODS, PaymentSplitSection(, POSCartPanel.tsx
+Community 37: csvColumns.ts, formatPaymentMethod(, headerAliases(, LANGUAGES, mapProductCsvHeaders(, NORMALIZED_TO_PRODUCT_KEY, normalizeHeader(, parseFacturaNegativo(, parsePaymentMethod(, PRODUCT_CSV_KEYS, PRODUCT_HEADER_ALIASES, productCsvHeaders(
+Community 38: DiscountModal.tsx, DiscountAction, DiscountModal(, DiscountModalProps, discountReducer(, DiscountState, LineDiscountPinModal.tsx, LineDiscountPinModal(, LineDiscountPinRequest, PriceOverrideModal.tsx, PriceOverrideAction, PriceOverrideModal(
+Community 39: AccountsStep.tsx, AccountsStep(, FirstRun.tsx, FirstRunWizard(, Step, LanguagePicker.tsx, LanguagePicker(, AccountsPinFields.tsx, AccountsPinFields(, AccountsPinFieldsProps, AdminAccountFields.tsx, AdminAccountFields(
+Community 40: migrations.ts, getDbVersion(, Migration, migrations, runMigrations(, parseEnv.ts, applyEnvFile(, parseEnvFileContent(, parseEnvLine(, operatorConfig.ts, isOperatorLoginConfigured(, loadOperatorEnv(
+Community 41: ProductCsvKey, ParsedCsv, productEfacturaImport.ts, cell(, cellToValue(, EFACTURA_HEADERS, efacturaRowToProductCsvRow(, findHeaderRow(, mapLetterColumns(, normalizeCell(, NORMALIZED_CSV_COLUMNS, parseEfacturaStock(
+Community 42: ProductManagerModals(, ProductsPageToolbar.tsx, ProductsPageToolbar(, ProductsPageToolbarProps, ProductsPage.tsx, ProductManager(, ProductsPage(, singleFilteredProduct(, ProductsPagination.tsx, PAGE_SIZE_OPTIONS, ProductsPagination(, ProductsPaginationProps
+Community 43: UserFormModal.tsx, FormAction, formReducer(, FormState, initialFormState(, UserFormModal(, UserModalState, UsersInitialSetupModal.tsx, UsersInitialSetupModal(, UsersPage.tsx, Users(, UsersPage(
+Community 44: audit.ts, registerAuditHandlers(, AuditMeta, auditWhere(, countAudit(, listAudit(, listAuditActions(, listAuditPage(, listAuditUsers(, AuditLogFilter, AuditLogPage, AuditUser
+Community 45: cartLine.ts, cartLineBarcode(, cartLineDisplayName(, cartLineGross(, cartLineHasCustomPrice(, cartLineKey(, cartLineShowsBulk(, cartLineTotal(, cartLineUnitPrice(, cartLineUsesPrice2(, cartLineUsesPrice3(, miscLineUnitPrice(
+Community 46: e2e-full.mjs, dumpState(, evalJs(, fail(, log(, page, pending, pinClicks(, send(, sleep(, waitFor(, ws
+Community 47: dashboardChartLazy.tsx, LazyInventoryHealthChart(, LazyProductAnalyticsCharts(, LazySalesAnalyticsSection(, LazyStockMovementChart(, dashboardChartLoaders.ts, DashboardHomeChartsLazy, InventoryHealthChartLazy, ProductAnalyticsChartsLazy, SalesAnalyticsSectionLazy, StockMovementChartLazy
+Community 48: ProductManagerModals.tsx, ProductManagerModalsProps, AdjustStockModal.tsx, AdjustStockModal(, REASONS, ProductLabelPrintPromptModal.tsx, ProductLabelPrintPromptModal(, ProductReceiveChoiceModal.tsx, ProductReceiveChoice, ProductReceiveChoiceModal(, ProductReceiveChoiceModalProps
+Community 49: labelLayout.ts, estimateShelfLabelDots(, estimateShelfLabelDotsFromLines(, shelfLabelBigCols(, shelfLabelPaperWidthDots(, shelfLabelTextCols(, shelfLabelTextDots(, warnIfShelfLabelOverflow(, wrapShelfLabelText(, shelfLabelLines.ts, PrintLine
+Community 50: labelPrintLines.ts, LabelPrintKind, labelPrintPayload(, resolveLabelPrintLines(, buildProductBarcodeLabelLines(, barcode.ts, barcodePrintValue(, canPrintProductBarcode(, formatSpacedBarcode(, isPrintableCode128Barcode(, PrintPayload
+Community 51: ReportsPage.tsx, parseReportSearch(, PERIOD_PRESETS, periodFromRange(, REPORT_TYPES, Reports(, ReportSearch, reportSearchFromRange(, ReportsPage(, ReportTable(
+Community 52: lineDiscountFromPercent(, usePosEnterShortcut(, usePosSearchFocus(, usePOSTerminal.ts, CloseTabTarget, DiscountTarget, findCartLine(, saleFromTab(, SaleState, WorkspaceState
+Community 53: paymentModalState.ts, createInitialPaymentState(, defaultCashTendered(, METHODS, newPaymentEntry(, PaymentEntry, PaymentModalAction, paymentModalReducer(, PaymentModalState, usePaymentModalState(
+Community 54: BatchLabelPrintModal.tsx, AddProductResult, BatchLabelPrintModal(, BatchLabelPrintModalFooter(, BatchLabelPrintQueueTable(, clampCopies(, copiesDigitsOnly(, copiesFromText(, QueueItem, resolveProductLookup(
+Community 55: NotificationsCenter.tsx, NotificationsCenter(, NotificationsCenterProps, positionDialogNearTrigger(, dashboardAlertSearch.ts, dashboardAlertProductSearch(, dashboardAlertSeverity.ts, notificationAlertSeverityClass(, panelAlertSeverityClass(
+Community 56: shortcuts.ts, eventToShortcutKey(, shouldIgnoreShortcutTarget(, useScanner.ts, isWedgeScan(, shouldSkipGlobalScanTarget(, useDebouncedValue(, useGlobalBarcodeScanner(, useScannerDetector(
+Community 57: CashDrawerPage.tsx, CashDrawer(, CashDrawerPage(, CashDrawerSummary.tsx, CashDrawerSummary(, StatBox(, CashMovementsPanel.tsx, CashMovementsPanel(, PendingMovement
+Community 58: print-colon-sp-32-32-port.mjs, buildBuffer(, COLON_SIGN_MATRIX, data, __dirname, getPrinterAndPort(, matrixToUserDefinedChar(, { name, port }, sendToPort(
+Community 59: print-colon-sp-32-32.mjs, buildBuffer(, colonNvGraphicEscPos(, data, __dirname, printer, probePrinter(, rawPrintScriptPath(, sendRaw(
+Community 60: main.ts, activateBtn, ERROR_MESSAGES, feedback, licenseInput, loadStatus(, machineInput, showFeedback(
+Community 61: AuditLogPage.tsx, AuditLog(, AuditLogAction, AuditLogPage(, auditLogReducer(, AuditLogState, formatAuditDetail(, PAGE_SIZE_OPTIONS
+Community 62: firstRun.types.ts, AccountDraft, EMPTY_ACCOUNT_DRAFT, EMPTY_PIN_FIELDS, EMPTY_VALIDATION, MANAGED_ROLES, PinFieldsState, ValidationState
+Community 63: LanguageSwitcher.tsx, currentLanguage(, languageLabel(, LANGUAGES, languageShortLabel(, LanguageSwitcher(, MenuPlacement, menuPositionStyle(
+Community 64: cartTabSnapshot.ts, CartTabSnapshot, EMPTY_CART_TAB_SNAPSHOT, isEmptySnapshot(, liveSaleTotal(, parseCartTabSnapshot(, serializeCartTabSnapshot(, snapshotTotal(
+Community 65: dpapi-win.ts, decryptDpapi(, encryptDpapi(, isEncryptedSecret(, PS_DECRYPT, PS_ENCRYPT, runPs(
+Community 66: BackupService, .backupTo(, .cleanup(, .constructor(, .dailyBackup(, .dailyPath(, .listBackups(, .onCierre(
+Community 67: Shell.tsx, ADMIN_ITEMS, AdminSidebarNotifications(, NAV_ITEMS, NavItem, navLinkClass(, RequireRole(, Shell(
+Community 68: ProductsPageFilters.tsx, ProductsPageFilters(, ProductsPageFiltersProps, useProductManager.ts, ProductFiltersState, ProductManagerUiState, useProductManager(
+Community 69: electron.vite.config.ts, appIcon, closeBundle(, copyBrandAssets(, copyBrandAssetsPlugin, inAppLogo, licensePub
+Community 70: ProductCsvHelpModal.tsx, OPTIONAL_COLS, ProductCsvHelpModal(, ProductCsvHelpModalProps, REQUIRED_COLS, STEP_KEYS, TIP_KEYS
+Community 71: generate-keypair.js, { generateKeyPairSync }, { homedir }, { join, dirname }, privateDir, { publicKey, privateKey }, { writeFileSync, mkdirSync, existsSync }
+Community 72: SupplierInvoicePreviewModal.tsx, buildConfirmInput(, initDrafts(, NewItemDraft, SupplierInvoicePreviewModal(, SupplierInvoicePreviewModalProps
+Community 73: print-smoke-test.mjs, binPath, data, dir, __dirname, printer
+Community 74: ReprintReceiptsList.tsx, ReprintReceiptsList(, ReprintReceiptsPage.tsx, ReprintReceipts(, ReprintReceiptsPage(
+Community 75: ProductImportPreviewModal.tsx, importHasStockChanges(, PreviewTable(, ProductImportPreviewModal(, ProductImportPreviewModalProps
+Community 76: generate-license.ts, Args, loadPrivateKey(, main(, parseArgs(
+Community 77: screenshot.mjs, page, pending, send(, ws
+Community 78: sync-vendor.mjs, libDir, root, sharedDir, vendorDir
+Community 79: NavIcon.tsx, NavIcon(, NavIconName, PATHS
+Community 80: errors.ts, stockAllows(, toastApiError(, Toasts
+Community 81: ProductForm.tsx, ProductFormModal(, ProductFormModalProps, productFormState(
+Community 82: useSidebarCollapsed.ts, readCollapsed(, useSidebarCollapsed(, writeCollapsed(
+Community 83: eslint.config.mjs, nodeFiles, reactFiles
+Community 84: vite-env.d.ts, ImportMeta, ImportMetaEnv
 
 ## Instructions
 

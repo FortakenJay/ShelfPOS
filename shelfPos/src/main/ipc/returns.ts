@@ -1,4 +1,4 @@
-import { handle } from './helpers'
+import { handle, SALES_ACCESS } from './helpers'
 import { AppError } from '../errors'
 import { getDb } from '../db'
 import { localNow, round2 } from '../db/helpers'
@@ -7,6 +7,7 @@ import { enqueueSync } from '../db/repos/syncQueue'
 import { hasOpeningFloat } from '../db/repos/cash'
 import { writeAudit } from '../db/repos/audit'
 import { session } from '../services/session'
+import { assertCreditSaleReturnable } from '../services/customerCredit'
 import type { CreateReturnInput, CreateReturnResult } from '../../shared/types'
 
 interface SaleLineRow {
@@ -16,10 +17,15 @@ interface SaleLineRow {
   line_total: number
 }
 
+interface ReturnSaleRow {
+  id: number
+  customer_account_id: number | null
+}
+
 export function registerReturnHandlers(): void {
   handle<CreateReturnInput, CreateReturnResult>(
     'returns:create',
-    ['sales'],
+    SALES_ACCESS,
     async (input) => {
       const user = session.require()
       if (!hasOpeningFloat()) throw new AppError('errors.cashNotOpened')
@@ -38,8 +44,13 @@ export function registerReturnHandlers(): void {
       const restockedProductIds: number[] = []
 
       db.transaction(() => {
-        const sale = db.prepare('SELECT id FROM sales WHERE id = ?').get(input.saleId)
+        const sale = db
+          .prepare('SELECT id, customer_account_id FROM sales WHERE id = ?')
+          .get(input.saleId) as ReturnSaleRow | undefined
         if (!sale) throw new AppError('errors.saleNotFound')
+        if (sale.customer_account_id != null) {
+          assertCreditSaleReturnable(db, sale.customer_account_id, sale.id)
+        }
 
         const saleLineStmt = db.prepare(
           `SELECT id, product_id, quantity, line_total
@@ -67,6 +78,8 @@ export function registerReturnHandlers(): void {
              WHERE si.id = ? AND si.sale_id = ?
            )`
         )
+        // Return restocks intentionally use return_items as their ledger. Do not route
+        // them through applyStockDelta: that would create a manual stock_adjustments row.
         const restock = db.prepare(
           'UPDATE products SET stock = stock + ?, updated_at = ? WHERE id = ?'
         )

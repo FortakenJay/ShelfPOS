@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { basename } from 'node:path'
 import { AppError } from '../errors'
 import { getDb } from '../db'
@@ -8,6 +9,7 @@ import { writeAudit } from '../db/repos/audit'
 import { parseCsv } from './csv'
 import { parseSpreadsheetText } from './csvSpreadsheet'
 import { mapProductCsvHeaders, parseFacturaNegativo, type ProductCsvKey } from './csvColumns'
+import { toProductImportError } from './productImportErrors'
 import type {
   Product,
   ProductImportError,
@@ -17,46 +19,25 @@ import type {
   ProductImportStockMode,
   ProductInput
 } from '../../shared/types'
-import { roundColones } from '../../shared/money'
-import { MAX_PRODUCT_STOCK } from '../../shared/schemas/primitives'
+import {
+  normalizeProductInput,
+  validateProductBusinessRules
+} from '../../shared/productValidation'
+import { parseMachineNumber } from '../../shared/money'
 
 const STANDARD_TAX: ProductInput['taxCategory'] = 'standard'
 
-export function validateProductInput(input: ProductInput): void {
-  if (!input.barcode?.trim() || !input.name?.trim()) throw new AppError('errors.invalidInput')
-  if (!Number.isFinite(input.price) || input.price < 0) throw new AppError('errors.invalidInput')
-  if (
-    !Number.isInteger(input.stock) ||
-    input.stock < 0 ||
-    input.stock > MAX_PRODUCT_STOCK
-  ) {
+export function validateProductInput(input: ProductInput): ProductInput {
+  const normalized = normalizeProductInput(input)
+  if (!validateProductBusinessRules(normalized)) {
     throw new AppError('errors.invalidInput')
   }
-  if (input.taxCategory !== STANDARD_TAX) throw new AppError('errors.invalidInput')
-  const hasQty = input.bulkQty != null
-  const hasPrice = input.bulkPrice != null
-  if (hasQty !== hasPrice) throw new AppError('errors.invalidInput')
-  if (hasQty) {
-    if (!Number.isInteger(input.bulkQty) || (input.bulkQty as number) < 2) {
-      throw new AppError('errors.invalidInput')
-    }
-    if (!Number.isFinite(input.bulkPrice as number) || (input.bulkPrice as number) < 0) {
-      throw new AppError('errors.invalidInput')
-    }
-  }
-  input.price = roundColones(input.price)
-  if (input.bulkPrice != null) input.bulkPrice = roundColones(input.bulkPrice)
+  return normalized
 }
 
 function cell(row: string[], index: number | undefined): string {
   if (index == null) return ''
   return (row[index] ?? '').trim()
-}
-
-function parseOptionalNumber(raw: string): number | null {
-  if (!raw.trim()) return null
-  const n = Number(raw.replace(/,/g, ''))
-  return Number.isFinite(n) ? n : null
 }
 
 export function parseProductRow(
@@ -66,8 +47,18 @@ export function parseProductRow(
   const barcode = parseSpreadsheetText(cell(row, columns.barcode))
   const name = cell(row, columns.name)
   const priceRaw = cell(row, columns.price)
-  const price = parseOptionalNumber(priceRaw)
+  const price = parseMachineNumber(priceRaw)
   if (!barcode || !name || price == null || price < 0) {
+    throw new AppError('errors.invalidInput')
+  }
+  const price2Raw = cell(row, columns.price2)
+  const price2 = parseMachineNumber(price2Raw)
+  if (price2Raw !== '' && (price2 == null || price2 <= 0)) {
+    throw new AppError('errors.invalidInput')
+  }
+  const price3Raw = cell(row, columns.price3)
+  const price3 = parseMachineNumber(price3Raw)
+  if (price3Raw !== '' && (price3 == null || price3 <= 0)) {
     throw new AppError('errors.invalidInput')
   }
 
@@ -77,27 +68,29 @@ export function parseProductRow(
   let bulkQty: number | null = null
   let bulkPrice: number | null = null
   if (hasBulk) {
-    bulkQty = bulkQtyRaw === '' ? null : Math.trunc(Number(bulkQtyRaw))
-    bulkPrice = parseOptionalNumber(bulkPriceRaw)
+    bulkQty = bulkQtyRaw === '' ? null : Number(bulkQtyRaw)
+    bulkPrice = parseMachineNumber(bulkPriceRaw)
     if (bulkQty == null || bulkQty < 2 || bulkPrice == null || bulkPrice < 0) {
       throw new AppError('products.csv.invalidBulk')
     }
   }
 
   const stockRaw = cell(row, columns.stock)
-  const stock = stockRaw === '' ? 0 : Math.trunc(Number(stockRaw) || 0)
+  const stock = stockRaw === '' ? 0 : Math.trunc(Number(stockRaw))
   const thresholdRaw = cell(row, columns.stock_threshold)
-  const threshold = thresholdRaw === '' ? null : Math.trunc(Number(thresholdRaw) || 0)
+  const threshold = thresholdRaw === '' ? null : Math.trunc(Number(thresholdRaw))
 
   return {
     barcode,
     name,
     price,
-    costPrice: parseOptionalNumber(cell(row, columns.cost_price)),
+    price2,
+    price3,
+    costPrice: parseMachineNumber(cell(row, columns.cost_price)),
     category: cell(row, columns.category) || null,
     stockProvider: null,
-    stock: stock < 0 ? 0 : stock,
-    stockThreshold: threshold != null && threshold >= 0 ? threshold : null,
+    stock,
+    stockThreshold: threshold,
     taxCategory: STANDARD_TAX,
     bulkQty,
     bulkPrice,
@@ -109,6 +102,8 @@ function productInputDiffers(existing: Product, input: ProductInput): boolean {
   return (
     existing.name !== input.name.trim() ||
     existing.price !== input.price ||
+    (existing.price2 ?? null) !== input.price2 ||
+    (existing.price3 ?? null) !== input.price3 ||
     (existing.cost_price ?? null) !== input.costPrice ||
     (existing.category ?? null) !== (input.category?.trim() || null) ||
     (existing.stock_threshold ?? null) !== input.stockThreshold ||
@@ -116,6 +111,18 @@ function productInputDiffers(existing: Product, input: ProductInput): boolean {
     (existing.bulk_price ?? null) !== input.bulkPrice ||
     Boolean(existing.factura_negativo) !== input.facturaNegativo
   )
+}
+
+export function preserveAlternatePricesWhenColumnsAreOmitted(
+  input: ProductInput,
+  existing: Product,
+  columns: Partial<Record<ProductCsvKey, number>>
+): ProductInput {
+  return {
+    ...input,
+    price2: columns.price2 == null ? existing.price2 : input.price2,
+    price3: columns.price3 == null ? existing.price3 : input.price3
+  }
 }
 
 function previewRow(
@@ -143,12 +150,58 @@ function previewRow(
 export interface ParsedCsv {
   filePath: string
   fileName: string
+  sourceVersion: string
   columns: Partial<Record<ProductCsvKey, number>>
   rows: string[][]
 }
 
-export function readProductCsv(filePath: string): ParsedCsv {
-  const parsed = parseCsv(readFileSync(filePath, 'utf8'))
+export function productImportSourceVersion(content: Buffer | string): string {
+  return createHash('sha256').update(content).digest('hex')
+}
+
+export function assertProductImportSourceVersion(
+  content: Buffer | string,
+  expectedVersion: string
+): void {
+  if (
+    !expectedVersion ||
+    productImportSourceVersion(content) !== expectedVersion
+  ) {
+    throw new AppError('errors.productImportSourceChanged')
+  }
+}
+
+export function readProductImportSource(
+  filePath: string,
+  expectedVersion?: string
+): Buffer {
+  try {
+    const content = readFileSync(filePath)
+    if (expectedVersion) {
+      assertProductImportSourceVersion(content, expectedVersion)
+    }
+    return content
+  } catch (err) {
+    if (expectedVersion) {
+      throw new AppError('errors.productImportSourceChanged')
+    }
+    throw err
+  }
+}
+
+export function verifyProductImportSourceVersion(
+  filePath: string,
+  expectedVersion: string
+): void {
+  readProductImportSource(filePath, expectedVersion)
+}
+
+export function readProductCsv(
+  filePath: string,
+  expectedVersion?: string
+): ParsedCsv {
+  const content = readProductImportSource(filePath, expectedVersion)
+  const parsed = parseCsv(content.toString('utf8'))
   if (parsed.length < 1) throw new AppError('products.csv.empty')
 
   const columns = mapProductCsvHeaders(parsed[0])
@@ -156,13 +209,32 @@ export function readProductCsv(filePath: string): ParsedCsv {
     throw new AppError('products.csv.missingColumns')
   }
 
-  return { filePath, fileName: basename(filePath), columns, rows: parsed }
+  return {
+    filePath,
+    fileName: basename(filePath),
+    sourceVersion: productImportSourceVersion(content),
+    columns,
+    rows: parsed
+  }
 }
 
-export function buildProductImportPreview(parsed: ParsedCsv): ProductImportPreview {
-  const toCreate: ProductImportPreviewRow[] = []
-  const toUpdate: ProductImportPreviewRow[] = []
-  const unchanged: ProductImportPreviewRow[] = []
+export type ProductImportDecision =
+  | { action: 'create'; row: number; input: ProductInput }
+  | { action: 'update' | 'unchanged'; row: number; input: ProductInput; existing: Product }
+
+export interface AnalyzedProductImport {
+  filePath: string
+  fileName: string
+  sourceVersion: string
+  decisions: ProductImportDecision[]
+  errors: ProductImportError[]
+}
+
+export function analyzeProductImport(
+  parsed: ParsedCsv,
+  findExisting: (barcode: string) => Product | undefined = getProductByBarcode
+): AnalyzedProductImport {
+  const decisions: ProductImportDecision[] = []
   const errors: ProductImportError[] = []
   const seenBarcodes = new Set<string>()
 
@@ -171,8 +243,7 @@ export function buildProductImportPreview(parsed: ParsedCsv): ProductImportPrevi
     if (row.every((c) => !c.trim())) continue
 
     try {
-      const input = parseProductRow(row, parsed.columns)
-      validateProductInput(input)
+      const input = validateProductInput(parseProductRow(row, parsed.columns))
       const barcodeKey = input.barcode.trim().toLowerCase()
       if (seenBarcodes.has(barcodeKey)) {
         errors.push({ row: i + 1, key: 'products.csv.duplicateInFile' })
@@ -180,31 +251,60 @@ export function buildProductImportPreview(parsed: ParsedCsv): ProductImportPrevi
       }
       seenBarcodes.add(barcodeKey)
 
-      const existing = getProductByBarcode(input.barcode)
+      const existing = findExisting(input.barcode)
       if (!existing) {
-        toCreate.push(previewRow(i + 1, input))
+        decisions.push({ action: 'create', row: i + 1, input })
         continue
       }
-      if (productInputDiffers(existing, input)) {
-        toUpdate.push(previewRow(i + 1, input, existing))
+      const effectiveInput = preserveAlternatePricesWhenColumnsAreOmitted(
+        input,
+        existing,
+        parsed.columns
+      )
+      if (productInputDiffers(existing, effectiveInput)) {
+        decisions.push({ action: 'update', row: i + 1, input: effectiveInput, existing })
       } else {
-        unchanged.push(previewRow(i + 1, input, existing))
+        decisions.push({ action: 'unchanged', row: i + 1, input: effectiveInput, existing })
       }
     } catch (err) {
-      const key = err instanceof AppError ? err.key : 'errors.unknown'
-      const detail = err instanceof Error && !(err instanceof AppError) ? err.message : undefined
-      errors.push({ row: i + 1, key, detail })
+      errors.push(toProductImportError(i + 1, err))
     }
   }
 
   return {
-    canceled: false,
     filePath: parsed.filePath,
     fileName: parsed.fileName,
-    toCreate,
-    toUpdate,
-    unchanged,
+    sourceVersion: parsed.sourceVersion,
+    decisions,
     errors
+  }
+}
+
+export function buildProductImportPreview(
+  analysis: AnalyzedProductImport
+): ProductImportPreview {
+  const rowsFor = (
+    action: ProductImportDecision['action']
+  ): ProductImportPreviewRow[] =>
+    analysis.decisions
+      .filter((decision) => decision.action === action)
+      .map((decision) =>
+        previewRow(
+          decision.row,
+          decision.input,
+          decision.action === 'create' ? undefined : decision.existing
+        )
+      )
+
+  return {
+    canceled: false,
+    filePath: analysis.filePath,
+    fileName: analysis.fileName,
+    sourceVersion: analysis.sourceVersion,
+    toCreate: rowsFor('create'),
+    toUpdate: rowsFor('update'),
+    unchanged: rowsFor('unchanged'),
+    errors: analysis.errors
   }
 }
 
@@ -216,21 +316,27 @@ export function applyImportStock(
 ): boolean {
   const product = getProduct(productId)
   if (!product) return false
-  const delta = stockMode === 'add' ? importStock : importStock - product.stock
+  const delta = productImportStockDelta(product.stock, importStock, stockMode)
   if (delta === 0) return false
   applyStockDelta(productId, delta, userId, 'csv_import')
   return true
 }
 
+export function productImportStockDelta(
+  currentStock: number,
+  importStock: number,
+  stockMode: ProductImportStockMode
+): number {
+  return stockMode === 'add' ? importStock : importStock - currentStock
+}
+
 export function applyProductImport(
-  filePathOrParsed: string | ParsedCsv,
+  analysis: AnalyzedProductImport,
   userId: number,
   stockMode: ProductImportStockMode = 'add'
 ): ProductImportResult {
-  const parsed = typeof filePathOrParsed === 'string' ? readProductCsv(filePathOrParsed) : filePathOrParsed
-  const preview = buildProductImportPreview(parsed)
   const db = getDb()
-  const errors: ProductImportError[] = [...preview.errors]
+  const errors: ProductImportError[] = [...analysis.errors]
   let created = 0
   let updated = 0
 
@@ -248,9 +354,7 @@ export function applyProductImport(
       })()
       created++
     } catch (err) {
-      const key = err instanceof AppError ? err.key : 'errors.unknown'
-      const detail = err instanceof Error && !(err instanceof AppError) ? err.message : undefined
-      errors.push({ row, key, detail })
+      errors.push(toProductImportError(row, err))
     }
   }
 
@@ -267,9 +371,7 @@ export function applyProductImport(
       })()
       updated++
     } catch (err) {
-      const key = err instanceof AppError ? err.key : 'errors.unknown'
-      const detail = err instanceof Error && !(err instanceof AppError) ? err.message : undefined
-      errors.push({ row, key, detail })
+      errors.push(toProductImportError(row, err))
     }
   }
 
@@ -281,35 +383,17 @@ export function applyProductImport(
       })()
       if (stockChanged) updated++
     } catch (err) {
-      const key = err instanceof AppError ? err.key : 'errors.unknown'
-      const detail = err instanceof Error && !(err instanceof AppError) ? err.message : undefined
-      errors.push({ row, key, detail })
+      errors.push(toProductImportError(row, err))
     }
   }
 
-  const seenBarcodes = new Set<string>()
-
-  for (let i = 1; i < parsed.rows.length; i++) {
-    const row = parsed.rows[i]
-    if (row.every((c) => !c.trim())) continue
-
-    try {
-      const input = parseProductRow(row, parsed.columns)
-      validateProductInput(input)
-      const barcodeKey = input.barcode.trim().toLowerCase()
-      if (seenBarcodes.has(barcodeKey)) continue
-      seenBarcodes.add(barcodeKey)
-
-      const existing = getProductByBarcode(input.barcode)
-      if (!existing) {
-        insertRow(input, i + 1)
-      } else if (productInputDiffers(existing, input)) {
-        updateRow(existing, input, i + 1)
-      } else {
-        applyStockOnlyRow(existing, input, i + 1)
-      }
-    } catch {
-      // Already captured in preview.errors; skip invalid rows on apply.
+  for (const decision of analysis.decisions) {
+    if (decision.action === 'create') {
+      insertRow(decision.input, decision.row)
+    } else if (decision.action === 'update') {
+      updateRow(decision.existing, decision.input, decision.row)
+    } else {
+      applyStockOnlyRow(decision.existing, decision.input, decision.row)
     }
   }
 

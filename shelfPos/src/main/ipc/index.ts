@@ -18,6 +18,7 @@ import { registerDashboardHandlers } from './dashboard'
 import { registerUserHandlers } from './users'
 import { registerPrinterHandlers } from './printer'
 import { registerSyncSetupHandlers } from './syncSetup'
+import { registerCustomerHandlers } from './customers'
 import type { BackupService } from '../services/backup'
 
 export function registerIpcHandlers(backup: BackupService): void {
@@ -39,6 +40,7 @@ export function registerIpcHandlers(backup: BackupService): void {
   registerPriceOverrideHandlers()
   registerDashboardHandlers()
   registerUserHandlers()
+  registerCustomerHandlers()
   registerPrinterHandlers()
   registerSyncSetupHandlers()
 }

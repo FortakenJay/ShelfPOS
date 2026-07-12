@@ -64,10 +64,12 @@ export function paymentTotals(filter: SaleFilter): PaymentMethodReport {
     cash: 0,
     card: 0,
     sinpe: 0,
+    credit: 0,
     total: 0,
     countCash: 0,
     countCard: 0,
-    countSinpe: 0
+    countSinpe: 0,
+    countCredit: 0
   }
   for (const row of rows) {
     if (row.method === 'cash') {
@@ -79,9 +81,12 @@ export function paymentTotals(filter: SaleFilter): PaymentMethodReport {
     } else if (row.method === 'sinpe') {
       result.sinpe = round2(row.amount)
       result.countSinpe = row.count
+    } else if (row.method === 'credit') {
+      result.credit = round2(row.amount)
+      result.countCredit = row.count
     }
   }
-  result.total = round2(result.cash + result.card + result.sinpe)
+  result.total = round2(result.cash + result.card + result.sinpe + result.credit)
   return result
 }
 
@@ -550,6 +555,7 @@ export function cierrePriceOverrides(filter: SaleFilter): {
 }
 
 interface DiscardedTabAuditRow {
+  id: number
   username: string | null
   action: string
   detail: string | null
@@ -560,6 +566,7 @@ interface DiscardedTabAuditRow {
 export function cierreDiscardedTabs(filter: { fromTs?: string; toTs?: string }): {
   totalDiscarded: number
   rows: {
+    id: number
     createdAt: string
     cashier: string
     label: string
@@ -581,7 +588,7 @@ export function cierreDiscardedTabs(filter: { fromTs?: string; toTs?: string }):
   }
   const auditRows = getDb()
     .prepare(
-      `SELECT username, action, detail, created_at AS createdAt
+      `SELECT id, username, action, detail, created_at AS createdAt
        FROM audit_log
        WHERE ${conditions.join(' AND ')}
        ORDER BY created_at`
@@ -603,6 +610,7 @@ export function cierreDiscardedTabs(filter: { fromTs?: string; toTs?: string }):
     }
     totalDiscarded = round2(totalDiscarded + total)
     return {
+      id: row.id,
       createdAt: row.createdAt,
       cashier: row.username ?? '—',
       label,

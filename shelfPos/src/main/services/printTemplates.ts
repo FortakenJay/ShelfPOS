@@ -1,6 +1,8 @@
 import { t } from './i18n'
 import { formatDate, formatMoney } from './format'
 import { localNow } from '../db/helpers'
+import { calculateCartTotals, totalAfterLineDiscount } from '../../shared/cartTotals'
+import { moneyEquals } from '../../shared/pricing'
 import type {
   AppSettings,
   CierreDiscountReport,
@@ -137,7 +139,7 @@ function receiptItemsFromCatalog(
       quantity: qty,
       unitPrice: row.price,
       discount,
-      lineTotal: gross - discount
+      lineTotal: totalAfterLineDiscount(gross, discount)
     }
   })
 }
@@ -149,9 +151,12 @@ export function buildPrinterTestReceiptLines(
   footer: string
 ): PrintLine[] {
   const items = receiptItemsFromCatalog(PRINTER_TEST_RECEIPT_CATALOG)
-  const subtotal = items.reduce((acc, i) => acc + i.unitPrice * i.quantity, 0)
-  const discountTotal = items.reduce((acc, i) => acc + i.discount, 0)
-  const total = subtotal - discountTotal
+  const { subtotal, discountTotal, total } = calculateCartTotals(
+    items.map((item) => ({
+      gross: item.unitPrice * item.quantity,
+      discount: item.discount
+    }))
+  )
   const tendered = Math.ceil(total / 1000) * 1000
   const change = tendered - total
 
@@ -243,10 +248,7 @@ export function buildReceiptLines(args: ReceiptArgs, lang: Language): PrintLine[
       l: `  ${item.quantity} x ${money(item.unitPrice)}`,
       r: money(item.unitPrice * item.quantity)
     })
-    if (
-      item.catalogUnitPrice != null &&
-      Math.abs(item.catalogUnitPrice - item.unitPrice) >= 0.01
-    ) {
+    if (item.catalogUnitPrice != null && !moneyEquals(item.catalogUnitPrice, item.unitPrice)) {
       lines.push({
         t: 'row',
         l: `  ${t(lang, 'print.receipt.catalogPrice')}`,
@@ -341,6 +343,7 @@ function paymentLines(lang: Language, totals: PaymentMethodReport): PrintLine[] 
     { t: 'row', l: `${methodLabel(lang, 'cash')} (${totals.countCash})`, r: money(totals.cash) },
     { t: 'row', l: `${methodLabel(lang, 'card')} (${totals.countCard})`, r: money(totals.card) },
     { t: 'row', l: `${methodLabel(lang, 'sinpe')} (${totals.countSinpe})`, r: money(totals.sinpe) },
+    { t: 'row', l: `${methodLabel(lang, 'credit')} (${totals.countCredit})`, r: money(totals.credit) },
     { t: 'row', l: t(lang, 'common.total'), r: money(totals.total), bold: true }
   ]
 }

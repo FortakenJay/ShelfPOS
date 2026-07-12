@@ -24,6 +24,8 @@ import { SettingsPage } from '@/features/admin/SettingsPage'
 import { SyncSetupPage } from '@/features/sync-setup/SyncSetupPage'
 import { AdminCashPage } from '@/features/admin/AdminCashPage'
 import { UsersPage } from '@/features/admin/UsersPage'
+import { CustomersPage } from '@/features/admin/CustomersPage'
+import { CustomerCreditPage } from '@/features/customers/CustomerCreditPage'
 import { DashboardPage } from '@/features/admin/dashboard/DashboardPage'
 import { DASHBOARD_TAB_SEARCH, type DashboardTab } from '@/features/admin/dashboard/dashboardTabs'
 import type { ReportType, StockStatus, ReportPeriodPreset } from '@shared/types'
@@ -90,6 +92,12 @@ const cashRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: '/cash',
   component: CashDrawerPage
+})
+
+const creditRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: '/credit',
+  component: CustomerCreditPage
 })
 
 const reprintsRoute = createRoute({
@@ -217,6 +225,12 @@ const usersRoute = createRoute({
   component: UsersPage
 })
 
+const customersRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: '/admin/customers',
+  component: CustomersPage
+})
+
 const settingsRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: '/admin/settings',
@@ -232,6 +246,7 @@ const routeTree = rootRoute.addChildren([
   shellRoute.addChildren([
     posRoute,
     cashRoute,
+    creditRoute,
     reprintsRoute,
     productsRoute,
     adminIndexRoute,
@@ -243,6 +258,7 @@ const routeTree = rootRoute.addChildren([
     exportRoute,
     adminCashRoute,
     usersRoute,
+    customersRoute,
     settingsRoute
   ])
 ])

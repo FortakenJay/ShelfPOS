@@ -1,4 +1,4 @@
-import { handle } from './helpers'
+import { ADMIN_ACCESS, handle } from './helpers'
 import { AppError } from '../errors'
 import { writeAudit } from '../db/repos/audit'
 import { getSyncQueueHealth, requeueFailedSync } from '../db/repos/syncQueue'
@@ -15,9 +15,9 @@ function syncSetupStatus(): SyncSetupStatus {
 }
 
 export function registerSyncSetupHandlers(): void {
-  handle<void, SyncSetupStatus>('syncSetup:status', ['admin'], () => syncSetupStatus())
+  handle<void, SyncSetupStatus>('syncSetup:status', ADMIN_ACCESS, () => syncSetupStatus())
 
-  handle<SyncSetupSaveInput, SyncSetupStatus>('syncSetup:save', ['admin'], (input) => {
+  handle<SyncSetupSaveInput, SyncSetupStatus>('syncSetup:save', ADMIN_ACCESS, (input) => {
     if (!input?.pairingCode) {
       throw new AppError('errors.invalidInput')
     }
@@ -27,14 +27,14 @@ export function registerSyncSetupHandlers(): void {
     return syncSetupStatus()
   })
 
-  handle<void, null>('syncSetup:restartService', ['admin'], () => {
+  handle<void, null>('syncSetup:restartService', ADMIN_ACCESS, () => {
     restartSyncService()
     return null
   })
 
   handle<void, { requeued: number; queueHealth: SyncQueueHealth }>(
     'syncSetup:requeueFailed',
-    ['admin'],
+    ADMIN_ACCESS,
     () => {
       const requeued = requeueFailedSync()
       if (requeued > 0) {

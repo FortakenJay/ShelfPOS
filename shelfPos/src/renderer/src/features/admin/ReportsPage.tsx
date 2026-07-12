@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
 import { toastApiError } from '@/lib/errors'
+import { invalidatePrintQueue } from '@/lib/queryKeys'
 import { useToasts } from '@/lib/toast'
 import { RequireRole } from '@/features/shell/Shell'
 import { Button } from '@/components/ui'
@@ -140,7 +141,7 @@ function Reports(): React.JSX.Element {
     onSuccess: ({ printStatus }) => {
       if (printStatus === 'printed') toasts.success('reports.printSent')
       else toasts.error('pos.printFailed')
-      void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
+      invalidatePrintQueue(queryClient)
     },
     onError: (err) => toastApiError(toasts, err)
   })

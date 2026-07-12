@@ -1,7 +1,13 @@
 import { useTranslation } from 'react-i18next'
+import { PAYMENT_METHODS } from '@shared/types'
 import type { ActionShortcutKey, PaymentMethod } from '@shared/types'
 
-const METHODS: PaymentMethod[] = ['cash', 'sinpe', 'card']
+const METHODS = [
+  PAYMENT_METHODS[0],
+  PAYMENT_METHODS[2],
+  PAYMENT_METHODS[1],
+  PAYMENT_METHODS[3]
+] as const
 
 export function PaymentMethodButtons({
   value,

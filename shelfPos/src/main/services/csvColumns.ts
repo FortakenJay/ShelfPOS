@@ -1,4 +1,5 @@
 import { t } from './i18n'
+import { PAYMENT_METHODS } from '../../shared/types'
 import type { Language, PaymentMethod } from '../../shared/types'
 
 export const SALES_CSV_KEYS = [
@@ -22,6 +23,8 @@ export const PRODUCT_CSV_KEYS = [
   'barcode',
   'name',
   'price',
+  'price2',
+  'price3',
   'cost_price',
   'category',
   'stock',
@@ -93,8 +96,7 @@ export function formatPaymentMethod(lang: Language, method: string): string {
 
 export function parsePaymentMethod(raw: string): PaymentMethod | null {
   const norm = normalizeHeader(raw)
-  const methods: PaymentMethod[] = ['cash', 'card', 'sinpe']
-  for (const method of methods) {
+  for (const method of PAYMENT_METHODS) {
     if (normalizeHeader(method) === norm) return method
     for (const lang of LANGUAGES) {
       if (normalizeHeader(t(lang, `pos.methods.${method}`)) === norm) return method

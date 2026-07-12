@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
+import { queryKeys } from '@/lib/queryKeys'
 import { useToasts } from '@/lib/toast'
 import { Button, Field, Input, Modal } from '@/components/ui'
 
@@ -24,7 +25,7 @@ export function UsersInitialSetupModal({
       return api.settings.changeCajaPin('', pin)
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['settings'] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.settings })
       void queryClient.invalidateQueries({ queryKey: ['users'] })
       toasts.success('users.setupDone')
       onComplete()

@@ -1,6 +1,6 @@
 import { app, shell } from 'electron'
 import { join } from 'node:path'
-import { handle } from './helpers'
+import { ADMIN_ACCESS, handle, SALES_ACCESS, SALES_OR_ADMIN_ACCESS } from './helpers'
 import { AppError } from '../errors'
 import { getDb } from '../db'
 import { localNow, rangeBounds, round2 } from '../db/helpers'
@@ -39,10 +39,6 @@ import type {
   PrintStatus
 } from '../../shared/types'
 
-const CIERRE: 'sales'[] = ['sales']
-const CIERRE_ADMIN: 'admin'[] = ['admin']
-const CIERRE_EXPORT: ('sales' | 'admin')[] = ['sales', 'admin']
-
 function formatCashDifferenceAuditDetail(
   difference: number,
   countedCash: number,
@@ -70,7 +66,7 @@ function getCierreById(id: number): CierreRecord {
   const row = getDb()
     .prepare(
       `SELECT c.id, c.opened_at, c.closed_at, c.shift_label, c.total_cash, c.total_card,
-              c.total_sinpe, c.total_sales, c.opening_float, c.cash_in, c.cash_out,
+              c.total_sinpe, c.total_credit, c.total_sales, c.opening_float, c.cash_in, c.cash_out,
               c.expected_cash, c.counted_cash, c.cash_difference, c.notes, u.username AS closed_by
        FROM cierres c JOIN users u ON u.id = c.closed_by_user_id
        WHERE c.id = ?`
@@ -111,7 +107,7 @@ function cierrePrintLines(cierre: CierreRecord, lang: Language): PrintLine[] {
 }
 
 export function registerCierreHandlers(backup: BackupService): void {
-  handle<void, CierrePreview>('cierre:preview', CIERRE, () => {
+  handle<void, CierrePreview>('cierre:preview', SALES_ACCESS, () => {
     const user = session.require()
     const pendingSales = salesCount({ cierrePending: true })
     const cash = openCashSummary()
@@ -141,7 +137,7 @@ export function registerCierreHandlers(backup: BackupService): void {
     }
   })
 
-  handle<CierreConfirmInput, CierreConfirmResult>('cierre:confirm', CIERRE, async (input) => {
+  handle<CierreConfirmInput, CierreConfirmResult>('cierre:confirm', SALES_ACCESS, async (input) => {
     const user = session.require()
     const notes = input.notes?.trim() || null
     if (
@@ -172,9 +168,9 @@ export function registerCierreHandlers(backup: BackupService): void {
           .prepare(
             `INSERT INTO cierres
                (opened_at, closed_at, closed_by_user_id, closed_by_username, shift_label, total_cash, total_card,
-                total_sinpe, total_sales, opening_float, cash_in, cash_out, expected_cash,
+                total_sinpe, total_credit, total_sales, opening_float, cash_in, cash_out, expected_cash,
                 counted_cash, cash_difference, notes)
-             VALUES (?,?,?,?,?,0,0,0,0,0,0,0,0,?,?,?)`
+             VALUES (?,?,?,?,?,0,0,0,0,0,0,0,0,0,?,?,?)`
           )
           .run(
             openedAt,
@@ -190,6 +186,7 @@ export function registerCierreHandlers(backup: BackupService): void {
 
       db.prepare('UPDATE sales SET cierre_id = ? WHERE cierre_id IS NULL').run(id)
       db.prepare('UPDATE cash_movements SET cierre_id = ? WHERE cierre_id IS NULL').run(id)
+      db.prepare('UPDATE credit_payments SET cierre_id = ? WHERE cierre_id IS NULL').run(id)
 
       const totals = paymentTotals({ cierreId: id })
       const cash = cashSummaryForCierre(id)
@@ -201,7 +198,7 @@ export function registerCierreHandlers(backup: BackupService): void {
 
       db.prepare(
         `UPDATE cierres
-         SET total_cash = ?, total_card = ?, total_sinpe = ?, total_sales = ?,
+         SET total_cash = ?, total_card = ?, total_sinpe = ?, total_credit = ?, total_sales = ?,
              opening_float = ?, cash_in = ?, cash_out = ?, expected_cash = ?,
              cash_difference = ?
          WHERE id = ?`
@@ -209,6 +206,7 @@ export function registerCierreHandlers(backup: BackupService): void {
         totals.cash,
         totals.card,
         totals.sinpe,
+        totals.credit,
         totals.total,
         cash.openingFloat,
         cash.cashIn,
@@ -230,6 +228,12 @@ export function registerCierreHandlers(backup: BackupService): void {
         .all(id) as { id: number }[]
       for (const row of linkedMovements) {
         enqueueSync('cash_movements', row.id, 'update', db)
+      }
+      const linkedCreditPayments = db
+        .prepare('SELECT id FROM credit_payments WHERE cierre_id = ?')
+        .all(id) as { id: number }[]
+      for (const row of linkedCreditPayments) {
+        enqueueSync('credit_payments', row.id, 'update', db)
       }
 
       const lines = buildCierreLines(
@@ -291,13 +295,13 @@ export function registerCierreHandlers(backup: BackupService): void {
 
   handle<{ range: { from: string; to: string } }, CierreRecord[]>(
     'cierre:history',
-    CIERRE_ADMIN,
+    ADMIN_ACCESS,
     ({ range }) => {
       const [from, to] = rangeBounds(range)
       return getDb()
         .prepare(
           `SELECT c.id, c.opened_at, c.closed_at, c.shift_label, c.total_cash, c.total_card,
-                  c.total_sinpe, c.total_sales, c.opening_float, c.cash_in, c.cash_out,
+                  c.total_sinpe, c.total_credit, c.total_sales, c.opening_float, c.cash_in, c.cash_out,
                   c.expected_cash, c.counted_cash, c.cash_difference, c.notes, u.username AS closed_by
            FROM cierres c JOIN users u ON u.id = c.closed_by_user_id
            WHERE c.closed_at >= ? AND c.closed_at <= ?
@@ -307,13 +311,13 @@ export function registerCierreHandlers(backup: BackupService): void {
     }
   )
 
-  handle<void, CierreDiscrepancyAlert[]>('cierre:discrepancyAlerts', CIERRE_ADMIN, () =>
+  handle<void, CierreDiscrepancyAlert[]>('cierre:discrepancyAlerts', ADMIN_ACCESS, () =>
     listCierreDiscrepancyAlerts()
   )
 
   handle<{ cierreId: number }, { printStatus: PrintStatus }>(
     'cierre:print',
-    CIERRE_EXPORT,
+    SALES_OR_ADMIN_ACCESS,
     async ({ cierreId }) => {
       if (!Number.isInteger(cierreId) || cierreId < 1) throw new AppError('errors.invalidInput')
       const cierre = getCierreById(cierreId)
@@ -327,7 +331,7 @@ export function registerCierreHandlers(backup: BackupService): void {
 
   handle<{ cierreId: number }, { canceled: boolean; path?: string }>(
     'cierre:exportPdf',
-    CIERRE_EXPORT,
+    SALES_OR_ADMIN_ACCESS,
     async ({ cierreId }) => {
       if (!Number.isInteger(cierreId) || cierreId < 1) throw new AppError('errors.invalidInput')
       const cierre = getCierreById(cierreId)

@@ -4,6 +4,7 @@ import {
 } from '@/lib/cartLine'
 import type { CartLine } from './types'
 import type { CreateSaleLineInput } from '@shared/types'
+import { clampLineDiscount } from '@shared/cartTotals'
 
 export function cartLineToSaleInput(line: CartLine): CreateSaleLineInput {
   if (line.kind === 'misc') {
@@ -18,13 +19,13 @@ export function cartLineToSaleInput(line: CartLine): CreateSaleLineInput {
       unitPrice,
       name: line.customName?.trim() || undefined,
       catalogUnitPrice: miscCatalogUnitPrice,
-      discount: Math.min(line.discount, cartLineGross(line))
+      discount: clampLineDiscount(cartLineGross(line), line.discount)
     }
   }
   return {
     productId: line.product.id,
     quantity: line.quantity,
-    discount: Math.min(line.discount, cartLineGross(line)),
+    discount: clampLineDiscount(cartLineGross(line), line.discount),
     unitPrice: line.priceOverride
   }
 }

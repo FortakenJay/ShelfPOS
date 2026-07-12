@@ -2,11 +2,16 @@ import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
-import { parseColonesInput } from '@/lib/format'
+import { parseLocalizedMoneyInput } from '@/lib/format'
+import { invalidateProducts } from '@/lib/queryKeys'
 import { useToasts } from '@/lib/toast'
 import { Button, Field, Input, Modal, Toggle } from '@/components/ui'
 import { MoneyInput } from '@/components/MoneyInput'
 import { formatMoneyInputFromNumber, moneyInputIsEmpty } from '@shared/money'
+import {
+  normalizeProductInput,
+  validateProductBusinessRules
+} from '@shared/productValidation'
 import type { Product, ProductInput } from '@shared/types'
 
 function productFormState(product: Product | null) {
@@ -14,6 +19,8 @@ function productFormState(product: Product | null) {
     barcode: product?.barcode ?? '',
     name: product?.name ?? '',
     price: product ? formatMoneyInputFromNumber(product.price) : '',
+    price2: product?.price2 != null ? formatMoneyInputFromNumber(product.price2) : '',
+    price3: product?.price3 != null ? formatMoneyInputFromNumber(product.price3) : '',
     costPrice: product?.cost_price != null ? formatMoneyInputFromNumber(product.cost_price) : '',
     category: product?.category ?? '',
     stockProvider: product?.stock_provider ?? '',
@@ -58,7 +65,7 @@ export function ProductFormModal({
       isEdit ? api.products.update(product.id, input) : api.products.create(input),
     onSuccess: (saved) => {
       toasts.success(isEdit ? 'products.updated' : 'products.created')
-      void queryClient.invalidateQueries({ queryKey: ['products'] })
+      invalidateProducts(queryClient)
       if (!isEdit && onCreated) {
         onCreated(saved)
       } else {
@@ -72,25 +79,40 @@ export function ProductFormModal({
 
   const submit = (): void => {
     setError(null)
-    const priceNum = parseColonesInput(form.price)
+    const priceNum = parseLocalizedMoneyInput(form.price)
     if (!form.barcode.trim() || !form.name.trim() || priceNum == null || priceNum < 0) {
+      setError(t('errors.invalidInput'))
+      return
+    }
+    const price2Empty = moneyInputIsEmpty(form.price2)
+    const price3Empty = moneyInputIsEmpty(form.price3)
+    const price2Num = price2Empty ? null : parseLocalizedMoneyInput(form.price2)
+    const price3Num = price3Empty ? null : parseLocalizedMoneyInput(form.price3)
+    if (
+      (!price2Empty && (price2Num == null || price2Num <= 0)) ||
+      (!price3Empty && (price3Num == null || price3Num <= 0))
+    ) {
       setError(t('errors.invalidInput'))
       return
     }
     const hasBulk = form.bulkQty.trim() !== '' || !moneyInputIsEmpty(form.bulkPrice)
     const bulkQtyNum = moneyInputIsEmpty(form.bulkQty) ? null : Math.trunc(Number(form.bulkQty))
-    const bulkPriceNum = parseColonesInput(form.bulkPrice)
+    const bulkPriceNum = parseLocalizedMoneyInput(form.bulkPrice)
     if (hasBulk) {
       if (bulkQtyNum == null || bulkQtyNum < 2 || bulkPriceNum == null || bulkPriceNum < 0) {
         setError(t('products.form.bulkError'))
         return
       }
     }
-    mutation.mutate({
+    const input = normalizeProductInput({
       barcode: form.barcode.trim(),
       name: form.name.trim(),
       price: priceNum,
-      costPrice: moneyInputIsEmpty(form.costPrice) ? null : parseColonesInput(form.costPrice),
+      price2: price2Num,
+      price3: price3Num,
+      costPrice: moneyInputIsEmpty(form.costPrice)
+        ? null
+        : parseLocalizedMoneyInput(form.costPrice),
       category: form.category.trim() || null,
       stockProvider: form.stockProvider.trim() || null,
       stock: isEdit ? 0 : Math.trunc(Number(form.stock) || 0),
@@ -100,6 +122,11 @@ export function ProductFormModal({
       bulkPrice: hasBulk ? bulkPriceNum : null,
       facturaNegativo: form.facturaNegativo
     })
+    if (!validateProductBusinessRules(input)) {
+      setError(t('errors.invalidInput'))
+      return
+    }
+    mutation.mutate(input)
   }
 
   return (
@@ -137,6 +164,18 @@ export function ProductFormModal({
           </Field>
           <Field label={t('products.price')}>
             <MoneyInput value={form.price} onChange={(price) => patch({ price })} />
+          </Field>
+          <Field label={`${t('products.price2')} (${t('common.optional')})`}>
+            <MoneyInput value={form.price2} onChange={(price2) => patch({ price2 })} />
+            <span className="mt-1 block text-[13px] text-slate-500">
+              {t('products.form.price2Hint')}
+            </span>
+          </Field>
+          <Field label={`${t('products.price3')} (${t('common.optional')})`}>
+            <MoneyInput value={form.price3} onChange={(price3) => patch({ price3 })} />
+            <span className="mt-1 block text-[13px] text-slate-500">
+              {t('products.form.price3Hint')}
+            </span>
           </Field>
           <Field label={`${t('products.costPrice')} (${t('common.optional')})`}>
             <MoneyInput value={form.costPrice} onChange={(costPrice) => patch({ costPrice })} />

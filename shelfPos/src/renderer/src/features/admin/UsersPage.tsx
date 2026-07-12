@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
 import { toastApiError } from '@/lib/errors'
 import { formatDate } from '@/lib/format'
+import { queryKeys } from '@/lib/queryKeys'
 import { useToasts } from '@/lib/toast'
 import { RequireRole } from '@/features/shell/Shell'
 import { Button, FullScreenSpinner, Td, Th } from '@/components/ui'
@@ -31,7 +32,7 @@ function Users(): React.JSX.Element {
   const [modal, setModal] = useState<UserModalState>(null)
 
   const { data: settings, isLoading: settingsLoading } = useQuery({
-    queryKey: ['settings'],
+    queryKey: queryKeys.settings,
     queryFn: api.settings.get
   })
 
@@ -66,7 +67,7 @@ function Users(): React.JSX.Element {
   }
 
   const onSetupComplete = (): void => {
-    void queryClient.invalidateQueries({ queryKey: ['settings'] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.settings })
     void queryClient.invalidateQueries({ queryKey: ['users'] })
   }
 

@@ -1,7 +1,7 @@
 import { useReducer } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
-import { formatMoney, parseColonesInput } from '@/lib/format'
+import { formatMoney, parseLocalizedMoneyInput } from '@/lib/format'
 import { formatMoneyInputFromNumber, roundColones } from '@shared/money'
 import { Button, Field, Input, Modal } from '@/components/ui'
 import { MoneyInput } from '@/components/MoneyInput'
@@ -75,7 +75,7 @@ export function DiscountModal({
       ? value === ''
         ? 0
         : Number(value)
-      : (parseColonesInput(value) ?? 0)
+      : (parseLocalizedMoneyInput(value) ?? 0)
   const computed =
     mode === 'percent' ? roundColones((base * num) / 100) : roundColones(num)
   const clamped = Math.min(Math.max(computed, 0), roundColones(base))

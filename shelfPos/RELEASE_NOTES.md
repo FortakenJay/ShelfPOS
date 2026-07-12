@@ -2,6 +2,73 @@
 
 ## Unreleased
 
+### Nueva función — Precios 2 y 3 por producto
+
+- Productos acepta **Precio 2** y **Precio 3** opcionales, separados del precio por mayor automático.
+- Caja muestra los precios almacenados disponibles al cambiar el precio de una línea.
+- Elegir Precio 2 o Precio 3 no pide PIN; cualquier otro precio personalizado conserva la autorización por PIN.
+- Inventario muestra y permite editar ambos precios alternativos.
+- Importación/exportación CSV incluye las columnas opcionales `price2` y `price3`; archivos anteriores siguen funcionando.
+- SQLite v26–v27 y el mirror de Supabase agregan `products.price2` / `products.price3`. Ejecutar el `SUPA.sql` actualizado al desplegar.
+- `SUPA.sql` sigue siendo idempotente (no borra ventas/productos). Al final limpia triggers viejos de auto-RLS (`ensure_rls`); el RLS de las tablas se mantiene explícito en la sección 5.
+
+### Limpieza — auditoría DRY
+
+- Unifica validación de productos, clasificación Precio 1/2/3, totales de carrito, parsers de dinero por fuente, errores de import, métodos de pago y claves TanStack Query.
+- Import CSV/eFactura: un solo análisis preview/apply; rechaza confirmación si el archivo cambió (`errors.productImportSourceChanged`).
+- Sync: manifiesto compartido live + backfill (incluye clientes / crédito). Reinstalar sync service después del deploy.
+- Stock sale/ajuste/devolución permanece separado a propósito (DRY-09). Estado PIN modal diferido (DRY-15).
+- Detalle: `docs/DRY_AUDIT.md`.
+
+### QA — Vitest + Playwright Electron
+
+- Unit tests + 8 smokes E2E (login, venta, Precio 2, bulk+Precio 1, crédito, devolución bloqueada, CRUD producto, idioma).
+- Scripts: `npm run test`, `test:e2e`, `test:qa`. CI: `.github/workflows/qa.yml`.
+- Guía: `docs/QA.md`.
+
+---
+
+## 1.8.0
+
+### Nueva función — cuentas de crédito
+
+- Clientes persistentes con nombre, teléfono, estado y saldo pendiente.
+- Caja acepta **Crédito** como método completo o combinado con efectivo, tarjeta y SINPE.
+- Toda venta a crédito exige seleccionar un cliente activo; el saldo se actualiza dentro de la misma transacción.
+- **Cobrar deuda** permite pagos parciales por efectivo, tarjeta o SINPE, con referencia y nota.
+- Caja puede crear un cliente desde el selector de crédito usando únicamente nombre y teléfono.
+- Los montos en colones se redondean al múltiplo de ₡10 más cercano.
+- Administración incluye alta, edición, desactivación y estado de cuenta del cliente.
+
+### Nueva función — compras del cliente en Caja
+
+- La barra de navegación existente agrega la pestaña **Deudas pendientes**, que abre la pantalla de ventas a crédito por cliente.
+- Cada cliente muestra cantidad de carritos pendientes y saldo total.
+- Al entrar, cada carrito muestra fecha, saldo y una vista previa de hasta cuatro artículos.
+- Al abrir un carrito se ve el contenido completo. **Cobrar ahora** registra un pago dirigido a ese saldo, sin volver a vender artículos ni descontar inventario por segunda vez.
+- Las devoluciones de una venta a crédito se bloquean mientras esa venta tenga deuda pendiente.
+
+### Datos y sincronización
+
+- SQLite **v24–v25**: cuentas de crédito, más `credit_payments.sale_id` para cobrar un carrito específico.
+- Supabase agrega mirrors `customers` y `credit_payments`, más las columnas de ventas/cierres.
+- El sync service prioriza clientes antes de ventas y enlaza pagos de deuda con cierres.
+- Antes de desplegar el POS, ejecutar el `SUPA.sql` actualizado. Como cambió el sync service, reinstalarlo desde el ZIP de release.
+
+### Versionado (`X.Y.Z`)
+
+- **X — versión mayor:** cambio grande o incompatible. Ejemplo: `1.8.0` → `2.0.0`.
+- **Y — función:** nueva capacidad compatible. Esta release sube `1.7.4` → `1.8.0`.
+- **Z — corrección:** arreglo compatible sin función principal nueva. Ejemplo: `1.8.0` → `1.8.1`.
+
+### Despliegue
+
+| Componente | Versión | Acción |
+|------------|---------|--------|
+| POS Windows | 1.8.0 | `npm run release:win` → `ShelfPOS-1.8.0-win.zip` |
+| Sync service | 1.8.0 | Incluido en ZIP; reinstalar con `Install-ShelfPOS` |
+| Dashboard | 1.5.3 | Sin cambio de app; ejecutar el `SUPA.sql` actualizado |
+
 ---
 
 ## 1.7.1

@@ -1,7 +1,7 @@
 import i18n from 'i18next'
 import { formatColones } from '@shared/money'
 
-export { formatGroupedInteger } from '@shared/money'
+export { formatGroupedInteger, parseLocalizedMoneyInput } from '@shared/money'
 
 export function formatMoney(n: number): string {
   void i18n.language
@@ -22,17 +22,4 @@ export function todayStr(): string {
   const d = new Date()
   const pad = (n: number): string => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-}
-
-/** Parse cash typed in the UI (₡3 000, 10 980, or 10.980). */
-export function parseColonesInput(raw: string): number | null {
-  const s = raw.trim().replace(/₡/g, '').replace(/\s/g, '')
-  if (!s) return null
-  if (/^\d+$/.test(s)) {
-    const n = Number(s)
-    return Number.isFinite(n) ? n : null
-  }
-  const normalized = s.replace(/\./g, '').replace(',', '.')
-  const n = Number(normalized)
-  return Number.isFinite(n) && n >= 0 ? n : null
 }

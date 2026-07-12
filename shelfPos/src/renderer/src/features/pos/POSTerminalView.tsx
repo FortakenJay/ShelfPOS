@@ -10,6 +10,7 @@ import type { usePOSTerminal } from './usePOSTerminal'
 import type { CustomerInput } from '@shared/types'
 import { useTranslation } from 'react-i18next'
 import { formatMoney } from '@/lib/format'
+import { queryKeys } from '@/lib/queryKeys'
 
 type POSTerminalState = ReturnType<typeof usePOSTerminal>
 
@@ -35,11 +36,11 @@ export function POSTerminalView(state: POSTerminalState): React.JSX.Element {
     cancelCloseTab,
     cashBlocked,
     scanner,
-    debouncedQuery,
     searchResults,
     payOpen,
     payInitialMethod,
     returnOpen,
+    abonoOpen,
     discountTarget,
     priceTarget,
     removeTarget,
@@ -73,7 +74,7 @@ export function POSTerminalView(state: POSTerminalState): React.JSX.Element {
     <>
       {cashBlocked && (
         <OpenFloatModal
-          onOpened={() => void queryClient.invalidateQueries({ queryKey: ['cashStatus'] })}
+          onOpened={() => void queryClient.invalidateQueries({ queryKey: queryKeys.cashStatus })}
         />
       )}
       <div className={`flex h-full ${cashBlocked ? 'pointer-events-none opacity-40' : ''}`}>
@@ -91,17 +92,15 @@ export function POSTerminalView(state: POSTerminalState): React.JSX.Element {
           <POSSearchPanel
             inputRef={inputRef}
             query={query}
-            debouncedQuery={debouncedQuery}
             searchResults={searchResults}
             onQueryChange={setQuery}
             onKeyDown={(e) => {
               scanner.onKeyDown(e)
             }}
             onSelectProduct={(product) => {
-              if (addToCart(product)) {
-                setQuery('')
-                focusSearch()
-              }
+              const added = addToCart(product)
+              setQuery('')
+              if (added) focusSearch()
             }}
           />
 
@@ -130,6 +129,10 @@ export function POSTerminalView(state: POSTerminalState): React.JSX.Element {
             if (cashBlocked) return
             setModals((m) => ({ ...m, returnOpen: true }))
           }}
+          onAbonoOpen={() => {
+            if (cashBlocked) return
+            setModals((m) => ({ ...m, abonoOpen: true }))
+          }}
         />
 
         <POSModals
@@ -141,6 +144,7 @@ export function POSTerminalView(state: POSTerminalState): React.JSX.Element {
           payOpen={payOpen}
           payInitialMethod={payInitialMethod}
           returnOpen={returnOpen}
+          abonoOpen={abonoOpen}
           discountTarget={discountTarget}
           priceTarget={priceTarget}
           removeTarget={removeTarget}
@@ -154,6 +158,10 @@ export function POSTerminalView(state: POSTerminalState): React.JSX.Element {
           }}
           onReturnClose={() => {
             setModals((m) => ({ ...m, returnOpen: false }))
+            focusSearch()
+          }}
+          onAbonoClose={() => {
+            setModals((m) => ({ ...m, abonoOpen: false }))
             focusSearch()
           }}
           onDiscountClose={() => setModals((m) => ({ ...m, discountTarget: null }))}

@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
 import { toastApiError } from '@/lib/errors'
-import { formatDate, formatMoney, parseColonesInput } from '@/lib/format'
+import { formatDate, formatMoney, parseLocalizedMoneyInput } from '@/lib/format'
+import { invalidatePrintQueue, queryKeys } from '@/lib/queryKeys'
 import { useSession } from '@/lib/session'
 import { useToasts } from '@/lib/toast'
 import { RequireRole } from '@/features/shell/Shell'
@@ -59,7 +60,7 @@ function Cierre(): React.JSX.Element {
   const heldCartTabs = preview?.heldCartTabs ?? []
   const heldCartTotal = heldCartTabs.reduce((sum, row) => sum + row.total, 0)
   const expectedCash = preview?.cash?.expectedCash ?? 0
-  const countedNum = parseColonesInput(countedCash)
+  const countedNum = parseLocalizedMoneyInput(countedCash)
   const difference =
     countedNum == null ? null : Math.round((countedNum - expectedCash) * 100) / 100
   const isOver = difference != null && difference > 0
@@ -88,9 +89,9 @@ function Cierre(): React.JSX.Element {
       void queryClient.invalidateQueries({ queryKey: ['cierrePreview', 2] })
       void queryClient.invalidateQueries({ queryKey: ['cierreHistory'] })
       void queryClient.invalidateQueries({ queryKey: ['cierreDiscrepancyAlerts'] })
-      void queryClient.invalidateQueries({ queryKey: ['cashStatus'] })
-      void queryClient.invalidateQueries({ queryKey: ['cartTabs'] })
-      void queryClient.invalidateQueries({ queryKey: ['salesForReprint'] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cashStatus })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cartTabs })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.salesForReprint })
     },
     onError: (err) => toastApiError(toasts, err)
   })
@@ -278,9 +279,10 @@ function AdminCierreSummary({
       acc.cash += row.total_cash ?? 0
       acc.card += row.total_card ?? 0
       acc.sinpe += row.total_sinpe ?? 0
+      acc.credit += row.total_credit ?? 0
       return acc
     },
-    { sales: 0, cash: 0, card: 0, sinpe: 0 }
+    { sales: 0, cash: 0, card: 0, sinpe: 0, credit: 0 }
   )
 
   const countLabel =
@@ -306,11 +308,12 @@ function AdminCierreSummary({
           {t('cierre.historyTruncatedWarning')}
         </p>
       )}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <SummaryCell label={t('cierre.totalSales')} value={truncated ? t('common.dash') : formatMoney(totals.sales)} />
         <SummaryCell label={t('cierre.totalCash')} value={truncated ? t('common.dash') : formatMoney(totals.cash)} />
         <SummaryCell label={t('cierre.totalCard')} value={truncated ? t('common.dash') : formatMoney(totals.card)} />
         <SummaryCell label={t('cierre.totalSinpe')} value={truncated ? t('common.dash') : formatMoney(totals.sinpe)} />
+        <SummaryCell label={t('cierre.totalCredit')} value={truncated ? t('common.dash') : formatMoney(totals.credit)} />
       </div>
     </section>
   )
@@ -563,8 +566,8 @@ function CierreDiscardedTabs({
             </tr>
           </thead>
           <tbody>
-            {discarded.rows.map((row, index) => (
-              <tr key={`${row.createdAt}-${index}`} className="border-t border-line">
+            {discarded.rows.map((row) => (
+              <tr key={row.id} className="border-t border-line">
                 <Td>{formatDate(row.createdAt, true)}</Td>
                 <Td>{row.cashier}</Td>
                 <Td className="font-semibold">{row.label}</Td>
@@ -606,7 +609,7 @@ function CierreHistory({ historyRows }: { historyRows: CierreRecord[] | undefine
     onSuccess: ({ printStatus }) => {
       if (printStatus === 'printed') toasts.success('cierre.printSent')
       else toasts.error('pos.printFailed')
-      void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
+      invalidatePrintQueue(queryClient)
     },
     onError: (err) => toastApiError(toasts, err)
   })
@@ -626,6 +629,7 @@ function CierreHistory({ historyRows }: { historyRows: CierreRecord[] | undefine
               <Th className="text-right">{t('cierre.totalCash')}</Th>
               <Th className="text-right">{t('cierre.totalCard')}</Th>
               <Th className="text-right">{t('cierre.totalSinpe')}</Th>
+              <Th className="text-right">{t('cierre.totalCredit')}</Th>
               <Th className="text-right">{t('common.total')}</Th>
               <Th className="text-right">{t('cash.difference')}</Th>
               <Th className="text-right">{t('common.actions')}</Th>
@@ -634,7 +638,7 @@ function CierreHistory({ historyRows }: { historyRows: CierreRecord[] | undefine
           <tbody>
             {historyRows?.length === 0 && (
               <tr>
-                <Td colSpan={8} className="py-6 text-center text-slate-500">
+                <Td colSpan={9} className="py-6 text-center text-slate-500">
                   {t('common.noData')}
                 </Td>
               </tr>
@@ -646,6 +650,7 @@ function CierreHistory({ historyRows }: { historyRows: CierreRecord[] | undefine
                 <Td className="text-right">{formatMoney(c.total_cash)}</Td>
                 <Td className="text-right">{formatMoney(c.total_card)}</Td>
                 <Td className="text-right">{formatMoney(c.total_sinpe)}</Td>
+                <Td className="text-right">{formatMoney(c.total_credit)}</Td>
                 <Td className="text-right font-bold">{formatMoney(c.total_sales)}</Td>
                 <Td
                   className={`text-right font-bold ${

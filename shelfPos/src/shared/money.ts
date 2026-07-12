@@ -1,9 +1,35 @@
-/** Smallest circulating CRC coin is ₡5 — cash amounts round to the nearest ₡5. */
-export const CRC_COIN_STEP = 5
+/** ShelfPOS records CRC amounts in ₡10 increments; decimal colones are never persisted. */
+export const CRC_COIN_STEP = 10
 
 export function roundColones(n: number): number {
   if (!Number.isFinite(n)) return 0
   return Math.round(n / CRC_COIN_STEP) * CRC_COIN_STEP
+}
+
+/** Cashier-entered money: dots group thousands, while a comma is decimal. */
+export function parseLocalizedMoneyInput(raw: string): number | null {
+  const value = raw.trim().replace(/₡/g, '').replace(/\s/g, '')
+  if (!value) return null
+  if (/^\d+$/.test(value)) {
+    const amount = Number(value)
+    return Number.isFinite(amount) ? amount : null
+  }
+  const amount = Number(value.replace(/\./g, '').replace(',', '.'))
+  return Number.isFinite(amount) && amount >= 0 ? amount : null
+}
+
+/** Machine/CSV number: commas group thousands and dots retain Number semantics. */
+export function parseMachineNumber(raw: string): number | null {
+  if (!raw.trim()) return null
+  const amount = Number(raw.replace(/,/g, ''))
+  return Number.isFinite(amount) ? amount : null
+}
+
+/** Supplier PDF amount: comma-grouped, exactly two dot-decimal places, rounded to CRC. */
+export function parseSupplierAmount(raw: string): number | null {
+  if (!/^[\d,]+\.\d{2}$/.test(raw)) return null
+  const amount = parseMachineNumber(raw)
+  return amount == null ? null : roundColones(amount)
 }
 
 /** Groups digits with a space every three places: 3000 → "3 000". */

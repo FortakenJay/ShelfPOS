@@ -7,6 +7,7 @@ import { DiscountModal } from './DiscountModal'
 import { PriceOverrideModal } from './PriceOverrideModal'
 import { CustomerModal } from './CustomerModal'
 import { RemoveLineModal } from './RemoveLineModal'
+import { AbonoModal } from './AbonoModal'
 import { cartLineToSaleInput } from './posCartSale'
 import type { CartLine } from './types'
 import type { DiscountTarget } from './usePOSTerminal'
@@ -21,6 +22,7 @@ interface POSModalsProps {
   payOpen: boolean
   payInitialMethod: PaymentMethod
   returnOpen: boolean
+  abonoOpen: boolean
   discountTarget: DiscountTarget | null
   priceTarget: string | null
   removeTarget: string | null
@@ -30,6 +32,7 @@ interface POSModalsProps {
   discountModalCurrent: number
   onPayClose: () => void
   onReturnClose: () => void
+  onAbonoClose: () => void
   onDiscountClose: () => void
   onPriceClose: () => void
   onRemoveClose: () => void
@@ -50,6 +53,7 @@ export function POSModals({
   payOpen,
   payInitialMethod,
   returnOpen,
+  abonoOpen,
   discountTarget,
   priceTarget,
   removeTarget,
@@ -58,6 +62,7 @@ export function POSModals({
   discountModalCurrent,
   onPayClose,
   onReturnClose,
+  onAbonoClose,
   onDiscountClose,
   onPriceClose,
   onRemoveClose,
@@ -86,6 +91,7 @@ export function POSModals({
         />
       )}
       {returnOpen && <ReturnModal onClose={onReturnClose} />}
+      {abonoOpen && <AbonoModal onClose={onAbonoClose} />}
       {discountTarget && (
         <DiscountModal
           title={t('pos.cartDiscount')}
@@ -102,12 +108,16 @@ export function POSModals({
           if (!line) return null
           const catalog =
             line.kind === 'misc' ? line.unitPrice : catalogUnitPrice(line.product, line.quantity)
+          const baseUnitPrice = line.kind === 'product' ? line.product.price : catalog
           const name = cartLineDisplayName(line, miscLabel)
           return (
             <PriceOverrideModal
               productName={name}
               productId={line.kind === 'product' ? line.product.id : 0}
               catalogUnitPrice={catalog}
+              baseUnitPrice={baseUnitPrice}
+              price2={line.kind === 'product' ? line.product.price2 : null}
+              price3={line.kind === 'product' ? line.product.price3 : null}
               quantity={line.quantity}
               currentOverride={line.priceOverride}
               onApply={onPriceApply}

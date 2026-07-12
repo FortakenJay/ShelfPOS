@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
 import { toastApiError } from '@/lib/errors'
-import { parseColonesInput } from '@/lib/format'
+import { parseLocalizedMoneyInput } from '@/lib/format'
+import { queryKeys } from '@/lib/queryKeys'
 import { eventToShortcutKey } from '@/lib/shortcuts'
 import { useToasts } from '@/lib/toast'
 import { Button, Field, Modal } from '@/components/ui'
@@ -15,18 +16,18 @@ export function OpenFloatModal({ onOpened }: { onOpened: () => void }): React.JS
   const toasts = useToasts()
   const queryClient = useQueryClient()
   const [amount, setAmount] = useState('')
-  const { data: settings } = useQuery({ queryKey: ['settings'], queryFn: api.settings.get })
+  const { data: settings } = useQuery({ queryKey: queryKeys.settings, queryFn: api.settings.get })
 
   const openFloat = useMutation({
     mutationFn: () => {
-      const parsed = parseColonesInput(amount)
+      const parsed = parseLocalizedMoneyInput(amount)
       if (parsed == null || parsed < 0) throw new ApiError('errors.invalidInput')
       return api.cash.openFloat({ amount: parsed })
     },
     onSuccess: () => {
       toasts.success('cash.floatOpenedToast')
       setAmount('')
-      void queryClient.invalidateQueries({ queryKey: ['cashStatus'] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cashStatus })
       onOpened()
     },
     onError: (err) => toastApiError(toasts, err)

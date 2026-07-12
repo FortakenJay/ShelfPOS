@@ -27,7 +27,12 @@ interface ProductManagerModalsProps {
   printPromptPrintingBarcode: boolean
   onDeleteConfirm: (id: number) => void
   onExportTemplate: () => void
-  onImportConfirm: (filePath: string, format: 'csv' | 'efactura', stockMode: ProductImportStockMode) => void
+  onImportConfirm: (
+    filePath: string,
+    sourceVersion: string,
+    format: 'csv' | 'efactura',
+    stockMode: ProductImportStockMode
+  ) => void
   onReceiveChoice: (choice: ProductReceiveChoice) => void
   onSupplierInvoiceConfirm: (input: SupplierInvoiceConfirmInput) => void
   onProductsSaved: () => void
@@ -148,7 +153,10 @@ export function ProductManagerModals({
           onClose={() => setUi((u) => ({ ...u, receiveChoiceOpen: false }))}
         />
       )}
-      {ui.importPreview && !ui.importPreview.canceled && ui.importPreview.filePath && (
+      {ui.importPreview &&
+        !ui.importPreview.canceled &&
+        ui.importPreview.filePath &&
+        ui.importPreview.sourceVersion && (
         <ProductImportPreviewModal
           preview={ui.importPreview}
           titleKey={
@@ -159,10 +167,15 @@ export function ProductManagerModals({
           loading={importConfirmPending}
           onClose={() => setUi((u) => ({ ...u, importPreview: null }))}
           onConfirm={(stockMode) =>
-            onImportConfirm(ui.importPreview!.filePath as string, ui.importFormat, stockMode)
+            onImportConfirm(
+              ui.importPreview!.filePath as string,
+              ui.importPreview!.sourceVersion as string,
+              ui.importFormat,
+              stockMode
+            )
           }
         />
-      )}
+        )}
       {ui.supplierInvoicePreview && !ui.supplierInvoicePreview.canceled && (
         <SupplierInvoicePreviewModal
           preview={ui.supplierInvoicePreview}

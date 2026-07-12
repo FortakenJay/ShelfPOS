@@ -5,6 +5,7 @@ import { api, ApiError } from '@/lib/api'
 import { formatDate, formatMoney } from '@/lib/format'
 import { toastApiError } from '@/lib/errors'
 import { notifyPrintFailure } from '@/lib/printToasts'
+import { invalidatePrintQueue, queryKeys } from '@/lib/queryKeys'
 import { useToasts } from '@/lib/toast'
 import { Button, Td, Th } from '@/components/ui'
 import type { PrintStatus } from '@shared/types'
@@ -16,7 +17,7 @@ export function ReprintReceiptsList(): React.JSX.Element {
   const [pdfSaleId, setPdfSaleId] = useState<number | null>(null)
 
   const { data: sales, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['salesForReprint'],
+    queryKey: queryKeys.salesForReprint,
     queryFn: api.sales.listForReprint
   })
 
@@ -25,8 +26,8 @@ export function ReprintReceiptsList(): React.JSX.Element {
     onSuccess: ({ printStatus, printJobId }: { printStatus: PrintStatus; printJobId: number }) => {
       if (printStatus === 'printed') toasts.success('pos.reprintSuccess')
       else notifyPrintFailure(toasts, printJobId)
-      void queryClient.invalidateQueries({ queryKey: ['salesForReprint'] })
-      void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.salesForReprint })
+      invalidatePrintQueue(queryClient)
     },
     onError: (err) => toastApiError(toasts, err)
   })

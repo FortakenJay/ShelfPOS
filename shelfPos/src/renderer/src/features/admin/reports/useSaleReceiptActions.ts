@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { api } from '@/lib/api'
 import { toastApiError } from '@/lib/errors'
 import { notifyPrintFailure } from '@/lib/printToasts'
+import { invalidatePrintQueue } from '@/lib/queryKeys'
 import { useToasts } from '@/lib/toast'
 import type { PrintStatus } from '@shared/types'
 
@@ -22,7 +23,7 @@ export function useSaleReceiptActions(saleId: number): {
     onSuccess: ({ printStatus, printJobId }: { printStatus: PrintStatus; printJobId: number }) => {
       if (printStatus === 'printed') toasts.success('pos.reprintSuccess')
       else notifyPrintFailure(toasts, printJobId)
-      void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
+      invalidatePrintQueue(queryClient)
     },
     onError: (err) => toastApiError(toasts, err)
   })

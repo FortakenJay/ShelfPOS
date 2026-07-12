@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
 import { toastApiError } from '@/lib/errors'
 import { formatDate } from '@/lib/format'
+import { invalidatePrintQueue, queryKeys } from '@/lib/queryKeys'
 import { useToasts } from '@/lib/toast'
 import { RequireRole } from '@/features/shell/Shell'
 import { ProductsPagination } from '@/features/products/ProductsPagination'
@@ -33,7 +34,7 @@ function PrintQueue(): React.JSX.Element {
     error,
     refetch
   } = useQuery({
-    queryKey: ['printQueue', page, pageSize],
+    queryKey: queryKeys.printQueue.list(page, pageSize),
     queryFn: () => api.printQueue.list({ page, pageSize }),
     refetchOnMount: 'always',
     refetchInterval: 10_000
@@ -44,7 +45,7 @@ function PrintQueue(): React.JSX.Element {
     onSuccess: ({ printStatus }) => {
       if (printStatus === 'printed') toasts.success('printQueue.retrySuccess')
       else toasts.error('printQueue.retryFailed')
-      void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
+      invalidatePrintQueue(queryClient)
     },
     onError: (err) => toastApiError(toasts, err)
   })

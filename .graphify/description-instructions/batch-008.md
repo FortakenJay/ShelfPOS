@@ -1,4 +1,4 @@
-# Node Description Batch 9 of 42
+# Node Description Batch 9 of 43
 
 Graphify is running in assistant/skill mode (no API key). You are the host
 assistant (Claude Code / Codex / Gemini CLI). Read the prompt below and write
@@ -9,9 +9,6 @@ your JSON answer to the answer file.
 You are documenting nodes in a knowledge graph.
 For each entry below, write ONE concise factual plain-language sentence
 describing what it is or does. Use only the provided context.
-For a code symbol (kind=code-symbol — a function, class, or constant),
-describe what the function/symbol does based on its name, source location
-and neighbors — e.g. "Resolves the configured ontology profile from graphify.yaml.".
 For an entity node (any other kind — e.g. a person, place, event, object),
 describe what the entity is and its role, grounded in its type, its
 relations (neighbors) and the provided citations/evidence — e.g.
@@ -26,6 +23,20 @@ No marketing language.
 Respond ONLY with a JSON object mapping each node id (as a string) to its
 one-sentence description — no prose, no markdown fences.
 
+- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@28828b3fca647aae068799cb79bb8d9b7ff8409c": "28828b3 TO PROD" | kind=Commit | source=git | neighbors=[07a5b84 more fixes, Separation, dev, 24e20c4 bug fixes and fully documented.] | lang=en
+- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@29f24aa5857eca47c126597559ed019d0c1d7635": "29f24aa dashboad online update" | kind=Commit | source=git | neighbors=[Separation, dev, fcdc308 stuff, 830f6ac Printer QA: TM-T81III detection…] | lang=en
+- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@33bb2b32da538442ba12fb75a9aa428adaa70700": "33bb2b3 changed on nonsense" | kind=Commit | source=git | neighbors=[Separation, dev, f61bbb3 big update., 430f3aa lints] | lang=en
+- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@35ec2ded9138edaa85ac019c9d69fd64c96aac94": "35ec2de more changes." | kind=Commit | source=git | neighbors=[Separation, dev, 07a5b84 more fixes, 6564709 added admin] | lang=nl
+- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@36c67a5ec5d9540db53ff2da9123e37eee443c22": "36c67a5 added nitro" | kind=Commit | source=git | neighbors=[Separation, dev, 0ef1588 stuff, fcdc308 stuff] | lang=pt
+- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@430f3aac88e04f634a2f35b1ca9e8a20768a4bb2": "430f3aa lints" | kind=Commit | source=git | neighbors=[Separation, dev, 33bb2b3 changed on nonsense, e32e315 sitea] | lang=en
+- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@4b18b22fc40dad33472cb5dbd031ccd7b7e390f8": "4b18b22 fixes." | kind=Commit | source=git | neighbors=[Separation, dev, f846cf6 updates., e26c275 more fixes.] | lang=en
+- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@4d467fe30a69863c6e898835dc233e2a4d95d676": "4d467fe changes" | kind=Commit | source=git | neighbors=[Separation, dev, 81b3271 more fixes on the websuites, ee398bc clean and full rebuild] | lang=en
+- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@526a635547da8385f52de8a9b9f3052742e41a49": "526a635 fixed the build" | kind=Commit | source=git | neighbors=[Separation, dev, 7721f65 fixed previous issues, d1a0ec4 fix more stuff] | lang=en
+- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@5b151317c7cfa85fee16db5a9829105ab6961979": "5b15131 more fixes" | kind=Commit | source=git | neighbors=[Separation, dev, caf7d3c ui fixes, added add or replace …, 812fb04 more ui fixes.] | lang=en
+- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@5f4f7d2c7160f70c7df2111955117d3c1c9a7bdd": "5f4f7d2 document to push so deployment is from another account" | kind=Commit | source=git | neighbors=[4274ea5 graphify, Separation, dev, 3da0d23 Merge branch 'dev' of https://g…] | lang=en
+- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@641f6af79ed95f5a43d9caf13df2e2d7fdde2008": "641f6af fixed UI." | kind=Commit | source=git | neighbors=[Separation, dev, ea1fc8a new update, f846cf6 updates.] | lang=en
+- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@6564709b322d47fba5326a2b506ea75ae6bf813b": "6564709 added admin" | kind=Commit | source=git | neighbors=[Separation, dev, 35ec2de more changes., 71a7bcb 1.3.3] | lang=en
+- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@660d33a239cccdcbfde443721c6d558c4ca9fadf": "660d33a fixed mail." | kind=Commit | source=git | neighbors=[4274ea5 graphify, Separation, dev, 3da0d23 Merge branch 'dev' of https://g…] | lang=pt
 - "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@71a7bcbb936176c1b22ac4badecc71a2b5b263eb": "71a7bcb 1.3.3" | kind=Commit | source=git | neighbors=[Separation, dev, 6564709 added admin, cd0b86f v 1.3] | lang=pt
 - "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@7721f6597c8c270b2cef02f25f857e5055c8432e": "7721f65 fixed previous issues" | kind=Commit | source=git | neighbors=[526a635 fixed the build, Separation, dev, ee398bc clean and full rebuild] | lang=en
 - "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@812fb042ff090e596c4f3c29f4b4669584df1470": "812fb04 more ui fixes." | kind=Commit | source=git | neighbors=[Separation, dev, 5b15131 more fixes, cf0fdc7 UI fixes (thansk andres)] | lang=en
@@ -52,20 +63,6 @@ one-sentence description — no prose, no markdown fences.
 - "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@f3113275b97a295a70f238e2b2080dc1432d35dd": "f311327 updated PDF and fixed bug. (STILLL NEEDS FIXING)" | kind=Commit | source=git | neighbors=[Separation, dev, 14a2364 Split monorepo into independent…, f69ed35 graph] | lang=en
 - "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@f61bbb37be8535b83c430af3187686017fd71ba7": "f61bbb3 big update." | kind=Commit | source=git | neighbors=[33bb2b3 changed on nonsense, Separation, dev, cd0b86f v 1.3] | lang=en
 - "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@f69ed35f395db78c93537d38993c994e59988831": "f69ed35 graph" | kind=Commit | source=git | neighbors=[e5f80bd graphs, Separation, dev, f311327 updated PDF and fixed bug. (STI…] | lang=en
-- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@f846cf6291d7f8d03d359e8d5860585dd16bfc5c": "f846cf6 updates." | kind=Commit | source=git | neighbors=[4b18b22 fixes., Separation, dev, 641f6af fixed UI.] | lang=en
-- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@f884e6420ad283f74e20262e8226a87b08939cef": "f884e64 added admin dashboard" | kind=Commit | source=git | neighbors=[24f0fbb fixed more UIs, Separation, dev, cf0fdc7 UI fixes (thansk andres)] | lang=en
-- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@fcdc3084cf98760f64d69b8210ff27c867aac3a5": "fcdc308 stuff" | kind=Commit | source=git | neighbors=[29f24aa dashboad online update, Separation, dev, 36c67a5 added nitro] | lang=en
-- "components_accountspinfields": "AccountsPinFields.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/auth/components/AccountsPinFields.tsx:L1 | neighbors=[AccountsStep.tsx, 1bdbad7 Consolidate shelfPos, shelfDash…, AccountsPinFields(), AccountsPinFieldsProps] | lang=en
-- "components_adminaccountfields": "AdminAccountFields.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/auth/components/AdminAccountFields.tsx:L1 | neighbors=[AccountsStep.tsx, 1bdbad7 Consolidate shelfPos, shelfDash…, AdminAccountFields(), AdminAccountFieldsProps] | lang=en
-- "components_dashboardprimitives_dashboardcard": "DashboardCard()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/dashboard/components/DashboardPrimitives.tsx:L7 | neighbors=[DashboardCharts.tsx, DashboardHomeCharts.tsx, DashboardPrimitives.tsx, DashboardTables.tsx] | lang=en
-- "components_dashboardprimitives_dashboardempty": "DashboardEmpty()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/dashboard/components/DashboardPrimitives.tsx:L39 | neighbors=[DashboardCharts.tsx, DashboardHomeCharts.tsx, DashboardPrimitives.tsx, DashboardTables.tsx] | lang=en
-- "components_daterangepresets_presetweek": "presetWeek()" | kind=code-symbol | source=shelfPos/src/renderer/src/components/dateRangePresets.ts:L16 | neighbors=[DateRangePicker.tsx, dateRangePresets.ts, shiftDays(), rangeForReportPeriod()] | lang=en
-- "components_daterangepresets_rangeforreportperiod": "rangeForReportPeriod()" | kind=code-symbol | source=shelfPos/src/renderer/src/components/dateRangePresets.ts:L27 | neighbors=[dateRangePresets.ts, presetMonth(), presetToday(), presetWeek()] | lang=en
-- "components_languageswitcher": "LanguageSwitcher.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/components/LanguageSwitcher.tsx:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, LANGUAGES, languageShortLabel(), LanguageSwitcher()] | lang=en
-- "components_navicon": "NavIcon.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/components/NavIcon.tsx:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, NavIcon(), NavIconName, PATHS] | lang=en
-- "components_productspagetoolbar": "ProductsPageToolbar.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/products/components/ProductsPageToolbar.tsx:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, ProductsPageToolbar(), ProductsPageToolbarProps, ProductsPage.tsx] | lang=en
-- "dashboard_dashboardalertsearch": "dashboardAlertSearch.ts" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/dashboard/dashboardAlertSearch.ts:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, DashboardTables.tsx, NotificationsCenter.tsx, dashboardAlertProductSearch()] | lang=en
-- "db_helpers_daysagolocal": "daysAgoLocal()" | kind=code-symbol | source=shelfPos/src/main/db/helpers.ts:L17 | neighbors=[helpers.ts, pad(), dashboard.ts, dataRetention.ts] | lang=en
 
 ## Instructions
 

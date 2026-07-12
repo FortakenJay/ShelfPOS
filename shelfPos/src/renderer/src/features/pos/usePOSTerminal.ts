@@ -8,24 +8,19 @@ import {
   serializeCartTabSnapshot,
   snapshotTotal
 } from '@/lib/cartTabSnapshot'
-import {
-  cartLineGross,
-  cartLineKey,
-  cartLineTotal
-} from '@/lib/cartLine'
+import { cartLineGross, cartLineKey } from '@/lib/cartLine'
 import { stockAllows, toastApiError } from '@/lib/errors'
+import { invalidateAfterSale, queryKeys } from '@/lib/queryKeys'
 import { eventToShortcutKey, shouldIgnoreShortcutTarget } from '@/lib/shortcuts'
 import { useToasts } from '@/lib/toast'
+import { calculateCartTotals } from '@shared/cartTotals'
 import { parseMiscPriceInput } from '@shared/miscItem'
-import { roundColones } from '@shared/money'
 import { useDebouncedValue, useGlobalBarcodeScanner, useScannerDetector } from '@/lib/useScanner'
 import { usePosEnterShortcut, usePosSearchFocus } from './posKeyboard'
 import type { CartLine } from './types'
 import type { CustomerInput, CartTabListItem, PaymentMethod, Product } from '@shared/types'
 import type { LineDiscountPinRequest } from './LineDiscountPinModal'
 import { lineDiscountFromPercent } from './lineDiscount'
-
-const round2 = roundColones
 
 export type DiscountTarget = { kind: 'cart' }
 
@@ -74,6 +69,7 @@ export function usePOSTerminal() {
     payOpen: false,
     payInitialMethod: 'cash' as PaymentMethod,
     returnOpen: false,
+    abonoOpen: false,
     discountTarget: null as DiscountTarget | null,
     priceTarget: null as string | null,
     removeTarget: null as string | null,
@@ -142,7 +138,7 @@ export function usePOSTerminal() {
     saleRef.current = workspace.sale
   }, [workspace.sale])
 
-  const { payOpen, payInitialMethod, returnOpen, discountTarget, priceTarget, removeTarget, customerOpen } = modals
+  const { payOpen, payInitialMethod, returnOpen, abonoOpen, discountTarget, priceTarget, removeTarget, customerOpen } = modals
   const { cart, cartDiscount, customer } = sale
   const setCart = (updater: CartLine[] | ((prev: CartLine[]) => CartLine[])): void =>
     setSale((s) => ({
@@ -150,10 +146,10 @@ export function usePOSTerminal() {
       cart: typeof updater === 'function' ? updater(s.cart) : updater
     }))
 
-  const { data: settings } = useQuery({ queryKey: ['settings'], queryFn: api.settings.get })
-  const { data: cashStatus } = useQuery({ queryKey: ['cashStatus'], queryFn: api.cash.status })
+  const { data: settings } = useQuery({ queryKey: queryKeys.settings, queryFn: api.settings.get })
+  const { data: cashStatus } = useQuery({ queryKey: queryKeys.cashStatus, queryFn: api.cash.status })
   const { data: tabs = [], isSuccess: tabsLoaded } = useQuery({
-    queryKey: ['cartTabs'],
+    queryKey: queryKeys.cartTabs,
     queryFn: api.cartTabs.list,
     staleTime: 0
   })
@@ -173,7 +169,7 @@ export function usePOSTerminal() {
 
   const debouncedQuery = useDebouncedValue(query.trim(), 150)
   const { data: searchResults } = useQuery({
-    queryKey: ['posSearch', debouncedQuery],
+    queryKey: queryKeys.posSearch.search(debouncedQuery),
     queryFn: () => api.products.search(debouncedQuery),
     enabled: debouncedQuery.length > 0 && !debouncedQuery.endsWith('*')
   })
@@ -190,7 +186,7 @@ export function usePOSTerminal() {
       customer: saleRef.current.customer
     })
     await api.cartTabs.save({ id: activeTabId, cartJson: json })
-    queryClient.setQueryData<CartTabListItem[]>(['cartTabs'], (prev) =>
+    queryClient.setQueryData<CartTabListItem[]>(queryKeys.cartTabs, (prev) =>
       prev?.map((tab) => (tab.id === activeTabId ? { ...tab, cartJson: json } : tab)) ?? prev
     )
   }
@@ -214,7 +210,7 @@ export function usePOSTerminal() {
         if (tabList.length === 0) {
           const created = await api.cartTabs.create({ position: 1 })
           tabList = [created]
-          queryClient.setQueryData(['cartTabs'], tabList)
+          queryClient.setQueryData(queryKeys.cartTabs, tabList)
         }
         const first = tabList[0]!
         loadTab(first)
@@ -256,7 +252,7 @@ export function usePOSTerminal() {
       await saveCurrentTab()
       const [created] = await Promise.all([
         api.cartTabs.create({ position: tabs.length + 1 }),
-        queryClient.invalidateQueries({ queryKey: ['cartTabs'] })
+        queryClient.invalidateQueries({ queryKey: queryKeys.cartTabs })
       ])
       setActiveTabId(created.id)
       resetSale()
@@ -293,7 +289,7 @@ export function usePOSTerminal() {
         await api.cartTabs.remove(id)
         const remaining = tabs.filter((t) => t.id !== id)
         await api.cartTabs.reorder({ ids: remaining.map((t) => t.id) })
-        await queryClient.invalidateQueries({ queryKey: ['cartTabs'] })
+        await queryClient.invalidateQueries({ queryKey: queryKeys.cartTabs })
         if (id === activeTabId) {
           activateTabAfterClose(remaining, tabIndex)
         }
@@ -334,8 +330,8 @@ export function usePOSTerminal() {
           toastApiError(toasts, err)
         }
       }
-      queryClient.setQueryData(['cartTabs'], afterTabs)
-      void queryClient.invalidateQueries({ queryKey: ['cartTabs'] })
+      queryClient.setQueryData(queryKeys.cartTabs, afterTabs)
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cartTabs })
       void queryClient.invalidateQueries({ queryKey: ['audit'] })
       void queryClient.invalidateQueries({ queryKey: ['auditActions'] })
       void queryClient.invalidateQueries({ queryKey: ['cierrePreview', 2] })
@@ -345,7 +341,7 @@ export function usePOSTerminal() {
         const created = await api.cartTabs.create({ position: 1 })
         setActiveTabId(created.id)
         resetSale()
-        void queryClient.invalidateQueries({ queryKey: ['cartTabs'] })
+        void queryClient.invalidateQueries({ queryKey: queryKeys.cartTabs })
       }
       toasts.success('pos.cartTabs.discarded')
       setCloseTabLoading(false)
@@ -554,6 +550,7 @@ export function usePOSTerminal() {
     cart.length > 0 &&
     !payOpen &&
     !returnOpen &&
+    !abonoOpen &&
     !discountTarget &&
     lineDiscountPin == null &&
     priceTarget == null &&
@@ -583,6 +580,7 @@ export function usePOSTerminal() {
     !cashBlocked &&
     !payOpen &&
     !returnOpen &&
+    !abonoOpen &&
     !discountTarget &&
     lineDiscountPin == null &&
     priceTarget == null &&
@@ -621,7 +619,7 @@ export function usePOSTerminal() {
 
   useEffect(() => {
     const shortcut = settings?.shortcutDrawerAction
-    if (!shortcut || payOpen || returnOpen || discountTarget || lineDiscountPin != null || priceTarget != null || removeTarget != null || customerOpen || closeTabTarget != null) return
+    if (!shortcut || payOpen || returnOpen || abonoOpen || discountTarget || lineDiscountPin != null || priceTarget != null || removeTarget != null || customerOpen || closeTabTarget != null) return
 
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.defaultPrevented) return
@@ -635,13 +633,18 @@ export function usePOSTerminal() {
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [settings?.shortcutDrawerAction, payOpen, returnOpen, discountTarget, lineDiscountPin, priceTarget, removeTarget, customerOpen, closeTabTarget, toasts])
+  }, [settings?.shortcutDrawerAction, payOpen, returnOpen, abonoOpen, discountTarget, lineDiscountPin, priceTarget, removeTarget, customerOpen, closeTabTarget, toasts])
 
-  const itemsGross = round2(cart.reduce((acc, l) => acc + cartLineGross(l), 0))
-  const afterLineDiscounts = round2(cart.reduce((acc, l) => acc + cartLineTotal(l), 0))
-  const cartDiscountClamped = round2(Math.min(Math.max(cartDiscount, 0), afterLineDiscounts))
-  const total = round2(afterLineDiscounts - cartDiscountClamped)
-  const discountTotal = round2(itemsGross - total)
+  const {
+    subtotal: itemsGross,
+    afterLineDiscounts,
+    cartDiscount: cartDiscountClamped,
+    total,
+    discountTotal
+  } = calculateCartTotals(
+    cart.map((line) => ({ gross: cartLineGross(line), discount: line.discount })),
+    cartDiscount
+  )
   const activeDiscountPin = discountTotal > 0 ? discountAuthPin : null
 
   const onSaleCompleted = (change: number | null): void => {
@@ -682,8 +685,8 @@ export function usePOSTerminal() {
           resetSale()
           freshTabs = [created]
         }
-        queryClient.setQueryData(['cartTabs'], freshTabs)
-        void queryClient.invalidateQueries({ queryKey: ['cartTabs'] })
+        queryClient.setQueryData(queryKeys.cartTabs, freshTabs)
+        void queryClient.invalidateQueries({ queryKey: queryKeys.cartTabs })
       } else {
         resetSale()
       }
@@ -695,11 +698,7 @@ export function usePOSTerminal() {
       } else {
         toasts.success('pos.saleCompleted')
       }
-      void queryClient.invalidateQueries({ queryKey: ['posSearch'] })
-      void queryClient.invalidateQueries({ queryKey: ['products'] })
-      void queryClient.invalidateQueries({ queryKey: ['cashStatus'] })
-      void queryClient.invalidateQueries({ queryKey: ['salesForReprint'] })
-      void queryClient.invalidateQueries({ queryKey: ['printQueue'] })
+      invalidateAfterSale(queryClient)
       focusSearch()
     })()
   }
@@ -802,6 +801,7 @@ export function usePOSTerminal() {
     payOpen,
     payInitialMethod,
     returnOpen,
+    abonoOpen,
     discountTarget,
     priceTarget,
     removeTarget,

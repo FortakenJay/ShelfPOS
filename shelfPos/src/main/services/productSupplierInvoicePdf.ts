@@ -13,7 +13,8 @@ import {
 } from '../db/repos/products'
 import { writeAudit } from '../db/repos/audit'
 import { validateProductInput } from './productCsvImport'
-import { roundColones } from '../../shared/money'
+import { toProductImportError } from './productImportErrors'
+import { parseSupplierAmount, roundColones } from '../../shared/money'
 import type {
   ProductImportError,
   SupplierInvoiceConfirmInput,
@@ -37,10 +38,10 @@ function normalizePdfText(raw: string): string[] {
     .filter((line) => line.length > 0)
 }
 
-function parseMoney(raw: string): number {
-  const n = Number(raw.replace(/,/g, ''))
-  if (!Number.isFinite(n)) throw new AppError('errors.invalidInput')
-  return roundColones(n)
+function requireSupplierAmount(raw: string): number {
+  const amount = parseSupplierAmount(raw)
+  if (amount == null) throw new AppError('errors.invalidInput')
+  return amount
 }
 
 function guessCategory(name: string): string | null {
@@ -60,9 +61,9 @@ function extractTrailingNumbers(line: string): {
   const match = line.match(TRAILING_NUMBERS_RE)
   if (!match) return null
   const qty = Number(match[1])
-  const unitPrice = parseMoney(match[2])
+  const unitPrice = requireSupplierAmount(match[2])
   const discountPercent = Number(match[3])
-  const lineTotal = parseMoney(match[4])
+  const lineTotal = requireSupplierAmount(match[4])
   if (!Number.isFinite(qty) || qty <= 0) return null
   const description = line.slice(0, match.index).trim()
   return { description, qty, unitPrice, discountPercent, lineTotal }
@@ -246,10 +247,6 @@ export function buildSupplierInvoicePreview(filePath: string): Promise<SupplierI
   })
 }
 
-function isUniqueViolation(err: unknown): boolean {
-  return err instanceof Error && err.message.includes('UNIQUE constraint failed')
-}
-
 export function applySupplierInvoiceImport(
   input: SupplierInvoiceConfirmInput,
   userId: number
@@ -280,8 +277,7 @@ export function applySupplierInvoiceImport(
         })
         restocked++
       } catch (err) {
-        const key = err instanceof AppError ? err.key : 'errors.unknown'
-        errors.push({ row: row.line, key })
+        errors.push(toProductImportError(row.line, err))
       }
     }
 
@@ -292,10 +288,12 @@ export function applySupplierInvoiceImport(
           errors.push({ row: item.line, key: 'errors.invalidInput', detail: item.barcode })
           continue
         }
-        const productInput = {
+        const productInput = validateProductInput({
           barcode: item.barcode.trim(),
           name: item.name.trim(),
           price,
+          price2: null,
+          price3: null,
           costPrice: item.unitCost != null && item.unitCost > 0 ? item.unitCost : null,
           category: item.category?.trim() || null,
           stockProvider: null,
@@ -305,8 +303,7 @@ export function applySupplierInvoiceImport(
           bulkQty: null,
           bulkPrice: null,
           facturaNegativo: false
-        }
-        validateProductInput(productInput)
+        })
         if (getProductByBarcode(productInput.barcode)) {
           errors.push({ row: item.line, key: 'errors.barcodeExists', detail: item.barcode })
           continue
@@ -324,12 +321,7 @@ export function applySupplierInvoiceImport(
         })
         created++
       } catch (err) {
-        if (isUniqueViolation(err)) {
-          errors.push({ row: item.line, key: 'errors.barcodeExists', detail: item.barcode })
-          continue
-        }
-        const key = err instanceof AppError ? err.key : 'errors.unknown'
-        errors.push({ row: item.line, key, detail: item.barcode })
+        errors.push(toProductImportError(item.line, err, item.barcode))
       }
     }
   })()

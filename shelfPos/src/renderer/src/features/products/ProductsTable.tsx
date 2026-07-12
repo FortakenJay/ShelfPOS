@@ -62,7 +62,19 @@ export function ProductsTable({
               <tr key={p.id} className="hover:bg-slate-50">
                 <Td className="font-mono text-[14px]">{p.barcode}</Td>
                 <Td className="font-semibold">{p.name}</Td>
-                <Td className="text-right">{formatMoney(p.price)}</Td>
+                <Td className="text-right">
+                  <div>{formatMoney(p.price)}</div>
+                  {p.price2 != null && (
+                    <div className="text-[13px] font-semibold text-primary">
+                      {t('products.price2')}: {formatMoney(p.price2)}
+                    </div>
+                  )}
+                  {p.price3 != null && (
+                    <div className="text-[13px] font-semibold text-primary">
+                      {t('products.price3')}: {formatMoney(p.price3)}
+                    </div>
+                  )}
+                </Td>
                 <Td className={`text-center text-[16px] ${stockCellClass(p)}`}>
                   <div className="flex items-center justify-center gap-1">
                     <button

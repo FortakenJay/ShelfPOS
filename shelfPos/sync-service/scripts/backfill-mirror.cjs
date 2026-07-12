@@ -13,6 +13,10 @@ const path = require('node:path')
 const { execFileSync } = require('node:child_process')
 const { homedir } = require('node:os')
 const Database = require('better-sqlite3')
+const {
+  MIRROR_MANIFEST,
+  buildTableSelect,
+} = require('../mirror-manifest.cjs')
 
 const CHUNK = 500
 const SERVICE_ROOT = path.join(__dirname, '..')
@@ -72,67 +76,16 @@ function resolveSecretKey() {
   }
 }
 
-loadSyncConfig()
-
-const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, '')
-const supabaseSecretKey = resolveSecretKey()
-const sqlitePath = process.env.SQLITE_PATH
-
-if (!supabaseUrl || !supabaseSecretKey || !sqlitePath) {
-  console.error('Missing SUPABASE_URL, SUPABASE_SECRET_KEY, or SQLITE_PATH in sync.env')
-  process.exit(1)
+function readRuntimeConfig() {
+  loadSyncConfig()
+  const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, '')
+  const supabaseSecretKey = resolveSecretKey()
+  const sqlitePath = process.env.SQLITE_PATH
+  if (!supabaseUrl || !supabaseSecretKey || !sqlitePath) {
+    throw new Error('Missing SUPABASE_URL, SUPABASE_SECRET_KEY, or SQLITE_PATH in sync.env')
+  }
+  return { supabaseUrl, supabaseSecretKey, sqlitePath, fetchImpl: fetch }
 }
-
-const TABLE_SELECT = {
-  sales: `
-    SELECT id, user_id, total, subtotal, discount_total, cart_discount, note, sale_condition,
-           consecutivo, customer_name, customer_id_type, customer_id, customer_phone,
-           customer_email, customer_activity_code, cierre_id, created_at
-    FROM sales`,
-  sale_items: `
-    SELECT id, sale_id, product_id, product_name_snapshot, barcode_snapshot, quantity, unit_price,
-           catalog_unit_price, line_total, line_discount, discount, tax_category
-    FROM sale_items`,
-  sale_payments: `SELECT id, sale_id, method, amount, ref FROM sale_payments`,
-  cierres: `
-    SELECT id, opened_at, closed_at, closed_by_user_id, closed_by_username, shift_label,
-           total_cash, total_card, total_sinpe, total_sales, opening_float, cash_in, cash_out,
-           expected_cash, counted_cash, cash_difference, notes
-    FROM cierres`,
-  cash_movements: `
-    SELECT id, type, amount, reason, user_id, created_at, cierre_id
-    FROM cash_movements`,
-  products: `
-    SELECT id, barcode, name, price, cost_price, category, stock_provider, stock, stock_threshold,
-           tax_category, bulk_qty, bulk_price, factura_negativo, deleted_at, created_at, updated_at
-    FROM products`,
-  return_items: `
-    SELECT id, sale_id, product_id, sale_item_id, quantity, line_total, restocked, created_at, processed_by
-    FROM return_items`,
-  stock_adjustments: `
-    SELECT id, product_id, user_id, delta, reason, created_at
-    FROM stock_adjustments`,
-  audit_log: `
-    SELECT id, user_id, username, action, entity, entity_id, detail, created_at
-    FROM audit_log`,
-  pos_users: `
-    SELECT id, username, role, is_active, created_at, last_login_at
-    FROM users`,
-}
-
-/** Analytics-critical tables first; audit_log last (large, not needed for dashboard KPIs). */
-const TABLE_ORDER = [
-  'sales',
-  'sale_items',
-  'sale_payments',
-  'cierres',
-  'cash_movements',
-  'return_items',
-  'products',
-  'stock_adjustments',
-  'pos_users',
-  'audit_log',
-]
 
 function readStoreId(db) {
   const row = db.prepare('SELECT value FROM settings WHERE key = ?').get('sync_store_id')
@@ -155,27 +108,27 @@ function sanitizeMirrorRow(table, row, db) {
   return row
 }
 
-async function upsertChunk(table, rows, storeId, db) {
+async function upsertChunk(definition, rows, storeId, db, config) {
   const payload = rows.map((row) => ({
-    ...sanitizeMirrorRow(table, row, db),
+    ...sanitizeMirrorRow(definition.table, row, db),
     store_id: storeId,
   }))
-  const res = await fetch(`${supabaseUrl}/rest/v1/${table}`, {
+  const res = await config.fetchImpl(`${config.supabaseUrl}/rest/v1/${definition.table}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      apikey: supabaseSecretKey,
-      Authorization: `Bearer ${supabaseSecretKey}`,
+      apikey: config.supabaseSecretKey,
+      Authorization: `Bearer ${config.supabaseSecretKey}`,
       Prefer: 'resolution=merge-duplicates,return=minimal',
     },
     body: JSON.stringify(payload),
   })
   if (!res.ok) {
-    throw new Error(`${table}: ${res.status} ${await res.text()}`)
+    throw new Error(`${definition.table}: ${res.status} ${await res.text()}`)
   }
 }
 
-async function syncStoreRegistry(storeId, db) {
+async function syncStoreRegistry(storeId, db, config) {
   const read = (key) => {
     const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key)
     return row?.value?.trim() ?? null
@@ -188,12 +141,12 @@ async function syncStoreRegistry(storeId, db) {
   const rawIvaRate = Number(read('iva_rate_standard') ?? '13')
   const ivaRateStandard = Number.isFinite(rawIvaRate) && rawIvaRate >= 0 ? rawIvaRate : 13
 
-  const res = await fetch(`${supabaseUrl}/rest/v1/stores?on_conflict=store_id`, {
+  const res = await config.fetchImpl(`${config.supabaseUrl}/rest/v1/stores?on_conflict=store_id`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      apikey: supabaseSecretKey,
-      Authorization: `Bearer ${supabaseSecretKey}`,
+      apikey: config.supabaseSecretKey,
+      Authorization: `Bearer ${config.supabaseSecretKey}`,
       Prefer: 'return=minimal,resolution=merge-duplicates',
     },
     body: JSON.stringify({
@@ -210,58 +163,105 @@ async function syncStoreRegistry(storeId, db) {
   console.log(`stores: upserted ${storeId} (${displayName})`)
 }
 
-const LOCAL_TABLE = {
-  pos_users: 'users',
+function pendingQueueEntries(db, table) {
+  return db
+    .prepare(
+      `SELECT id, row_id FROM sync_queue
+       WHERE table_name = ? AND status = 'pending' AND operation <> 'delete'`,
+    )
+    .all(table)
 }
 
-async function backfillTable(table, storeId, db) {
-  const sql = TABLE_SELECT[table]
-  const localTable = LOCAL_TABLE[table] ?? table
-  const total = db.prepare(`SELECT COUNT(*) AS c FROM ${localTable}`).get().c
+function markQueueEntriesSynced(db, queueIds) {
+  if (queueIds.length === 0) return
+  const mark = db.prepare(
+    `UPDATE sync_queue
+     SET status = 'synced', synced_at = datetime('now'), error = NULL
+     WHERE id = ? AND status = 'pending'`,
+  )
+  db.transaction((ids) => {
+    for (const id of ids) mark.run(id)
+  })(queueIds)
+}
+
+async function backfillTable(definition, storeId, db, config, chunkSize = CHUNK) {
+  const table = definition.table
+  const sql = buildTableSelect(definition)
+  const snapshot = db
+    .prepare(`SELECT COUNT(*) AS c, MAX(id) AS max_id FROM ${definition.localTable}`)
+    .get()
+  const total = snapshot.c
   if (total === 0) {
     console.log(`${table}: skip (0 rows)`)
     return
   }
 
-  let offset = 0
+  const queueIdsByRow = new Map()
+  for (const entry of pendingQueueEntries(db, table)) {
+    const queueIds = queueIdsByRow.get(entry.row_id) ?? []
+    queueIds.push(entry.id)
+    queueIdsByRow.set(entry.row_id, queueIds)
+  }
+  const completedQueueIds = []
+  let lastId = 0
   let pushed = 0
-  while (offset < total) {
-    const rows = db.prepare(`${sql} ORDER BY id LIMIT ? OFFSET ?`).all(CHUNK, offset)
-    if (rows.length === 0) break
-    await upsertChunk(table, rows, storeId, db)
+  while (pushed < total) {
+    const rows = db
+      .prepare(`${sql} WHERE id > ? AND id <= ? ORDER BY id LIMIT ?`)
+      .all(lastId, snapshot.max_id, chunkSize)
+    if (rows.length === 0) {
+      throw new Error(`${table}: source changed before the backfill snapshot completed`)
+    }
+    await upsertChunk(definition, rows, storeId, db, config)
+    for (const row of rows) {
+      completedQueueIds.push(...(queueIdsByRow.get(row.id) ?? []))
+    }
     pushed += rows.length
-    offset += CHUNK
+    lastId = rows[rows.length - 1].id
     process.stdout.write(`\r${table}: ${pushed}/${total}`)
+  }
+  const finalTotal = db
+    .prepare(`SELECT COUNT(*) AS c FROM ${definition.localTable} WHERE id <= ?`)
+    .get(snapshot.max_id).c
+  if (pushed !== total || finalTotal !== total) {
+    throw new Error(`${table}: source changed during backfill; queue rows remain pending`)
   }
   console.log(`\r${table}: ${pushed}/${total} done`)
 
-  db.prepare(
-    `UPDATE sync_queue
-     SET status = 'synced', synced_at = datetime('now'), error = NULL
-     WHERE table_name = ? AND status = 'pending'`,
-  ).run(table)
+  markQueueEntriesSynced(db, completedQueueIds)
 }
 
 async function main() {
-  const db = new Database(sqlitePath, { readonly: false, fileMustExist: true })
-  const storeId = readStoreId(db)
+  const config = readRuntimeConfig()
+  const db = new Database(config.sqlitePath, { readonly: false, fileMustExist: true })
+  try {
+    const storeId = readStoreId(db)
 
-  console.log(`backfill store_id=${storeId} db=${sqlitePath}`)
+    console.log(`backfill store_id=${storeId} db=${config.sqlitePath}`)
 
-  await syncStoreRegistry(storeId, db)
+    await syncStoreRegistry(storeId, db, config)
 
-  for (const table of TABLE_ORDER) {
-    await backfillTable(table, storeId, db)
+    for (const definition of MIRROR_MANIFEST) {
+      await backfillTable(definition, storeId, db, config)
+    }
+
+    const pending = db
+      .prepare('SELECT COUNT(*) AS c FROM sync_queue WHERE status = ?')
+      .get('pending').c
+    console.log(`remaining pending queue rows: ${pending}`)
+  } finally {
+    db.close()
   }
-
-  const pending = db
-    .prepare('SELECT COUNT(*) AS c FROM sync_queue WHERE status = ?')
-    .get('pending').c
-  console.log(`remaining pending queue rows: ${pending}`)
-  db.close()
 }
 
-main().catch((err) => {
-  console.error('backfill failed:', err)
-  process.exit(1)
-})
+if (require.main === module) {
+  main().catch((err) => {
+    console.error('backfill failed:', err)
+    process.exitCode = 1
+  })
+}
+
+module.exports = {
+  backfillTable,
+  syncStoreRegistry,
+}

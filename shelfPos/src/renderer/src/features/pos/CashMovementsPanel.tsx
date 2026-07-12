@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '@/lib/api'
 import { toastApiError } from '@/lib/errors'
-import { formatDate, formatMoney, parseColonesInput } from '@/lib/format'
+import { formatDate, formatMoney, parseLocalizedMoneyInput } from '@/lib/format'
+import { queryKeys } from '@/lib/queryKeys'
 import { eventToShortcutKey } from '@/lib/shortcuts'
 import { useToasts } from '@/lib/toast'
 import { PinModal } from '@/components/PinModal'
@@ -32,7 +33,7 @@ export function CashMovementsPanel({
   const { t } = useTranslation()
   const toasts = useToasts()
   const queryClient = useQueryClient()
-  const { data: settings } = useQuery({ queryKey: ['settings'], queryFn: api.settings.get })
+  const { data: settings } = useQuery({ queryKey: queryKeys.settings, queryFn: api.settings.get })
   const [moveAmount, setMoveAmount] = useState('')
   const [moveReason, setMoveReason] = useState('')
   const [pending, setPending] = useState<PendingMovement | null>(null)
@@ -41,7 +42,7 @@ export function CashMovementsPanel({
 
   const movementLabel = (type: CashMovementType): string => t(`cash.types.${type}`)
 
-  const parsedAmount = parseColonesInput(moveAmount)
+  const parsedAmount = parseLocalizedMoneyInput(moveAmount)
   const cashOutExceedsDrawer =
     parsedAmount != null &&
     expectedCash != null &&
@@ -50,7 +51,7 @@ export function CashMovementsPanel({
 
   const movement = useMutation({
     mutationFn: ({ type, pin }: PendingMovement & { pin: string }) => {
-      const amount = parseColonesInput(moveAmount)
+      const amount = parseLocalizedMoneyInput(moveAmount)
       if (amount == null || amount <= 0) throw new ApiError('errors.invalidInput')
       return api.cash.movement({ type, amount, reason: moveReason || undefined, pin })
     },
@@ -60,7 +61,7 @@ export function CashMovementsPanel({
       setMoveReason('')
       setPending(null)
       setPinError(null)
-      void queryClient.invalidateQueries({ queryKey: ['cashStatus'] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cashStatus })
       void queryClient.invalidateQueries({ queryKey: ['cashMovements'] })
       onMovementComplete?.()
     },
@@ -83,7 +84,7 @@ export function CashMovementsPanel({
 
   const requestMovement = (type: 'cash_in' | 'cash_out'): void => {
     if (!floatOpened || moneyInputIsEmpty(moveAmount)) return
-    const amount = parseColonesInput(moveAmount)
+    const amount = parseLocalizedMoneyInput(moveAmount)
     if (
       type === 'cash_out' &&
       amount != null &&
@@ -130,7 +131,7 @@ export function CashMovementsPanel({
       }
       if (shortcut === cashOutShortcut) {
         event.preventDefault()
-        const amount = parseColonesInput(moveAmount)
+        const amount = parseLocalizedMoneyInput(moveAmount)
         if (
           amount != null &&
           expectedCash != null &&

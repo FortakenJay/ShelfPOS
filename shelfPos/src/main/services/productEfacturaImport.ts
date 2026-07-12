@@ -1,9 +1,13 @@
-import { readFileSync } from 'node:fs'
 import { basename } from 'node:path'
 import ExcelJS from 'exceljs'
 import { AppError } from '../errors'
+import { parseMachineNumber } from '../../shared/money'
 import { IMPORT_STOCK_GARBAGE_THRESHOLD } from '../../shared/schemas/primitives'
-import type { ParsedCsv } from './productCsvImport'
+import {
+  productImportSourceVersion,
+  readProductImportSource,
+  type ParsedCsv
+} from './productCsvImport'
 import type { ProductCsvKey } from './csvColumns'
 
 /** eFactura product export column letters (header row). */
@@ -63,15 +67,9 @@ function cell(row: unknown[], cols: Record<string, number>, letter: string): str
   return normalizeCell(row[index])
 }
 
-function parseOptionalMoney(raw: string): number | null {
-  if (!raw.trim()) return null
-  const n = Number(raw.replace(/,/g, ''))
-  return Number.isFinite(n) ? n : null
-}
-
 function parseEfacturaStock(raw: string): number {
   if (!raw.trim()) return 0
-  const n = Math.trunc(Number(raw.replace(/,/g, '')) || 0)
+  const n = Math.trunc(parseMachineNumber(raw) ?? 0)
   if (!Number.isFinite(n) || n < 0 || n > IMPORT_STOCK_GARBAGE_THRESHOLD) return 0
   return n
 }
@@ -88,11 +86,11 @@ function efacturaRowToProductCsvRow(
   const priceRaw = cell(row, cols, 'p1')
   if (!barcode || !name || !priceRaw) return null
 
-  const price = parseOptionalMoney(priceRaw)
+  const price = parseMachineNumber(priceRaw)
   if (price == null || price < 0) return null
 
   const costRaw = cell(row, cols, 'h')
-  const cost = parseOptionalMoney(costRaw)
+  const cost = parseMachineNumber(costRaw)
   const costPrice = cost != null && cost > 0 ? String(cost) : ''
 
   const stockRaw = cell(row, cols, 'c')
@@ -102,7 +100,7 @@ function efacturaRowToProductCsvRow(
   const bulkPriceRaw = cell(row, cols, 'p2')
   const bulkQty = bulkQtyRaw === '' ? '' : String(Math.trunc(Number(bulkQtyRaw) || 0))
   const bulkPrice =
-    bulkPriceRaw === '' ? '' : String(parseOptionalMoney(bulkPriceRaw) ?? '')
+    bulkPriceRaw === '' ? '' : String(parseMachineNumber(bulkPriceRaw) ?? '')
 
   const facturaNegativo = cell(row, cols, 'g') === '1' ? '1' : '0'
 
@@ -120,7 +118,8 @@ function efacturaRowToProductCsvRow(
   ]
 }
 
-const NORMALIZED_CSV_COLUMNS: Record<ProductCsvKey, number> = {
+/** eFactura has no alternate-price columns — omit them so CSV import preserves existing values. */
+const NORMALIZED_CSV_COLUMNS: Partial<Record<ProductCsvKey, number>> = {
   barcode: 0,
   name: 1,
   price: 2,
@@ -139,8 +138,11 @@ const NORMALIZED_CSV_COLUMNS: Record<ProductCsvKey, number> = {
  * Mapped: a/k→barcode, b→name, p1→price, h→cost, c→stock, g→factura negativo, p2/p2a→mayorista.
  * Stock above 10,000,000 is treated as 0 (corrupt eFactura values).
  */
-export async function readEfacturaXlsx(filePath: string): Promise<ParsedCsv> {
-  const buffer = readFileSync(filePath)
+export async function readEfacturaXlsx(
+  filePath: string,
+  expectedVersion?: string
+): Promise<ParsedCsv> {
+  const buffer = readProductImportSource(filePath, expectedVersion)
   const workbook = new ExcelJS.Workbook()
   await workbook.xlsx.load(buffer as unknown as ExcelJS.Buffer)
 
@@ -172,6 +174,7 @@ export async function readEfacturaXlsx(filePath: string): Promise<ParsedCsv> {
   return {
     filePath,
     fileName: basename(filePath),
+    sourceVersion: productImportSourceVersion(buffer),
     columns: NORMALIZED_CSV_COLUMNS,
     rows: normalizedRows
   }

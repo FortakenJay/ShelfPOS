@@ -8,7 +8,9 @@ import {
   cartLineKey,
   cartLineShowsBulk,
   cartLineTotal,
-  cartLineUnitPrice
+  cartLineUnitPrice,
+  cartLineUsesPrice2,
+  cartLineUsesPrice3
 } from '@/lib/cartLine'
 import type { CartLine } from './types'
 import { CartLineDiscountInput } from './CartLineDiscountInput'
@@ -76,7 +78,7 @@ export function POSCartPanel({
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto">
+      <div data-testid="pos-cart" className="flex-1 overflow-y-auto">
         {cart.length === 0 ? (
           <div className="flex h-full items-center justify-center text-xl text-slate-400">
             {t('pos.cartEmpty')}
@@ -108,11 +110,17 @@ export function POSCartPanel({
                 const lineKey = cartLineKey(line)
                 const unit = cartLineUnitPrice(line)
                 const isBulk = cartLineShowsBulk(line)
+                const usesPrice2 = cartLineUsesPrice2(line)
+                const usesPrice3 = cartLineUsesPrice3(line)
                 const hasCustomPrice = cartLineHasCustomPrice(line)
                 const productName = cartLineDisplayName(line, miscLabel)
                 const barcode = cartLineBarcode(line)
                 return (
-                  <tr key={lineKey} className="border-b border-line bg-white">
+                  <tr
+                    key={lineKey}
+                    data-testid={`pos-cart-line-${lineKey}`}
+                    className="border-b border-line bg-white"
+                  >
                     <td className="px-4 py-3">
                       <div className="min-w-0">
                         {line.kind === 'misc' ? (
@@ -140,6 +148,16 @@ export function POSCartPanel({
                           {isBulk && (
                             <span className="rounded bg-cta/10 px-1.5 py-0.5 text-[14px] font-bold text-cta">
                               {t('pos.bulkApplied')}
+                            </span>
+                          )}
+                          {usesPrice2 && (
+                            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[14px] font-bold text-primary">
+                              {t('pos.priceOverride.price2')}
+                            </span>
+                          )}
+                          {usesPrice3 && (
+                            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[14px] font-bold text-primary">
+                              {t('pos.priceOverride.price3')}
                             </span>
                           )}
                           {hasCustomPrice && (

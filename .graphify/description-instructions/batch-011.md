@@ -1,4 +1,4 @@
-# Node Description Batch 12 of 42
+# Node Description Batch 12 of 43
 
 Graphify is running in assistant/skill mode (no API key). You are the host
 assistant (Claude Code / Codex / Gemini CLI). Read the prompt below and write
@@ -19,53 +19,51 @@ relations (neighbors) and the provided citations/evidence — e.g.
 Ground entity descriptions in the citations/evidence when present; do not
 speculate beyond the context, so a node with no supporting context may be
 left out of the reply.
-LANGUAGE: each entry has a `lang=` marker giving the language of its source.
-Write that entry's description in EXACTLY that language. Do not translate to
-a single common language — match each node's source language individually.
+Write every description in English (en). Do not switch languages.
 No marketing language.
 Respond ONLY with a JSON object mapping each node id (as a string) to its
 one-sentence description — no prose, no markdown fences.
 
-- "src_db_readstoreid": "readStoreId()" | kind=code-symbol | source=shelfPos/sync-service/src/db.ts:L24 | neighbors=[db.ts, readStoreDisplayName(), readSetting(), index.ts] | lang=en
-- "src_errorlog_appendsyncerrorlog": "appendSyncErrorLog()" | kind=code-symbol | source=shelfPos/sync-service/src/errorLog.ts:L18 | neighbors=[errorLog.ts, syncErrorLogFile(), logSyncQueueFailure(), logSyncServiceError()] | lang=en
-- "src_errorlog_logsyncserviceerror": "logSyncServiceError()" | kind=code-symbol | source=shelfPos/sync-service/src/errorLog.ts:L46 | neighbors=[errorLog.ts, appendSyncErrorLog(), index.ts, sync.ts] | lang=en
-- "src_sync_claimstoreifneeded": "claimStoreIfNeeded()" | kind=code-symbol | source=shelfPos/sync-service/src/sync.ts:L211 | neighbors=[index.ts, sync.ts, checkConnectivity(), storeHasDashboardAccess()] | lang=en
-- "admin_admincashpage": "AdminCashPage.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/AdminCashPage.tsx:L1 | neighbors=[AdminCash(), AdminCashPage(), 1bdbad7 Consolidate shelfPos, shelfDash…] | lang=en
-- "admin_cierrediscrepancyalerts_cierrediscrepancyalerts": "CierreDiscrepancyAlerts()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/CierreDiscrepancyAlerts.tsx:L115 | neighbors=[CierreDiscrepancyAlerts.tsx, useCierreDiscrepancyAlerts(), CierrePage.tsx] | lang=en
-- "admin_cierrediscrepancyalerts_dismisscierreids": "dismissCierreIds()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/CierreDiscrepancyAlerts.tsx:L38 | neighbors=[CierreDiscrepancyAlerts.tsx, emitDismissedChange(), readDismissedIds()] | lang=en
-- "admin_cierrediscrepancyalerts_readdismissedids": "readDismissedIds()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/CierreDiscrepancyAlerts.tsx:L22 | neighbors=[CierreDiscrepancyAlerts.tsx, dismissCierreIds(), useDismissedCierreIds()] | lang=en
-- "admin_cierrediscrepancyalerts_usedismissedcierreids": "useDismissedCierreIds()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/CierreDiscrepancyAlerts.tsx:L46 | neighbors=[CierreDiscrepancyAlerts.tsx, useCierreDiscrepancyAlerts(), readDismissedIds()] | lang=en
-- "admin_printqueuepage": "PrintQueuePage.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/PrintQueuePage.tsx:L1 | neighbors=[PrintQueue(), PrintQueuePage(), 1bdbad7 Consolidate shelfPos, shelfDash…] | lang=en
-- "admin_settingscloudpanel_settingscloudpanel": "SettingsCloudPanel()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/SettingsCloudPanel.tsx:L26 | neighbors=[SettingsCloudPanel.tsx, cloudStatusKey(), SettingsPage.tsx] | lang=en
-- "admin_settingsdraft_emisordraftdirty": "emisorDraftDirty()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/settingsDraft.ts:L102 | neighbors=[settingsDraft.ts, sectionDirty(), SettingsForm.tsx] | lang=en
-- "admin_settingsdraft_generaldraftdirty": "generalDraftDirty()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/settingsDraft.ts:L98 | neighbors=[settingsDraft.ts, sectionDirty(), SettingsForm.tsx] | lang=en
-- "admin_settingsdraft_settingsdraft": "SettingsDraft" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/settingsDraft.ts:L3 | neighbors=[settingsDraft.ts, SettingsForm.tsx, SettingsSections.tsx] | lang=en
-- "admin_settingsdraft_shortcutsdraftdirty": "shortcutsDraftDirty()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/settingsDraft.ts:L110 | neighbors=[settingsDraft.ts, sectionDirty(), SettingsForm.tsx] | lang=en
-- "admin_settingsdraft_taxdraftdirty": "taxDraftDirty()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/settingsDraft.ts:L106 | neighbors=[settingsDraft.ts, sectionDirty(), SettingsForm.tsx] | lang=en
-- "admin_settingsform_emptypinfields": "emptyPinFields()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/SettingsForm.tsx:L98 | neighbors=[SettingsForm.tsx, pinFormsReducer(), SettingsForm()] | lang=en
-- "admin_settingsform_settingsform": "SettingsForm()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/SettingsForm.tsx:L127 | neighbors=[SettingsForm.tsx, emptyPinFields(), SettingsPage.tsx] | lang=en
-- "admin_usersinitialsetupmodal": "UsersInitialSetupModal.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/UsersInitialSetupModal.tsx:L1 | neighbors=[UsersInitialSetupModal(), UsersPage.tsx, 1bdbad7 Consolidate shelfPos, shelfDash…] | lang=en
-- "auth_languagepicker": "LanguagePicker.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/auth/LanguagePicker.tsx:L1 | neighbors=[FirstRun.tsx, LanguagePicker(), 1bdbad7 Consolidate shelfPos, shelfDash…] | lang=en
-- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@0d0d88f5c6d806b32661ac39ca303da8c9460cb3": "0d0d88f Remove split-out repository entries from .gitignore" | kind=Commit | source=git | neighbors=[Separation, 1bdbad7 Consolidate shelfPos, shelfDash…, 14a2364 Split monorepo into independent…] | lang=en
-- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@14a236405498baf91b313756215e541de2010194": "14a2364 Split monorepo into independent repos: shelfPos, shelfDashboard, shelfD…" | kind=Commit | source=git | neighbors=[Separation, 0d0d88f Remove split-out repository ent…, f311327 updated PDF and fixed bug. (STI…] | lang=pt
-- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@5b432e4b311e8a610102a334319dce591cc46185": "5b432e4 Add documentation consistency audit and findings for shelfDocs" | kind=Commit | source=git | neighbors=[Separation, 6901179 fixed some bugs., 8c9e4fc Add raw output files for ESLint…] | lang=en
-- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@690117903095e55a5a6486078a84d5010b3dcc26": "6901179 fixed some bugs." | kind=Commit | source=git | neighbors=[5b432e4 Add documentation consistency a…, Separation, e729c74 its just POS now.] | lang=en
-- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@8c9e4fc8102429ca996ea31fe4c72c092c46247a": "8c9e4fc Add raw output files for ESLint, Knip, npm audit, React Doctor, and Typ…" | kind=Commit | source=git | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, Separation, 5b432e4 Add documentation consistency a…] | lang=en
-- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@e66527e21353f5bdba58848e545c0cee43ba4ede": "e66527e needed, react DOCTOR" | kind=Commit | source=git | neighbors=[Separation, dev, c044586 fixed codebase and added cierre…] | lang=en
-- "components_dashboardpaneltoolbar": "DashboardPanelToolbar.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/dashboard/components/DashboardPanelToolbar.tsx:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, DashboardPanelToolbar(), DashboardPage.tsx] | lang=en
-- "components_daterangepresets_presetmonth": "presetMonth()" | kind=code-symbol | source=shelfPos/src/renderer/src/components/dateRangePresets.ts:L22 | neighbors=[DateRangePicker.tsx, dateRangePresets.ts, rangeForReportPeriod()] | lang=en
-- "components_daterangepresets_presettoday": "presetToday()" | kind=code-symbol | source=shelfPos/src/renderer/src/components/dateRangePresets.ts:L11 | neighbors=[DateRangePicker.tsx, dateRangePresets.ts, rangeForReportPeriod()] | lang=en
-- "components_moneyinput": "MoneyInput.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/components/MoneyInput.tsx:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, MoneyInput(), MoneyInputProps] | lang=en
-- "components_paymentmethodspiechart_paymentmethodspiechart": "PaymentMethodsPieChart()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/dashboard/components/PaymentMethodsPieChart.tsx:L7 | neighbors=[DashboardCharts.tsx, DashboardHomeCharts.tsx, PaymentMethodsPieChart.tsx] | lang=en
-- "components_ui_button": "Button()" | kind=code-symbol | source=shelfPos/src/renderer/src/components/ui.tsx:L58 | neighbors=[DateRangePicker.tsx, PinModal.tsx, ui.tsx] | lang=en
-- "components_ui_input": "Input()" | kind=code-symbol | source=shelfPos/src/renderer/src/components/ui.tsx:L83 | neighbors=[DateRangePicker.tsx, PinModal.tsx, ui.tsx] | lang=en
-- "dashboard_dashboardalertsearch_dashboardalertproductsearch": "dashboardAlertProductSearch()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/dashboard/dashboardAlertSearch.ts:L4 | neighbors=[DashboardTables.tsx, NotificationsCenter.tsx, dashboardAlertSearch.ts] | lang=en
-- "dashboard_dashboardtabs_dashboardtab": "DashboardTab" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/dashboard/dashboardTabs.ts:L3 | neighbors=[DashboardTabNav.tsx, DashboardPage.tsx, dashboardTabs.ts] | lang=en
-- "dashboard_usedashboard": "useDashboard.ts" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/dashboard/useDashboard.ts:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, DashboardPage.tsx, useDashboard()] | lang=en
-- "db_migrations_getdbversion": "getDbVersion()" | kind=code-symbol | source=shelfPos/src/main/db/migrations.ts:L541 | neighbors=[migrations.ts, runMigrations(), index.ts] | lang=en
-- "db_migrations_runmigrations": "runMigrations()" | kind=code-symbol | source=shelfPos/src/main/db/migrations.ts:L546 | neighbors=[migrations.ts, getDbVersion(), index.ts] | lang=en
-- "hooks_useaccountsstep": "useAccountsStep.ts" | kind=code-symbol | source=shelfPos/src/renderer/src/features/auth/hooks/useAccountsStep.ts:L1 | neighbors=[AccountsStep.tsx, 1bdbad7 Consolidate shelfPos, shelfDash…, useAccountsStep()] | lang=en
-- "ipc_authorize_authorizewithdiscountpin": "authorizeWithDiscountPin()" | kind=code-symbol | source=shelfPos/src/main/ipc/authorize.ts:L7 | neighbors=[authorize.ts, discount.ts, priceOverride.ts] | lang=en
+- "services_productsupplierinvoicepdf_extracttrailingnumbers": "extractTrailingNumbers()" | kind=code-symbol | source=shelfPos/src/main/services/productSupplierInvoicePdf.ts:L54 | neighbors=[productSupplierInvoicePdf.ts, requireSupplierAmount(), parseSupplierInvoiceText(), parseMoney()]
+- "services_shelflabellines_buildshelflabellines": "buildShelfLabelLines()" | kind=code-symbol | source=shelfPos/src/main/services/shelfLabelLines.ts:L12 | neighbors=[print-test-crc.ts, printer.ts, printTemplates.ts, shelfLabelLines.ts]
+- "services_syncconfig_issyncserviceinstalled": "isSyncServiceInstalled()" | kind=code-symbol | source=shelfPos/src/main/services/syncConfig.ts:L66 | neighbors=[syncConfig.ts, querySyncServiceRunning(), readSyncSetupStatus(), restartSyncServiceIfInstalled()]
+- "services_syncconfig_restartsyncserviceifinstalled": "restartSyncServiceIfInstalled()" | kind=code-symbol | source=shelfPos/src/main/services/syncConfig.ts:L150 | neighbors=[syncSetup.ts, syncConfig.ts, restartSyncService(), isSyncServiceInstalled()]
+- "shared_carttabsnapshot_carttabsnapshottotal": "cartTabSnapshotTotal()" | kind=code-symbol | source=shelfPos/src/shared/cartTabSnapshot.ts:L32 | neighbors=[cartTabs.ts, cartTabs.ts, cartTabSnapshot.ts, parseCartTabSnapshotJson()]
+- "shared_money_parsemachinenumber": "parseMachineNumber()" | kind=code-symbol | source=shelfPos/src/shared/money.ts:L22 | neighbors=[productCsvImport.ts, productEfacturaImport.ts, money.ts, parseSupplierAmount()]
+- "shared_money_parsesupplieramount": "parseSupplierAmount()" | kind=code-symbol | source=shelfPos/src/shared/money.ts:L29 | neighbors=[productSupplierInvoicePdf.ts, money.ts, parseMachineNumber(), roundColones()]
+- "shared_pendingstoreid": "pendingStoreId.ts" | kind=code-symbol | source=shelfPos/src/shared/pendingStoreId.ts:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, pendingStoreId.ts, parsePendingStoreIdFileContent(), shouldApplyPendingStoreId()]
+- "shared_pricing_catalogunitprice": "catalogUnitPrice()" | kind=code-symbol | source=shelfPos/src/shared/pricing.ts:L48 | neighbors=[priceOverride.ts, sales.ts, pricing.ts, lineUnitPrice()]
+- "shared_pricing_iscustompriceoverride": "isCustomPriceOverride()" | kind=code-symbol | source=shelfPos/src/shared/pricing.ts:L35 | neighbors=[priceOverride.ts, sales.ts, pricing.ts, moneyEquals()]
+- "shared_pricing_linegross": "lineGross()" | kind=code-symbol | source=shelfPos/src/shared/pricing.ts:L65 | neighbors=[cartTabSnapshot.ts, pricing.ts, lineUnitPrice(), lineTotal()]
+- "shared_types_appsettings": "AppSettings" | kind=code-symbol | source=shelfPos/src/shared/types.ts:L57 | neighbors=[settings.ts, settings.ts, printTemplates.ts, types.ts]
+- "shared_types_cashdrawerstatus": "CashDrawerStatus" | kind=code-symbol | source=shelfPos/src/shared/types.ts:L1133 | neighbors=[cash.ts, cash.ts, types.ts, CashSummary]
+- "shared_types_payment_methods": "PAYMENT_METHODS" | kind=code-symbol | source=shelfPos/src/shared/types.ts:L2 | neighbors=[sales.ts, primitives.ts, csvColumns.ts, types.ts]
+- "shared_types_paymentmethodreport": "PaymentMethodReport" | kind=code-symbol | source=shelfPos/src/shared/types.ts:L435 | neighbors=[dashboard.ts, reports.ts, printTemplates.ts, types.ts]
+- "shared_types_printpayload": "PrintPayload" | kind=code-symbol | source=shelfPos/src/shared/types.ts:L1191 | neighbors=[printJobs.ts, labelPrintLines.ts, printer.ts, types.ts]
+- "shared_types_productinput": "ProductInput" | kind=code-symbol | source=shelfPos/src/shared/types.ts:L113 | neighbors=[products.ts, products.ts, productCsvImport.ts, types.ts]
+- "shared_types_taxcategory": "TaxCategory" | kind=code-symbol | source=shelfPos/src/shared/types.ts:L45 | neighbors=[sales.ts, reports.ts, settings.ts, types.ts]
+- "shell_usesidebarcollapsed": "useSidebarCollapsed.ts" | kind=code-symbol | source=shelfPos/src/renderer/src/features/shell/useSidebarCollapsed.ts:L1 | neighbors=[1bdbad7 Consolidate shelfPos, shelfDash…, readCollapsed(), useSidebarCollapsed(), writeCollapsed()]
+- "src_config_syncconfig": "SyncConfig" | kind=code-symbol | source=shelfPos/sync-service/src/config.ts:L8 | neighbors=[config.ts, db.ts, index.ts, sync.ts]
+- "src_db_readstoredisplayname": "readStoreDisplayName()" | kind=code-symbol | source=shelfPos/sync-service/src/db.ts:L41 | neighbors=[db.ts, readSetting(), readStoreId(), index.ts]
+- "src_db_readstoreid": "readStoreId()" | kind=code-symbol | source=shelfPos/sync-service/src/db.ts:L31 | neighbors=[db.ts, readStoreDisplayName(), readSetting(), index.ts]
+- "src_errorlog_appendsyncerrorlog": "appendSyncErrorLog()" | kind=code-symbol | source=shelfPos/sync-service/src/errorLog.ts:L18 | neighbors=[errorLog.ts, syncErrorLogFile(), logSyncQueueFailure(), logSyncServiceError()]
+- "src_errorlog_logsyncserviceerror": "logSyncServiceError()" | kind=code-symbol | source=shelfPos/sync-service/src/errorLog.ts:L46 | neighbors=[errorLog.ts, appendSyncErrorLog(), index.ts, sync.ts]
+- "admin_admincashpage": "AdminCashPage.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/AdminCashPage.tsx:L1 | neighbors=[AdminCash(), AdminCashPage(), 1bdbad7 Consolidate shelfPos, shelfDash…]
+- "admin_cierrediscrepancyalerts_cierrediscrepancyalerts": "CierreDiscrepancyAlerts()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/CierreDiscrepancyAlerts.tsx:L115 | neighbors=[CierreDiscrepancyAlerts.tsx, useCierreDiscrepancyAlerts(), CierrePage.tsx]
+- "admin_cierrediscrepancyalerts_dismisscierreids": "dismissCierreIds()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/CierreDiscrepancyAlerts.tsx:L38 | neighbors=[CierreDiscrepancyAlerts.tsx, emitDismissedChange(), readDismissedIds()]
+- "admin_cierrediscrepancyalerts_readdismissedids": "readDismissedIds()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/CierreDiscrepancyAlerts.tsx:L22 | neighbors=[CierreDiscrepancyAlerts.tsx, dismissCierreIds(), useDismissedCierreIds()]
+- "admin_cierrediscrepancyalerts_usedismissedcierreids": "useDismissedCierreIds()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/CierreDiscrepancyAlerts.tsx:L46 | neighbors=[CierreDiscrepancyAlerts.tsx, useCierreDiscrepancyAlerts(), readDismissedIds()]
+- "admin_settingscloudpanel_settingscloudpanel": "SettingsCloudPanel()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/SettingsCloudPanel.tsx:L26 | neighbors=[SettingsCloudPanel.tsx, cloudStatusKey(), SettingsPage.tsx]
+- "admin_settingsdraft_emisordraftdirty": "emisorDraftDirty()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/settingsDraft.ts:L102 | neighbors=[settingsDraft.ts, sectionDirty(), SettingsForm.tsx]
+- "admin_settingsdraft_generaldraftdirty": "generalDraftDirty()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/settingsDraft.ts:L98 | neighbors=[settingsDraft.ts, sectionDirty(), SettingsForm.tsx]
+- "admin_settingsdraft_settingsdraft": "SettingsDraft" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/settingsDraft.ts:L3 | neighbors=[settingsDraft.ts, SettingsForm.tsx, SettingsSections.tsx]
+- "admin_settingsdraft_shortcutsdraftdirty": "shortcutsDraftDirty()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/settingsDraft.ts:L110 | neighbors=[settingsDraft.ts, sectionDirty(), SettingsForm.tsx]
+- "admin_settingsdraft_taxdraftdirty": "taxDraftDirty()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/settingsDraft.ts:L106 | neighbors=[settingsDraft.ts, sectionDirty(), SettingsForm.tsx]
+- "admin_settingsform_emptypinfields": "emptyPinFields()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/SettingsForm.tsx:L99 | neighbors=[SettingsForm.tsx, pinFormsReducer(), SettingsForm()]
+- "admin_settingsform_settingsform": "SettingsForm()" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/SettingsForm.tsx:L128 | neighbors=[SettingsForm.tsx, emptyPinFields(), SettingsPage.tsx]
+- "admin_usersinitialsetupmodal": "UsersInitialSetupModal.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/admin/UsersInitialSetupModal.tsx:L1 | neighbors=[UsersInitialSetupModal(), UsersPage.tsx, 1bdbad7 Consolidate shelfPos, shelfDash…]
+- "auth_languagepicker": "LanguagePicker.tsx" | kind=code-symbol | source=shelfPos/src/renderer/src/features/auth/LanguagePicker.tsx:L1 | neighbors=[FirstRun.tsx, LanguagePicker(), 1bdbad7 Consolidate shelfPos, shelfDash…]
+- "commit:repo:github.com/SakenEtAlOrg/ShelfPOS@0d0d88f5c6d806b32661ac39ca303da8c9460cb3": "0d0d88f Remove split-out repository entries from .gitignore" | kind=Commit | source=git | neighbors=[Separation, 1bdbad7 Consolidate shelfPos, shelfDash…, 14a2364 Split monorepo into independent…]
 
 ## Instructions
 

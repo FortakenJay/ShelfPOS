@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
 import { toastApiError } from '@/lib/errors'
+import { invalidateProducts } from '@/lib/queryKeys'
 import { useToasts } from '@/lib/toast'
 import { Button, Field, Input, Modal, Select } from '@/components/ui'
 import type { Product } from '@shared/types'
@@ -33,7 +34,7 @@ export function AdjustStockModal({
     onSuccess: (result) => {
       toasts.stockAlerts(result.stockAlerts)
       toasts.success('products.adjust.done')
-      void queryClient.invalidateQueries({ queryKey: ['products'] })
+      invalidateProducts(queryClient)
       onSaved()
     },
     onError: (err) => toastApiError(toasts, err)

@@ -1,5 +1,8 @@
 export type Role = 'sales' | 'product_manager' | 'admin'
-export type PaymentMethod = 'cash' | 'card' | 'sinpe'
+export const PAYMENT_METHODS = ['cash', 'card', 'sinpe', 'credit'] as const
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number]
+export const CREDIT_PAYMENT_METHODS = ['cash', 'card', 'sinpe'] as const satisfies readonly PaymentMethod[]
+export type CreditPaymentMethod = (typeof CREDIT_PAYMENT_METHODS)[number]
 export type Language = 'es' | 'zh-CN'
 export type StockStatus = 'all' | 'low' | 'zero' | 'negative'
 export type ActionShortcutKey =
@@ -91,6 +94,8 @@ export interface Product {
   barcode: string
   name: string
   price: number
+  price2: number | null
+  price3: number | null
   cost_price: number | null
   category: string | null
   stock_provider: string | null
@@ -109,6 +114,8 @@ export interface ProductInput {
   barcode: string
   name: string
   price: number
+  price2: number | null
+  price3: number | null
   costPrice: number | null
   category: string | null
   stockProvider: string | null
@@ -166,6 +173,7 @@ export interface ProductImportPreview {
   canceled: boolean
   filePath?: string
   fileName?: string
+  sourceVersion?: string
   toCreate: ProductImportPreviewRow[]
   toUpdate: ProductImportPreviewRow[]
   unchanged: ProductImportPreviewRow[]
@@ -310,6 +318,8 @@ export interface CreateSaleInput {
   /** Absolute discount (₡) applied to the whole cart, on top of line discounts. */
   cartDiscount?: number
   customer?: CustomerInput
+  /** Persisted customer account required when any tender uses customer credit. */
+  customerAccountId?: number
   /** Physical cash handed over (for change). Only relevant when a cash payment exists. */
   tendered?: number
   /** Required when any line or cart discount is applied. Caja or manager PIN. */
@@ -426,10 +436,12 @@ export interface PaymentMethodReport {
   cash: number
   card: number
   sinpe: number
+  credit: number
   total: number
   countCash: number
   countCard: number
   countSinpe: number
+  countCredit: number
 }
 
 export interface TopProductRow {
@@ -767,6 +779,7 @@ export interface CierrePriceOverrideReport {
 }
 
 export interface CierreDiscardedTabRow {
+  id: number
   createdAt: string
   cashier: string
   label: string
@@ -806,6 +819,7 @@ export interface CierreRecord {
   total_cash: number
   total_card: number
   total_sinpe: number
+  total_credit: number
   total_sales: number
   opening_float: number
   cash_in: number
@@ -982,6 +996,94 @@ export interface UserUpdateInput {
   isActive?: boolean
 }
 
+export interface CustomerRow {
+  id: number
+  name: string
+  phone: string | null
+  idNumber: string | null
+  note: string | null
+  balance: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CustomerListInput {
+  search?: string
+  includeInactive?: boolean
+}
+
+export interface CustomerCreateInput {
+  name: string
+  phone?: string
+  idNumber?: string
+  note?: string
+}
+
+export interface CustomerUpdateInput extends CustomerCreateInput {
+  id: number
+  isActive?: boolean
+}
+
+export interface CreditChargeHistoryRow {
+  type: 'charge'
+  id: number
+  saleId: number
+  consecutivo: string | null
+  amount: number
+  outstandingAmount: number
+  saleTotal: number
+  method: 'credit'
+  note: string | null
+  cashier: string
+  createdAt: string
+  items: CustomerPurchaseItem[]
+}
+
+export interface CustomerPurchaseItem {
+  saleItemId: number
+  name: string
+  quantity: number
+  unitPrice: number
+  lineTotal: number
+}
+
+export interface CreditPaymentHistoryRow {
+  type: 'payment'
+  id: number
+  saleId: number | null
+  consecutivo: string | null
+  amount: number
+  method: CreditPaymentMethod
+  note: string | null
+  cashier: string
+  createdAt: string
+}
+
+export type CustomerCreditHistoryRow = CreditChargeHistoryRow | CreditPaymentHistoryRow
+
+export interface CustomerDetail {
+  customer: CustomerRow
+  history: CustomerCreditHistoryRow[]
+}
+
+export interface PendingCreditCustomerSummary {
+  customerId: number
+  name: string
+  phone: string | null
+  balance: number
+  pendingCartCount: number
+}
+
+export interface CreditPaymentInput {
+  customerId: number
+  saleId?: number
+  amount: number
+  method: CreditPaymentMethod
+  ref?: string
+  note?: string
+}
+
 export interface BackupInfo {
   dbPath: string
   backupDir: string
@@ -1154,6 +1256,13 @@ export const IPC_CHANNELS = [
   'sales:listForReprint',
   'sales:reprintReceipt',
   'sales:exportFacturaPdf',
+  'customers:list',
+  'customers:pending',
+  'customers:create',
+  'customers:update',
+  'customers:deactivate',
+  'customers:detail',
+  'customers:recordPayment',
   'returns:create',
   'discount:authorize',
   'cart:removeAuthorize',

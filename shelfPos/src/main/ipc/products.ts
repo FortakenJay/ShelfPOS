@@ -1,4 +1,4 @@
-import { handle } from './helpers'
+import { handle, PRODUCT_MANAGER_OR_ADMIN_ACCESS } from './helpers'
 import { AppError } from '../errors'
 import { dialog } from 'electron'
 import { getDb } from '../db'
@@ -30,6 +30,7 @@ import { attemptPrintJob, probePrinter } from '../services/printer'
 import { barcodePrintValue, isPrintableCode128Barcode } from '../../shared/barcode'
 import { MAX_LABEL_COPIES } from '../../shared/printLimits'
 import {
+  analyzeProductImport,
   applyProductImport,
   buildProductImportPreview,
   readProductCsv,
@@ -40,6 +41,7 @@ import {
   applySupplierInvoiceImport,
   buildSupplierInvoicePreview
 } from '../services/productSupplierInvoicePdf'
+import { throwProductDbError } from '../services/productImportErrors'
 import type {
   AdjustStockInput,
   Product,
@@ -56,7 +58,6 @@ import type {
   SupplierInvoiceResult
 } from '../../shared/types'
 
-const MANAGE: ('product_manager' | 'admin')[] = ['product_manager', 'admin']
 const MAX_BATCH_LABEL_PRODUCTS = 200
 
 function normalizeBatchPrintItems(
@@ -76,18 +77,6 @@ function normalizeBatchPrintItems(
   return normalized
 }
 
-function isUniqueViolation(err: unknown): boolean {
-  return err instanceof Error && err.message.includes('UNIQUE constraint failed')
-}
-
-function mapProductDbError(err: unknown): never {
-  if (isUniqueViolation(err)) throw new AppError('errors.barcodeExists')
-  if (err instanceof Error && err.message.includes('FOREIGN KEY constraint failed')) {
-    throw new AppError('errors.productInUse')
-  }
-  throw new AppError('errors.dbOperationFailed')
-}
-
 function productIncludesCost(): boolean {
   return session.get()?.role !== 'sales'
 }
@@ -104,7 +93,7 @@ function assignProductBarcode(productId: number, barcode: string): Product {
       enqueueProductSync(productId, 'update', db)
     })()
   } catch (err) {
-    mapProductDbError(err)
+    throwProductDbError(err)
   }
   const product = getProduct(productId)
   if (!product) throw new AppError('errors.productNotFound')
@@ -232,16 +221,20 @@ async function openImportFilePath(
 
 async function confirmProductImport(
   filePath: string,
+  sourceVersion: string,
   format: 'csv' | 'efactura',
   stockMode: ProductImportStockMode,
   userId: number
 ): Promise<ProductImportResult> {
-  if (!filePath?.trim()) throw new AppError('errors.invalidInput')
-  const path = filePath.trim()
-  if (format === 'efactura') {
-    return applyProductImport(await readEfacturaXlsx(path), userId, stockMode)
+  if (!filePath?.trim() || !sourceVersion?.trim()) {
+    throw new AppError('errors.invalidInput')
   }
-  return applyProductImport(path, userId, stockMode)
+  const path = filePath.trim()
+  const parsed =
+    format === 'efactura'
+      ? await readEfacturaXlsx(path, sourceVersion.trim())
+      : readProductCsv(path, sourceVersion.trim())
+  return applyProductImport(analyzeProductImport(parsed), userId, stockMode)
 }
 
 export function registerProductHandlers(): void {
@@ -263,7 +256,7 @@ export function registerProductHandlers(): void {
 
   handle<{ productId: number; copies?: number }, { printStatus: PrintStatus }>(
     'products:printLabel',
-    MANAGE,
+    PRODUCT_MANAGER_OR_ADMIN_ACCESS,
     async ({ productId, copies }) => {
       await probePrinter()
       const lang = receiptLanguage()
@@ -274,7 +267,7 @@ export function registerProductHandlers(): void {
 
   handle<{ productId: number; copies?: number }, { printStatus: PrintStatus }>(
     'products:printBarcode',
-    MANAGE,
+    PRODUCT_MANAGER_OR_ADMIN_ACCESS,
     async ({ productId, copies }) => {
       await probePrinter()
       const lang = receiptLanguage()
@@ -286,48 +279,57 @@ export function registerProductHandlers(): void {
   handle<
     { items: { productId: number; copies?: number }[] },
     { printStatus: PrintStatus; printed: number; failed: number; total: number }
-  >('products:printLabelBatch', MANAGE, async ({ items }) => runBatchPrint(items, 'label'))
+  >('products:printLabelBatch', PRODUCT_MANAGER_OR_ADMIN_ACCESS, async ({ items }) => runBatchPrint(items, 'label'))
 
   handle<
     { items: { productId: number; copies?: number }[] },
     { printStatus: PrintStatus; printed: number; failed: number; total: number }
-  >('products:printBarcodeBatch', MANAGE, async ({ items }) => runBatchPrint(items, 'barcode'))
+  >('products:printBarcodeBatch', PRODUCT_MANAGER_OR_ADMIN_ACCESS, async ({ items }) => runBatchPrint(items, 'barcode'))
 
-  handle<ProductInput, Product>('products:create', MANAGE, (input) => {
-    validateProductInput(input)
+  handle<ProductInput, Product>('products:create', PRODUCT_MANAGER_OR_ADMIN_ACCESS, (input) => {
+    const normalized = validateProductInput(input)
     const user = session.require()
     const db = getDb()
     const now = localNow()
     try {
       return db.transaction(() => {
-        const id = insertProductRow(db, input, now)
-        if (input.stock) applyStockDelta(id, Math.floor(input.stock), user.id, 'initial_stock')
-        else enqueueProductSync(id, 'insert', db)
-        writeAudit('product_created', { entity: 'product', entityId: id, detail: input.name.trim() })
+        const id = insertProductRow(db, normalized, now)
+        if (normalized.stock) {
+          applyStockDelta(id, Math.floor(normalized.stock), user.id, 'initial_stock')
+        } else enqueueProductSync(id, 'insert', db)
+        writeAudit('product_created', {
+          entity: 'product',
+          entityId: id,
+          detail: normalized.name
+        })
         return getProduct(id) as Product
       })()
     } catch (err) {
-      mapProductDbError(err)
+      throwProductDbError(err)
     }
   })
 
-  handle<{ id: number } & ProductInput, Product>('products:update', MANAGE, (input) => {
-    validateProductInput(input)
+  handle<{ id: number } & ProductInput, Product>('products:update', PRODUCT_MANAGER_OR_ADMIN_ACCESS, (input) => {
+    const normalized = validateProductInput(input)
     if (!getProduct(input.id)) throw new AppError('errors.productNotFound')
     try {
       const db = getDb()
       db.transaction(() => {
-        updateProductCatalogFields(db, input.id, input)
+        updateProductCatalogFields(db, input.id, normalized)
         enqueueProductSync(input.id, 'update', db)
       })()
     } catch (err) {
-      mapProductDbError(err)
+      throwProductDbError(err)
     }
-    writeAudit('product_updated', { entity: 'product', entityId: input.id, detail: input.name.trim() })
+    writeAudit('product_updated', {
+      entity: 'product',
+      entityId: input.id,
+      detail: normalized.name
+    })
     return getProduct(input.id) as Product
   })
 
-  handle<{ id: number }, null>('products:delete', MANAGE, ({ id }) => {
+  handle<{ id: number }, null>('products:delete', PRODUCT_MANAGER_OR_ADMIN_ACCESS, ({ id }) => {
     if (!getProduct(id, true)) throw new AppError('errors.productNotFound')
     try {
       getDb().transaction(() => {
@@ -335,14 +337,14 @@ export function registerProductHandlers(): void {
         writeAudit('product_deleted', { entity: 'product', entityId: id })
       })()
     } catch (err) {
-      mapProductDbError(err)
+      throwProductDbError(err)
     }
     return null
   })
 
   handle<AdjustStockInput, { product: Product; stockAlerts: StockAlert[] }>(
     'products:adjustStock',
-    MANAGE,
+    PRODUCT_MANAGER_OR_ADMIN_ACCESS,
     (input) => {
       const user = session.require()
       const delta = Math.trunc(input.delta)
@@ -366,7 +368,7 @@ export function registerProductHandlers(): void {
 
   handle<{ template?: boolean }, { canceled: boolean; path?: string }>(
     'products:exportCsv',
-    MANAGE,
+    PRODUCT_MANAGER_OR_ADMIN_ACCESS,
     async ({ template }) => {
       const lang = currentLanguage()
       const result = await dialog.showSaveDialog({
@@ -379,37 +381,57 @@ export function registerProductHandlers(): void {
     }
   )
 
-  handle<void, ProductImportPreview>('products:importCsvPreview', MANAGE, async () => {
+  handle<void, ProductImportPreview>('products:importCsvPreview', PRODUCT_MANAGER_OR_ADMIN_ACCESS, async () => {
     const filePath = await openImportFilePath([{ name: 'CSV', extensions: ['csv'] }])
     if (!filePath) return EMPTY_IMPORT_PREVIEW
-    return buildProductImportPreview(readProductCsv(filePath))
+    return buildProductImportPreview(analyzeProductImport(readProductCsv(filePath)))
   })
 
-  handle<void, ProductImportPreview>('products:importEfacturaPreview', MANAGE, async () => {
+  handle<void, ProductImportPreview>('products:importEfacturaPreview', PRODUCT_MANAGER_OR_ADMIN_ACCESS, async () => {
     const filePath = await openImportFilePath([{ name: 'Excel (eFactura)', extensions: ['xlsx'] }])
     if (!filePath) return EMPTY_IMPORT_PREVIEW
-    return buildProductImportPreview(await readEfacturaXlsx(filePath))
+    return buildProductImportPreview(
+      analyzeProductImport(await readEfacturaXlsx(filePath))
+    )
   })
 
-  handle<{ filePath: string; stockMode?: 'add' | 'replace' }, ProductImportResult>(
+  handle<
+    { filePath: string; sourceVersion: string; stockMode?: 'add' | 'replace' },
+    ProductImportResult
+  >(
     'products:importEfacturaConfirm',
-    MANAGE,
-    async ({ filePath, stockMode }) => {
+    PRODUCT_MANAGER_OR_ADMIN_ACCESS,
+    async ({ filePath, sourceVersion, stockMode }) => {
       const user = session.require()
-      return confirmProductImport(filePath, 'efactura', stockMode ?? 'add', user.id)
+      return confirmProductImport(
+        filePath,
+        sourceVersion,
+        'efactura',
+        stockMode ?? 'add',
+        user.id
+      )
     }
   )
 
-  handle<{ filePath: string; stockMode?: 'add' | 'replace' }, ProductImportResult>(
+  handle<
+    { filePath: string; sourceVersion: string; stockMode?: 'add' | 'replace' },
+    ProductImportResult
+  >(
     'products:importCsvConfirm',
-    MANAGE,
-    ({ filePath, stockMode }) => {
+    PRODUCT_MANAGER_OR_ADMIN_ACCESS,
+    ({ filePath, sourceVersion, stockMode }) => {
       const user = session.require()
-      return confirmProductImport(filePath, 'csv', stockMode ?? 'add', user.id)
+      return confirmProductImport(
+        filePath,
+        sourceVersion,
+        'csv',
+        stockMode ?? 'add',
+        user.id
+      )
     }
   )
 
-  handle<void, SupplierInvoicePreview>('products:importSupplierInvoicePreview', MANAGE, async () => {
+  handle<void, SupplierInvoicePreview>('products:importSupplierInvoicePreview', PRODUCT_MANAGER_OR_ADMIN_ACCESS, async () => {
     const filePath = await openImportFilePath([{ name: 'PDF', extensions: ['pdf'] }])
     if (!filePath) {
       return { canceled: true, restock: [], newItems: [], errors: [] }
@@ -419,7 +441,7 @@ export function registerProductHandlers(): void {
 
   handle<SupplierInvoiceConfirmInput, SupplierInvoiceResult>(
     'products:importSupplierInvoiceConfirm',
-    MANAGE,
+    PRODUCT_MANAGER_OR_ADMIN_ACCESS,
     (input) => {
       const user = session.require()
       return applySupplierInvoiceImport(input, user.id)

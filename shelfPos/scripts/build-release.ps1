@@ -274,6 +274,8 @@ New-Item -ItemType Directory -Path $SyncStage -Force | Out-Null
 Copy-Item -Recurse (Join-Path $SyncBuildDir 'dist') (Join-Path $SyncStage 'dist')
 Copy-Item -Recurse (Join-Path $SyncBuildDir 'node_modules') (Join-Path $SyncStage 'node_modules')
 Copy-Item (Join-Path $SyncBuildDir 'package.json') $SyncStage
+Copy-Item (Join-Path $SyncSourceDir 'mirror-manifest.cjs') $SyncStage
+Copy-Item (Join-Path $SyncSourceDir 'mirror-manifest.json') $SyncStage
 New-Item -ItemType Directory -Path (Join-Path $SyncStage 'scripts') -Force | Out-Null
 Copy-Item (Join-Path $SyncSourceDir 'scripts\set-store-id.cjs') (Join-Path $SyncStage 'scripts\set-store-id.cjs')
 Copy-Item (Join-Path $SyncSourceDir 'scripts\write-sync-env.cjs') (Join-Path $SyncStage 'scripts\write-sync-env.cjs')

@@ -9,6 +9,8 @@ interface ProductCsvHelpModalProps {
 
 const REQUIRED_COLS = ['barcode', 'name', 'price'] as const
 const OPTIONAL_COLS = [
+  'price2',
+  'price3',
   'cost_price',
   'category',
   'stock',
