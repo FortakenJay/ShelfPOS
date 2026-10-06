@@ -51,8 +51,19 @@ coverage/
 # TypeScript incremental
 *.tsbuildinfo
 
-# Graphify (https://graphify.net/) — commit graphify-out/; keep local cost log out
-graphify-out/cost.json
+# Local tooling, generated graphs and reports (kept on disk, not in git)
+.graphify/
+graphify-out/
+.claude/
+.cursor/
+.agents/
+skills-lock.json
+shelfPos/report/
+shelfPos/react-doctor-verbose.txt
+shelfPos/docs/prompts/
+shelfPos/docs/cleanup-and-qa-prompts.md
+# GitHub only runs workflows from the repo root .github/
+shelfPos/.github/
 
 # Scratch copy at repo root (canonical POS app is shelfPos/)
 OFFLINE-ONLY-POS/

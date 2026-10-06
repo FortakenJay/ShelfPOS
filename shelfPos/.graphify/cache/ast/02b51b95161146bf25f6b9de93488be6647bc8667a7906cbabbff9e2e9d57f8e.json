@@ -1,1 +1,0 @@
-{"nodes":[{"id":"scripts_get_machine_id","label":"get-machine-id.ts","file_type":"code","source_file":"scripts/get-machine-id.ts","source_location":"L1"}],"edges":[{"source":"scripts_get_machine_id","target":"node_machine_id","relation":"imports_from","confidence":"EXTRACTED","source_file":"scripts/get-machine-id.ts","source_location":"L2","weight":1}]}
