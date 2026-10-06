@@ -158,9 +158,14 @@ function devLicenseStatus(): LicenseStatus {
   }
 }
 
+/** Dev and e2e runs skip licensing. Env vars are runtime-settable, so a packaged build never does. */
+function isUnlicensedDevRun(): boolean {
+  return !app.isPackaged && (process.env.NODE_ENV === 'development' || process.env.SHELFPOS_TEST === '1')
+}
+
 /** Gate app startup — skipped entirely in development. */
 export async function checkLicense(): Promise<boolean> {
-  if (process.env.NODE_ENV === 'development' || process.env.SHELFPOS_TEST === '1') {
+  if (isUnlicensedDevRun()) {
     return true
   }
 
@@ -196,7 +201,7 @@ export function activateLicense(tokenInput: string): LicenseStatus {
 }
 
 export function getLicenseStatus(): LicenseStatus {
-  if (process.env.NODE_ENV === 'development' || process.env.SHELFPOS_TEST === '1') {
+  if (isUnlicensedDevRun()) {
     return devLicenseStatus()
   }
   return checkStoredLicense()

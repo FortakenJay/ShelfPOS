@@ -257,7 +257,7 @@ export function topProducts(filter: SaleFilter, limit = 10): TopProductRow[] {
       quantity: r.quantity,
       revenue,
       profit,
-      marginPct: revenue > 0 ? round2((profit / revenue) * 100) : null
+      marginPct: revenue > 0 ? Math.round((profit / revenue) * 100) : null
     }
   })
 }

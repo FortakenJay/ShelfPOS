@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui'
-import { formatDate } from '@/lib/format'
+import { formatDate, localTimestamp } from '@/lib/format'
 
 export function DashboardPanelToolbar({
   storeName,
@@ -26,7 +26,7 @@ export function DashboardPanelToolbar({
       <div className="flex shrink-0 flex-wrap items-center gap-3">
         {lastUpdated > 0 && (
           <p className="text-[12px] text-slate-400">
-            {t('dashboard.lastUpdated')}: {formatDate(new Date(lastUpdated).toISOString(), true)}
+            {t('dashboard.lastUpdated')}: {formatDate(localTimestamp(lastUpdated), true)}
           </p>
         )}
         <Button variant="outline" loading={isFetching} onClick={onRefresh}>

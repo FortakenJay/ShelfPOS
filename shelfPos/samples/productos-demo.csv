@@ -7,13 +7,13 @@ Código de barras,Nombre,Precio (₡),Precio de costo (₡),Categoría,Stock ini
 7501001001006,Sal yodada 1 kg,650,480,Despensa,20,5,canasta_basica,,
 7501001001007,Leche entera 1 L,1150,920,Lácteos,48,12,canasta_basica,6,1080
 7501001001008,Queso Turrialba 250 g,1850,1420,Lácteos,18,5,standard,,
-7501001001009,Huevos cartón 30 unid.,4200,3600,Lácteos,15,4,standard,2,8000
+7501001001009,Huevos cartón 30 unid.,4200,3600,Lácteos,15,4,standard,2,4000
 7501001001010,Pan blanco bolsa,1200,850,Panadería,20,6,standard,,
 7501001001011,Tortillas de maíz 20 pz,950,700,Panadería,22,6,standard,,
-7501001001012,Coca-Cola 600 ml,850,620,Bebidas,60,15,standard,6,4800
-7501001001013,Agua natural 600 ml,450,280,Bebidas,72,20,standard,12,4800
+7501001001012,Coca-Cola 600 ml,850,620,Bebidas,60,15,standard,6,800
+7501001001013,Agua natural 600 ml,450,280,Bebidas,72,20,standard,12,400
 7501001001014,Jugo Hit naranja 1 L,1350,1020,Bebidas,28,8,standard,,
-7501001001015,Cerveza Imperial 350 ml,950,720,Bebidas,36,10,standard,6,5400
+7501001001015,Cerveza Imperial 350 ml,950,720,Bebidas,36,10,standard,6,900
 7501001001016,Galletas María 200 g,780,560,Snacks,30,8,standard,,
 7501001001017,Papas fritas Lays 150 g,1100,820,Snacks,24,6,standard,,
 7501001001018,Chocolates Sublime,350,240,Snacks,50,12,standard,,

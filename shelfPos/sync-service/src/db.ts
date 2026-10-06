@@ -191,12 +191,16 @@ export function markError(
   maxRetries: number,
   rawErr?: unknown,
 ): { gaveUp: boolean; retryCount: number } {
+  // enqueueSync deletes an older pending row when a newer change lands, possibly while
+  // this worker was pushing it. The newer row carries the change; nothing to record.
+  const readRetryCount = (): number | null =>
+    (db.prepare(`SELECT retry_count FROM sync_queue WHERE id = ?`).get(queueId) as
+      | { retry_count: number }
+      | undefined)?.retry_count ?? null
+
   if (isTransientSyncError(error, rawErr)) {
     db.prepare(`UPDATE sync_queue SET status = 'pending', error = ? WHERE id = ?`).run(error, queueId)
-    const row = db
-      .prepare(`SELECT retry_count FROM sync_queue WHERE id = ?`)
-      .get(queueId) as { retry_count: number }
-    return { gaveUp: false, retryCount: row.retry_count }
+    return { gaveUp: false, retryCount: readRetryCount() ?? 0 }
   }
 
   db.prepare(
@@ -204,14 +208,12 @@ export function markError(
      SET status = 'error', error = ?, retry_count = retry_count + 1
      WHERE id = ?`,
   ).run(error, queueId)
-  const row = db
-    .prepare(`SELECT retry_count FROM sync_queue WHERE id = ?`)
-    .get(queueId) as { retry_count: number }
-  const willRetry = row.retry_count < maxRetries
+  const retryCount = readRetryCount()
+  if (retryCount === null) return { gaveUp: false, retryCount: 0 }
   db.prepare(
     `UPDATE sync_queue SET status = 'pending' WHERE id = ? AND retry_count < ?`,
   ).run(queueId, maxRetries)
-  return { gaveUp: !willRetry, retryCount: row.retry_count }
+  return { gaveUp: retryCount >= maxRetries, retryCount }
 }
 
 export function enqueueAllPosUsersBackfill(db: Database.Database): number {

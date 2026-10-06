@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { formatMoney } from '@/lib/format'
-import { parseColonesInput } from '@/lib/format'
+import { formatMoney, parseLocalizedMoneyInput } from '@/lib/format'
 import { Button, Field, Input, Modal, Td, Th, Toggle } from '@/components/ui'
 import { MoneyInput } from '@/components/MoneyInput'
 import { moneyInputIsEmpty } from '@shared/money'
@@ -52,7 +51,7 @@ export function SupplierInvoicePreviewModal({
 
   const submit = (): void => {
     const newItems = newDrafts.map((row) => {
-      const price = parseColonesInput(row.priceInput)
+      const price = parseLocalizedMoneyInput(row.priceInput)
       if (price == null || price < 0) throw new Error('invalid price')
       return {
         line: row.line,

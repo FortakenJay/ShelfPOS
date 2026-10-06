@@ -18,8 +18,15 @@ export function formatDate(local: string, withTime = false): string {
   return date
 }
 
+const pad = (n: number): string => String(n).padStart(2, '0')
+
 export function todayStr(): string {
   const d = new Date()
-  const pad = (n: number): string => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+/** Epoch ms → local 'YYYY-MM-DD HH:mm:ss', the shape formatDate expects. */
+export function localTimestamp(ms: number): string {
+  const d = new Date(ms)
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }

@@ -21,6 +21,7 @@ build/
 !**/.example.env
 !**/sync.env.example
 sync.env
+operator.env
 *.local
 
 # Logs
@@ -35,7 +36,12 @@ Thumbs.db
 # POS license keys (local only)
 private/
 
-# SQLite WAL sidecars
+# SQLite databases and WAL sidecars
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
 *.db-shm
 *.db-wal
 

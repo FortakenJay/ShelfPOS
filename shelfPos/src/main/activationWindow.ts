@@ -1,13 +1,17 @@
-import { BrowserWindow } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import { join } from 'node:path'
 import { resolveAppIcon } from './appIcon'
 
 let activationWindow: BrowserWindow | null = null
 
+// The window gets window.api, so a packaged build must never load a URL taken from the environment.
+function devRendererUrl(): string | undefined {
+  return app.isPackaged ? undefined : process.env.ELECTRON_RENDERER_URL
+}
+
 function activationUrl(): string {
-  if (process.env.ELECTRON_RENDERER_URL) {
-    return `${process.env.ELECTRON_RENDERER_URL}/activation/index.html`
-  }
+  const devUrl = devRendererUrl()
+  if (devUrl) return `${devUrl}/activation/index.html`
   return join(__dirname, '../renderer/activation/index.html')
 }
 
@@ -45,7 +49,7 @@ export function createActivationWindow(): BrowserWindow {
   })
 
   const target = activationUrl()
-  if (process.env.ELECTRON_RENDERER_URL) {
+  if (devRendererUrl()) {
     void activationWindow.loadURL(target)
   } else {
     void activationWindow.loadFile(target)

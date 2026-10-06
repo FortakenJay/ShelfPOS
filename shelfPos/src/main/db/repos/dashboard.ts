@@ -32,11 +32,16 @@ import type {
   TaxBreakdownReport
 } from '../../../shared/types'
 
-function kpiTrend(current: number, previous: number): DashboardKpiTrend {
+// round2 snaps to ₡10 (CRC_COIN_STEP); only money KPIs may use it.
+function kpiTrend(
+  current: number,
+  previous: number,
+  roundValue: (n: number) => number = round2
+): DashboardKpiTrend {
   let changePct: number | null = null
-  if (previous > 0) changePct = round2(((current - previous) / previous) * 100)
+  if (previous > 0) changePct = Math.round(((current - previous) / previous) * 100)
   else if (current > 0) changePct = 100
-  return { value: round2(current), previousValue: round2(previous), changePct }
+  return { value: roundValue(current), previousValue: roundValue(previous), changePct }
 }
 
 function monthRange(monthsAgo: number): DateRange {
@@ -258,7 +263,7 @@ function productPerformance(
       unitsSold: r.unitsSold,
       revenue,
       profit,
-      marginPct: revenue > 0 ? round2((profit / revenue) * 100) : null
+      marginPct: revenue > 0 ? Math.round((profit / revenue) * 100) : null
     }
   })
 }
@@ -567,12 +572,12 @@ export function dashboardOverview(): DashboardOverview {
     kpis: {
       todaySales: kpiTrend(todaySummary.totalRevenue, yesterdaySummary.totalRevenue),
       monthlySales: kpiTrend(monthSummary.totalRevenue, lastMonthSummary.totalRevenue),
-      todayTransactions: kpiTrend(todaySummary.txCount, yesterdaySummary.txCount),
+      todayTransactions: kpiTrend(todaySummary.txCount, yesterdaySummary.txCount, Math.round),
       avgTicketToday: kpiTrend(todaySummary.avgTicket, yesterdaySummary.avgTicket),
       grossProfitToday: kpiTrend(profitToday, profitYesterday),
-      totalProducts: kpiTrend(inventory.totalProducts, productCountAt(thisMonth.from)),
-      lowStockAlerts: kpiTrend(inventory.lowStock, lowStockCountWeekAgo()),
-      outOfStock: kpiTrend(inventory.outOfStock, outOfStockWeekAgo())
+      totalProducts: kpiTrend(inventory.totalProducts, productCountAt(thisMonth.from), Math.round),
+      lowStockAlerts: kpiTrend(inventory.lowStock, lowStockCountWeekAgo(), Math.round),
+      outOfStock: kpiTrend(inventory.outOfStock, outOfStockWeekAgo(), Math.round)
     },
     salesTrend: salesTrendLast30Days(),
     salesByHour: salesByHourToday(),

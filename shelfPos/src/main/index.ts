@@ -166,7 +166,7 @@ async function initData(): Promise<BackupService> {
 
   }
 
-  if (process.env.SHELFPOS_TEST === '1') {
+  if (!app.isPackaged && process.env.SHELFPOS_TEST === '1') {
     const { seedTestData } = await import('./services/testSeed')
     seedTestData(db)
   }
@@ -288,7 +288,7 @@ function createMainWindow(): void {
 
 
 
-  if (process.env.ELECTRON_RENDERER_URL) {
+  if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) {
 
     void mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL)
 

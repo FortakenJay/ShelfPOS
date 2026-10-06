@@ -97,7 +97,13 @@ async function main(): Promise<void> {
 
   const tick = async (): Promise<void> => {
     if (shuttingDown) return
-    const delayMs = await runSyncCycle(config, db, storeId)
+    let delayMs = RETRY_INTERVAL_MS
+    try {
+      delayMs = await runSyncCycle(config, db, storeId)
+    } catch (err) {
+      // A rejected tick would be an unhandled rejection and kill the service.
+      logSyncServiceError('sync cycle failed', err)
+    }
     setTimeout(() => {
       void tick()
     }, delayMs)
