@@ -1,6 +1,6 @@
 # ShelfPOS
 
-Fully offline, single-device Windows desktop POS system for small retail shops in Costa Rica. Electron + React 19 + SQLite. Bilingual: Español (default) / 简体中文.
+Offline-first Windows desktop POS for small retail shops in Costa Rica. Each register sells from its own local SQLite database; cloud sync to the owner dashboard is optional. Electron + React 19 + SQLite. Bilingual: Español (default) / 简体中文.
 
 ## Stack
 
@@ -23,7 +23,7 @@ npm run test:e2e   # Playwright Electron smokes (build first)
 npm run test:qa    # unit + build + e2e
 ```
 
-Full React Doctor baseline: `npx react-doctor@latest --verbose --scope full`. See wiki [[18-Quality-And-Tooling]]. QA details: [`docs/QA.md`](docs/QA.md). DRY cleanup status: [`docs/DRY_AUDIT.md`](docs/DRY_AUDIT.md).
+Full React Doctor baseline: `npx react-doctor@latest --verbose --scope full`. QA details: [`docs/QA.md`](docs/QA.md).
 
 ## Packaging
 
@@ -55,7 +55,7 @@ ShelfPOS follows `X.Y.Z` semantic versioning:
 - Prefer the **Receipt** queue (e.g. `EPSON TM-T81III Receipt`). If only a generic `EPSON TM-T81III` queue exists, ShelfPOS writes ESC/POS directly to the USB port.
 - Override detection with env var `SHELFPOS_PRINTER_NAME` if the queue has a custom name.
 - Spanish receipts and labels print amounts as **CRC** + digits on thermal output (e.g. `CRC 3200`). On-screen UI still shows **₡**.
-- Product labels: shelf etiquetas and barcode stickers from **Productos**; batch modals support up to 99 copies per product. CSV export streams the full catalog (see `docs/wiki/07-POS-Main-Process.md#product-csv-export-catalog-backup`). See `docs/wiki/08-POS-Renderer.md`.
+- Product labels: shelf etiquetas and barcode stickers from **Productos**; batch modals support up to 99 copies per product. CSV export streams the full catalog.
 
 ## First run
 
@@ -64,7 +64,7 @@ ShelfPOS follows `X.Y.Z` semantic versioning:
 3. Creation of the three fixed accounts (admin / cashier / inventory) + manager PIN (4-6 digits)
 4. Login
 
-Returns and cierre de caja are gated by the manager PIN. There is no user-management UI by design.
+Returns and cierre de caja are gated by the manager PIN. Admins add and edit users under **Usuarios**.
 
 ## Cloud sync (optional)
 
@@ -74,4 +74,4 @@ Sales and inventory mirror to **Supabase** for the owner dashboard via a separat
 - Service polls every 5s, upserts rows to Supabase (one-way mirror)
 - Install: `Install-ShelfPOS.ps1` after the POS setup; config in `%APPDATA%\shelfpos\sync.env`
 
-Full architecture: `docs/wiki/10-Sync-Service.md`
+Architecture overview: [root README](../README.md#architecture).
