@@ -262,7 +262,10 @@ function createMainWindow(): void {
 
       sandbox: false,
 
-      spellcheck: false
+      spellcheck: false,
+
+      // DevTools would let a cashier call window.api directly (e.g. arbitrary unitPrice on sales:create).
+      devTools: !app.isPackaged
 
     }
 

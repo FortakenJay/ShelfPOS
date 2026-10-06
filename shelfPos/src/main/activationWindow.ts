@@ -36,7 +36,8 @@ export function createActivationWindow(): BrowserWindow {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
-      spellcheck: false
+      spellcheck: false,
+      devTools: !app.isPackaged
     }
   })
 
