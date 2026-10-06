@@ -39,7 +39,7 @@ Mirrored rows are keyed `(id, store_id)`, and row-level security limits each das
 
 - Checkout transaction: [`shelfPos/src/main/ipc/sales.ts`](shelfPos/src/main/ipc/sales.ts)
 - Sync worker: [`shelfPos/sync-service/src/sync.ts`](shelfPos/sync-service/src/sync.ts)
-- Owner dashboard (separate repo): [FortakenJay/ShelfPOS-Dashboard](https://github.com/FortakenJay/ShelfPOS-Dashboard)
+- Owner dashboard: live at [shelfpos.net](https://shelfpos.net), code in [FortakenJay/ShelfPOS-Dashboard](https://github.com/FortakenJay/ShelfPOS-Dashboard)
 
 Dev setup, tests, and the Windows installer are in [`shelfPos/README.md`](shelfPos/README.md).
 
