@@ -31,6 +31,18 @@ Electron renderer
   → owner dashboard (read-only; RLS scopes each owner to their stores)
 ```
 
+Checkout is one SQLite transaction. The sync service is a separate process and only runs when the machine is online.
+
+![Checkout: one transaction writes the sale, the stock decrement, and the sync queue row](docs/media/checkout-sequence.png)
+
+![ShelfPOS writes shelf.db. ShelfPOSSync is the only process that talks to Supabase](docs/media/sync-process.png)
+
+![Dashboard reads Supabase. The register and the sync service share the local SQLite file](docs/media/components.png)
+
+On the shop network, registers and inventory PCs use one shelf.db on the hub PC. Only that PC runs ShelfPOSSync. The cloud copy is optional.
+
+![Several registers and inventory PCs on one shelf.db. Sync leaves the store only from the hub](docs/media/store-network.png)
+
 Hardware on the register: a USB barcode scanner (keyboard-burst detection) and an ESC/POS thermal printer for shelf tags and CODE128 labels.
 
 Mirrored rows are keyed `(id, store_id)`, and row-level security limits each dashboard user to the stores they own. Registers write with a server-side Supabase key, so the register PC is a trusted device. A register joins a store with a single-use 8-character pairing code that expires in 24 hours.
